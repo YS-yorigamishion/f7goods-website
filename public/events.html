@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>f7goods — 近期活动</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <section class="hero">
+    <h1 id="heroTitle" class="settings-pending">近期活动</h1>
+    <p id="heroSubtitle" class="settings-pending">关注最新的同人展会与活动信息，不错过每一场精彩</p>
+  </section>
+
+  <main class="main-content">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h2 id="pageTitle" class="settings-pending">活动日历</h2>
+        <p id="pageSubtitle" class="settings-pending">f7goods 参展及推荐的同人活动</p>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="timeline">📋 时间轴</button>
+          <button class="view-btn" data-view="calendar">📅 日历</button>
+          <button class="view-btn" data-view="grid">▦ 多格</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-bar" style="margin-bottom:1.5rem;">
+      <input type="text" class="search-input" placeholder="搜索活动名称、地点、分类..." id="searchInput" style="min-width:100%;margin-left:0;">
+    </div>
+
+    <div id="eventsContainer">
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    initPage('events');
+
+    let allEvents = [];
+    let allWorks = [];
+    let currentView = 'timeline';
+    let calYear, calMonth;
+
+    async function loadEvents() {
+      try {
+        await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
+        const [events, works] = await Promise.all([
+          F7API.getEvents(),
+          F7API.getWorks()
+        ]);
+        allEvents = events;
+        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+        allWorks = works;
+        const now = new Date();
+        calYear = now.getFullYear();
+        calMonth = now.getMonth();
+
+        // Apply settings
+        const ps = getPageSettings('events');
+        if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
+        if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
+        if (ps.pageTitle) document.getElementById('pageTitle').textContent = ps.pageTitle;
+        if (ps.pageSubtitle) document.getElementById('pageSubtitle').textContent = ps.pageSubtitle;
+        applyHeroBg('events');
+
+        document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+
+        renderEvents();
+      } catch (e) {
+        document.getElementById('eventsContainer').innerHTML =
+          '<div class="empty-state"><div class="icon">!</div><p>加载失败，请稍后重试</p></div>';
+      }
+    }
+
+    function getFilteredEvents() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      if (!search) return allEvents;
+      return allEvents.filter(e => {
+        // Match event name, location, description
+        if (e.title.toLowerCase().includes(search)) return true;
+        if ((e.location || '').toLowerCase().includes(search)) return true;
+        if ((e.description || '').toLowerCase().includes(search)) return true;
+        // Match category from related works
+        const related = allWorks.filter(w => (e.relatedWorks || []).includes(w.id));
+        if (related.some(w => (CATEGORIES[w.category] || '').includes(search))) return true;
+        if (related.some(w => (w.tags || []).some(t => t.toLowerCase().includes(search)))) return true;
+        return false;
+      });
+    }
+
+    function renderEvents() {
+      const container = document.getElementById('eventsContainer');
+      const events = getFilteredEvents();
+      if (events.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的活动</p></div>';
+        return;
+      }
+      if (currentView === 'timeline') renderTimeline(container, events);
+      else if (currentView === 'calendar') renderCalendar(container, events);
+      else renderGrid(container, events);
+    }
+
+    // ===== Timeline View =====
+    function renderTimeline(container, events) {
+      container.innerHTML = `<div class="events-timeline">${events.map(event => `
+        <div class="event-card" style="cursor:pointer;display:flex;gap:1.5rem;" onclick="location.href='/event-detail.html?id=${event.id}'">
+          <div style="flex:1;">
+            <span class="event-date">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
+            <h3 class="event-title">${event.title}</h3>
+            ${event.status ? `<span class="card-tag ${event.status}" style="font-size:0.75rem;padding:0.2rem 0.6rem;margin-bottom:0.5rem;display:inline-block;">${EVENT_STATUS_LABELS[event.status] || event.status}</span>` : ''}
+            <div class="event-location">${event.location}</div>
+            <p class="event-desc">${nl2br(event.description)}</p>
+            ${event.booth ? `<div class="event-booth">展位: ${event.booth}</div>` : ''}
+          </div>
+          ${event.coverImage ? `<div style="flex-shrink:0;width:160px;height:110px;border-radius:8px;overflow:hidden;"><img src="${event.coverImage}" alt="${event.title}" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
+        </div>
+      `).join('')}</div>`;
+    }
+
+    // ===== Calendar View =====
+    function renderCalendar(container, events) {
+      const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+      const weekdays = ['日','一','二','三','四','五','六'];
+
+      // Build event lookup by date string
+      const eventMap = {};
+      events.forEach(e => {
+        const start = new Date(e.date);
+        const end = e.endDate ? new Date(e.endDate) : start;
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          const key = d.toISOString().slice(0, 10);
+          if (!eventMap[key]) eventMap[key] = [];
+          eventMap[key].push(e);
+        }
+      });
+
+      const firstDay = new Date(calYear, calMonth, 1);
+      const lastDay = new Date(calYear, calMonth + 1, 0);
+      const startPad = firstDay.getDay();
+      const totalDays = lastDay.getDate();
+      const today = new Date().toISOString().slice(0, 10);
+
+      let daysHTML = '';
+      // Pad before
+      const prevLast = new Date(calYear, calMonth, 0).getDate();
+      for (let i = startPad - 1; i >= 0; i--) {
+        daysHTML += `<div class="calendar-day other-month"><span class="calendar-day-num">${prevLast - i}</span></div>`;
+      }
+      // Current month
+      for (let d = 1; d <= totalDays; d++) {
+        const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isToday = dateStr === today;
+        const dayEvents = eventMap[dateStr] || [];
+        daysHTML += `<div class="calendar-day${isToday ? ' today' : ''}">
+          <span class="calendar-day-num">${d}</span>
+          ${dayEvents.map(e => `<a class="calendar-event" href="/event-detail.html?id=${e.id}" title="${e.title}">${e.title}</a>`).join('')}
+        </div>`;
+      }
+      // Pad after
+      const endPad = 7 - ((startPad + totalDays) % 7);
+      if (endPad < 7) {
+        for (let i = 1; i <= endPad; i++) {
+          daysHTML += `<div class="calendar-day other-month"><span class="calendar-day-num">${i}</span></div>`;
+        }
+      }
+
+      container.innerHTML = `
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <button class="calendar-nav" onclick="changeMonth(-1)">&#8249;</button>
+            <h3>${calYear}年 ${monthNames[calMonth]}</h3>
+            <button class="calendar-nav" onclick="changeMonth(1)">&#8250;</button>
+          </div>
+          <div class="calendar-weekdays">
+            ${weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('')}
+          </div>
+          <div class="calendar-days">${daysHTML}</div>
+        </div>
+      `;
+    }
+
+    function changeMonth(dir) {
+      calMonth += dir;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderEvents();
+    }
+
+    // ===== Grid View =====
+    function renderGrid(container, events) {
+      container.innerHTML = `<div class="events-grid">${events.map(event => `
+        <div class="event-grid-card" onclick="location.href='/event-detail.html?id=${event.id}'">
+          ${event.coverImage
+            ? `<div style="height:180px;overflow:hidden;"><img src="${event.coverImage}" alt="${event.title}" style="width:100%;height:100%;object-fit:cover;"></div>`
+            : `<div class="event-grid-card-header">
+                <span class="event-date">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
+                <h3>${event.title}</h3>
+                ${event.status ? `<span class="card-tag ${event.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${EVENT_STATUS_LABELS[event.status] || event.status}</span>` : ''}
+              </div>`
+          }
+          <div class="event-grid-card-body">
+            ${event.coverImage ? `
+              <span class="event-date" style="margin-bottom:0.5rem;">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
+              <h3 style="font-family:'Noto Serif SC',serif;font-size:1.05rem;font-weight:600;margin-bottom:0.5rem;">${event.title}</h3>
+              ${event.status ? `<span class="card-tag ${event.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-bottom:0.5rem;display:inline-block;">${EVENT_STATUS_LABELS[event.status] || event.status}</span>` : ''}
+            ` : ''}
+            <div class="event-location">${event.location}</div>
+            <p>${nl2br(event.description)}</p>
+            ${event.booth ? `<div class="event-booth" style="margin-top:0.8rem;">展位: ${event.booth}</div>` : ''}
+          </div>
+        </div>
+      `).join('')}</div>`;
+    }
+
+    // ===== View Toggle =====
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentView = btn.dataset.view;
+        renderEvents();
+      });
+    });
+
+    // ===== Search =====
+    document.getElementById('searchInput').addEventListener('input', debounce(renderEvents));
+
+    loadEvents();
+  </script>
+</body>
+</html>

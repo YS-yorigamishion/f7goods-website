@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Uploads
+uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Sensitive data
+data/admin.json
+data/likes.json
+data/contact.json

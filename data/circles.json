@@ -1,0 +1,92 @@
+[
+  {
+    "id": "c002",
+    "name": "单纯7压抑阿妍",
+    "description": "",
+    "logo": "/uploads/danchun7yayiayan.png",
+    "images": [],
+    "socialLinks": {
+      "qqGroup": "987654321",
+      "contactLabel": "",
+      "website": "",
+      "websiteLabel": ""
+    },
+    "order": 6,
+    "category": "geren"
+  },
+  {
+    "id": "c1785520390477",
+    "name": "未命名制作组",
+    "description": "《未命名游戏》是由「未命名」制作组制作的一款永远的7日之都的同人游戏，目前正在制作中。\n如想了解更多有关于游戏的信息，请添加「未命名」游客群：765852632。",
+    "socialLinks": {
+      "qqGroup": "765852632",
+      "contactLabel": "「未命名」游客群",
+      "website": "https://f7d.huijiwiki.com/wiki/%E6%9C%AA%E5%91%BD%E5%90%8D%E5%88%B6%E4%BD%9C%E7%BB%84",
+      "websiteLabel": "未命名制作组WiKi页面"
+    },
+    "logo": "/uploads/404zhizuozu.png",
+    "images": [],
+    "order": 0,
+    "category": "shetuan"
+  },
+  {
+    "id": "c1785520414879",
+    "name": "八日晨光",
+    "description": "八日晨光为永远的7日之都吧吧务组在永远的7日之都吧同人作品升级计划基础上，经过两年几个版本的完善改进，最终于2022年成立的以无偿帮助不带交易性质的创作者和企划为主的七都同人平台。\n成立后试行了两年的邀请制，邀请了数位创作者与企划进行了合作（详见全部活动），在确认可行且效果良好后于2024年8月开始正式对外试开放投稿/合作渠道。",
+    "socialLinks": {
+      "qq": "",
+      "contactLabel": "",
+      "website": "https://f7d.huijiwiki.com/wiki/%E5%85%AB%E6%97%A5%E6%99%A8%E5%85%89",
+      "websiteLabel": "八日晨光"
+    },
+    "logo": "/uploads/barichenguang.png",
+    "images": [],
+    "order": 1,
+    "category": "shetuan"
+  },
+  {
+    "id": "c1785520541377",
+    "name": "永7WiKi",
+    "description": "由喜爱《永远的7日之都》剧情的玩家组建，为玩家无偿提供游戏内的部分参考资料。\n初期在FANDOM（原WIKIA）创建站点，但FANDOM由于不定时的不可抗力「墙」的阻挡，服务器在海外导致加载过于缓慢等原因，转移至灰机WIKI更新。",
+    "socialLinks": {
+      "qqGroup": "1124956915",
+      "contactLabel": " 永7Wiki反馈群",
+      "website": "https://f7d.huijiwiki.com/wiki/%E9%A6%96%E9%A1%B5",
+      "websiteLabel": "永远的7日之都维基"
+    },
+    "logo": "/uploads/7wiki.png",
+    "images": [],
+    "order": 2,
+    "category": "shetuan"
+  },
+  {
+    "id": "c1785521060638",
+    "name": "永远的7日之都吧吧务组",
+    "description": "各位指挥使，你们好，欢迎来到本吧。\n这里是以七都IP为主的最大玩家交流社区&攻略首发地——永远的7日之都吧。\n本吧为玩家自主管理，吧务组与游戏官方无任何联系。",
+    "socialLinks": {
+      "qq": "",
+      "contactLabel": "",
+      "website": "https://tieba.baidu.com/f?kw=%E6%B0%B8%E8%BF%9C%E7%9A%847%E6%97%A5%E4%B9%8B%E9%83%BD&fr=personalize_page",
+      "websiteLabel": "永远的7日之都贴吧"
+    },
+    "logo": "/uploads/bawuzu.jpg",
+    "images": [],
+    "order": 3,
+    "category": "shetuan"
+  },
+  {
+    "id": "c1785523517910",
+    "name": "永远的7日之都主页",
+    "description": "永远的7日之都QQ空间投稿",
+    "socialLinks": {
+      "qq": "2832478213",
+      "contactLabel": "QQ",
+      "website": "",
+      "websiteLabel": ""
+    },
+    "logo": "/uploads/qqzhuye.png",
+    "images": [],
+    "order": 4,
+    "category": "shetuan"
+  }
+]

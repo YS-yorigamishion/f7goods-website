@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>f7goods — 关于我们</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .about-section { max-width: 800px; margin: 0 auto; }
+    .about-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+    .about-card h3 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: var(--ink);
+    }
+    .about-card p {
+      color: #555;
+      line-height: 1.9;
+      margin-bottom: 1rem;
+    }
+    .about-card p:last-child { margin-bottom: 0; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+    .feature-item {
+      text-align: center;
+      padding: 1.5rem 1rem;
+    }
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin: 0 auto 0.8rem;
+    }
+    .feature-item h4 {
+      font-size: 1rem;
+      margin-bottom: 0.4rem;
+    }
+    .feature-item p {
+      font-size: 0.85rem;
+      color: var(--haze);
+      margin: 0;
+    }
+    @media (max-width: 768px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <section class="hero">
+    <h1 id="heroTitle" class="settings-pending">关于 f7goods</h1>
+    <p id="heroSubtitle" class="settings-pending">连接创作者与爱好者的同人周边展示平台</p>
+  </section>
+
+  <main class="main-content">
+    <div class="about-section">
+
+      <div class="about-card">
+        <h3 id="storyTitle">我们的故事</h3>
+        <div id="storyContent">
+          <p>f7goods 诞生于对同人创作的热爱。我们相信，每一件同人作品背后都凝聚着创作者的心血与才华——从精心雕琢的手办到反复打磨的音乐编曲，从细腻动人的同人漫画到独具匠心的周边设计。</p>
+          <p>我们建立这个平台，是为了让更多优秀的作品被看见，让创作者与爱好者之间建立更紧密的联系。无论你是资深收藏家还是刚刚踏入同人世界的新朋友，这里都有值得你探索的精彩。</p>
+        </div>
+      </div>
+
+      <div class="about-card">
+        <h3 id="contactTitle">联系我们</h3>
+        <p id="contactContent">有任何问题、合作意向或建议，欢迎通过以下方式联系我们：</p>
+        <div class="social-links" id="contactLinksContainer" style="justify-content:flex-start;margin-top:1rem;">
+          <a href="#" class="social-link">🐦 Twitter / X</a>
+          <a href="#" class="social-link">📧 support@f7goods.com</a>
+          <a href="#" class="social-link">💬 WeChat: f7goods</a>
+        </div>
+
+        <form id="contactForm" style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+          <div class="form-row">
+            <div class="form-group">
+              <label>姓名 <span style="color:var(--accent)">*</span></label>
+              <input class="form-input" id="contactName" required placeholder="请输入姓名">
+            </div>
+            <div class="form-group">
+              <label>邮箱 <span style="color:var(--accent)">*</span></label>
+              <input type="email" class="form-input" id="contactEmail" required placeholder="your@email.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>主题</label>
+            <input class="form-input" id="contactSubject" placeholder="咨询/合作/建议...">
+          </div>
+          <div class="form-group">
+            <label>消息内容 <span style="color:var(--accent)">*</span></label>
+            <textarea class="form-input" id="contactMessage" required placeholder="请输入您想说的话..." style="min-height:120px;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">发送消息</button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    initPage('contact');
+
+    async function loadAboutPage() {
+      await loadSettingsFromAPI();
+      const ps = getPageSettings('about');
+      if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
+      if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
+      applyHeroBg('about');
+      if (ps.storyTitle) document.getElementById('storyTitle').textContent = ps.storyTitle;
+      if (ps.storyContent) {
+        document.getElementById('storyContent').innerHTML = ps.storyContent.split('\n').map(p => `<p>${p}</p>`).join('');
+      }
+      if (ps.contactTitle) document.getElementById('contactTitle').textContent = ps.contactTitle;
+      if (ps.contactContent) document.getElementById('contactContent').textContent = ps.contactContent;
+
+      document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+
+      // Render contact links
+      if (ps.contactLinks && ps.contactLinks.length > 0) {
+        const container = document.getElementById('contactLinksContainer');
+        container.innerHTML = ps.contactLinks.map(link => {
+          let url = link.url || '#';
+          if (url && url !== '#' && !url.startsWith('http') && !url.startsWith('mailto:') && !url.startsWith('#')) {
+            url = 'https://' + url;
+          }
+          return `<a href="${url}" class="social-link" target="_blank" rel="noopener noreferrer">${link.icon || ''} ${link.text}</a>`;
+        }).join('');
+      }
+    }
+
+    loadAboutPage();
+
+    // Contact form submission
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const origText = btn.textContent;
+      btn.textContent = '发送中...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('contactName').value,
+            email: document.getElementById('contactEmail').value,
+            subject: document.getElementById('contactSubject').value,
+            message: document.getElementById('contactMessage').value
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('消息已发送，感谢您的反馈！', 'success');
+          e.target.reset();
+        } else {
+          showToast(data.error || '发送失败，请重试', 'error');
+        }
+      } catch (err) {
+        showToast('网络错误，请稍后重试', 'error');
+      }
+      btn.textContent = origText;
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>f7goods — 作品详情</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <main class="main-content detail-page">
+    <div id="workDetail">
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    initPage('works');
+
+    async function loadWork() {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      if (!id) { location.href = '/'; return; }
+
+      try {
+        await loadCategoriesFromAPI();
+        const [work, circles, allEvents] = await Promise.all([
+          F7API.getWork(id),
+          F7API.getCircles(),
+          F7API.getEvents()
+        ]);
+        const workCircles = (work.circles || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
+        const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(work.id));
+        document.title = `${work.title} — f7goods`;
+
+        const container = document.getElementById('workDetail');
+        container.innerHTML = `
+          <div class="detail-breadcrumb">
+            <a href="/">周边概览</a>
+            <span>›</span>
+            <span>${work.title}</span>
+          </div>
+          <div class="detail-header">
+            <div style="display:flex;align-items:flex-start;gap:1rem;">
+              <h1 style="flex:1;">${work.title}</h1>
+              <div style="flex-shrink:0;padding-top:0.3rem;">
+                ${renderLikeButton(work.id, work.likes)}
+              </div>
+            </div>
+            <div class="detail-meta">
+              <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
+              <span>${CATEGORIES[work.category] || work.category}</span>
+            </div>
+          </div>
+          <div class="detail-content">
+            <div class="detail-main">
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">简介</h3>
+              <p style="line-height:1.8;color:#444;">${nl2br(work.description)}</p>
+              ${work.images && work.images.length > 0 ? `
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">图片</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
+                  ${work.images.map((img, i) => `<img src="${img}" alt="${work.title}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(work.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
+                </div>
+              ` : ''}
+            </div>
+            <div class="detail-sidebar">
+              <div class="sidebar-card">
+                <h3>商品信息</h3>
+                <div class="info-row">
+                  <span class="info-label">价格</span>
+                  <span class="info-value" style="color:var(--accent);font-weight:700;">${work.price}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">发售日</span>
+                  <span class="info-value">${formatDate(work.releaseDate)}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">状态</span>
+                  <span class="info-value">${STATUS_LABELS[work.status] || work.status}</span>
+                </div>
+              </div>
+              ${workCircles.length > 0 ? `
+              <div class="sidebar-card">
+                <h3>作者</h3>
+                ${workCircles.map(c => `
+                  <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
+                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
+                    ${c.logo
+                      ? `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${c.logo}" alt="${c.name}" style="width:100%;height:100%;object-fit:cover;"></div>`
+                      : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">${c.name.charAt(0)}</div>`}
+                    <div>
+                      <div style="font-weight:600;font-size:0.9rem;">${c.name}</div>
+                    </div>
+                  </a>
+                `).join('')}
+              </div>
+              ` : ''}
+              <div class="sidebar-card">
+                <h3>标签</h3>
+                <div class="tag-list">
+                  ${work.tags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${t}</a>`).join('')}
+                </div>
+              </div>
+              ${relatedEvents.length > 0 ? `
+              <div class="sidebar-card">
+                <h3>参与活动</h3>
+                ${relatedEvents.map(e => `
+                  <a href="/event-detail.html?id=${e.id}" style="display:block;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
+                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
+                    <div style="font-weight:600;font-size:0.9rem;">${e.title}</div>
+                    <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' · ' + e.location : ''}</div>
+                  </a>
+                `).join('')}
+              </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        document.getElementById('workDetail').innerHTML =
+          '<div class="empty-state"><div class="icon">!</div><p>作品未找到或加载失败</p></div>';
+      }
+    }
+
+    loadWork();
+  </script>
+</body>
+</html>

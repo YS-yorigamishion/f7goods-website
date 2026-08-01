@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>f7goods — 同人企划</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <section class="hero">
+    <h1 id="heroTitle" class="settings-pending">同人企划</h1>
+    <p id="heroSubtitle" class="settings-pending">发现正在进行的同人企划，加入创作团队</p>
+  </section>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h2 id="pageTitle" class="settings-pending">企划列表</h2>
+      <p id="pageSubtitle" class="settings-pending">正在进行或招募中的同人企划项目</p>
+    </div>
+
+    <div class="filter-bar" id="statusFilters">
+      <button class="filter-btn active" data-status="all">全部状态</button>
+    </div>
+    <div class="filter-bar" id="categoryFilters">
+      <button class="filter-btn active" data-cat="all">全部分类</button>
+      <input type="text" class="search-input" placeholder="搜索企划..." id="searchInput">
+    </div>
+
+    <div class="cards-grid" id="projectsGrid">
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    initPage('projects');
+
+    let allProjects = [];
+    let currentStatus = 'all';
+    let currentCategory = 'all';
+
+    async function loadProjects() {
+      try {
+        await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
+        allProjects = await F7API.getProjects();
+
+        // Apply settings
+        const ps = getPageSettings('projects');
+        if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
+        if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
+        if (ps.pageTitle) document.getElementById('pageTitle').textContent = ps.pageTitle;
+        if (ps.pageSubtitle) document.getElementById('pageSubtitle').textContent = ps.pageSubtitle;
+        applyHeroBg('projects');
+
+        document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+        // Generate filter buttons dynamically
+        buildProjectFilterButtons();
+        renderProjects();
+      } catch (e) {
+        document.getElementById('projectsGrid').innerHTML =
+          '<div class="empty-state"><div class="icon">!</div><p>加载失败，请稍后重试</p></div>';
+      }
+    }
+
+    function renderProjects() {
+      const grid = document.getElementById('projectsGrid');
+      let filtered = allProjects;
+      if (currentStatus !== 'all') {
+        filtered = filtered.filter(p => p.status === currentStatus);
+      }
+      if (currentCategory !== 'all') {
+        filtered = filtered.filter(p => p.category === currentCategory);
+      }
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      if (search) {
+        filtered = filtered.filter(p =>
+          p.title.toLowerCase().includes(search) ||
+          (p.description || '').toLowerCase().includes(search) ||
+          (p.tags || []).some(t => t.toLowerCase().includes(search))
+        );
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的企划</p></div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(project => `
+        <div class="card" onclick="location.href='/project-detail.html?id=${project.id}'">
+          <div class="card-image" style="${(project.coverImage || (project.images && project.images.length > 0)) ? '' : 'background:linear-gradient(135deg,var(--accent-alt),var(--ink));'}">
+            ${project.coverImage
+              ? `<img src="${project.coverImage}" alt="${project.title}">`
+              : (project.images && project.images.length > 0
+                ? `<img src="${project.images[0]}" alt="${project.title}">`
+                : '<span class="placeholder-icon" style="color:white;">📋</span>')}
+          </div>
+          <div class="card-body">
+            <span class="card-tag ${project.status}">${PROJECT_STATUS_LABELS[project.status] || project.status}</span>
+            <h3 class="card-title">${project.title}</h3>
+            <p class="card-subtitle">${PROJECT_CATEGORIES[project.category] || project.category}</p>
+          </div>
+          <div class="card-footer">
+            <div class="tag-list" style="flex:1;">
+              ${(project.tags || []).slice(0, 3).map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${t}</a>`).join('')}
+            </div>
+            <span class="card-date">${formatDate(project.startDate)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function buildProjectFilterButtons() {
+      // Status filters
+      const statusContainer = document.getElementById('statusFilters');
+      statusContainer.innerHTML = '<button class="filter-btn active" data-status="all">全部状态</button>' +
+        PROJECT_STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${s.name}</button>`).join('');
+
+      // Category filters
+      const catContainer = document.getElementById('categoryFilters');
+      const searchInput = document.getElementById('searchInput').outerHTML;
+      catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部分类</button>' +
+        PROJECT_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('') +
+        searchInput;
+
+      // Re-bind events
+      document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentStatus = btn.dataset.status;
+          renderProjects();
+        });
+      });
+      document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn[data-cat]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentCategory = btn.dataset.cat;
+          renderProjects();
+        });
+      });
+      document.getElementById('searchInput').addEventListener('input', debounce(renderProjects));
+    }
+
+    loadProjects();
+  </script>
+</body>
+</html>

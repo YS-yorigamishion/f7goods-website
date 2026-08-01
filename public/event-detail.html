@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>f7goods — 活动详情</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <main class="main-content detail-page">
+    <div id="eventDetail">
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    initPage('events');
+
+    async function loadEvent() {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      if (!id) { location.href = '/events.html'; return; }
+
+      try {
+        await loadCategoriesFromAPI();
+        const [event, allWorks, allCircles, allProjects] = await Promise.all([
+          F7API.getEvent(id),
+          F7API.getWorks(),
+          F7API.getCircles(),
+          F7API.getProjects()
+        ]);
+        const relatedWorks = allWorks.filter(w => (event.relatedWorks || []).includes(w.id));
+        const relatedProjects = allProjects.filter(p => (event.relatedProjects || []).includes(p.id));
+        const relatedCircleIds = [...new Set([
+          ...relatedWorks.flatMap(w => w.circles || []),
+          ...(event.relatedCircles || [])
+        ])];
+        const relatedCircles = allCircles.filter(c => relatedCircleIds.includes(c.id));
+
+        document.title = `${event.title} — f7goods`;
+
+        const container = document.getElementById('eventDetail');
+        container.innerHTML = `
+          <div class="detail-breadcrumb">
+            <a href="/events.html">近期活动</a>
+            <span>›</span>
+            <span>${event.title}</span>
+          </div>
+          <div class="detail-header">
+            <span class="event-date" style="display:inline-block;margin-bottom:0.8rem;">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
+            <h1>${event.title}</h1>
+            <div class="detail-meta">
+              ${event.status ? `<span class="card-tag ${event.status}" style="margin-right:0.5rem;">${EVENT_STATUS_LABELS[event.status] || event.status}</span>` : ''}
+              <span style="display:flex;align-items:center;gap:0.4rem;">📍 ${event.location}</span>
+            </div>
+          </div>
+          <div class="detail-content">
+            <div class="detail-main">
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">活动简介</h3>
+              <p style="line-height:1.8;color:#444;">${nl2br(event.description)}</p>
+
+              ${event.booth ? `<div style="margin-top:1.5rem;"><span class="event-booth" style="font-size:0.9rem;">展位: ${event.booth}</span></div>` : ''}
+
+              ${event.images && event.images.length > 0 ? `
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">活动图片</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
+                  ${event.images.map((img, i) => `<img src="${img}" alt="${event.title}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(event.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
+                </div>
+              ` : ''}
+
+              ${relatedWorks.length > 0 ? `
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">关联作品 (${relatedWorks.length})</h3>
+                <div class="cards-grid">
+                  ${relatedWorks.map(work => `
+                    <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
+                      <div class="card-image">
+                        ${work.images && work.images.length > 0
+                          ? `<img src="${work.images[0]}" alt="${work.title}">`
+                          : '<span class="placeholder-icon">🎨</span>'}
+                      </div>
+                      <div class="card-body">
+                        <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
+                        <h3 class="card-title" style="font-size:0.95rem;">${work.title}</h3>
+                        <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.5rem;">${work.price}</p>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+
+            </div>
+            <div class="detail-sidebar">
+              <div class="sidebar-card">
+                <h3>活动信息</h3>
+                <div class="info-row">
+                  <span class="info-label">开始日期</span>
+                  <span class="info-value">${formatDate(event.date)}</span>
+                </div>
+                ${event.endDate ? `
+                  <div class="info-row">
+                    <span class="info-label">结束日期</span>
+                    <span class="info-value">${formatDate(event.endDate)}</span>
+                  </div>
+                ` : ''}
+                <div class="info-row">
+                  <span class="info-label">地点</span>
+                  <span class="info-value">${event.location}</span>
+                </div>
+                ${event.booth ? `
+                  <div class="info-row">
+                    <span class="info-label">展位</span>
+                    <span class="info-value" style="color:var(--accent);font-weight:600;">${event.booth}</span>
+                  </div>
+                ` : ''}
+              </div>
+              ${relatedProjects.length > 0 ? `
+              <div class="sidebar-card">
+                <h3>关联企划</h3>
+                ${relatedProjects.map(p => `
+                  <a href="/project-detail.html?id=${p.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
+                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
+                    ${p.coverImage
+                      ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${p.coverImage}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;"></div>`
+                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">📋</div>`}
+                    <div>
+                      <div style="font-weight:600;font-size:0.9rem;">${p.title}</div>
+                      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${PROJECT_STATUS_LABELS[p.status] || p.status}</div>
+                    </div>
+                  </a>
+                `).join('')}
+              </div>
+              ` : ''}
+              ${relatedCircles.length > 0 ? `
+              <div class="sidebar-card">
+                <h3>关联作者</h3>
+                ${relatedCircles.map(c => `
+                  <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
+                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
+                    ${c.logo
+                      ? `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${c.logo}" alt="${c.name}" style="width:100%;height:100%;object-fit:cover;"></div>`
+                      : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">${c.name.charAt(0)}</div>`}
+                    <div>
+                      <div style="font-weight:600;font-size:0.9rem;">${c.name}</div>
+                    </div>
+                  </a>
+                `).join('')}
+              </div>
+              ` : ''}
+              ${(() => {
+                const allTags = [...new Set(relatedWorks.flatMap(w => w.tags || []))];
+                return allTags.length > 0 ? `
+              <div class="sidebar-card">
+                <h3>标签</h3>
+                <div class="tag-list">
+                  ${allTags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${t}</a>`).join('')}
+                </div>
+              </div>` : '';
+              })()}
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        document.getElementById('eventDetail').innerHTML =
+          '<div class="empty-state"><div class="icon">!</div><p>活动未找到或加载失败</p></div>';
+      }
+    }
+
+    loadEvent();
+  </script>
+</body>
+</html>

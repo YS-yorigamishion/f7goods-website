@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>f7goods — 同人周边概览</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <section class="hero">
+    <h1 id="heroTitle" class="settings-pending">探索同人世界的精彩</h1>
+    <p id="heroSubtitle" class="settings-pending">汇集优质同人作者的周边商品，从手办到音乐，从同人志到服饰</p>
+  </section>
+
+  <main class="main-content">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h2 id="pageTitle" class="settings-pending">周边概览</h2>
+        <p id="pageSubtitle" class="settings-pending">浏览所有在售及预约中的同人周边商品</p>
+      </div>
+      <div id="announcementBtn"></div>
+    </div>
+
+    <div class="filter-bar" id="statusFilters">
+      <button class="filter-btn active" data-status="all">全部状态</button>
+    </div>
+    <div class="filter-bar" id="categoryFilters">
+      <button class="filter-btn active" data-cat="all">全部</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
+        <select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
+          <option value="default">默认排序</option>
+          <option value="date-asc">发售时间 ↑ 早→晚</option>
+          <option value="date-desc">发售时间 ↓ 晚→早</option>
+          <option value="likes-desc">喜爱数 ↓ 高→低</option>
+          <option value="likes-asc">喜爱数 ↑ 低→高</option>
+        </select>
+        <input type="text" class="search-input" placeholder="搜索作品..." id="searchInput">
+      </div>
+    </div>
+
+    <div class="cards-grid" id="worksGrid">
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    initPage('works');
+
+    let allWorks = [];
+    let allEvents = [];
+    let circlesMap = {};
+    let currentCategory = 'all';
+    let currentStatus = 'all';
+
+    async function loadWorks() {
+      try {
+        await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
+        const [works, circles, events] = await Promise.all([
+          F7API.getWorks(),
+          F7API.getCircles(),
+          F7API.getEvents()
+        ]);
+        allWorks = works;
+        allEvents = events;
+        circles.forEach(c => circlesMap[c.id] = c.name);
+
+        // Apply settings
+        const ps = getPageSettings('works');
+        if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
+        if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
+        if (ps.pageTitle) document.getElementById('pageTitle').textContent = ps.pageTitle;
+        if (ps.pageSubtitle) document.getElementById('pageSubtitle').textContent = ps.pageSubtitle;
+        applyHeroBg('works');
+
+        // Reveal elements after settings are loaded
+        document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+        // Generate filter buttons dynamically
+        buildFilterButtons();
+        renderWorks();
+
+        // Render announcement button
+        const annBtn = document.getElementById('announcementBtn');
+        if (annBtn) annBtn.innerHTML = renderAnnouncementButton();
+      } catch (e) {
+        document.getElementById('worksGrid').innerHTML =
+          '<div class="empty-state"><div class="icon">!</div><p>加载失败，请稍后重试</p></div>';
+      }
+    }
+
+    function buildFilterButtons() {
+      // Status filters
+      const statusContainer = document.getElementById('statusFilters');
+      statusContainer.innerHTML = '<button class="filter-btn active" data-status="all">全部状态</button>' +
+        STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${s.name}</button>`).join('');
+
+      // Category filters
+      const catContainer = document.getElementById('categoryFilters');
+      const searchInput = document.getElementById('searchInput');
+      const sortSelect = document.getElementById('sortSelect');
+      const searchHtml = searchInput ? searchInput.outerHTML : '<input type="text" class="search-input" placeholder="搜索作品..." id="searchInput">';
+      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">默认排序</option><option value="date-asc">发售时间 ↑ 早→晚</option><option value="date-desc">发售时间 ↓ 晚→早</option><option value="likes-desc">喜爱数 ↓ 高→低</option><option value="likes-asc">喜爱数 ↑ 低→高</option></select>`;
+      catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部</button>' +
+        CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('') +
+        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">${sortHtml}${searchHtml}</div>`;
+
+      // Re-bind events
+      document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn[data-cat]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentCategory = btn.dataset.cat;
+          renderWorks();
+        });
+      });
+      document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentStatus = btn.dataset.status;
+          renderWorks();
+        });
+      });
+      document.getElementById('searchInput').addEventListener('input', debounce(() => {
+        renderWorks();
+      }));
+      document.getElementById('sortSelect').addEventListener('change', () => {
+        renderWorks();
+      });
+    }
+
+    function renderWorks() {
+      const grid = document.getElementById('worksGrid');
+      let filtered = [...allWorks];
+      if (currentCategory !== 'all') {
+        filtered = filtered.filter(w => w.category === currentCategory);
+      }
+      if (currentStatus !== 'all') {
+        filtered = filtered.filter(w => w.status === currentStatus);
+      }
+      const search = document.getElementById('searchInput').value.toLowerCase();
+
+      // Check for exact tag match from URL
+      const urlParams = new URLSearchParams(location.search);
+      const tagFilter = urlParams.get('tag');
+      if (tagFilter) {
+        filtered = filtered.filter(w => (w.tags || []).some(t => t === tagFilter));
+        document.getElementById('searchInput').value = tagFilter;
+      } else if (search) {
+        // Circle IDs whose names match search
+        const matchCircleIds = Object.entries(circlesMap)
+          .filter(([, name]) => name.toLowerCase().includes(search))
+          .map(([id]) => id);
+        // Work IDs from events whose titles match search
+        const matchEventWorkIds = allEvents
+          .filter(e => e.title.toLowerCase().includes(search))
+          .flatMap(e => e.relatedWorks || []);
+
+        filtered = filtered.filter(w =>
+          w.title.toLowerCase().includes(search) ||
+          w.tags.some(t => t.toLowerCase().includes(search)) ||
+          matchCircleIds.some(cid => (w.circles || []).includes(cid)) ||
+          matchEventWorkIds.includes(w.id)
+        );
+      }
+
+      // Apply sorting
+      const sortVal = document.getElementById('sortSelect')?.value || 'default';
+      if (sortVal === 'date-asc') {
+        filtered.sort((a, b) => (a.releaseDate || 'z').localeCompare(b.releaseDate || 'z'));
+      } else if (sortVal === 'date-desc') {
+        filtered.sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
+      } else if (sortVal === 'likes-desc') {
+        filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      } else if (sortVal === 'likes-asc') {
+        filtered.sort((a, b) => (a.likes || 0) - (b.likes || 0));
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的作品</p></div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(work => `
+        <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
+          <div class="card-image">
+            ${work.images && work.images.length > 0
+              ? `<img src="${work.images[0]}" alt="${work.title}">`
+              : '<span class="placeholder-icon">🎨</span>'}
+          </div>
+          <div class="card-body">
+            <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
+            <h3 class="card-title">${work.title}</h3>
+            <p class="card-subtitle">${(work.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join(', ') || ''}${(work.circles || []).length > 0 ? ' · ' : ''}${CATEGORIES[work.category] || work.category}</p>
+          </div>
+          <div class="card-footer">
+            <span class="card-price">${work.price}</span>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <span class="card-date">${formatDate(work.releaseDate)}</span>
+              ${renderLikeButton(work.id, work.likes)}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    loadWorks();
+  </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>f7goods — 公告</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .announcement-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      transition: var(--transition);
+    }
+    .announcement-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+    .announcement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+    .announcement-title {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .announcement-date {
+      display: inline-block;
+      padding: 0.2rem 0.7rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+      color: white;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .announcement-content {
+      font-size: 0.95rem;
+      color: #555;
+      line-height: 1.8;
+    }
+    @media (max-width: 768px) {
+      .announcement-card {
+        padding: 1rem 1.2rem;
+      }
+      .announcement-header {
+        flex-direction: column;
+      }
+      .announcement-title {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <section class="hero">
+    <h1 id="heroTitle">📢 公告</h1>
+    <p id="heroSubtitle">了解 f7goods 的最新动态和重要通知</p>
+  </section>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h2 id="pageTitle">公告列表</h2>
+      <p id="pageSubtitle">按发布时间倒序排列</p>
+    </div>
+
+    <div id="announcementsContainer">
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    initPage('announcements');
+
+    async function loadAnnouncements() {
+      try {
+        const res = await fetch('/api/announcements');
+        if (!res.ok) throw new Error('Failed to load');
+        const announcements = await res.json();
+
+        const container = document.getElementById('announcementsContainer');
+
+        if (!announcements || announcements.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><p>暂无公告</p></div>';
+          return;
+        }
+
+        container.innerHTML = announcements.map(a => `
+          <div class="announcement-card">
+            <div class="announcement-header">
+              <h3 class="announcement-title">${escapeHtml(a.title)}</h3>
+              <span class="announcement-date">${formatDate(a.publishDate)}</span>
+            </div>
+            <div class="announcement-content">${nl2br(a.content)}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('announcementsContainer').innerHTML =
+          '<div class="empty-state"><div class="icon">⚠️</div><p>加载失败，请稍后重试</p></div>';
+      }
+    }
+
+    loadAnnouncements();
+  </script>
+</body>
+</html>

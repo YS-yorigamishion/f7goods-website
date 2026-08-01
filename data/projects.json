@@ -1,0 +1,31 @@
+[
+  {
+    "id": "p003",
+    "title": "2027七都新春宴",
+    "description": "2027七都新春宴视频企划，欢迎同人创作者参与投稿。",
+    "status": "zhaomuzhong",
+    "category": "shipin",
+    "images": [],
+    "circles": [
+      "c1785520414879",
+      "c002"
+    ],
+    "events": [
+      "e001"
+    ],
+    "tags": [
+      "视频",
+      "新春宴"
+    ],
+    "contactInfo": "",
+    "startDate": "2026-08-01",
+    "endDate": "2027-01-10",
+    "order": 0,
+    "createdAt": "2026-06-01T00:00:00Z",
+    "socialLinks": {
+      "qq": "",
+      "contactLabel": ""
+    },
+    "coverImage": "/uploads/2026xinchunyan.png"
+  }
+]

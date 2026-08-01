@@ -1,0 +1,27 @@
+[
+  {
+    "id": "e001",
+    "title": "7都·迴梦游园",
+    "date": "2026-07-11",
+    "endDate": "2026-07-11",
+    "location": "成都新会展中和城际酒店",
+    "description": "",
+    "coverImage": "/uploads/711chengdu.jpg",
+    "images": [],
+    "relatedWorks": [
+      "w1785524299488",
+      "w1785585980921k4h69",
+      "w1785585980921k4h70"
+    ],
+    "relatedCircles": [
+      "c002",
+      "c1785520390477"
+    ],
+    "booth": "",
+    "order": 0,
+    "status": "yijiesu",
+    "relatedProjects": [
+      "p003"
+    ]
+  }
+]

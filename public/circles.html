@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>f7goods — 同人作者</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <section class="hero">
+    <h1 id="heroTitle" class="settings-pending">同人作者</h1>
+    <p id="heroSubtitle" class="settings-pending">发现优秀的同人创作者与作者，支持独立创作</p>
+  </section>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h2 id="pageTitle" class="settings-pending">入驻作者</h2>
+      <p id="pageSubtitle" class="settings-pending">在 f7goods 展示作品的同人作者</p>
+    </div>
+
+    <div class="filter-bar" id="categoryFilters"></div>
+    <div class="filter-bar">
+      <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" style="min-width:100%;margin-left:0;">
+    </div>
+
+    <div class="cards-grid" id="circlesGrid">
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    initPage('circles');
+
+    let allCircles = [];
+    let circleTagsMap = {};
+    let currentCategory = 'all';
+
+    async function loadCircles() {
+      try {
+        await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
+        const [circles, works] = await Promise.all([
+          F7API.getCircles(),
+          F7API.getWorks()
+        ]);
+        allCircles = circles;
+        // Build circle -> tags map from their works
+        works.forEach(w => {
+          (w.circles || []).forEach(cid => {
+            if (!circleTagsMap[cid]) circleTagsMap[cid] = [];
+            circleTagsMap[cid].push(...(w.tags || []));
+          });
+        });
+        // Deduplicate tags
+        Object.keys(circleTagsMap).forEach(k => {
+          circleTagsMap[k] = [...new Set(circleTagsMap[k])];
+        });
+
+        // Apply settings
+        const ps = getPageSettings('circles');
+        if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
+        if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
+        if (ps.pageTitle) document.getElementById('pageTitle').textContent = ps.pageTitle;
+        if (ps.pageSubtitle) document.getElementById('pageSubtitle').textContent = ps.pageSubtitle;
+        applyHeroBg('circles');
+
+        document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+
+        // Build category filter buttons
+        const catContainer = document.getElementById('categoryFilters');
+        if (catContainer && CIRCLE_CATEGORIES_ORDERED.length > 0) {
+          catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部</button>' +
+            CIRCLE_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('');
+          catContainer.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              catContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              currentCategory = btn.dataset.cat;
+              renderCircles();
+            });
+          });
+        }
+
+        renderCircles();
+      } catch (e) {
+        document.getElementById('circlesGrid').innerHTML =
+          '<div class="empty-state"><div class="icon">!</div><p>加载失败，请稍后重试</p></div>';
+      }
+    }
+
+    function renderCircles() {
+      const grid = document.getElementById('circlesGrid');
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      let filtered = allCircles;
+      if (currentCategory !== 'all') {
+        filtered = filtered.filter(c => c.category === currentCategory);
+      }
+      if (search) {
+        filtered = filtered.filter(c =>
+          c.name.toLowerCase().includes(search) ||
+          (c.description || '').toLowerCase().includes(search) ||
+          (circleTagsMap[c.id] || []).some(t => t.toLowerCase().includes(search))
+        );
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的作者</p></div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(circle => `
+        <div class="circle-card" onclick="location.href='/circle-detail.html?id=${circle.id}'">
+          ${circle.logo
+            ? `<div style="width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 1rem;"><img src="${circle.logo}" alt="${circle.name}" style="width:100%;height:100%;object-fit:cover;"></div>`
+            : `<div class="circle-avatar">${circle.name.charAt(0)}</div>`}
+          <h3 class="circle-name">${circle.name}</h3>
+          ${circle.category ? `<p style="font-size:0.8rem;color:var(--accent);margin-bottom:0.3rem;">${CIRCLE_CATEGORIES[circle.category] || circle.category}</p>` : ''}
+          <p class="circle-desc">${circle.description}</p>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('searchInput').addEventListener('input', debounce(renderCircles));
+
+    loadCircles();
+  </script>
+</body>
+</html>
