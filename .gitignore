@@ -2,7 +2,8 @@
 node_modules/
 
 # Uploads
-uploads/
+uploads/*
+!uploads/.gitkeep
 
 # OS files
 .DS_Store
