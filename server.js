@@ -277,6 +277,7 @@ app.post('/api/contact', (req, res) => {
   // Save to contact.json
   let contacts = [];
   try { contacts = readJSON('contact.json'); } catch {}
+  if (!Array.isArray(contacts)) contacts = [];
   contacts.push({
     id: 'ct' + Date.now(),
     name, email, subject, message,
@@ -364,12 +365,14 @@ app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
 app.get('/api/admin/contacts', authMiddleware, (req, res) => {
   let contacts = [];
   try { contacts = readJSON('contact.json'); } catch {}
+  if (!Array.isArray(contacts)) contacts = [];
   res.json(contacts);
 });
 
 app.delete('/api/admin/contacts/:id', authMiddleware, (req, res) => {
   let contacts = [];
   try { contacts = readJSON('contact.json'); } catch {}
+  if (!Array.isArray(contacts)) contacts = [];
   contacts = contacts.filter(c => c.id !== req.params.id);
   writeJSON('contact.json', contacts);
   res.json({ success: true });
