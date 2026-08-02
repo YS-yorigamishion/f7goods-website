@@ -122,43 +122,55 @@ app.get('/api/works/:id', (req, res) => {
   res.json(work);
 });
 
-// ===== Like System (file-lock dedup) =====
-const likeQueues = new Map(); // workId -> Promise chain
+// ===== Like System (cookie-based + mutex) =====
+const crypto = require('crypto');
+const likeMutex = new Map();
 
-function normalizeIp(ip) {
-  if (!ip) return '';
-  return ip.replace(/^::ffff:/, '');
+function parseCookies(req) {
+  const obj = {};
+  (req.headers.cookie || '').split(';').forEach(c => {
+    const [k, ...v] = c.trim().split('=');
+    if (k) obj[k] = v.join('=');
+  });
+  return obj;
 }
 
-function enqueueLike(workId, fn) {
-  const prev = likeQueues.get(workId) || Promise.resolve();
+function getUid(req, res) {
+  const cookies = parseCookies(req);
+  let uid = cookies.f7uid;
+  if (!uid) {
+    uid = crypto.randomBytes(16).toString('hex');
+    res.setHeader('Set-Cookie', 'f7uid=' + uid + '; Max-Age=31536000; HttpOnly; SameSite=Lax; Path=/');
+  }
+  return uid;
+}
+
+function withMutex(key, fn) {
+  const prev = likeMutex.get(key) || Promise.resolve();
   const next = prev.then(fn, fn);
-  likeQueues.set(workId, next);
-  next.finally(() => { if (likeQueues.get(workId) === next) likeQueues.delete(workId); });
+  likeMutex.set(key, next);
+  next.finally(() => { if (likeMutex.get(key) === next) likeMutex.delete(key); });
   return next;
 }
 
 app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
-  const ip = normalizeIp(req.ip || req.connection.remoteAddress);
-  enqueueLike(workId, () => {
+  const uid = getUid(req, res);
+  withMutex(workId, () => {
     let likesData = {};
     try { likesData = readJSON('likes.json'); } catch {}
     if (!likesData[workId]) likesData[workId] = [];
-
-    if (likesData[workId].includes(ip)) {
+    if (likesData[workId].includes(uid)) {
       const works = readJSON('works.json');
       const w = works.find(w => w.id === workId);
       res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
       return;
     }
-
     let works = readJSON('works.json');
     const index = works.findIndex(w => w.id === workId);
     if (index === -1) { res.status(404).json({ error: '作品未找到' }); return; }
     if (!works[index].likes) works[index].likes = 0;
-
-    likesData[workId].push(ip);
+    likesData[workId].push(uid);
     writeJSON('likes.json', likesData);
     works[index].likes++;
     writeJSON('works.json', works);
@@ -168,25 +180,22 @@ app.post('/api/works/:id/like', (req, res) => {
 
 app.post('/api/works/:id/unlike', (req, res) => {
   const workId = req.params.id;
-  const ip = normalizeIp(req.ip || req.connection.remoteAddress);
-  enqueueLike(workId, () => {
+  const uid = getUid(req, res);
+  withMutex(workId, () => {
     let likesData = {};
     try { likesData = readJSON('likes.json'); } catch {}
     if (!likesData[workId]) likesData[workId] = [];
-
-    const ipIndex = likesData[workId].indexOf(ip);
-    if (ipIndex === -1) {
+    const idx = likesData[workId].indexOf(uid);
+    if (idx === -1) {
       const works = readJSON('works.json');
       const w = works.find(w => w.id === workId);
       res.json({ likes: w ? (w.likes || 0) : 0 });
       return;
     }
-
     let works = readJSON('works.json');
     const index = works.findIndex(w => w.id === workId);
     if (index === -1) { res.status(404).json({ error: '作品未找到' }); return; }
-
-    likesData[workId].splice(ipIndex, 1);
+    likesData[workId].splice(idx, 1);
     writeJSON('likes.json', likesData);
     works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
     writeJSON('works.json', works);
