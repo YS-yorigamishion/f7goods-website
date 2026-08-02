@@ -8,6 +8,7 @@ const path = require('path');
 const XLSX = require('xlsx');
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'f7goods_secret_2026';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'f7goods2026';
@@ -122,51 +123,63 @@ app.get('/api/works/:id', (req, res) => {
 });
 
 // Like/Unlike a work
-app.post('/api/works/:id/like', (req, res) => {
+const likeLocks = new Map();
+
+app.post('/api/works/:id/like', async (req, res) => {
   const workId = req.params.id;
-  const ip = req.ip || req.connection.remoteAddress;
-  let works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  if (!works[index].likes) works[index].likes = 0;
+  while (likeLocks.get(workId)) await new Promise(r => setTimeout(r, 50));
+  likeLocks.set(workId, true);
+  try {
+    const ip = req.ip || req.connection.remoteAddress;
+    let works = readJSON('works.json');
+    const index = works.findIndex(w => w.id === workId);
+    if (index === -1) return res.status(404).json({ error: '作品未找到' });
+    if (!works[index].likes) works[index].likes = 0;
 
-  // Check IP-based deduplication
-  let likesData = {};
-  try { likesData = readJSON('likes.json'); } catch {}
-  if (!likesData[workId]) likesData[workId] = [];
-  if (likesData[workId].includes(ip)) {
-    return res.json({ likes: works[index].likes, alreadyLiked: true });
+    let likesData = {};
+    try { likesData = readJSON('likes.json'); } catch {}
+    if (!likesData[workId]) likesData[workId] = [];
+    if (likesData[workId].includes(ip)) {
+      return res.json({ likes: works[index].likes, alreadyLiked: true });
+    }
+
+    likesData[workId].push(ip);
+    writeJSON('likes.json', likesData);
+    works[index].likes++;
+    writeJSON('works.json', works);
+    res.json({ likes: works[index].likes });
+  } finally {
+    likeLocks.delete(workId);
   }
-
-  likesData[workId].push(ip);
-  writeJSON('likes.json', likesData);
-  works[index].likes++;
-  writeJSON('works.json', works);
-  res.json({ likes: works[index].likes });
 });
 
-app.post('/api/works/:id/unlike', (req, res) => {
+app.post('/api/works/:id/unlike', async (req, res) => {
   const workId = req.params.id;
-  const ip = req.ip || req.connection.remoteAddress;
-  let works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  if (!works[index].likes) works[index].likes = 0;
+  while (likeLocks.get(workId)) await new Promise(r => setTimeout(r, 50));
+  likeLocks.set(workId, true);
+  try {
+    const ip = req.ip || req.connection.remoteAddress;
+    let works = readJSON('works.json');
+    const index = works.findIndex(w => w.id === workId);
+    if (index === -1) return res.status(404).json({ error: '作品未找到' });
+    if (!works[index].likes) works[index].likes = 0;
 
-  // Check IP-based deduplication
-  let likesData = {};
-  try { likesData = readJSON('likes.json'); } catch {}
-  if (!likesData[workId]) likesData[workId] = [];
-  const ipIndex = likesData[workId].indexOf(ip);
-  if (ipIndex === -1) {
-    return res.json({ likes: works[index].likes });
+    let likesData = {};
+    try { likesData = readJSON('likes.json'); } catch {}
+    if (!likesData[workId]) likesData[workId] = [];
+    const ipIndex = likesData[workId].indexOf(ip);
+    if (ipIndex === -1) {
+      return res.json({ likes: works[index].likes });
+    }
+
+    likesData[workId].splice(ipIndex, 1);
+    writeJSON('likes.json', likesData);
+    works[index].likes = Math.max(0, works[index].likes - 1);
+    writeJSON('works.json', works);
+    res.json({ likes: works[index].likes });
+  } finally {
+    likeLocks.delete(workId);
   }
-
-  likesData[workId].splice(ipIndex, 1);
-  writeJSON('likes.json', likesData);
-  works[index].likes = Math.max(0, works[index].likes - 1);
-  writeJSON('works.json', works);
-  res.json({ likes: works[index].likes });
 });
 
 // Events

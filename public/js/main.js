@@ -316,11 +316,15 @@ function renderLikeButton(workId, likes) {
   `;
 }
 
-async function toggleLike(workId, btn) {
-  const liked = isLiked(workId);
-  let likedList = getLikedWorks();
+const likeInProgress = new Set();
 
+async function toggleLike(workId, btn) {
+  if (likeInProgress.has(workId)) return;
+  likeInProgress.add(workId);
   try {
+    const liked = isLiked(workId);
+    let likedList = getLikedWorks();
+
     const endpoint = liked ? `/api/works/${workId}/unlike` : `/api/works/${workId}/like`;
     const res = await fetch(endpoint, { method: 'POST' });
     const data = await res.json();
@@ -335,7 +339,6 @@ async function toggleLike(workId, btn) {
       btn.classList.add('liked');
       icon.textContent = '❤️';
       count.textContent = data.likes > 0 ? data.likes : '';
-      // Sync allWorks data
       if (typeof allWorks !== 'undefined') {
         const w = allWorks.find(w => w.id === workId);
         if (w) w.likes = data.likes;
@@ -350,13 +353,11 @@ async function toggleLike(workId, btn) {
     }
     localStorage.setItem('f7liked', JSON.stringify(likedList));
 
-    // Sync allWorks data
     if (typeof allWorks !== 'undefined') {
       const w = allWorks.find(w => w.id === workId);
       if (w) w.likes = data.likes;
     }
 
-    // Update button
     const icon = btn.querySelector('.like-icon');
     const count = btn.querySelector('.like-count');
     btn.classList.toggle('liked');
@@ -364,6 +365,8 @@ async function toggleLike(workId, btn) {
     count.textContent = data.likes > 0 ? data.likes : '';
   } catch (e) {
     console.error('Like failed:', e);
+  } finally {
+    likeInProgress.delete(workId);
   }
 }
 

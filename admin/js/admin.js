@@ -248,7 +248,7 @@ function renderOrderControls(type, id, index, total) {
 function renderWorksTable(works) {
   const tbody = document.getElementById('worksTableBody');
   if (!works || works.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--haze);padding:2rem;">暂无作品</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--haze);padding:2rem;">暂无作品</td></tr>';
     return;
   }
   tbody.innerHTML = works.map((w, i) => {
@@ -273,6 +273,7 @@ function renderWorksTable(works) {
       <td class="editable-cell" onclick="makeSelectCircles(this, '${w.id}', ${JSON.stringify(w.circles || []).replace(/"/g, '&quot;')})">${(w.circles || []).map(cid => adminCirclesMap[cid] || cid).join(', ') || '-'}</td>
       <td class="editable-cell" onclick="makeSelectCategory(this, '${w.id}', '${w.category}')">${CATEGORIES[w.category] || w.category}</td>
       <td class="editable-cell" onclick="makeEditable(this, '${w.id}', 'price', '${escapeHtml(w.price)}')">${w.price}</td>
+      <td style="text-align:center;">${w.likes || 0}</td>
       <td class="editable-cell" onclick="makeSelectStatus(this, '${w.id}', '${w.status}')"><span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || w.status}</span></td>
       <td>
         <div class="table-actions">
@@ -492,6 +493,12 @@ function openWorkModal(work = null, returnToCircleId = null) {
         <input type="date" class="form-input" id="wReleaseDate" value="${work?.releaseDate || ''}">
       </div>
     </div>
+    ${isEdit ? `<div class="form-row">
+      <div class="form-group">
+        <label>点赞数</label>
+        <input type="number" class="form-input" id="wLikes" value="${work?.likes || 0}" min="0">
+      </div>
+    </div>` : ''}
     <div class="form-group">
       <label>作者</label>
       <div id="wCirclesTags" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem;">
@@ -532,6 +539,10 @@ function openWorkModal(work = null, returnToCircleId = null) {
       description: document.getElementById('wDesc').value,
       images: work?.images || []
     };
+    if (isEdit) {
+      const likesInput = document.getElementById('wLikes');
+      if (likesInput) data.likes = parseInt(likesInput.value) || 0;
+    }
 
     if (!data.title) { alert('请填写标题'); return; }
 
