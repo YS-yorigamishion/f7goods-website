@@ -1222,6 +1222,10 @@ textarea.form-input {
     gap: 0.8rem;
   }
 
+  .related-works-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
   .events-timeline {
     padding-left: 1.5rem;
   }
@@ -1638,6 +1642,10 @@ textarea.form-input {
 .clickable-img:hover {
   opacity: 0.85;
   transform: scale(1.02);
+}
+
+.related-works-grid {
+  grid-template-columns: repeat(3, 1fr) !important;
 }
 
 .event-img-wrap {

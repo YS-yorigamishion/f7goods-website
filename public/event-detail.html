@@ -51,20 +51,23 @@
         grid.innerHTML = '<div class="empty-state" style="padding:2rem 0;"><p>暂无匹配的作品</p></div>';
         return;
       }
-      grid.innerHTML = filtered.map(work => `
+      grid.innerHTML = filtered.map(work => {
+        const authorNames = (work.circles || []).map(cid => eventCirclesMap[cid]).filter(Boolean).join('、');
+        return `
         <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
-          <div class="card-image">
+          <div class="card-image" style="height:160px;">
             ${work.images && work.images.length > 0
               ? `<img src="${work.images[0]}" alt="${work.title}">`
               : '<span class="placeholder-icon">🎨</span>'}
           </div>
-          <div class="card-body">
-            <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
-            <h3 class="card-title" style="font-size:0.95rem;">${work.title}</h3>
-            <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.5rem;">${work.price}</p>
+          <div class="card-body" style="padding:0.8rem;">
+            <span class="card-tag ${work.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${STATUS_LABELS[work.status] || work.status}</span>
+            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${work.title}</h3>
+            ${authorNames ? `<p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${authorNames}</p>` : ''}
+            <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${work.price}</p>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     }
 
     function toggleEventImg(el) {
@@ -156,7 +159,7 @@
                   ${catBtns.map(c => `<button class="filter-btn" data-rw-cat="${c.id}" onclick="rwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${c.name}</button>`).join('')}
                   <input type="text" class="search-input" placeholder="搜索作品、标签、作者..." style="margin-left:auto;max-width:200px;" oninput="rwSearchText=this.value;renderRelatedWorks();">
                 </div>
-                <div class="cards-grid" id="relatedWorksGrid"></div>
+                <div class="cards-grid related-works-grid" id="relatedWorksGrid"></div>
                 `;
               })() : ''}
 
