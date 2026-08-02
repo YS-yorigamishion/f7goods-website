@@ -122,76 +122,76 @@ app.get('/api/works/:id', (req, res) => {
   res.json(work);
 });
 
-// ===== Like System (nonce-based dedup) =====
-const processedNonces = new Set();
-// Clean old nonces every 30s
-setInterval(() => { if (processedNonces.size > 5000) processedNonces.clear(); }, 30000);
+// ===== Like System (file-lock dedup) =====
+const likeQueues = new Map(); // workId -> Promise chain
 
 function normalizeIp(ip) {
   if (!ip) return '';
   return ip.replace(/^::ffff:/, '');
 }
 
-app.post('/api/works/:id/like', (req, res) => {
-  const { nonce } = req.body;
-  if (!nonce) return res.status(400).json({ error: 'missing nonce' });
-  if (processedNonces.has(nonce)) return res.status(409).json({ error: 'duplicate' });
-  processedNonces.add(nonce);
+function enqueueLike(workId, fn) {
+  const prev = likeQueues.get(workId) || Promise.resolve();
+  const next = prev.then(fn, fn);
+  likeQueues.set(workId, next);
+  next.finally(() => { if (likeQueues.get(workId) === next) likeQueues.delete(workId); });
+  return next;
+}
 
+app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
   const ip = normalizeIp(req.ip || req.connection.remoteAddress);
+  enqueueLike(workId, () => {
+    let likesData = {};
+    try { likesData = readJSON('likes.json'); } catch {}
+    if (!likesData[workId]) likesData[workId] = [];
 
-  let likesData = {};
-  try { likesData = readJSON('likes.json'); } catch {}
-  if (!likesData[workId]) likesData[workId] = [];
+    if (likesData[workId].includes(ip)) {
+      const works = readJSON('works.json');
+      const w = works.find(w => w.id === workId);
+      res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
+      return;
+    }
 
-  if (likesData[workId].includes(ip)) {
-    const works = readJSON('works.json');
-    const w = works.find(w => w.id === workId);
-    return res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
-  }
+    let works = readJSON('works.json');
+    const index = works.findIndex(w => w.id === workId);
+    if (index === -1) { res.status(404).json({ error: '作品未找到' }); return; }
+    if (!works[index].likes) works[index].likes = 0;
 
-  let works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  if (!works[index].likes) works[index].likes = 0;
-
-  likesData[workId].push(ip);
-  writeJSON('likes.json', likesData);
-  works[index].likes++;
-  writeJSON('works.json', works);
-  res.json({ likes: works[index].likes });
+    likesData[workId].push(ip);
+    writeJSON('likes.json', likesData);
+    works[index].likes++;
+    writeJSON('works.json', works);
+    res.json({ likes: works[index].likes });
+  });
 });
 
 app.post('/api/works/:id/unlike', (req, res) => {
-  const { nonce } = req.body;
-  if (!nonce) return res.status(400).json({ error: 'missing nonce' });
-  if (processedNonces.has(nonce)) return res.status(409).json({ error: 'duplicate' });
-  processedNonces.add(nonce);
-
   const workId = req.params.id;
   const ip = normalizeIp(req.ip || req.connection.remoteAddress);
+  enqueueLike(workId, () => {
+    let likesData = {};
+    try { likesData = readJSON('likes.json'); } catch {}
+    if (!likesData[workId]) likesData[workId] = [];
 
-  let likesData = {};
-  try { likesData = readJSON('likes.json'); } catch {}
-  if (!likesData[workId]) likesData[workId] = [];
+    const ipIndex = likesData[workId].indexOf(ip);
+    if (ipIndex === -1) {
+      const works = readJSON('works.json');
+      const w = works.find(w => w.id === workId);
+      res.json({ likes: w ? (w.likes || 0) : 0 });
+      return;
+    }
 
-  const ipIndex = likesData[workId].indexOf(ip);
-  if (ipIndex === -1) {
-    const works = readJSON('works.json');
-    const w = works.find(w => w.id === workId);
-    return res.json({ likes: w ? (w.likes || 0) : 0 });
-  }
+    let works = readJSON('works.json');
+    const index = works.findIndex(w => w.id === workId);
+    if (index === -1) { res.status(404).json({ error: '作品未找到' }); return; }
 
-  let works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-
-  likesData[workId].splice(ipIndex, 1);
-  writeJSON('likes.json', likesData);
-  works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
-  writeJSON('works.json', works);
-  res.json({ likes: works[index].likes });
+    likesData[workId].splice(ipIndex, 1);
+    writeJSON('likes.json', likesData);
+    works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
+    writeJSON('works.json', works);
+    res.json({ likes: works[index].likes });
+  });
 });
 
 // Events

@@ -326,14 +326,8 @@ async function toggleLike(workId, btn) {
   btn.disabled = true;
   var liked = isLiked(workId);
   var endpoint = liked ? '/api/works/' + workId + '/unlike' : '/api/works/' + workId + '/like';
-  var nonce = Date.now().toString(36) + Math.random().toString(36).substr(2, 8);
   try {
-    var res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nonce: nonce })
-    });
-    if (res.status === 409) { btn.disabled = false; return; }
+    var res = await fetch(endpoint, { method: 'POST' });
     var data = await res.json();
 
     var likedList = getLikedWorks();
