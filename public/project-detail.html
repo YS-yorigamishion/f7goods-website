@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 企划详情</title>
+  <title>f7goods �?企划详情</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,14 +11,14 @@
 
   <main class="main-content detail-page">
     <div id="projectDetail">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div class="loading"><div class="spinner"></div><p>加载�?..</p></div>
     </div>
   </main>
 
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js"></script>
+  <script src="/js/main.js?v=20260802"></script>
   <script>
     initPage('projects');
 
@@ -40,13 +40,13 @@
         const relatedEvents = allEvents.filter(e => (project.events || []).includes(e.id));
         const relatedWorks = allWorks.filter(w => (project.works || []).includes(w.id));
 
-        document.title = `${project.title} — f7goods`;
+        document.title = `${project.title} �?f7goods`;
 
         const container = document.getElementById('projectDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/projects.html">同人企划</a>
-            <span>›</span>
+            <span>�?/span>
             <span>${project.title}</span>
           </div>
           <div class="detail-header">
@@ -59,7 +59,7 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">企划简介</h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">企划简�?/h3>
               <p style="line-height:1.8;color:#444;">${nl2br(project.description)}</p>
 
               ${project.images && project.images.length > 0 ? `
@@ -78,7 +78,7 @@
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">联系方式</h3>
                 <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
                   ${Object.entries(project.socialLinks).filter(([k, v]) => v && k !== 'contactLabel').map(([key, value]) => {
-                    const label = project.socialLinks.contactLabel || (key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key);
+                    const label = project.socialLinks.contactLabel || (key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ�? : key);
                     return `<span style="display:inline-block;padding:0.4rem 1rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.9rem;font-weight:500;">${label}: ${value}</span>`;
                   }).join('')}
                 </div>
@@ -108,7 +108,7 @@
               <div class="sidebar-card">
                 <h3>企划信息</h3>
                 <div class="info-row">
-                  <span class="info-label">状态</span>
+                  <span class="info-label">状�?/span>
                   <span class="info-value">${PROJECT_STATUS_LABELS[project.status] || project.status}</span>
                 </div>
                 <div class="info-row">
@@ -116,7 +116,7 @@
                   <span class="info-value">${PROJECT_CATEGORIES[project.category] || project.category}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">开始日期</span>
+                  <span class="info-label">开始日�?/span>
                   <span class="info-value">${formatDate(project.startDate)}</span>
                 </div>
                 ${project.endDate ? `
@@ -153,7 +153,7 @@
               ` : ''}
               ${relatedCircles.length > 0 ? `
               <div class="sidebar-card">
-                <h3>关联作者</h3>
+                <h3>关联作�?/h3>
                 ${relatedCircles.map(c => `
                   <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">

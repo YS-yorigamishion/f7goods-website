@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 同人周边概览</title>
+  <title>f7goods �?同人周边概览</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending">探索同人世界的精彩</h1>
-    <p id="heroSubtitle" class="settings-pending">汇集优质同人作者的周边商品，从手办到音乐，从同人志到服饰</p>
+    <h1 id="heroTitle" class="settings-pending">探索同人世界的精�?/h1>
+    <p id="heroSubtitle" class="settings-pending">汇集优质同人作者的周边商品，从手办到音乐，从同人志到服�?/p>
   </section>
 
   <main class="main-content">
@@ -24,31 +24,31 @@
     </div>
 
     <div class="filter-bar" id="statusFilters">
-      <button class="filter-btn active" data-status="all">全部状态</button>
+      <button class="filter-btn active" data-status="all">全部状�?/button>
     </div>
     <div class="filter-bar" id="categoryFilters">
       <button class="filter-btn active" data-cat="all">全部</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
           <option value="default">默认排序</option>
-          <option value="date-asc">发售时间 ↑ 早→晚</option>
-          <option value="date-desc">发售时间 ↓ 晚→早</option>
-          <option value="likes-desc">喜爱数 ↓ 高→低</option>
-          <option value="likes-asc">喜爱数 ↑ 低→高</option>
+          <option value="date-asc">发售时间 �?早→�?/option>
+          <option value="date-desc">发售时间 �?晚→�?/option>
+          <option value="likes-desc">喜爱�?�?高→�?/option>
+          <option value="likes-asc">喜爱�?�?低→�?/option>
         </select>
         <input type="text" class="search-input" placeholder="搜索作品..." id="searchInput">
       </div>
     </div>
 
     <div class="cards-grid" id="worksGrid">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div class="loading"><div class="spinner"></div><p>加载�?..</p></div>
     </div>
   </main>
 
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js"></script>
+  <script src="/js/main.js?v=20260802"></script>
   <script>
     initPage('works');
 
@@ -96,7 +96,7 @@
     function buildFilterButtons() {
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = '<button class="filter-btn active" data-status="all">全部状态</button>' +
+      statusContainer.innerHTML = '<button class="filter-btn active" data-status="all">全部状�?/button>' +
         STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${s.name}</button>`).join('');
 
       // Category filters
@@ -104,7 +104,7 @@
       const searchInput = document.getElementById('searchInput');
       const sortSelect = document.getElementById('sortSelect');
       const searchHtml = searchInput ? searchInput.outerHTML : '<input type="text" class="search-input" placeholder="搜索作品..." id="searchInput">';
-      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">默认排序</option><option value="date-asc">发售时间 ↑ 早→晚</option><option value="date-desc">发售时间 ↓ 晚→早</option><option value="likes-desc">喜爱数 ↓ 高→低</option><option value="likes-asc">喜爱数 ↑ 低→高</option></select>`;
+      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">默认排序</option><option value="date-asc">发售时间 �?早→�?/option><option value="date-desc">发售时间 �?晚→�?/option><option value="likes-desc">喜爱�?�?高→�?/option><option value="likes-asc">喜爱�?�?低→�?/option></select>`;
       catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部</button>' +
         CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('') +
         `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">${sortHtml}${searchHtml}</div>`;
@@ -182,7 +182,7 @@
       }
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的作品</p></div>';
+        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的作�?/p></div>';
         return;
       }
 

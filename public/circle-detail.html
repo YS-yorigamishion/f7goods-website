@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 作者详情</title>
+  <title>f7goods �?作者详�?/title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,14 +11,14 @@
 
   <main class="main-content detail-page">
     <div id="circleDetail">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div class="loading"><div class="spinner"></div><p>加载�?..</p></div>
     </div>
   </main>
 
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js"></script>
+  <script src="/js/main.js?v=20260802"></script>
   <script>
     initPage('circles');
 
@@ -43,13 +43,13 @@
         );
         const relatedProjects = (allProjects || []).filter(p => (p.circles || []).includes(circle.id));
 
-        document.title = `${circle.name} — f7goods`;
+        document.title = `${circle.name} �?f7goods`;
 
         const container = document.getElementById('circleDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
-            <a href="/circles.html">同人作者</a>
-            <span>›</span>
+            <a href="/circles.html">同人作�?/a>
+            <span>�?/span>
             <span>${circle.name}</span>
           </div>
           <div class="detail-header">
@@ -65,11 +65,11 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">作者简介</h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">作者简�?/h3>
               <p style="line-height:1.8;color:#444;">${nl2br(circle.description)}</p>
 
               ${circle.images && circle.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">作者图片</h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">作者图�?/h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
                   ${circle.images.map((img, i) => `<img src="${img}" alt="${circle.name}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(circle.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
                 </div>
@@ -97,9 +97,9 @@
             </div>
             <div class="detail-sidebar">
               <div class="sidebar-card">
-                <h3>作者信息</h3>
+                <h3>作者信�?/h3>
                 <div class="info-row">
-                  <span class="info-label">作品数</span>
+                  <span class="info-label">作品�?/span>
                   <span class="info-value">${circleWorks.length}</span>
                 </div>
               </div>
@@ -143,7 +143,7 @@
                   <h3>联系方式</h3>
                   ${Object.entries(circle.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
                     const isUrl = url.startsWith('http');
-                    const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key === 'website' ? '访问网站' : key;
+                    const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ�? : key === 'website' ? '访问网站' : key;
                     const label = key === 'website' ? (circle.socialLinks.websiteLabel || defaultLabel) : (circle.socialLinks.contactLabel || defaultLabel);
                     return isUrl
                       ? `<a href="${url}" target="_blank" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
@@ -160,7 +160,7 @@
         `;
       } catch (e) {
         document.getElementById('circleDetail').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>作者未找到或加载失败</p></div>';
+          '<div class="empty-state"><div class="icon">!</div><p>作者未找到或加载失�?/p></div>';
       }
     }
 
