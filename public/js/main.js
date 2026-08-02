@@ -314,6 +314,17 @@ function isLiked(workId) {
   return getLikedWorks().includes(workId);
 }
 
+function hasEverLiked(workId) {
+  try { return (JSON.parse(localStorage.getItem('f7everliked') || '[]')).includes(workId); } catch { return []; }
+}
+
+function markEverLiked(workId) {
+  var list = [];
+  try { list = JSON.parse(localStorage.getItem('f7everliked') || '[]'); } catch {}
+  if (list.indexOf(workId) === -1) list.push(workId);
+  localStorage.setItem('f7everliked', JSON.stringify(list));
+}
+
 function renderLikeButton(workId, likes) {
   const liked = isLiked(workId);
   const count = likes || 0;
@@ -359,7 +370,7 @@ function showMathChallenge(callback) {
 async function toggleLike(workId, btn) {
   if (btn.disabled) return;
   var liked = isLiked(workId);
-  var needChallenge = liked; // 取消点赞时需要做数学题
+  var needChallenge = hasEverLiked(workId); // 非首次操作需要做数学题
 
   function doLike() {
     btn.disabled = true;
@@ -369,6 +380,7 @@ async function toggleLike(workId, btn) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: getUid() })
     }).then(function(res) { return res.json(); }).then(function(data) {
+      markEverLiked(workId);
       var likedList = getLikedWorks();
       if (liked) {
         likedList = likedList.filter(function(id) { return id !== workId; });
