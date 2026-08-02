@@ -74,16 +74,6 @@
                 <p style="line-height:1.8;color:#444;">${nl2br(project.contactInfo)}</p>
               ` : ''}
 
-              ${project.socialLinks && Object.keys(project.socialLinks).filter(k => project.socialLinks[k] && k !== 'contactLabel').length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">联系方式</h3>
-                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
-                  ${Object.entries(project.socialLinks).filter(([k, v]) => v && k !== 'contactLabel').map(([key, value]) => {
-                    const label = project.socialLinks.contactLabel || (key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key);
-                    return `<span style="display:inline-block;padding:0.4rem 1rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.9rem;font-weight:500;">${label}: ${value}</span>`;
-                  }).join('')}
-                </div>
-              ` : ''}
-
               ${relatedWorks.length > 0 ? `
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">关联作品 (${relatedWorks.length})</h3>
                 <div class="cards-grid">
@@ -126,12 +116,21 @@
                   </div>
                 ` : ''}
               </div>
-              ${project.tags && project.tags.length > 0 ? `
+              ${project.socialLinks && Object.keys(project.socialLinks).filter(k => project.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
               <div class="sidebar-card">
-                <h3>标签</h3>
-                <div class="tag-list">
-                  ${project.tags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${t}</a>`).join('')}
-                </div>
+                <h3>联系方式</h3>
+                ${Object.entries(project.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
+                  const isUrl = url.startsWith('http');
+                  const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key === 'website' ? '访问网站' : key;
+                  const label = key === 'website' ? (project.socialLinks.websiteLabel || defaultLabel) : (project.socialLinks.contactLabel || defaultLabel);
+                  return isUrl
+                    ? `<a href="${url}" target="_blank" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
+                         onmouseover="this.style.background='rgba(233,69,96,0.12)'" onmouseout="this.style.background='rgba(233,69,96,0.06)'">${label}</a>`
+                    : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;">
+                         <span style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(15,52,96,0.06);color:var(--accent-alt);border-radius:100px;font-weight:500;">${label}</span>
+                         <span style="color:var(--accent);font-weight:500;">${url}</span>
+                       </div>`;
+                }).join('')}
               </div>
               ` : ''}
               ${relatedEvents.length > 0 ? `
@@ -165,6 +164,14 @@
                     </div>
                   </a>
                 `).join('')}
+              </div>
+              ` : ''}
+              ${project.tags && project.tags.length > 0 ? `
+              <div class="sidebar-card">
+                <h3>标签</h3>
+                <div class="tag-list">
+                  ${project.tags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${t}</a>`).join('')}
+                </div>
               </div>
               ` : ''}
             </div>

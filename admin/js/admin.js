@@ -2200,6 +2200,7 @@ function openProjectModal(project = null) {
     <div class="form-group">
       <label>联系方式类型</label>
       <select class="form-input" id="pContactType">
+        <option value="" ${!project?.socialLinks?.qq && !project?.socialLinks?.qqGroup ? 'selected' : ''}>无</option>
         <option value="qq" ${project?.socialLinks?.qq ? 'selected' : ''}>QQ</option>
         <option value="qqGroup" ${project?.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option>
       </select>
@@ -2211,6 +2212,14 @@ function openProjectModal(project = null) {
     <div class="form-group">
       <label>显示名称（前台显示的中文）</label>
       <input class="form-input" id="pContactLabel" value="${project?.socialLinks?.contactLabel || ''}" placeholder="如：QQ联系、加入QQ群">
+    </div>
+    <div class="form-group">
+      <label>网站链接</label>
+      <input class="form-input" id="pWebsite" value="${project?.socialLinks?.website || ''}" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>网站显示名称</label>
+      <input class="form-input" id="pWebsiteLabel" value="${project?.socialLinks?.websiteLabel || ''}" placeholder="如：访问官网、企划主页">
     </div>
     <div class="form-group">
       <label>首图（列表页封面图，仅限1张）</label>
@@ -2251,10 +2260,17 @@ function openProjectModal(project = null) {
       tags: document.getElementById('pTags').value.split(',').map(t => t.trim()).filter(Boolean),
       description: document.getElementById('pDesc').value,
       contactInfo: document.getElementById('pContact').value,
-      socialLinks: {
-        [document.getElementById('pContactType').value]: document.getElementById('pContactValue').value,
-        contactLabel: document.getElementById('pContactLabel').value
-      },
+      socialLinks: (() => {
+        const type = document.getElementById('pContactType').value;
+        const value = document.getElementById('pContactValue').value;
+        const sl = {
+          contactLabel: document.getElementById('pContactLabel').value,
+          website: document.getElementById('pWebsite').value,
+          websiteLabel: document.getElementById('pWebsiteLabel').value
+        };
+        if (type && value) sl[type] = value;
+        return sl;
+      })(),
       coverImage: document.querySelector('#pCoverPreview img')?.src || '',
       images: [...document.querySelectorAll('#pImagesPreview img')].map(img => img.src)
     };
