@@ -128,7 +128,7 @@ function normalizeIp(ip) {
   return ip.replace(/^::ffff:/, '');
 }
 
-// Like — each IP can only like a work once
+// Like/Unlike — each IP can toggle like per work
 app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
   const ip = normalizeIp(req.ip || req.connection.remoteAddress);
@@ -151,6 +151,32 @@ app.post('/api/works/:id/like', (req, res) => {
   likesData[workId].push(ip);
   writeJSON('likes.json', likesData);
   works[index].likes++;
+  writeJSON('works.json', works);
+  res.json({ likes: works[index].likes });
+});
+
+app.post('/api/works/:id/unlike', (req, res) => {
+  const workId = req.params.id;
+  const ip = normalizeIp(req.ip || req.connection.remoteAddress);
+
+  let likesData = {};
+  try { likesData = readJSON('likes.json'); } catch {}
+  if (!likesData[workId]) likesData[workId] = [];
+
+  const ipIndex = likesData[workId].indexOf(ip);
+  if (ipIndex === -1) {
+    const works = readJSON('works.json');
+    const w = works.find(w => w.id === workId);
+    return res.json({ likes: w ? (w.likes || 0) : 0 });
+  }
+
+  let works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === workId);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+
+  likesData[workId].splice(ipIndex, 1);
+  writeJSON('likes.json', likesData);
+  works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
   writeJSON('works.json', works);
   res.json({ likes: works[index].likes });
 });

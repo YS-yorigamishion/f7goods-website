@@ -309,41 +309,46 @@ function renderLikeButton(workId, likes) {
   const liked = isLiked(workId);
   const count = likes || 0;
   return `
-    <button class="like-btn ${liked ? 'liked' : ''}" data-work-id="${workId}" onclick="event.preventDefault();event.stopPropagation();toggleLike('${workId}', this)" title="${liked ? '已点赞' : '点赞'}">
+    <button class="like-btn ${liked ? 'liked' : ''}" data-work-id="${workId}" onclick="event.preventDefault();event.stopPropagation();toggleLike('${workId}', this)" title="${liked ? '取消点赞' : '点赞'}">
       <span class="like-icon">${liked ? '❤️' : '🤍'}</span>
       <span class="like-count">${count > 0 ? count : ''}</span>
     </button>
   `;
 }
 
+function updateLikeButtons(workId, liked, count) {
+  document.querySelectorAll(`[data-work-id="${workId}"]`).forEach(b => {
+    b.disabled = false;
+    b.classList.toggle('liked', liked);
+    b.querySelector('.like-icon').textContent = liked ? '❤️' : '🤍';
+    b.querySelector('.like-count').textContent = count > 0 ? count : '';
+    b.title = liked ? '取消点赞' : '点赞';
+  });
+}
+
 async function toggleLike(workId, btn) {
-  if (isLiked(workId) || btn.disabled) return;
+  if (btn.disabled) return;
   btn.disabled = true;
+  const liked = isLiked(workId);
+  const endpoint = liked ? `/api/works/${workId}/unlike` : `/api/works/${workId}/like`;
   try {
-    const res = await fetch(`/api/works/${workId}/like`, { method: 'POST' });
+    const res = await fetch(endpoint, { method: 'POST' });
     const data = await res.json();
 
     let likedList = getLikedWorks();
-    if (!likedList.includes(workId)) {
-      likedList.push(workId);
-      localStorage.setItem('f7liked', JSON.stringify(likedList));
+    if (liked) {
+      likedList = likedList.filter(id => id !== workId);
+    } else {
+      if (!likedList.includes(workId)) likedList.push(workId);
     }
+    localStorage.setItem('f7liked', JSON.stringify(likedList));
 
     if (typeof allWorks !== 'undefined') {
       const w = allWorks.find(w => w.id === workId);
       if (w) w.likes = data.likes;
     }
 
-    btn.classList.add('liked');
-    btn.querySelector('.like-icon').textContent = '❤️';
-    btn.querySelector('.like-count').textContent = data.likes > 0 ? data.likes : '';
-
-    // Update all like buttons for this work on the page
-    document.querySelectorAll(`[data-work-id="${workId}"]`).forEach(b => {
-      b.classList.add('liked');
-      b.querySelector('.like-icon').textContent = '❤️';
-      b.querySelector('.like-count').textContent = data.likes > 0 ? data.likes : '';
-    });
+    updateLikeButtons(workId, !liked, data.likes);
   } catch (e) {
     console.error('Like failed:', e);
     btn.disabled = false;
