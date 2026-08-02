@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods �?近期活动</title>
+  <title>f7goods — 近期活动</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
 
   <section class="hero">
     <h1 id="heroTitle" class="settings-pending">近期活动</h1>
-    <p id="heroSubtitle" class="settings-pending">关注最新的同人展会与活动信息，不错过每一场精�?/p>
+    <p id="heroSubtitle" class="settings-pending">关注最新的同人展会与活动信息，不错过每一场精彩</p>
   </section>
 
   <main class="main-content">
@@ -22,19 +22,19 @@
       </div>
       <div style="display:flex;gap:0.5rem;align-items:center;">
         <div class="view-toggle">
-          <button class="view-btn active" data-view="timeline">📋 时间�?/button>
+          <button class="view-btn active" data-view="timeline">📋 时间轴</button>
           <button class="view-btn" data-view="calendar">📅 日历</button>
-          <button class="view-btn" data-view="grid">�?多格</button>
+          <button class="view-btn" data-view="grid">▦ 多格</button>
         </div>
       </div>
     </div>
 
     <div class="filter-bar" style="margin-bottom:1.5rem;">
-      <input type="text" class="search-input" placeholder="搜索活动名称、地点、分�?.." id="searchInput" style="min-width:100%;margin-left:0;">
+      <input type="text" class="search-input" placeholder="搜索活动名称、地点、分类..." id="searchInput" style="min-width:100%;margin-left:0;">
     </div>
 
     <div id="eventsContainer">
-      <div class="loading"><div class="spinner"></div><p>加载�?..</p></div>
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
     </div>
   </main>
 
@@ -101,7 +101,7 @@
       const container = document.getElementById('eventsContainer');
       const events = getFilteredEvents();
       if (events.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的活�?/p></div>';
+        container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的活动</p></div>';
         return;
       }
       if (currentView === 'timeline') renderTimeline(container, events);
@@ -128,8 +128,8 @@
 
     // ===== Calendar View =====
     function renderCalendar(container, events) {
-      const monthNames = ['1�?,'2�?,'3�?,'4�?,'5�?,'6�?,'7�?,'8�?,'9�?,'10�?,'11�?,'12�?];
-      const weekdays = ['�?,'一','�?,'�?,'�?,'�?,'�?];
+      const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+      const weekdays = ['日','一','二','三','四','五','六'];
 
       // Build event lookup by date string
       const eventMap = {};
@@ -177,7 +177,7 @@
         <div class="calendar-container">
           <div class="calendar-header">
             <button class="calendar-nav" onclick="changeMonth(-1)">&#8249;</button>
-            <h3>${calYear}�?${monthNames[calMonth]}</h3>
+            <h3>${calYear}年 ${monthNames[calMonth]}</h3>
             <button class="calendar-nav" onclick="changeMonth(1)">&#8250;</button>
           </div>
           <div class="calendar-weekdays">
