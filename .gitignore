@@ -22,6 +22,10 @@ npm-debug.log*
 .env.local
 .env.production
 
+# Data files (runtime, managed by admin panel)
+data/*.json
+!data/.gitkeep
+
 # Sensitive data
 data/admin.json
 data/likes.json
