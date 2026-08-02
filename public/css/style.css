@@ -1555,10 +1555,23 @@ textarea.form-input {
   transform: scale(0.9);
   transition: transform 0.3s ease;
   cursor: default;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .lightbox-overlay.open img {
   transform: scale(1);
+}
+
+.lightbox-overlay img.lightbox-zoomed {
+  max-width: none;
+  max-height: none;
+  cursor: grab;
+}
+
+.lightbox-overlay img.lightbox-dragging {
+  cursor: grabbing;
+  transition: none;
 }
 
 .lightbox-close {
