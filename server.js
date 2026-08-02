@@ -122,23 +122,31 @@ app.get('/api/works/:id', (req, res) => {
   res.json(work);
 });
 
+// Normalize IP — strip IPv6-mapped prefix (::ffff:) for consistent comparison
+function normalizeIp(ip) {
+  if (!ip) return '';
+  return ip.replace(/^::ffff:/, '');
+}
+
 // Like — each IP can only like a work once
 app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
-  const ip = req.ip || req.connection.remoteAddress;
-
-  let works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  if (!works[index].likes) works[index].likes = 0;
+  const ip = normalizeIp(req.ip || req.connection.remoteAddress);
 
   let likesData = {};
   try { likesData = readJSON('likes.json'); } catch {}
   if (!likesData[workId]) likesData[workId] = [];
 
   if (likesData[workId].includes(ip)) {
-    return res.json({ likes: works[index].likes, alreadyLiked: true });
+    const works = readJSON('works.json');
+    const w = works.find(w => w.id === workId);
+    return res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
   }
+
+  let works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === workId);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+  if (!works[index].likes) works[index].likes = 0;
 
   likesData[workId].push(ip);
   writeJSON('likes.json', likesData);
