@@ -370,7 +370,7 @@ function showMathChallenge(callback) {
 async function toggleLike(workId, btn) {
   if (btn.disabled) return;
   var liked = isLiked(workId);
-  var needChallenge = hasEverLiked(workId); // 非首次操作需要做数学题
+  var needChallenge = hasEverLiked(workId) && !liked; // 只有重新点赞需要做数学题
 
   function doLike() {
     btn.disabled = true;
