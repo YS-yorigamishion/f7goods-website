@@ -122,14 +122,22 @@ app.get('/api/works/:id', (req, res) => {
   res.json(work);
 });
 
-// Normalize IP — strip IPv6-mapped prefix (::ffff:) for consistent comparison
+// ===== Like System (nonce-based dedup) =====
+const processedNonces = new Set();
+// Clean old nonces every 30s
+setInterval(() => { if (processedNonces.size > 5000) processedNonces.clear(); }, 30000);
+
 function normalizeIp(ip) {
   if (!ip) return '';
   return ip.replace(/^::ffff:/, '');
 }
 
-// Like/Unlike — each IP can toggle like per work
 app.post('/api/works/:id/like', (req, res) => {
+  const { nonce } = req.body;
+  if (!nonce) return res.status(400).json({ error: 'missing nonce' });
+  if (processedNonces.has(nonce)) return res.status(409).json({ error: 'duplicate' });
+  processedNonces.add(nonce);
+
   const workId = req.params.id;
   const ip = normalizeIp(req.ip || req.connection.remoteAddress);
 
@@ -156,6 +164,11 @@ app.post('/api/works/:id/like', (req, res) => {
 });
 
 app.post('/api/works/:id/unlike', (req, res) => {
+  const { nonce } = req.body;
+  if (!nonce) return res.status(400).json({ error: 'missing nonce' });
+  if (processedNonces.has(nonce)) return res.status(409).json({ error: 'duplicate' });
+  processedNonces.add(nonce);
+
   const workId = req.params.id;
   const ip = normalizeIp(req.ip || req.connection.remoteAddress);
 

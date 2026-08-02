@@ -308,46 +308,44 @@ function isLiked(workId) {
 function renderLikeButton(workId, likes) {
   const liked = isLiked(workId);
   const count = likes || 0;
-  return `
-    <button class="like-btn ${liked ? 'liked' : ''}" data-work-id="${workId}" onclick="event.preventDefault();event.stopPropagation();toggleLike('${workId}', this)" title="${liked ? '取消点赞' : '点赞'}">
-      <span class="like-icon">${liked ? '❤️' : '🤍'}</span>
-      <span class="like-count">${count > 0 ? count : ''}</span>
-    </button>
-  `;
+  return '<button class="like-btn ' + (liked ? 'liked' : '') + '" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();toggleLike(\'' + workId + '\',this)" title="' + (liked ? '取消点赞' : '点赞') + '"><span class="like-icon">' + (liked ? '❤️' : '🤍') + '</span><span class="like-count">' + (count > 0 ? count : '') + '</span></button>';
 }
 
 function updateLikeButtons(workId, liked, count) {
-  document.querySelectorAll('.like-btn[data-work-id="' + workId + '"]').forEach(b => {
+  document.querySelectorAll('.like-btn[data-work-id="' + workId + '"]').forEach(function(b) {
     b.disabled = false;
-    b.classList.toggle('liked', liked);
+    if (liked) b.classList.add('liked'); else b.classList.remove('liked');
     b.querySelector('.like-icon').textContent = liked ? '❤️' : '🤍';
     b.querySelector('.like-count').textContent = count > 0 ? count : '';
     b.title = liked ? '取消点赞' : '点赞';
   });
 }
 
-let likeGlobalLock = false;
-
 async function toggleLike(workId, btn) {
-  if (btn.disabled || likeGlobalLock) return;
-  likeGlobalLock = true;
+  if (btn.disabled) return;
   btn.disabled = true;
-  const liked = isLiked(workId);
-  const endpoint = liked ? '/api/works/' + workId + '/unlike' : '/api/works/' + workId + '/like';
+  var liked = isLiked(workId);
+  var endpoint = liked ? '/api/works/' + workId + '/unlike' : '/api/works/' + workId + '/like';
+  var nonce = Date.now().toString(36) + Math.random().toString(36).substr(2, 8);
   try {
-    const res = await fetch(endpoint, { method: 'POST' });
-    const data = await res.json();
+    var res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nonce: nonce })
+    });
+    if (res.status === 409) { btn.disabled = false; return; }
+    var data = await res.json();
 
-    let likedList = getLikedWorks();
+    var likedList = getLikedWorks();
     if (liked) {
-      likedList = likedList.filter(id => id !== workId);
+      likedList = likedList.filter(function(id) { return id !== workId; });
     } else {
-      if (!likedList.includes(workId)) likedList.push(workId);
+      if (likedList.indexOf(workId) === -1) likedList.push(workId);
     }
     localStorage.setItem('f7liked', JSON.stringify(likedList));
 
     if (typeof allWorks !== 'undefined') {
-      const w = allWorks.find(w => w.id === workId);
+      var w = allWorks.find(function(w) { return w.id === workId; });
       if (w) w.likes = data.likes;
     }
 
@@ -355,8 +353,6 @@ async function toggleLike(workId, btn) {
   } catch (e) {
     console.error('Like failed:', e);
     btn.disabled = false;
-  } finally {
-    likeGlobalLock = false;
   }
 }
 
