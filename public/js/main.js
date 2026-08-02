@@ -317,7 +317,7 @@ function renderLikeButton(workId, likes) {
 }
 
 function updateLikeButtons(workId, liked, count) {
-  document.querySelectorAll(`[data-work-id="${workId}"]`).forEach(b => {
+  document.querySelectorAll('.like-btn[data-work-id="' + workId + '"]').forEach(b => {
     b.disabled = false;
     b.classList.toggle('liked', liked);
     b.querySelector('.like-icon').textContent = liked ? '❤️' : '🤍';
@@ -326,11 +326,14 @@ function updateLikeButtons(workId, liked, count) {
   });
 }
 
+let likeGlobalLock = false;
+
 async function toggleLike(workId, btn) {
-  if (btn.disabled) return;
+  if (btn.disabled || likeGlobalLock) return;
+  likeGlobalLock = true;
   btn.disabled = true;
   const liked = isLiked(workId);
-  const endpoint = liked ? `/api/works/${workId}/unlike` : `/api/works/${workId}/like`;
+  const endpoint = liked ? '/api/works/' + workId + '/unlike' : '/api/works/' + workId + '/like';
   try {
     const res = await fetch(endpoint, { method: 'POST' });
     const data = await res.json();
@@ -352,6 +355,8 @@ async function toggleLike(workId, btn) {
   } catch (e) {
     console.error('Like failed:', e);
     btn.disabled = false;
+  } finally {
+    likeGlobalLock = false;
   }
 }
 
