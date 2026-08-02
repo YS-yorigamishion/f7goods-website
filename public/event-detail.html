@@ -22,6 +22,51 @@
   <script>
     initPage('events');
 
+    let eventRelatedWorks = [];
+    let eventCirclesMap = {};
+    let rwCategory = 'all';
+    let rwSearchText = '';
+
+    function renderRelatedWorks() {
+      let filtered = eventRelatedWorks;
+      if (rwCategory !== 'all') {
+        filtered = filtered.filter(w => w.category === rwCategory);
+      }
+      if (rwSearchText) {
+        const q = rwSearchText.toLowerCase();
+        const matchCircleIds = Object.entries(eventCirclesMap)
+          .filter(([, name]) => name.toLowerCase().includes(q))
+          .map(([id]) => id);
+        filtered = filtered.filter(w =>
+          w.title.toLowerCase().includes(q) ||
+          (w.tags || []).some(t => t.toLowerCase().includes(q)) ||
+          matchCircleIds.some(cid => (w.circles || []).includes(cid))
+        );
+      }
+      const grid = document.getElementById('relatedWorksGrid');
+      const count = document.getElementById('relatedWorksCount');
+      if (count) count.textContent = `(${filtered.length})`;
+      if (!grid) return;
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state" style="padding:2rem 0;"><p>暂无匹配的作品</p></div>';
+        return;
+      }
+      grid.innerHTML = filtered.map(work => `
+        <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
+          <div class="card-image">
+            ${work.images && work.images.length > 0
+              ? `<img src="${work.images[0]}" alt="${work.title}">`
+              : '<span class="placeholder-icon">🎨</span>'}
+          </div>
+          <div class="card-body">
+            <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
+            <h3 class="card-title" style="font-size:0.95rem;">${work.title}</h3>
+            <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.5rem;">${work.price}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function toggleEventImg(el) {
       if (el._clickTimer) {
         clearTimeout(el._clickTimer);
@@ -56,6 +101,8 @@
           F7API.getProjects()
         ]);
         const relatedWorks = allWorks.filter(w => (event.relatedWorks || []).includes(w.id));
+        eventRelatedWorks = relatedWorks;
+        eventCirclesMap = Object.fromEntries(allCircles.map(c => [c.id, c.name]));
         const relatedProjects = allProjects.filter(p => (event.relatedProjects || []).includes(p.id));
         const relatedCircleIds = [...new Set([
           ...relatedWorks.flatMap(w => w.circles || []),
@@ -99,25 +146,19 @@
                 </div>
               ` : ''}
 
-              ${relatedWorks.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">关联作品 (${relatedWorks.length})</h3>
-                <div class="cards-grid">
-                  ${relatedWorks.map(work => `
-                    <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
-                      <div class="card-image">
-                        ${work.images && work.images.length > 0
-                          ? `<img src="${work.images[0]}" alt="${work.title}">`
-                          : '<span class="placeholder-icon">🎨</span>'}
-                      </div>
-                      <div class="card-body">
-                        <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
-                        <h3 class="card-title" style="font-size:0.95rem;">${work.title}</h3>
-                        <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.5rem;">${work.price}</p>
-                      </div>
-                    </div>
-                  `).join('')}
+              ${relatedWorks.length > 0 ? (() => {
+                const usedCats = [...new Set(relatedWorks.map(w => w.category).filter(Boolean))];
+                const catBtns = CATEGORIES_ORDERED.filter(c => usedCats.includes(c.id));
+                return `
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">关联作品 <span id="relatedWorksCount">(${relatedWorks.length})</span></h3>
+                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
+                  <button class="filter-btn active" data-rw-cat="all" onclick="rwCategory='all';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">全部</button>
+                  ${catBtns.map(c => `<button class="filter-btn" data-rw-cat="${c.id}" onclick="rwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${c.name}</button>`).join('')}
+                  <input type="text" class="search-input" placeholder="搜索作品、标签、作者..." style="margin-left:auto;max-width:200px;" oninput="rwSearchText=this.value;renderRelatedWorks();">
                 </div>
-              ` : ''}
+                <div class="cards-grid" id="relatedWorksGrid"></div>
+                `;
+              })() : ''}
 
             </div>
             <div class="detail-sidebar">
@@ -190,6 +231,7 @@
             </div>
           </div>
         `;
+        renderRelatedWorks();
       } catch (e) {
         document.getElementById('eventDetail').innerHTML =
           '<div class="empty-state"><div class="icon">!</div><p>活动未找到或加载失败</p></div>';
