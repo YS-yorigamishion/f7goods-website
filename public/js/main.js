@@ -297,6 +297,15 @@ function nl2br(str) {
 }
 
 // Like functionality
+function getUid() {
+  var uid = localStorage.getItem('f7uid');
+  if (!uid) {
+    uid = Date.now().toString(36) + Math.random().toString(36).substr(2, 12);
+    localStorage.setItem('f7uid', uid);
+  }
+  return uid;
+}
+
 function getLikedWorks() {
   try { return JSON.parse(localStorage.getItem('f7liked') || '[]'); } catch { return []; }
 }
@@ -327,7 +336,11 @@ async function toggleLike(workId, btn) {
   var liked = isLiked(workId);
   var endpoint = liked ? '/api/works/' + workId + '/unlike' : '/api/works/' + workId + '/like';
   try {
-    var res = await fetch(endpoint, { method: 'POST' });
+    var res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: getUid() })
+    });
     var data = await res.json();
 
     var likedList = getLikedWorks();

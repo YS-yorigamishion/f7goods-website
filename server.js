@@ -122,85 +122,59 @@ app.get('/api/works/:id', (req, res) => {
   res.json(work);
 });
 
-// ===== Like System (cookie-based + mutex) =====
-const crypto = require('crypto');
-const likeMutex = new Map();
-
-function parseCookies(req) {
-  const obj = {};
-  (req.headers.cookie || '').split(';').forEach(c => {
-    const [k, ...v] = c.trim().split('=');
-    if (k) obj[k] = v.join('=');
-  });
-  return obj;
-}
-
-function getUid(req, res) {
-  const cookies = parseCookies(req);
-  let uid = cookies.f7uid;
-  if (!uid) {
-    uid = crypto.randomBytes(16).toString('hex');
-    res.setHeader('Set-Cookie', 'f7uid=' + uid + '; Max-Age=31536000; HttpOnly; SameSite=Lax; Path=/');
-  }
-  return uid;
-}
-
-function withMutex(key, fn) {
-  const prev = likeMutex.get(key) || Promise.resolve();
-  const next = prev.then(fn, fn);
-  likeMutex.set(key, next);
-  next.finally(() => { if (likeMutex.get(key) === next) likeMutex.delete(key); });
-  return next;
-}
-
+// ===== Like System =====
 app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
-  const uid = getUid(req, res);
-  withMutex(workId, () => {
-    let likesData = {};
-    try { likesData = readJSON('likes.json'); } catch {}
-    if (!likesData[workId]) likesData[workId] = [];
-    if (likesData[workId].includes(uid)) {
-      const works = readJSON('works.json');
-      const w = works.find(w => w.id === workId);
-      res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
-      return;
-    }
-    let works = readJSON('works.json');
-    const index = works.findIndex(w => w.id === workId);
-    if (index === -1) { res.status(404).json({ error: '作品未找到' }); return; }
-    if (!works[index].likes) works[index].likes = 0;
-    likesData[workId].push(uid);
-    writeJSON('likes.json', likesData);
-    works[index].likes++;
-    writeJSON('works.json', works);
-    res.json({ likes: works[index].likes });
-  });
+  const uid = req.body.uid;
+  if (!uid) return res.status(400).json({ error: 'missing uid' });
+
+  let likesData = {};
+  try { likesData = readJSON('likes.json'); } catch {}
+  if (!likesData[workId]) likesData[workId] = [];
+
+  if (likesData[workId].includes(uid)) {
+    const works = readJSON('works.json');
+    const w = works.find(w => w.id === workId);
+    return res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
+  }
+
+  let works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === workId);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+  if (!works[index].likes) works[index].likes = 0;
+
+  likesData[workId].push(uid);
+  writeJSON('likes.json', likesData);
+  works[index].likes++;
+  writeJSON('works.json', works);
+  res.json({ likes: works[index].likes });
 });
 
 app.post('/api/works/:id/unlike', (req, res) => {
   const workId = req.params.id;
-  const uid = getUid(req, res);
-  withMutex(workId, () => {
-    let likesData = {};
-    try { likesData = readJSON('likes.json'); } catch {}
-    if (!likesData[workId]) likesData[workId] = [];
-    const idx = likesData[workId].indexOf(uid);
-    if (idx === -1) {
-      const works = readJSON('works.json');
-      const w = works.find(w => w.id === workId);
-      res.json({ likes: w ? (w.likes || 0) : 0 });
-      return;
-    }
-    let works = readJSON('works.json');
-    const index = works.findIndex(w => w.id === workId);
-    if (index === -1) { res.status(404).json({ error: '作品未找到' }); return; }
-    likesData[workId].splice(idx, 1);
-    writeJSON('likes.json', likesData);
-    works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
-    writeJSON('works.json', works);
-    res.json({ likes: works[index].likes });
-  });
+  const uid = req.body.uid;
+  if (!uid) return res.status(400).json({ error: 'missing uid' });
+
+  let likesData = {};
+  try { likesData = readJSON('likes.json'); } catch {}
+  if (!likesData[workId]) likesData[workId] = [];
+
+  const idx = likesData[workId].indexOf(uid);
+  if (idx === -1) {
+    const works = readJSON('works.json');
+    const w = works.find(w => w.id === workId);
+    return res.json({ likes: w ? (w.likes || 0) : 0 });
+  }
+
+  let works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === workId);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+
+  likesData[workId].splice(idx, 1);
+  writeJSON('likes.json', likesData);
+  works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
+  writeJSON('works.json', works);
+  res.json({ likes: works[index].likes });
 });
 
 // Events
