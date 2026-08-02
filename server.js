@@ -122,44 +122,33 @@ app.get('/api/works/:id', (req, res) => {
   res.json(work);
 });
 
-// ===== Like System (queue lock) =====
-let likeQueue = Promise.resolve();
-
-function enqueueLike(fn) {
-  const p = likeQueue.then(fn, fn);
-  likeQueue = p;
-  return p;
-}
-
+// ===== Like System =====
 app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
   const uid = req.body.uid;
-  console.log('[LIKE] workId=%s uid=%s ip=%s', workId, uid, req.ip);
   if (!uid) return res.status(400).json({ error: 'missing uid' });
 
-  enqueueLike(() => {
-    let likesData = {};
-    try { likesData = readJSON('likes.json'); } catch {}
-    if (!likesData[workId]) likesData[workId] = [];
+  // Synchronous read-check-write (Node.js single thread = atomic)
+  const likesData = readJSON('likes.json');
+  if (!likesData[workId]) likesData[workId] = [];
 
-    if (likesData[workId].includes(uid)) {
-      const works = readJSON('works.json');
-      const w = works.find(w => w.id === workId);
-      res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
-      return;
-    }
+  if (likesData[workId].includes(uid)) {
+    const works = readJSON('works.json');
+    const w = works.find(w => w.id === workId);
+    return res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
+  }
 
-    let works = readJSON('works.json');
-    const index = works.findIndex(w => w.id === workId);
-    if (index === -1) { res.status(404).json({ error: '作品未找到' }); return; }
-    if (!works[index].likes) works[index].likes = 0;
+  const works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === workId);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+  if (!works[index].likes) works[index].likes = 0;
 
-    likesData[workId].push(uid);
-    writeJSON('likes.json', likesData);
-    works[index].likes++;
-    writeJSON('works.json', works);
-    res.json({ likes: works[index].likes });
-  });
+  likesData[workId].push(uid);
+  writeJSON('likes.json', likesData);
+  works[index].likes++;
+  writeJSON('works.json', works);
+  console.log('[LIKE] workId=%s uid=%s count=%d', workId, uid, works[index].likes);
+  res.json({ likes: works[index].likes });
 });
 
 app.post('/api/works/:id/unlike', (req, res) => {
@@ -167,29 +156,26 @@ app.post('/api/works/:id/unlike', (req, res) => {
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: 'missing uid' });
 
-  enqueueLike(() => {
-    let likesData = {};
-    try { likesData = readJSON('likes.json'); } catch {}
-    if (!likesData[workId]) likesData[workId] = [];
+  const likesData = readJSON('likes.json');
+  if (!likesData[workId]) likesData[workId] = [];
 
-    const idx = likesData[workId].indexOf(uid);
-    if (idx === -1) {
-      const works = readJSON('works.json');
-      const w = works.find(w => w.id === workId);
-      res.json({ likes: w ? (w.likes || 0) : 0 });
-      return;
-    }
+  const idx = likesData[workId].indexOf(uid);
+  if (idx === -1) {
+    const works = readJSON('works.json');
+    const w = works.find(w => w.id === workId);
+    return res.json({ likes: w ? (w.likes || 0) : 0 });
+  }
 
-    let works = readJSON('works.json');
-    const index = works.findIndex(w => w.id === workId);
-    if (index === -1) { res.status(404).json({ error: '作品未找到' }); return; }
+  const works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === workId);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
-    likesData[workId].splice(idx, 1);
-    writeJSON('likes.json', likesData);
-    works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
-    writeJSON('works.json', works);
-    res.json({ likes: works[index].likes });
-  });
+  likesData[workId].splice(idx, 1);
+  writeJSON('likes.json', likesData);
+  works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
+  writeJSON('works.json', works);
+  console.log('[UNLIKE] workId=%s uid=%s count=%d', workId, uid, works[index].likes);
+  res.json({ likes: works[index].likes });
 });
 
 // Events
