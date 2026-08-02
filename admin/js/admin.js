@@ -1948,6 +1948,10 @@ async function pickImageFromLibrary(type) {
     alert('图片库为空，请先在图片管理中上传图片');
     return;
   }
+  const savedBody = document.getElementById('modalBody').innerHTML;
+  const savedTitle = document.getElementById('modalTitle').textContent;
+  const savedSaveText = document.getElementById('modalSave').textContent;
+  const savedSaveOnclick = document.getElementById('modalSave').onclick;
   document.getElementById('modalTitle').textContent = '选择图片';
   document.getElementById('modalBody').innerHTML = `
     <input type="text" class="form-input" id="imageLibSearch" placeholder="搜索图片名称..." style="margin-bottom:0.8rem;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterImageLibrary(this.value)">
@@ -1965,7 +1969,11 @@ async function pickImageFromLibrary(type) {
   document.getElementById('modalSave').onclick = () => {
     const selected = [...document.querySelectorAll('.image-pick-item.selected')].map(el => el.dataset.url);
     if (selected.length === 0) { alert('请至少选择一张图片'); return; }
-    document.getElementById('modalSave').textContent = '保存';
+
+    document.getElementById('modalBody').innerHTML = savedBody;
+    document.getElementById('modalTitle').textContent = savedTitle;
+    document.getElementById('modalSave').textContent = savedSaveText;
+    document.getElementById('modalSave').onclick = savedSaveOnclick;
 
     if (type === 'circle-logo') {
       const preview = document.getElementById('cLogoPreview');
@@ -1986,7 +1994,6 @@ async function pickImageFromLibrary(type) {
       const preview = document.getElementById('pImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
     }
-    closeModal();
   };
   openModal();
 }
