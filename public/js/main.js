@@ -309,7 +309,7 @@ function renderLikeButton(workId, likes) {
   const liked = isLiked(workId);
   const count = likes || 0;
   return `
-    <button class="like-btn ${liked ? 'liked' : ''}" onclick="event.preventDefault();event.stopPropagation();toggleLike('${workId}', this)" title="${liked ? '取消点赞' : '点赞'}">
+    <button class="like-btn ${liked ? 'liked' : ''}" onclick="event.preventDefault();event.stopPropagation();toggleLike('${workId}', this)" title="${liked ? '已点赞' : '点赞'}">
       <span class="like-icon">${liked ? '❤️' : '🤍'}</span>
       <span class="like-count">${count > 0 ? count : ''}</span>
     </button>
@@ -319,39 +319,22 @@ function renderLikeButton(workId, likes) {
 const likeInProgress = new Set();
 
 async function toggleLike(workId, btn) {
+  if (isLiked(workId)) return;
   if (likeInProgress.has(workId)) return;
   likeInProgress.add(workId);
   try {
-    const liked = isLiked(workId);
     let likedList = getLikedWorks();
 
-    const endpoint = liked ? `/api/works/${workId}/unlike` : `/api/works/${workId}/like`;
-    const res = await fetch(endpoint, { method: 'POST' });
+    const res = await fetch(`/api/works/${workId}/like`, { method: 'POST' });
     const data = await res.json();
 
-    // Handle IP-based deduplication
-    if (!liked && data.alreadyLiked) {
-      // Already liked from another browser, sync localStorage
+    if (data.alreadyLiked) {
       likedList.push(workId);
       localStorage.setItem('f7liked', JSON.stringify(likedList));
-      const icon = btn.querySelector('.like-icon');
-      const count = btn.querySelector('.like-count');
-      btn.classList.add('liked');
-      icon.textContent = '❤️';
-      count.textContent = data.likes > 0 ? data.likes : '';
-      if (typeof allWorks !== 'undefined') {
-        const w = allWorks.find(w => w.id === workId);
-        if (w) w.likes = data.likes;
-      }
-      return;
-    }
-
-    if (liked) {
-      likedList = likedList.filter(id => id !== workId);
     } else {
       likedList.push(workId);
+      localStorage.setItem('f7liked', JSON.stringify(likedList));
     }
-    localStorage.setItem('f7liked', JSON.stringify(likedList));
 
     if (typeof allWorks !== 'undefined') {
       const w = allWorks.find(w => w.id === workId);
@@ -360,8 +343,8 @@ async function toggleLike(workId, btn) {
 
     const icon = btn.querySelector('.like-icon');
     const count = btn.querySelector('.like-count');
-    btn.classList.toggle('liked');
-    icon.textContent = likedList.includes(workId) ? '❤️' : '🤍';
+    btn.classList.add('liked');
+    icon.textContent = '❤️';
     count.textContent = data.likes > 0 ? data.likes : '';
   } catch (e) {
     console.error('Like failed:', e);

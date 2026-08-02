@@ -122,27 +122,10 @@ app.get('/api/works/:id', (req, res) => {
   res.json(work);
 });
 
-// Like/Unlike a work
-// Short-lived in-memory cache to deduplicate rapid requests
-const recentLikes = new Map(); // key: "workId:ip" -> timestamp
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, ts] of recentLikes) {
-    if (now - ts > 3000) recentLikes.delete(key);
-  }
-}, 10000);
-
+// Like — each IP can only like a work once
 app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
   const ip = req.ip || req.connection.remoteAddress;
-  const dedupeKey = workId + ':' + ip;
-
-  // Block duplicate request within 3 seconds
-  if (recentLikes.has(dedupeKey)) {
-    const works = readJSON('works.json');
-    const w = works.find(w => w.id === workId);
-    return res.json({ likes: w ? w.likes : 0, alreadyLiked: true });
-  }
 
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === workId);
@@ -152,48 +135,14 @@ app.post('/api/works/:id/like', (req, res) => {
   let likesData = {};
   try { likesData = readJSON('likes.json'); } catch {}
   if (!likesData[workId]) likesData[workId] = [];
+
   if (likesData[workId].includes(ip)) {
-    recentLikes.set(dedupeKey, Date.now());
     return res.json({ likes: works[index].likes, alreadyLiked: true });
   }
 
-  recentLikes.set(dedupeKey, Date.now());
   likesData[workId].push(ip);
   writeJSON('likes.json', likesData);
   works[index].likes++;
-  writeJSON('works.json', works);
-  res.json({ likes: works[index].likes });
-});
-
-app.post('/api/works/:id/unlike', (req, res) => {
-  const workId = req.params.id;
-  const ip = req.ip || req.connection.remoteAddress;
-  const dedupeKey = workId + ':' + ip;
-
-  if (recentLikes.has(dedupeKey)) {
-    const works = readJSON('works.json');
-    const w = works.find(w => w.id === workId);
-    return res.json({ likes: w ? w.likes : 0 });
-  }
-
-  let works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  if (!works[index].likes) works[index].likes = 0;
-
-  let likesData = {};
-  try { likesData = readJSON('likes.json'); } catch {}
-  if (!likesData[workId]) likesData[workId] = [];
-  const ipIndex = likesData[workId].indexOf(ip);
-  if (ipIndex === -1) {
-    recentLikes.set(dedupeKey, Date.now());
-    return res.json({ likes: works[index].likes });
-  }
-
-  recentLikes.set(dedupeKey, Date.now());
-  likesData[workId].splice(ipIndex, 1);
-  writeJSON('likes.json', likesData);
-  works[index].likes = Math.max(0, works[index].likes - 1);
   writeJSON('works.json', works);
   res.json({ likes: works[index].likes });
 });
