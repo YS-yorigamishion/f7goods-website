@@ -892,6 +892,30 @@ function openEventModal(event = null) {
       <textarea class="form-input" id="eDesc">${event?.description || ''}</textarea>
     </div>
     <div class="form-group">
+      <label>联系方式类型</label>
+      <select class="form-input" id="eContactType">
+        <option value="" ${!event?.socialLinks?.qq && !event?.socialLinks?.qqGroup ? 'selected' : ''}>无</option>
+        <option value="qq" ${event?.socialLinks?.qq ? 'selected' : ''}>QQ</option>
+        <option value="qqGroup" ${event?.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>联系方式</label>
+      <input class="form-input" id="eContactValue" value="${event?.socialLinks?.qq || event?.socialLinks?.qqGroup || ''}" placeholder="QQ号或QQ群号">
+    </div>
+    <div class="form-group">
+      <label>显示名称（前台显示的中文）</label>
+      <input class="form-input" id="eContactLabel" value="${event?.socialLinks?.contactLabel || ''}" placeholder="如：QQ联系、加入QQ群">
+    </div>
+    <div class="form-group">
+      <label>网站链接</label>
+      <input class="form-input" id="eWebsite" value="${event?.socialLinks?.website || ''}" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>网站显示名称</label>
+      <input class="form-input" id="eWebsiteLabel" value="${event?.socialLinks?.websiteLabel || ''}" placeholder="如：访问官网、活动主页">
+    </div>
+    <div class="form-group">
       <label>首图（时间轴和多格视图的封面图，仅限1张）</label>
       <div id="eCoverPreview" style="margin-bottom:0.5rem;">
         ${event?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${event.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
@@ -931,6 +955,17 @@ function openEventModal(event = null) {
       description: document.getElementById('eDesc').value,
       coverImage: document.querySelector('#eCoverPreview img')?.src || '',
       images: [...document.querySelectorAll('#eImagesPreview img')].map(img => img.src),
+      socialLinks: (() => {
+        const type = document.getElementById('eContactType').value;
+        const value = document.getElementById('eContactValue').value;
+        const sl = {
+          contactLabel: document.getElementById('eContactLabel').value,
+          website: document.getElementById('eWebsite').value,
+          websiteLabel: document.getElementById('eWebsiteLabel').value
+        };
+        if (type && value) sl[type] = value;
+        return sl;
+      })(),
       relatedWorks: event?.relatedWorks || [],
       relatedCircles: event?.relatedCircles || [],
       relatedProjects: event?.relatedProjects || []

@@ -189,6 +189,23 @@
                   </div>
                 ` : ''}
               </div>
+              ${event.socialLinks && Object.keys(event.socialLinks).filter(k => event.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
+              <div class="sidebar-card">
+                <h3>联系方式</h3>
+                ${Object.entries(event.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
+                  const isUrl = url.startsWith('http');
+                  const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key === 'website' ? '访问网站' : key;
+                  const label = key === 'website' ? (event.socialLinks.websiteLabel || defaultLabel) : (event.socialLinks.contactLabel || defaultLabel);
+                  return isUrl
+                    ? `<a href="${url}" target="_blank" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
+                         onmouseover="this.style.background='rgba(233,69,96,0.12)'" onmouseout="this.style.background='rgba(233,69,96,0.06)'">${label}</a>`
+                    : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;">
+                         <span style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(15,52,96,0.06);color:var(--accent-alt);border-radius:100px;font-weight:500;">${label}</span>
+                         <span style="color:var(--accent);font-weight:500;">${url}</span>
+                       </div>`;
+                }).join('')}
+              </div>
+              ` : ''}
               ${relatedProjects.length > 0 ? `
               <div class="sidebar-card">
                 <h3>关联企划</h3>
