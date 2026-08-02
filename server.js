@@ -122,17 +122,22 @@ app.get('/api/works/:id', (req, res) => {
   res.json(work);
 });
 
-// ===== Like System =====
+// ===== Like System (in-memory + file sync) =====
+let likesCache = {};
+try { likesCache = readJSON('likes.json'); } catch {}
+
+function saveLikes() {
+  writeJSON('likes.json', likesCache);
+}
+
 app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: 'missing uid' });
 
-  // Synchronous read-check-write (Node.js single thread = atomic)
-  const likesData = readJSON('likes.json');
-  if (!likesData[workId]) likesData[workId] = [];
+  if (!likesCache[workId]) likesCache[workId] = [];
 
-  if (likesData[workId].includes(uid)) {
+  if (likesCache[workId].includes(uid)) {
     const works = readJSON('works.json');
     const w = works.find(w => w.id === workId);
     return res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
@@ -143,8 +148,8 @@ app.post('/api/works/:id/like', (req, res) => {
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
   if (!works[index].likes) works[index].likes = 0;
 
-  likesData[workId].push(uid);
-  writeJSON('likes.json', likesData);
+  likesCache[workId].push(uid);
+  saveLikes();
   works[index].likes++;
   writeJSON('works.json', works);
   console.log('[LIKE] workId=%s uid=%s count=%d', workId, uid, works[index].likes);
@@ -156,10 +161,9 @@ app.post('/api/works/:id/unlike', (req, res) => {
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: 'missing uid' });
 
-  const likesData = readJSON('likes.json');
-  if (!likesData[workId]) likesData[workId] = [];
+  if (!likesCache[workId]) likesCache[workId] = [];
 
-  const idx = likesData[workId].indexOf(uid);
+  const idx = likesCache[workId].indexOf(uid);
   if (idx === -1) {
     const works = readJSON('works.json');
     const w = works.find(w => w.id === workId);
@@ -170,8 +174,8 @@ app.post('/api/works/:id/unlike', (req, res) => {
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
-  likesData[workId].splice(idx, 1);
-  writeJSON('likes.json', likesData);
+  likesCache[workId].splice(idx, 1);
+  saveLikes();
   works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
   writeJSON('works.json', works);
   console.log('[UNLIKE] workId=%s uid=%s count=%d', workId, uid, works[index].likes);
