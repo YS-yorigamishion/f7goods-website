@@ -271,8 +271,8 @@ app.get('/api/categories', (req, res) => {
 // Contact form
 app.post('/api/contact', (req, res) => {
   const { name, email, subject, message } = req.body;
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: '请填写必填字段' });
+  if (!message) {
+    return res.status(400).json({ error: '请填写消息内容' });
   }
   // Save to contact.json
   let contacts = [];
