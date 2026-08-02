@@ -1627,6 +1627,39 @@ textarea.form-input {
   transform: scale(1.02);
 }
 
+.event-img-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: max-height 0.4s ease;
+}
+
+.event-img-wrap.collapsed {
+  max-height: 200px;
+}
+
+.event-img-wrap .event-img-expand-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.4));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+  color: white;
+  font-size: 1rem;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.event-img-wrap:not(.collapsed) .event-img-expand-hint {
+  opacity: 0;
+}
+
 /* Hide elements until page settings are loaded to prevent FOUC */
 .settings-pending {
   visibility: hidden;

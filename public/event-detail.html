@@ -22,6 +22,26 @@
   <script>
     initPage('events');
 
+    function toggleEventImg(el) {
+      if (el._clickTimer) {
+        clearTimeout(el._clickTimer);
+        el._clickTimer = null;
+      } else {
+        el._clickTimer = setTimeout(() => {
+          el._clickTimer = null;
+          el.classList.toggle('collapsed');
+        }, 250);
+      }
+    }
+
+    function openEventImgLightbox(images, i, el) {
+      if (el._clickTimer) {
+        clearTimeout(el._clickTimer);
+        el._clickTimer = null;
+      }
+      openLightbox(images, i);
+    }
+
     async function loadEvent() {
       const params = new URLSearchParams(location.search);
       const id = params.get('id');
@@ -70,7 +90,12 @@
               ${event.images && event.images.length > 0 ? `
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">活动图片</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
-                  ${event.images.map((img, i) => `<img src="${img}" alt="${event.title}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(event.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
+                  ${event.images.map((img, i) => `
+                    <div class="event-img-wrap collapsed" onclick="toggleEventImg(this)" ondblclick="openEventImgLightbox(${JSON.stringify(event.images).replace(/"/g, '&quot;')}, ${i}, this)">
+                      <img src="${img}" alt="${event.title}" style="width:100%;border-radius:8px;display:block;">
+                      <div class="event-img-expand-hint">&#8595;</div>
+                    </div>
+                  `).join('')}
                 </div>
               ` : ''}
 

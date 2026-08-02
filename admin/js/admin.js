@@ -954,23 +954,7 @@ async function editEvent(id) {
   const events = await adminAPI('GET', '/api/admin/events');
   const event = events.find(e => e.id === id);
   if (event) {
-    pendingEventImages._eventId = id;
     openEventModal(event);
-    // Apply pending images from picker
-    if (pendingEventImages.cover) {
-      const preview = document.getElementById('eCoverPreview');
-      if (preview) {
-        preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${pendingEventImages.cover}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
-      }
-      pendingEventImages.cover = null;
-    }
-    if (pendingEventImages.images.length > 0) {
-      const preview = document.getElementById('eImagesPreview');
-      if (preview) {
-        pendingEventImages.images.forEach(url => appendImagePreview(preview, url));
-      }
-      pendingEventImages.images = [];
-    }
   }
 }
 
@@ -1909,24 +1893,7 @@ async function editCircle(id) {
   const circles = await adminAPI('GET', '/api/admin/circles');
   const circle = circles.find(c => c.id === id);
   if (circle) {
-    // Store circle ID for image picker
-    pendingCircleImages.circleId = id;
     openCircleModal(circle);
-    // Apply pending images from picker
-    if (pendingCircleImages.logo) {
-      const preview = document.getElementById('cLogoPreview');
-      if (preview) {
-        preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${pendingCircleImages.logo}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
-      }
-      pendingCircleImages.logo = null;
-    }
-    if (pendingCircleImages.images.length > 0) {
-      const preview = document.getElementById('cImagesPreview');
-      if (preview) {
-        pendingCircleImages.images.forEach(url => appendImagePreview(preview, url));
-      }
-      pendingCircleImages.images = [];
-    }
   }
 }
 
@@ -1967,11 +1934,6 @@ function appendImagePreview(container, url) {
   container.appendChild(div);
 }
 
-// Store pending images from picker
-let pendingCircleImages = { logo: null, images: [], circleId: null };
-let pendingEventImages = { cover: null, images: [] };
-let pendingProjectImages = { cover: null, images: [] };
-
 function filterImageLibrary(query) {
   const q = query.toLowerCase();
   document.querySelectorAll('#imageLibGrid .image-pick-item').forEach(item => {
@@ -2006,32 +1968,25 @@ async function pickImageFromLibrary(type) {
     document.getElementById('modalSave').textContent = '保存';
 
     if (type === 'circle-logo') {
-      pendingCircleImages.logo = selected[0];
-      if (pendingCircleImages.circleId) editCircle(pendingCircleImages.circleId);
-      else closeModal();
+      const preview = document.getElementById('cLogoPreview');
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
     } else if (type === 'circle-images') {
-      pendingCircleImages.images = selected;
-      if (pendingCircleImages.circleId) editCircle(pendingCircleImages.circleId);
-      else closeModal();
+      const preview = document.getElementById('cImagesPreview');
+      if (preview) selected.forEach(url => appendImagePreview(preview, url));
     } else if (type === 'event-cover') {
-      pendingEventImages.cover = selected[0];
-      if (pendingEventImages._eventId) editEvent(pendingEventImages._eventId);
-      else closeModal();
+      const preview = document.getElementById('eCoverPreview');
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
     } else if (type === 'event-images') {
-      pendingEventImages.images = selected;
-      if (pendingEventImages._eventId) editEvent(pendingEventImages._eventId);
-      else closeModal();
+      const preview = document.getElementById('eImagesPreview');
+      if (preview) selected.forEach(url => appendImagePreview(preview, url));
     } else if (type === 'project-cover') {
-      pendingProjectImages.cover = selected[0];
-      if (pendingProjectImages._projectId) editProject(pendingProjectImages._projectId);
-      else closeModal();
+      const preview = document.getElementById('pCoverPreview');
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
     } else if (type === 'project-images') {
-      pendingProjectImages.images = selected;
-      if (pendingProjectImages._projectId) editProject(pendingProjectImages._projectId);
-      else closeModal();
-    } else {
-      closeModal();
+      const preview = document.getElementById('pImagesPreview');
+      if (preview) selected.forEach(url => appendImagePreview(preview, url));
     }
+    closeModal();
   };
   openModal();
 }
@@ -2280,24 +2235,7 @@ async function editProject(id) {
   const projects = await adminAPI('GET', '/api/admin/projects');
   const project = projects.find(p => p.id === id);
   if (project) {
-    pendingProjectImages._projectId = id;
     openProjectModal(project);
-    // Apply pending cover from picker
-    if (pendingProjectImages.cover) {
-      const coverPreview = document.getElementById('pCoverPreview');
-      if (coverPreview) {
-        coverPreview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${pendingProjectImages.cover}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
-      }
-      pendingProjectImages.cover = null;
-    }
-    // Apply pending images from picker
-    if (pendingProjectImages.images.length > 0) {
-      const preview = document.getElementById('pImagesPreview');
-      if (preview) {
-        pendingProjectImages.images.forEach(url => appendImagePreview(preview, url));
-      }
-      pendingProjectImages.images = [];
-    }
   }
 }
 
