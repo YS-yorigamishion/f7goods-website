@@ -22,6 +22,46 @@
   <script>
     initPage('circles');
 
+    let circleWorksData = [];
+    let cwCategory = 'all';
+    let cwSearchText = '';
+
+    function renderCircleWorks() {
+      let filtered = circleWorksData;
+      if (cwCategory !== 'all') {
+        filtered = filtered.filter(w => w.category === cwCategory);
+      }
+      if (cwSearchText) {
+        const q = cwSearchText.toLowerCase();
+        filtered = filtered.filter(w =>
+          w.title.toLowerCase().includes(q) ||
+          (w.tags || []).some(t => t.toLowerCase().includes(q))
+        );
+      }
+      const grid = document.getElementById('circleWorksGrid');
+      const count = document.getElementById('circleWorksCount');
+      if (count) count.textContent = `(${filtered.length})`;
+      if (!grid) return;
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state" style="padding:2rem 0;"><p>暂无匹配的作品</p></div>';
+        return;
+      }
+      grid.innerHTML = filtered.map(work => `
+        <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
+          <div class="card-image" style="height:160px;">
+            ${work.images && work.images.length > 0
+              ? `<img src="${work.images[0]}" alt="${work.title}">`
+              : '<span class="placeholder-icon">🎨</span>'}
+          </div>
+          <div class="card-body" style="padding:0.8rem;">
+            <span class="card-tag ${work.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${STATUS_LABELS[work.status] || work.status}</span>
+            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${work.title}</h3>
+            <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${work.price}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
     async function loadCircle() {
       const params = new URLSearchParams(location.search);
       const id = params.get('id');
@@ -36,6 +76,7 @@
           F7API.getProjects()
         ]);
         const circleWorks = allWorks.filter(w => (w.circles || []).includes(circle.id));
+        circleWorksData = circleWorks;
         const circleWorkIds = circleWorks.map(w => w.id);
         const relatedEvents = allEvents.filter(e =>
           (e.relatedCircles || []).includes(circle.id) ||
@@ -75,25 +116,19 @@
                 </div>
               ` : ''}
 
-              <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">作品列表 (${circleWorks.length})</h3>
-              ${circleWorks.length > 0 ? `
-                <div class="cards-grid">
-                  ${circleWorks.map(work => `
-                    <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
-                      <div class="card-image">
-                        ${work.images && work.images.length > 0
-                          ? `<img src="${work.images[0]}" alt="${work.title}">`
-                          : '<span class="placeholder-icon">🎨</span>'}
-                      </div>
-                      <div class="card-body">
-                        <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
-                        <h3 class="card-title" style="font-size:0.95rem;">${work.title}</h3>
-                        <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.5rem;">${work.price}</p>
-                      </div>
-                    </div>
-                  `).join('')}
+              ${circleWorks.length > 0 ? (() => {
+                const usedCats = [...new Set(circleWorks.map(w => w.category).filter(Boolean))];
+                const catBtns = CATEGORIES_ORDERED.filter(c => usedCats.includes(c.id));
+                return `
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">作品列表 <span id="circleWorksCount">(${circleWorks.length})</span></h3>
+                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
+                  <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">全部</button>
+                  ${catBtns.map(c => `<button class="filter-btn" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${c.name}</button>`).join('')}
+                  <input type="text" class="search-input" placeholder="搜索作品、标签..." style="margin-left:auto;max-width:200px;" oninput="cwSearchText=this.value;renderCircleWorks();">
                 </div>
-              ` : '<p style="color:var(--haze);">暂无作品</p>'}
+                <div class="cards-grid related-works-grid" id="circleWorksGrid"></div>
+                `;
+              })() : '<p style="color:var(--haze);">暂无作品</p>'}
             </div>
             <div class="detail-sidebar">
               <div class="sidebar-card">
@@ -158,6 +193,7 @@
             </div>
           </div>
         `;
+        renderCircleWorks();
       } catch (e) {
         document.getElementById('circleDetail').innerHTML =
           '<div class="empty-state"><div class="icon">!</div><p>作者未找到或加载失败</p></div>';
