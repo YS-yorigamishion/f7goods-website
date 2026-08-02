@@ -3320,7 +3320,7 @@ async function loadContacts() {
     }
     tbody.innerHTML = contacts
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .map(c => `
+      .map((c, i) => `
         <tr>
           <td>${escapeHtml(c.name || '')}</td>
           <td>${escapeHtml(c.email || '')}</td>
@@ -3329,11 +3329,13 @@ async function loadContacts() {
           <td>${c.createdAt ? formatDateAdmin(c.createdAt) : '-'}</td>
           <td>
             <div class="table-actions">
+              <button class="btn-sm btn-edit" onclick="viewContactMessage(${i})">查看</button>
               <button class="btn-sm btn-delete" onclick="deleteContact('${c.id}')">删除</button>
             </div>
           </td>
         </tr>
       `).join('');
+    window._contactsData = contacts;
   } catch (e) {
     document.getElementById('contactsTableBody').innerHTML =
       '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
@@ -3344,6 +3346,37 @@ async function deleteContact(id) {
   if (!confirm('确定要删除这条消息吗？')) return;
   await adminAPI('DELETE', `/api/admin/contacts/${id}`);
   loadContacts();
+}
+
+function viewContactMessage(index) {
+  const c = (window._contactsData || [])[index];
+  if (!c) return;
+  document.getElementById('modalTitle').textContent = '查看消息';
+  document.getElementById('modalBody').innerHTML = `
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:0.8rem;color:var(--haze);">昵称</label>
+      <div style="font-size:0.95rem;margin-top:0.2rem;">${escapeHtml(c.name || '匿名')}</div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:0.8rem;color:var(--haze);">联系方式</label>
+      <div style="font-size:0.95rem;margin-top:0.2rem;">${escapeHtml(c.email || '未填写')}</div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:0.8rem;color:var(--haze);">主题</label>
+      <div style="font-size:0.95rem;margin-top:0.2rem;">${escapeHtml(c.subject || '无')}</div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:0.8rem;color:var(--haze);">时间</label>
+      <div style="font-size:0.95rem;margin-top:0.2rem;">${c.createdAt ? formatDateAdmin(c.createdAt) : '-'}</div>
+    </div>
+    <div>
+      <label style="font-size:0.8rem;color:var(--haze);">消息内容</label>
+      <div style="font-size:0.95rem;line-height:1.8;margin-top:0.5rem;padding:1rem;background:var(--bg);border-radius:var(--radius);white-space:pre-wrap;word-break:break-all;">${escapeHtml(c.message || '')}</div>
+    </div>
+  `;
+  document.getElementById('modalSave').style.display = 'none';
+  openModal();
+  document.getElementById('modalSave').style.display = '';
 }
 
 // ===== Modal =====
