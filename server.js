@@ -134,6 +134,7 @@ function enqueueLike(fn) {
 app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
   const uid = req.body.uid;
+  console.log('[LIKE] workId=%s uid=%s ip=%s', workId, uid, req.ip);
   if (!uid) return res.status(400).json({ error: 'missing uid' });
 
   enqueueLike(() => {
