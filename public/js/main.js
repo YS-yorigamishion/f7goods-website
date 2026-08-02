@@ -330,36 +330,69 @@ function updateLikeButtons(workId, liked, count) {
   });
 }
 
+function showMathChallenge(callback) {
+  var a = Math.floor(Math.random() * 99999) + 1;
+  var b = Math.floor(Math.random() * 99999) + 1;
+  var answer = a * b;
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  overlay.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;max-width:360px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.2);"><h3 style="margin:0 0 1rem;font-size:1.1rem;">请完成验证</h3><p style="font-size:1.3rem;font-weight:700;margin:0 0 1rem;color:#333;">' + a + ' × ' + b + ' = ?</p><input id="mathInput" type="number" class="form-input" style="width:100%;text-align:center;font-size:1.2rem;padding:0.6rem;margin-bottom:1rem;" placeholder="请输入计算结果"><div style="display:flex;gap:0.5rem;"><button id="mathCancel" style="flex:1;padding:0.6rem;border:none;border-radius:8px;background:#eee;font-size:0.95rem;cursor:pointer;">取消</button><button id="mathSubmit" style="flex:1;padding:0.6rem;border:none;border-radius:8px;background:var(--accent,#e94560);color:white;font-size:0.95rem;cursor:pointer;">确认</button></div></div>';
+  document.body.appendChild(overlay);
+  var input = document.getElementById('mathInput');
+  input.focus();
+  function submit() {
+    if (parseInt(input.value) === answer) {
+      document.body.removeChild(overlay);
+      callback(true);
+    } else {
+      input.style.border = '2px solid red';
+      input.value = '';
+      input.placeholder = '答案错误，请重试';
+      input.focus();
+    }
+  }
+  document.getElementById('mathSubmit').onclick = submit;
+  document.getElementById('mathCancel').onclick = function() { document.body.removeChild(overlay); callback(false); };
+  input.onkeydown = function(e) { if (e.key === 'Enter') submit(); };
+}
+
 async function toggleLike(workId, btn) {
   if (btn.disabled) return;
-  btn.disabled = true;
   var liked = isLiked(workId);
-  var endpoint = liked ? '/api/works/' + workId + '/unlike' : '/api/works/' + workId + '/like';
-  try {
-    var res = await fetch(endpoint, {
+  var needChallenge = liked; // 取消点赞时需要做数学题
+
+  function doLike() {
+    btn.disabled = true;
+    var endpoint = liked ? '/api/works/' + workId + '/unlike' : '/api/works/' + workId + '/like';
+    fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: getUid() })
+    }).then(function(res) { return res.json(); }).then(function(data) {
+      var likedList = getLikedWorks();
+      if (liked) {
+        likedList = likedList.filter(function(id) { return id !== workId; });
+      } else {
+        if (likedList.indexOf(workId) === -1) likedList.push(workId);
+      }
+      localStorage.setItem('f7liked', JSON.stringify(likedList));
+      if (typeof allWorks !== 'undefined') {
+        var w = allWorks.find(function(w) { return w.id === workId; });
+        if (w) w.likes = data.likes;
+      }
+      updateLikeButtons(workId, !liked, data.likes);
+    }).catch(function(e) {
+      console.error('Like failed:', e);
+      btn.disabled = false;
     });
-    var data = await res.json();
+  }
 
-    var likedList = getLikedWorks();
-    if (liked) {
-      likedList = likedList.filter(function(id) { return id !== workId; });
-    } else {
-      if (likedList.indexOf(workId) === -1) likedList.push(workId);
-    }
-    localStorage.setItem('f7liked', JSON.stringify(likedList));
-
-    if (typeof allWorks !== 'undefined') {
-      var w = allWorks.find(function(w) { return w.id === workId; });
-      if (w) w.likes = data.likes;
-    }
-
-    updateLikeButtons(workId, !liked, data.likes);
-  } catch (e) {
-    console.error('Like failed:', e);
-    btn.disabled = false;
+  if (needChallenge) {
+    showMathChallenge(function(ok) {
+      if (ok) doLike();
+    });
+  } else {
+    doLike();
   }
 }
 
