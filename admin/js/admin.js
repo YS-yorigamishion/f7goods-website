@@ -181,17 +181,19 @@ async function uploadImage(file) {
 
 // ===== Dashboard =====
 async function loadDashboard() {
-  const [works, events, circles, projects, pvData] = await Promise.all([
+  const [works, events, circles, projects, updates, pvData] = await Promise.all([
     adminAPI('GET', '/api/admin/works'),
     adminAPI('GET', '/api/admin/events'),
     adminAPI('GET', '/api/admin/circles'),
     adminAPI('GET', '/api/admin/projects'),
+    adminAPI('GET', '/api/admin/updates'),
     adminAPI('GET', '/api/admin/pageviews')
   ]);
   document.getElementById('statWorks').textContent = works?.length || 0;
   document.getElementById('statEvents').textContent = events?.length || 0;
   document.getElementById('statCircles').textContent = circles?.length || 0;
   document.getElementById('statProjects').textContent = projects?.length || 0;
+  document.getElementById('statUpdates').textContent = updates?.length || 0;
 
   // Page view stats
   const daily = pvData?.daily || {};
