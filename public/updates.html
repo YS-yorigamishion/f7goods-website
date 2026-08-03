@@ -156,10 +156,11 @@
         applyHeroBg('updates');
         document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
 
-        const [updates, allEvents, allProjects] = await Promise.all([
+        const [updates, allEvents, allProjects, allCircles] = await Promise.all([
           fetch('/api/updates').then(r => r.json()),
           F7API.getEvents(),
-          F7API.getProjects()
+          F7API.getProjects(),
+          F7API.getCircles()
         ]);
 
         const container = document.getElementById('updatesContainer');
@@ -173,10 +174,16 @@
         allEvents.forEach(e => eventsMap[e.id] = e.title);
         const projectsMap = {};
         allProjects.forEach(p => projectsMap[p.id] = p.title);
+        const circlesMap = {};
+        allCircles.forEach(c => circlesMap[c.id] = c.name);
+        allProjects.forEach(p => projectsMap[p.id] = p.title);
 
         container.innerHTML = updates.map(u => {
           const preview = u.content.length > 80 ? u.content.substring(0, 80) + '...' : u.content;
           const relatedLinks = [];
+          (u.relatedCircles || []).forEach(cid => {
+            if (circlesMap[cid]) relatedLinks.push('<a href="/circle-detail.html?id=' + cid + '">🏠 ' + escapeHtml(circlesMap[cid]) + '</a>');
+          });
           (u.relatedEvents || []).forEach(eid => {
             if (eventsMap[eid]) relatedLinks.push('<a href="/event-detail.html?id=' + eid + '">📅 ' + escapeHtml(eventsMap[eid]) + '</a>');
           });

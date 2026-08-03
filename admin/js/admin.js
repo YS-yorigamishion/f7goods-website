@@ -3187,7 +3187,7 @@ function renderSettings() {
       </div>
     </div>
 
-    ${Object.entries({works:'周边概览', events:'近期活动', circles:'同人作者', projects:'同人企划', about:'关于我们'}).map(([key, name]) => `
+    ${Object.entries({works:'周边概览', events:'近期活动', circles:'同人作者', projects:'同人企划', updates:'同人动态', about:'关于我们'}).map(([key, name]) => `
       <div id="settings-${key}" class="settings-tab" style="display:none;">
         <div class="admin-card">
           <h3 style="margin-bottom:1rem;">${name}页面设置</h3>
@@ -3289,7 +3289,7 @@ function switchSettingsTab(page) {
 
 async function saveSettings() {
   const pages = {};
-  const pageKeys = ['works', 'events', 'circles', 'projects', 'about'];
+  const pageKeys = ['works', 'events', 'circles', 'projects', 'updates', 'about'];
 
   pageKeys.forEach(key => {
     pages[key] = {};
@@ -3594,15 +3594,18 @@ async function deleteAnnouncement(id) {
 // ===== Updates (同人动态) =====
 async function loadUpdates() {
   try {
-    const [updates, allEvents, allProjects] = await Promise.all([
+    const [updates, allEvents, allProjects, allCircles] = await Promise.all([
       adminAPI('GET', '/api/admin/updates'),
       adminAPI('GET', '/api/admin/events'),
-      adminAPI('GET', '/api/admin/projects')
+      adminAPI('GET', '/api/admin/projects'),
+      adminAPI('GET', '/api/admin/circles')
     ]);
     const eventsMap = {};
     (allEvents || []).forEach(e => eventsMap[e.id] = e.title);
     const projectsMap = {};
     (allProjects || []).forEach(p => projectsMap[p.id] = p.title);
+    const circlesMap = {};
+    (allCircles || []).forEach(c => circlesMap[c.id] = c.name);
 
     const tbody = document.getElementById('updatesTableBody');
     if (!updates || updates.length === 0) {
@@ -3617,6 +3620,7 @@ async function loadUpdates() {
       })
       .map(u => {
         const related = [];
+        (u.relatedCircles || []).forEach(cid => { if (circlesMap[cid]) related.push('🏠' + circlesMap[cid]); });
         (u.relatedEvents || []).forEach(eid => { if (eventsMap[eid]) related.push('📅' + eventsMap[eid]); });
         (u.relatedProjects || []).forEach(pid => { if (projectsMap[pid]) related.push('📋' + projectsMap[pid]); });
         return `
@@ -3644,11 +3648,12 @@ function openUpdateModal(update = null) {
   const isEdit = !!update;
   document.getElementById('modalTitle').textContent = isEdit ? '编辑动态' : '新增动态';
 
-  // Load events and projects for association
+  // Load events, projects and circles for association
   Promise.all([
     adminAPI('GET', '/api/admin/events'),
-    adminAPI('GET', '/api/admin/projects')
-  ]).then(([allEvents, allProjects]) => {
+    adminAPI('GET', '/api/admin/projects'),
+    adminAPI('GET', '/api/admin/circles')
+  ]).then(([allEvents, allProjects, allCircles]) => {
     const eventsMap = {};
     (allEvents || []).forEach(e => eventsMap[e.id] = e.title);
     const projectsMap = {};
@@ -3656,6 +3661,7 @@ function openUpdateModal(update = null) {
 
     const relatedEventIds = update?.relatedEvents || [];
     const relatedProjectIds = update?.relatedProjects || [];
+    const relatedCircleIds = update?.relatedCircles || [];
 
     document.getElementById('modalBody').innerHTML = `
       <div class="form-group">
@@ -3675,6 +3681,18 @@ function openUpdateModal(update = null) {
       <div class="form-group">
         <label>动态内容 <span style="color:var(--accent)">*</span></label>
         <textarea class="form-input" id="updContent" style="min-height:150px;">${update?.content || ''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>关联作者</label>
+        <input type="text" class="form-input" id="updCircleSearch" placeholder="搜索作者名称..." style="margin-bottom:0.5rem;padding:0.4rem 0.6rem;font-size:0.85rem;" oninput="filterUpdateCirclesList(this.value)">
+        <div id="updCirclesList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">
+          ${(allCircles || []).map(c => `
+            <label class="upd-circle-item" data-name="${(c.name || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;">
+              <input type="checkbox" class="upd-circle-cb" value="${c.id}" ${relatedCircleIds.includes(c.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">
+              ${escapeHtml(c.name)}
+            </label>
+          `).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作者</p>'}
+        </div>
       </div>
       <div class="form-group">
         <label>关联活动</label>
@@ -3706,6 +3724,7 @@ function openUpdateModal(update = null) {
         publishDate: document.getElementById('updPublishDate').value,
         content: document.getElementById('updContent').value,
         pinned: document.getElementById('updPinned').checked,
+        relatedCircles: [...document.querySelectorAll('.upd-circle-cb:checked')].map(cb => cb.value),
         relatedEvents: [...document.querySelectorAll('.upd-event-cb:checked')].map(cb => cb.value),
         relatedProjects: [...document.querySelectorAll('.upd-project-cb:checked')].map(cb => cb.value)
       };
@@ -3736,6 +3755,14 @@ async function deleteUpdate(id) {
   if (!confirm('确定要删除这条动态吗？')) return;
   await adminAPI('DELETE', `/api/admin/updates/${id}`);
   loadUpdates();
+}
+
+function filterUpdateCirclesList(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('.upd-circle-item').forEach(item => {
+    const name = item.dataset.name || '';
+    item.style.display = name.includes(q) ? 'flex' : 'none';
+  });
 }
 
 // ===== Change Password =====

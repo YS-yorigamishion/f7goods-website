@@ -90,11 +90,12 @@
 
       try {
         await loadCategoriesFromAPI();
-        const [circle, allWorks, allEvents, allProjects] = await Promise.all([
+        const [circle, allWorks, allEvents, allProjects, allUpdates] = await Promise.all([
           F7API.getCircle(id),
           F7API.getWorks(),
           F7API.getEvents(),
-          F7API.getProjects()
+          F7API.getProjects(),
+          fetch('/api/updates').then(r => r.json())
         ]);
         const circleWorks = allWorks.filter(w => (w.circles || []).includes(circle.id));
         circleWorksData = circleWorks;
@@ -104,6 +105,7 @@
           (e.relatedWorks || []).some(wid => circleWorkIds.includes(wid))
         );
         const relatedProjects = (allProjects || []).filter(p => (p.circles || []).includes(circle.id));
+        const relatedUpdates = (allUpdates || []).filter(u => (u.relatedCircles || []).includes(circle.id));
 
         document.title = `${circle.name} — f7goods`;
 
@@ -199,6 +201,18 @@
                       <div style="font-weight:600;font-size:0.9rem;">${p.title}</div>
                       <span class="card-tag ${p.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-top:0.2rem;display:inline-block;">${PROJECT_STATUS_LABELS[p.status] || p.status}</span>
                     </div>
+                  </a>
+                `).join('')}
+              </div>
+              ` : ''}
+              ${relatedUpdates.length > 0 ? `
+              <div class="sidebar-card">
+                <h3>相关动态</h3>
+                ${relatedUpdates.map(u => `
+                  <a href="/updates.html" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
+                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
+                    <div style="font-weight:600;font-size:0.9rem;">📰 ${escapeHtml(u.title)}</div>
+                    <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(u.publishDate)}</div>
                   </a>
                 `).join('')}
               </div>
