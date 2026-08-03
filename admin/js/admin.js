@@ -859,8 +859,6 @@ function openWorkModal(work = null, returnToCircleId = null) {
         }
       }
     } else {
-      await adminAPI('PUT', `/api/admin/works/${work.id}`, data);
-    } else {
       if (returnToCircleId && !data.circles.includes(returnToCircleId)) data.circles.push(returnToCircleId);
       await adminAPI('POST', '/api/admin/works', data);
     }
