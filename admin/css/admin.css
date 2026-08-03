@@ -531,6 +531,10 @@
     grid-template-columns: 1fr;
   }
 
+  div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
   .admin-card canvas {
     max-width: 100%;
   }
