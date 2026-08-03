@@ -3220,10 +3220,10 @@ async function loadImages() {
       document.getElementById('batchDeleteImagesBtn').style.display = 'none';
       return;
     }
-    // Apply search filter
+    // Apply search filter (name or uploader)
     const search = (document.getElementById('imageSearchInput')?.value || '').toLowerCase().trim();
     if (search) {
-      images = images.filter(img => img.name.toLowerCase().includes(search));
+      images = images.filter(img => img.name.toLowerCase().includes(search) || (img.uploader || '').toLowerCase().includes(search));
     }
     if (images.length === 0) {
       gallery.innerHTML = '<p style="color:var(--haze);grid-column:1/-1;text-align:center;padding:2rem;">未找到匹配的图片</p>';
@@ -3244,6 +3244,8 @@ async function loadImages() {
     // else 'time-desc' is default from API
     gallery.innerHTML = images.map(img => {
       const sizeMB = img.size ? (img.size / 1024 / 1024).toFixed(2) : '?';
+      const uploadDate = img.uploadedAt ? new Date(img.uploadedAt).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
+      const uploader = img.uploader || '';
       return `
       <div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--paper);">
         <input type="checkbox" class="image-checkbox" value="${img.name}" style="position:absolute;top:6px;left:6px;z-index:2;width:16px;height:16px;accent-color:var(--accent);cursor:pointer;" onchange="updateImageBatchBtn()">
@@ -3254,6 +3256,7 @@ async function loadImages() {
             <button onclick="deleteImage('${img.name}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;padding:0 0.3rem;" title="删除">&times;</button>
           </div>
           <div style="font-size:0.6rem;color:var(--haze);margin-top:0.15rem;">${sizeMB} MB</div>
+          ${uploader ? '<div style="font-size:0.6rem;color:var(--accent-alt);margin-top:0.1rem;">' + escapeHtml(uploader) + (uploadDate ? ' · ' + uploadDate : '') + '</div>' : ''}
         </div>
       </div>`;
     }).join('');

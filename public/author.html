@@ -168,6 +168,11 @@
 
       <!-- Works Tab -->
       <div id="tab-works" class="mgmt-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="margin:0;">我的作品</h3>
+          <button class="btn btn-primary" onclick="openAuthorWorkForm()">+ 新增作品</button>
+        </div>
+        <div id="workFormContainer" style="display:none;"></div>
         <div id="worksList"></div>
       </div>
 
@@ -444,48 +449,184 @@
       const works = await authorAPI('GET', '/api/author/works');
       const container = document.getElementById('worksList');
       if (!works || works.length === 0) {
-        container.innerHTML = '<div class="mgmt-card"><p style="color:var(--haze);text-align:center;">暂无关联作品</p></div>';
+        container.innerHTML = '<div class="mgmt-card"><p style="color:var(--haze);text-align:center;">暂无作品，点击上方按钮创建</p></div>';
         return;
       }
       container.innerHTML = works.map(w => `
         <div class="mgmt-card">
-          <div class="work-item">
+          <div class="work-item" style="cursor:pointer;" onclick="toggleWorkEdit('${w.id}')">
             ${w.images && w.images.length > 0 ? '<img src="' + w.images[0] + '">' : '<div style="width:50px;height:50px;border-radius:6px;background:var(--paper);display:flex;align-items:center;justify-content:center;">🎨</div>'}
             <div class="work-item-info">
               <div class="work-item-title">${escapeHtml(w.title)}</div>
               <div class="work-item-meta">${CATEGORIES[w.category] || w.category || ''} · ${w.price || ''} · ${STATUS_LABELS[w.status] || w.status || ''}</div>
             </div>
+            <span style="color:var(--haze);font-size:1.2rem;">›</span>
           </div>
-          <div style="margin-top:0.8rem;">
-            <div class="form-group">
-              <label>描述</label>
-              <textarea class="form-input work-desc" data-id="${w.id}" style="min-height:60px;">${w.description || ''}</textarea>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>价格</label>
-                <input class="form-input work-price" data-id="${w.id}" value="${w.price || ''}">
-              </div>
-              <div class="form-group">
-                <label>状态</label>
-                <select class="form-input work-status" data-id="${w.id}">
-                  ${Object.entries(STATUS_LABELS).map(([k,v]) => '<option value="' + k + '"' + (w.status === k ? ' selected' : '') + '>' + v + '</option>').join('')}
-                </select>
-              </div>
-            </div>
-            <button class="btn-sm btn-edit" onclick="saveWork('${w.id}')">保存修改</button>
-          </div>
+          <div id="workEdit-${w.id}" style="display:none;margin-top:0.8rem;"></div>
         </div>
       `).join('');
     }
 
-    // Save work
-    async function saveWork(workId) {
-      const desc = document.querySelector('.work-desc[data-id="' + workId + '"]').value;
-      const price = document.querySelector('.work-price[data-id="' + workId + '"]').value;
-      const status = document.querySelector('.work-status[data-id="' + workId + '"]').value;
-      const result = await authorAPI('PUT', '/api/author/works/' + workId, { description: desc, price, status });
-      if (result) showToast('作品已保存', 'success');
+    function toggleWorkEdit(workId) {
+      const el = document.getElementById('workEdit-' + workId);
+      if (el.style.display === 'none') {
+        el.style.display = 'block';
+        renderWorkForm(workId);
+      } else {
+        el.style.display = 'none';
+      }
+    }
+
+    async function renderWorkForm(workId) {
+      const works = await authorAPI('GET', '/api/author/works');
+      const work = works.find(w => w.id === workId);
+      if (!work) return;
+      const el = document.getElementById('workEdit-' + workId);
+      el.innerHTML = buildWorkFormHTML(work);
+    }
+
+    function buildWorkFormHTML(work) {
+      const w = work || {};
+      return `
+        <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="wfTitle" value="${escapeHtml(w.title || '')}"></div>
+        <div class="form-row">
+          <div class="form-group"><label>分类</label><select class="form-input" id="wfCategory">${Object.entries(CATEGORIES).map(([k,v]) => '<option value="'+k+'"'+(w.category===k?' selected':'')+'>'+v+'</option>').join('')}</select></div>
+          <div class="form-group"><label>状态</label><select class="form-input" id="wfStatus">${Object.entries(STATUS_LABELS).map(([k,v]) => '<option value="'+k+'"'+(w.status===k?' selected':'')+'>'+v+'</option>').join('')}</select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>价格</label><input class="form-input" id="wfPrice" value="${escapeHtml(w.price || '')}" placeholder="¥0"></div>
+          <div class="form-group"><label>发售日</label><input type="date" class="form-input" id="wfReleaseDate" value="${w.releaseDate || ''}"></div>
+        </div>
+        <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="wfTags" value="${(w.tags||[]).join(', ')}" placeholder="手办, 东方"></div>
+        <div class="form-group"><label>描述</label><textarea class="form-input" id="wfDesc" style="min-height:80px;">${w.description || ''}</textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup ? 'selected' : ''}>无</option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option></select></div>
+          <div class="form-group"><label>联系方式</label><input class="form-input" id="wfContactValue" value="${w.socialLinks?.qq || w.socialLinks?.qqGroup || ''}" placeholder="QQ号或QQ群号"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>联系显示名</label><input class="form-input" id="wfContactLabel" value="${w.socialLinks?.contactLabel || ''}"></div>
+          <div class="form-group"><label>网站链接</label><input class="form-input" id="wfWebsite" value="${w.socialLinks?.website || ''}" placeholder="https://..."></div>
+        </div>
+        <div class="form-group"><label>网站显示名</label><input class="form-input" id="wfWebsiteLabel" value="${w.socialLinks?.websiteLabel || ''}"></div>
+        <div class="form-group">
+          <label>展示图片</label>
+          <div id="wfImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+            ${(w.images||[]).map(img => '<div style="position:relative;"><img src="'+img+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}
+          </div>
+          <input type="file" id="wfImageInput" accept="image/*" multiple style="font-size:0.85rem;">
+          <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+            <button type="button" class="btn-sm btn-edit" onclick="wfUploadImages('wfImageInput','wfImagesPreview')">上传图片</button>
+            <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('wfImagesPreview')">从图片库选择</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>更多图片</label>
+          <div id="wfMoreImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+            ${(w.moreImages||[]).map(img => '<div style="position:relative;"><img src="'+img+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}
+          </div>
+          <input type="file" id="wfMoreImageInput" accept="image/*" multiple style="font-size:0.85rem;">
+          <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+            <button type="button" class="btn-sm btn-edit" onclick="wfUploadImages('wfMoreImageInput','wfMoreImagesPreview')">上传图片</button>
+            <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('wfMoreImagesPreview')">从图片库选择</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <button class="btn btn-primary" onclick="saveAuthorWorkForm('${w.id || ''}')">保存</button>
+          ${w.id ? '<button class="btn" style="background:var(--border);color:var(--ink);" onclick="toggleWorkEdit(\''+w.id+'\')">取消</button>' : '<button class="btn" style="background:var(--border);color:var(--ink);" onclick="document.getElementById(\'workFormContainer\').style.display=\'none\'">取消</button>'}
+        </div>`;
+    }
+
+    function openAuthorWorkForm(workId) {
+      const container = document.getElementById('workFormContainer');
+      container.style.display = 'block';
+      container.innerHTML = '<div class="mgmt-card">' + buildWorkFormHTML({}) + '</div>';
+    }
+
+    async function wfUploadImages(inputId, previewId) {
+      const input = document.getElementById(inputId);
+      const preview = document.getElementById(previewId);
+      if (!input.files.length) { alert('请选择图片'); return; }
+      for (const file of input.files) {
+        const formData = new FormData();
+        formData.append('image', file);
+        const res = await fetch('/api/author/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authorToken }, body: formData });
+        const data = await res.json();
+        if (data.url) {
+          const div = document.createElement('div');
+          div.style.position = 'relative';
+          div.innerHTML = '<img src="'+data.url+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>';
+          preview.appendChild(div);
+        }
+      }
+      input.value = '';
+    }
+
+    // Image library picker for authors
+    async function openAuthorImageLib(previewId) {
+      const images = await authorAPI('GET', '/api/author/images');
+      if (!images || images.length === 0) { alert('图片库为空'); return; }
+      const overlay = document.createElement('div');
+      overlay.id = 'authorImageLibOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">选择图片</h3><button onclick="document.getElementById(\'authorImageLibOverlay\').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button></div>' +
+        '<p style="font-size:0.85rem;color:var(--haze);margin-bottom:0.8rem;">点击图片选中，然后点击确定。</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.5rem;" id="authorImageLibGrid">' +
+        images.map(img => '<div class="aimg-pick" data-url="'+img.url+'" onclick="this.classList.toggle(\'selected\');this.style.outline=this.classList.contains(\'selected\')?\'3px solid var(--accent)\':\'none\';" style="border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;"><img src="'+img.url+'" style="width:100%;height:80px;object-fit:cover;display:block;"><div style="padding:0.2rem;font-size:0.6rem;color:var(--haze);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+img.uploader+'</div></div>').join('') +
+        '</div>' +
+        '<button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmAuthorImageLib(\''+previewId+'\')">确定选择</button></div>';
+      document.body.appendChild(overlay);
+    }
+
+    function confirmAuthorImageLib(previewId) {
+      const selected = [...document.querySelectorAll('.aimg-pick.selected')].map(el => el.dataset.url);
+      if (selected.length === 0) { alert('请至少选择一张图片'); return; }
+      const preview = document.getElementById(previewId);
+      selected.forEach(url => {
+        const div = document.createElement('div');
+        div.style.position = 'relative';
+        div.innerHTML = '<img src="'+url+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>';
+        preview.appendChild(div);
+      });
+      document.getElementById('authorImageLibOverlay').remove();
+    }
+
+    async function saveAuthorWorkForm(workId) {
+      const contactType = document.getElementById('wfContactType').value;
+      const contactValue = document.getElementById('wfContactValue').value;
+      const socialLinks = {
+        contactLabel: document.getElementById('wfContactLabel').value,
+        website: document.getElementById('wfWebsite').value,
+        websiteLabel: document.getElementById('wfWebsiteLabel').value
+      };
+      if (contactType && contactValue) socialLinks[contactType] = contactValue;
+
+      const data = {
+        title: document.getElementById('wfTitle').value,
+        category: document.getElementById('wfCategory').value,
+        status: document.getElementById('wfStatus').value,
+        price: document.getElementById('wfPrice').value,
+        releaseDate: document.getElementById('wfReleaseDate').value,
+        tags: document.getElementById('wfTags').value.split(',').map(t => t.trim()).filter(Boolean),
+        description: document.getElementById('wfDesc').value,
+        images: [...document.querySelectorAll('#wfImagesPreview img')].map(img => img.src),
+        moreImages: [...document.querySelectorAll('#wfMoreImagesPreview img')].map(img => img.src),
+        socialLinks
+      };
+
+      if (!data.title) { alert('请填写标题'); return; }
+
+      let result;
+      if (workId) {
+        result = await authorAPI('PUT', '/api/author/works/' + workId, data);
+      } else {
+        result = await authorAPI('POST', '/api/author/works', data);
+      }
+      if (result) {
+        showToast('作品已保存', 'success');
+        document.getElementById('workFormContainer').style.display = 'none';
+        loadAuthorWorks();
+      }
     }
 
     // Load events

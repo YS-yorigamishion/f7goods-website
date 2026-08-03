@@ -227,6 +227,50 @@ app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
   res.json(works[index]);
 });
 
+// Author: create new work
+app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
+  let works = readJSON('works.json');
+  const maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
+  const work = {
+    id: 'w' + Date.now(),
+    circles: [req.author.circleId],
+    images: [],
+    moreImages: [],
+    tags: [],
+    likes: 0,
+    wants: 0,
+    order: maxOrder + 1,
+    createdAt: new Date().toISOString(),
+    ...req.body
+  };
+  works.push(work);
+  writeJSON('works.json', works);
+  res.json(work);
+});
+
+// Author: get images list
+app.get('/api/author/images', authorAuthMiddleware, (req, res) => {
+  const uploadsDir = path.join(__dirname, 'uploads');
+  let meta = {};
+  try { meta = readJSON('uploads-meta.json'); } catch {}
+  try {
+    const files = fs.readdirSync(uploadsDir)
+      .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f))
+      .map(f => ({
+        name: f,
+        url: '/uploads/' + f,
+        size: fs.statSync(path.join(uploadsDir, f)).size,
+        time: fs.statSync(path.join(uploadsDir, f)).mtime,
+        uploader: meta[f]?.uploader || '未知',
+        uploadedAt: meta[f]?.uploadedAt || null
+      }))
+      .sort((a, b) => b.time - a.time);
+    res.json(files);
+  } catch (e) {
+    res.json([]);
+  }
+});
+
 // Author: get events list
 app.get('/api/author/events', authorAuthMiddleware, (req, res) => {
   const events = readJSON('events.json');
@@ -1205,20 +1249,33 @@ app.post('/api/admin/reorder/:type', authMiddleware, (req, res) => {
 });
 
 // --- Upload ---
+function saveUploadMeta(filename, uploader) {
+  let meta = {};
+  try { meta = readJSON('uploads-meta.json'); } catch {}
+  meta[filename] = { uploader, uploadedAt: new Date().toISOString() };
+  writeJSON('uploads-meta.json', meta);
+}
+
 app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择文件' });
+  saveUploadMeta(req.file.filename, '管理员');
   res.json({ url: '/uploads/' + req.file.filename });
 });
 
 // Author upload
 app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择文件' });
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  saveUploadMeta(req.file.filename, circle?.name || '未知作者');
   res.json({ url: '/uploads/' + req.file.filename });
 });
 
 // List all uploaded images
 app.get('/api/admin/images', authMiddleware, (req, res) => {
   const uploadsDir = path.join(__dirname, 'uploads');
+  let meta = {};
+  try { meta = readJSON('uploads-meta.json'); } catch {}
   try {
     const files = fs.readdirSync(uploadsDir)
       .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f))
@@ -1226,7 +1283,9 @@ app.get('/api/admin/images', authMiddleware, (req, res) => {
         name: f,
         url: '/uploads/' + f,
         size: fs.statSync(path.join(uploadsDir, f)).size,
-        time: fs.statSync(path.join(uploadsDir, f)).mtime
+        time: fs.statSync(path.join(uploadsDir, f)).mtime,
+        uploader: meta[f]?.uploader || '未知',
+        uploadedAt: meta[f]?.uploadedAt || null
       }))
       .sort((a, b) => b.time - a.time);
     res.json(files);
