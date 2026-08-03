@@ -56,7 +56,10 @@
           <div class="card-body" style="padding:0.8rem;">
             <span class="card-tag ${work.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${STATUS_LABELS[work.status] || work.status}</span>
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${work.title}</h3>
-            <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${work.price}</p>
+          </div>
+          <div class="card-footer" style="padding:0.5rem 0.8rem;">
+            <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${work.price}</span>
+            ${renderLikeButton(work.id, work.likes)}
           </div>
         </div>
       `).join('');
