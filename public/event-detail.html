@@ -100,16 +100,18 @@
 
       try {
         await loadCategoriesFromAPI();
-        const [event, allWorks, allCircles, allProjects] = await Promise.all([
+        const [event, allWorks, allCircles, allProjects, allUpdates] = await Promise.all([
           F7API.getEvent(id),
           F7API.getWorks(),
           F7API.getCircles(),
-          F7API.getProjects()
+          F7API.getProjects(),
+          fetch('/api/updates').then(r => r.json())
         ]);
         const relatedWorks = allWorks.filter(w => (event.relatedWorks || []).includes(w.id));
         eventRelatedWorks = relatedWorks;
         eventCirclesMap = Object.fromEntries(allCircles.map(c => [c.id, c.name]));
         const relatedProjects = allProjects.filter(p => (event.relatedProjects || []).includes(p.id));
+        const relatedUpdates = (allUpdates || []).filter(u => (u.relatedEvents || []).includes(event.id));
         const relatedCircleIds = [...new Set([
           ...relatedWorks.flatMap(w => w.circles || []),
           ...(event.relatedCircles || [])
@@ -238,6 +240,18 @@
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${c.name}</div>
                     </div>
+                  </a>
+                `).join('')}
+              </div>
+              ` : ''}
+              ${relatedUpdates.length > 0 ? `
+              <div class="sidebar-card">
+                <h3>相关动态</h3>
+                ${relatedUpdates.map(u => `
+                  <a href="/updates.html" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
+                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
+                    <div style="font-weight:600;font-size:0.9rem;">📰 ${escapeHtml(u.title)}</div>
+                    <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(u.publishDate)}</div>
                   </a>
                 `).join('')}
               </div>

@@ -844,6 +844,75 @@ app.delete('/api/admin/projects/:id', authMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
+// ===== Updates (同人动态) =====
+// Public: get published updates
+app.get('/api/updates', (req, res) => {
+  try {
+    let updates = readJSON('updates.json');
+    const today = new Date().toISOString().split('T')[0];
+    updates = updates.filter(u => u.publishDate <= today);
+    updates.sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return new Date(b.publishDate) - new Date(a.publishDate);
+    });
+    res.json(updates);
+  } catch (e) { res.json([]); }
+});
+
+app.get('/api/updates/:id', (req, res) => {
+  try {
+    const updates = readJSON('updates.json');
+    const update = updates.find(u => u.id === req.params.id);
+    if (!update) return res.status(404).json({ error: '动态未找到' });
+    res.json(update);
+  } catch (e) { res.status(404).json({ error: '动态未找到' }); }
+});
+
+// Admin: CRUD for updates
+app.get('/api/admin/updates', authMiddleware, (req, res) => {
+  try {
+    const updates = readJSON('updates.json');
+    res.json(updates);
+  } catch (e) { res.json([]); }
+});
+
+app.post('/api/admin/updates', authMiddleware, (req, res) => {
+  let updates = [];
+  try { updates = readJSON('updates.json'); } catch {}
+  const update = {
+    id: 'upd' + Date.now(),
+    title: req.body.title || '',
+    content: req.body.content || '',
+    publishDate: req.body.publishDate || new Date().toISOString().split('T')[0],
+    pinned: req.body.pinned || false,
+    relatedEvents: req.body.relatedEvents || [],
+    relatedProjects: req.body.relatedProjects || [],
+    createdAt: new Date().toISOString()
+  };
+  updates.push(update);
+  writeJSON('updates.json', updates);
+  res.json(update);
+});
+
+app.put('/api/admin/updates/:id', authMiddleware, (req, res) => {
+  let updates = readJSON('updates.json');
+  const index = updates.findIndex(u => u.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '动态未找到' });
+  delete req.body.id;
+  updates[index] = { ...updates[index], ...req.body };
+  writeJSON('updates.json', updates);
+  res.json(updates[index]);
+});
+
+app.delete('/api/admin/updates/:id', authMiddleware, (req, res) => {
+  const updateId = req.params.id;
+  let updates = readJSON('updates.json');
+  updates = updates.filter(u => u.id !== updateId);
+  writeJSON('updates.json', updates);
+  res.json({ success: true });
+});
+
 // --- Categories ---
 app.get('/api/admin/categories', authMiddleware, (req, res) => {
   res.json(readJSON('categories.json'));

@@ -131,7 +131,7 @@ function navigateTo(page) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${page}`)?.classList.add('active');
 
-  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', circles: '作者管理', projects: '企划管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', contacts: '联系消息' };
+  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', contacts: '联系消息' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
   // Load data for the page
@@ -144,6 +144,7 @@ function navigateTo(page) {
   else if (page === 'images') loadImages();
   else if (page === 'settings') loadSettings();
   else if (page === 'announcements') loadAnnouncements();
+  else if (page === 'updates') loadUpdates();
   else if (page === 'contacts') loadContacts();
 
   // Close mobile sidebar
@@ -3585,6 +3586,153 @@ async function deleteAnnouncement(id) {
   if (!confirm('确定要删除这条公告吗？')) return;
   await adminAPI('DELETE', `/api/admin/announcements/${id}`);
   loadAnnouncements();
+}
+
+// ===== Updates (同人动态) =====
+async function loadUpdates() {
+  try {
+    const [updates, allEvents, allProjects] = await Promise.all([
+      adminAPI('GET', '/api/admin/updates'),
+      adminAPI('GET', '/api/admin/events'),
+      adminAPI('GET', '/api/admin/projects')
+    ]);
+    const eventsMap = {};
+    (allEvents || []).forEach(e => eventsMap[e.id] = e.title);
+    const projectsMap = {};
+    (allProjects || []).forEach(p => projectsMap[p.id] = p.title);
+
+    const tbody = document.getElementById('updatesTableBody');
+    if (!updates || updates.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无动态</td></tr>';
+      return;
+    }
+    tbody.innerHTML = updates
+      .sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return new Date(b.publishDate) - new Date(a.publishDate);
+      })
+      .map(u => {
+        const related = [];
+        (u.relatedEvents || []).forEach(eid => { if (eventsMap[eid]) related.push('📅' + eventsMap[eid]); });
+        (u.relatedProjects || []).forEach(pid => { if (projectsMap[pid]) related.push('📋' + projectsMap[pid]); });
+        return `
+        <tr>
+          <td>${u.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escapeHtml(u.title)}</td>
+          <td>${formatDateAdmin(u.publishDate)}</td>
+          <td style="text-align:center;">${u.pinned ? '<span style="color:var(--accent);font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
+          <td style="font-size:0.8rem;">${related.length > 0 ? related.join(' ') : '<span style="color:var(--haze);">-</span>'}</td>
+          <td class="truncate" style="max-width:250px;">${escapeHtml(u.content)}</td>
+          <td>
+            <div class="table-actions">
+              <button class="btn-sm btn-edit" onclick="editUpdate('${u.id}')">编辑</button>
+              <button class="btn-sm btn-delete" onclick="deleteUpdate('${u.id}')">删除</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+  } catch (e) {
+    document.getElementById('updatesTableBody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
+  }
+}
+
+function openUpdateModal(update = null) {
+  const isEdit = !!update;
+  document.getElementById('modalTitle').textContent = isEdit ? '编辑动态' : '新增动态';
+
+  // Load events and projects for association
+  Promise.all([
+    adminAPI('GET', '/api/admin/events'),
+    adminAPI('GET', '/api/admin/projects')
+  ]).then(([allEvents, allProjects]) => {
+    const eventsMap = {};
+    (allEvents || []).forEach(e => eventsMap[e.id] = e.title);
+    const projectsMap = {};
+    (allProjects || []).forEach(p => projectsMap[p.id] = p.title);
+
+    const relatedEventIds = update?.relatedEvents || [];
+    const relatedProjectIds = update?.relatedProjects || [];
+
+    document.getElementById('modalBody').innerHTML = `
+      <div class="form-group">
+        <label>动态标题 <span style="color:var(--accent)">*</span></label>
+        <input class="form-input" id="updTitle" value="${update?.title || ''}" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>发布日期 <span style="color:var(--accent)">*</span></label>
+          <input type="date" class="form-input" id="updPublishDate" value="${update?.publishDate || new Date().toISOString().split('T')[0]}">
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;gap:0.6rem;padding-bottom:0.3rem;">
+          <input type="checkbox" id="updPinned" style="width:16px;height:16px;accent-color:var(--accent);" ${update?.pinned ? 'checked' : ''}>
+          <label for="updPinned" style="font-size:0.9rem;cursor:pointer;">置顶</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>动态内容 <span style="color:var(--accent)">*</span></label>
+        <textarea class="form-input" id="updContent" style="min-height:150px;">${update?.content || ''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>关联活动</label>
+        <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">
+          ${(allEvents || []).map(e => `
+            <label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;">
+              <input type="checkbox" class="upd-event-cb" value="${e.id}" ${relatedEventIds.includes(e.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">
+              ${escapeHtml(e.title)}
+            </label>
+          `).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无活动</p>'}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>关联企划</label>
+        <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">
+          ${(allProjects || []).map(p => `
+            <label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;">
+              <input type="checkbox" class="upd-project-cb" value="${p.id}" ${relatedProjectIds.includes(p.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">
+              ${escapeHtml(p.title)}
+            </label>
+          `).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无企划</p>'}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modalSave').onclick = async () => {
+      const data = {
+        title: document.getElementById('updTitle').value,
+        publishDate: document.getElementById('updPublishDate').value,
+        content: document.getElementById('updContent').value,
+        pinned: document.getElementById('updPinned').checked,
+        relatedEvents: [...document.querySelectorAll('.upd-event-cb:checked')].map(cb => cb.value),
+        relatedProjects: [...document.querySelectorAll('.upd-project-cb:checked')].map(cb => cb.value)
+      };
+
+      if (!data.title) { alert('请填写标题'); return; }
+      if (!data.content) { alert('请填写内容'); return; }
+
+      if (isEdit) {
+        await adminAPI('PUT', `/api/admin/updates/${update.id}`, data);
+      } else {
+        await adminAPI('POST', '/api/admin/updates', data);
+      }
+      closeModal();
+      loadUpdates();
+    };
+
+    openModal();
+  });
+}
+
+async function editUpdate(id) {
+  const updates = await adminAPI('GET', '/api/admin/updates');
+  const update = updates.find(u => u.id === id);
+  if (update) openUpdateModal(update);
+}
+
+async function deleteUpdate(id) {
+  if (!confirm('确定要删除这条动态吗？')) return;
+  await adminAPI('DELETE', `/api/admin/updates/${id}`);
+  loadUpdates();
 }
 
 // ===== Change Password =====

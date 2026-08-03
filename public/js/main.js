@@ -227,6 +227,7 @@ function buildNavbar(activePage) {
         <li><a href="/events.html" class="${activePage === 'events' ? 'active' : ''}">近期活动</a></li>
         <li><a href="/circles.html" class="${activePage === 'circles' ? 'active' : ''}">同人作者</a></li>
         <li><a href="/projects.html" class="${activePage === 'projects' ? 'active' : ''}">同人企划</a></li>
+        <li><a href="/updates.html" class="${activePage === 'updates' ? 'active' : ''}">同人动态</a></li>
         <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}">关于我们</a></li>
       </ul>
     </div>
