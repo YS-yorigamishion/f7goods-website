@@ -258,6 +258,7 @@ function buildFooter() {
           <li><a href="/events.html">近期活动</a></li>
           <li><a href="/circles.html">同人作者</a></li>
           <li><a href="/projects.html">同人企划</a></li>
+          <li><a href="/updates.html">同人动态</a></li>
         </ul>
       </div>
       <div class="footer-col">
