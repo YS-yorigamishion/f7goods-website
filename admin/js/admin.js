@@ -2899,23 +2899,40 @@ async function handleBatchUpload(input) {
 
 async function loadImages() {
   try {
-    const images = await adminAPI('GET', '/api/admin/images');
+    let images = await adminAPI('GET', '/api/admin/images');
     const gallery = document.getElementById('imageGallery');
     if (!images || images.length === 0) {
       gallery.innerHTML = '<p style="color:var(--haze);grid-column:1/-1;text-align:center;padding:2rem;">暂无已上传的图片</p>';
       document.getElementById('batchDeleteImagesBtn').style.display = 'none';
       return;
     }
-    gallery.innerHTML = images.map(img => `
+    // Apply sorting
+    const sortVal = document.getElementById('imageSortSelect')?.value || 'time-desc';
+    if (sortVal === 'time-asc') {
+      images.sort((a, b) => new Date(a.time) - new Date(b.time));
+    } else if (sortVal === 'size-desc') {
+      images.sort((a, b) => (b.size || 0) - (a.size || 0));
+    } else if (sortVal === 'size-asc') {
+      images.sort((a, b) => (a.size || 0) - (b.size || 0));
+    } else if (sortVal === 'name-asc') {
+      images.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    // else 'time-desc' is default from API
+    gallery.innerHTML = images.map(img => {
+      const sizeMB = img.size ? (img.size / 1024 / 1024).toFixed(2) : '?';
+      return `
       <div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--paper);">
         <input type="checkbox" class="image-checkbox" value="${img.name}" style="position:absolute;top:6px;left:6px;z-index:2;width:16px;height:16px;accent-color:var(--accent);cursor:pointer;" onchange="updateImageBatchBtn()">
         <img src="${img.url}" alt="${img.name}" style="width:100%;height:120px;object-fit:cover;display:block;cursor:pointer;" onclick="copyImageUrl('${img.url}')" title="点击复制链接">
-        <div style="padding:0.4rem 0.5rem;display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:0.65rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${img.name}</span>
-          <button onclick="deleteImage('${img.name}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;padding:0 0.3rem;" title="删除">&times;</button>
+        <div style="padding:0.4rem 0.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.65rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${img.name}</span>
+            <button onclick="deleteImage('${img.name}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;padding:0 0.3rem;" title="删除">&times;</button>
+          </div>
+          <div style="font-size:0.6rem;color:var(--haze);margin-top:0.15rem;">${sizeMB} MB</div>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   } catch (e) {
     document.getElementById('imageGallery').innerHTML = '<p style="color:var(--haze);grid-column:1/-1;text-align:center;padding:2rem;">加载失败</p>';
   }

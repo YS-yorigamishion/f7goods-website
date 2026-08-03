@@ -306,7 +306,14 @@
         <div id="page-images" class="admin-page">
           <div class="page-toolbar">
             <h3>图片管理</h3>
-            <div style="display:flex;gap:0.5rem;">
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <select class="form-input" id="imageSortSelect" onchange="loadImages()" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
+                <option value="time-desc">最新上传</option>
+                <option value="time-asc">最早上传</option>
+                <option value="size-desc">大小 ↓ 大→小</option>
+                <option value="size-asc">大小 ↑ 小→大</option>
+                <option value="name-asc">名称 A→Z</option>
+              </select>
               <button class="btn btn-primary" onclick="batchUploadImages()">批量上传</button>
               <button class="btn" style="background:var(--accent-alt);color:white;" onclick="cleanupUnusedImages()">清理未使用图片</button>
               <button class="btn" style="background:var(--accent);color:white;display:none;" id="batchDeleteImagesBtn" onclick="batchDeleteImages()">批量删除</button>
