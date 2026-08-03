@@ -194,6 +194,7 @@ async function loadDashboard() {
 
   // Page view stats
   const daily = pvData?.daily || {};
+  window._pvDaily = daily;
   const today = new Date().toISOString().slice(0, 10);
   const thisMonth = today.slice(0, 7);
   const thisYear = today.slice(0, 4);
@@ -253,6 +254,52 @@ async function loadDashboard() {
 }
 
 // ===== Works =====
+function showPVDetail(type) {
+  const daily = window._pvDaily || {};
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const thisMonth = todayStr.slice(0, 7);
+  const thisYear = todayStr.slice(0, 4);
+
+  let title = '', entries = [];
+
+  if (type === 'today') {
+    title = '今日浏览详情';
+    entries = [[todayStr, daily[todayStr] || 0]];
+  } else if (type === 'month') {
+    title = '本月浏览详情';
+    for (const [d, c] of Object.entries(daily)) {
+      if (d.startsWith(thisMonth)) entries.push([d, c]);
+    }
+    entries.sort((a, b) => b[0].localeCompare(a[0]));
+  } else if (type === 'year') {
+    title = '今年浏览详情';
+    // Group by month
+    const months = {};
+    for (const [d, c] of Object.entries(daily)) {
+      if (d.startsWith(thisYear)) {
+        const m = d.slice(0, 7);
+        months[m] = (months[m] || 0) + c;
+      }
+    }
+    entries = Object.entries(months).sort((a, b) => b[0].localeCompare(a[0]));
+  }
+
+  document.getElementById('modalTitle').textContent = title;
+  const rows = entries.length > 0
+    ? entries.map(([d, c]) => `<tr><td style="padding:0.5rem 1rem;border-bottom:1px solid var(--border);">${d}</td><td style="padding:0.5rem 1rem;border-bottom:1px solid var(--border);text-align:right;font-weight:600;">${c}</td></tr>`).join('')
+    : '<tr><td colspan="2" style="padding:1rem;text-align:center;color:var(--haze);">暂无数据</td></tr>';
+  document.getElementById('modalBody').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+      <thead><tr style="text-align:left;"><th style="padding:0.5rem 1rem;border-bottom:2px solid var(--border);">日期</th><th style="padding:0.5rem 1rem;border-bottom:2px solid var(--border);text-align:right;">浏览量</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+  document.getElementById('modalSave').style.display = 'none';
+  openModal();
+  document.getElementById('modalSave').style.display = '';
+}
+
 async function loadWorks() {
   const [works, circles] = await Promise.all([
     adminAPI('GET', '/api/admin/works'),

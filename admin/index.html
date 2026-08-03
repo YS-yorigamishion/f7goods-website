@@ -93,46 +93,6 @@
         <!-- Dashboard -->
         <div id="page-dashboard" class="admin-page active">
           <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;">👁</div>
-              <div class="stat-info">
-                <div class="stat-number" id="pvToday">0</div>
-                <div class="stat-label">今日浏览</div>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(52,152,219,0.1);color:#3498db;">📈</div>
-              <div class="stat-info">
-                <div class="stat-number" id="pvMonth">0</div>
-                <div class="stat-label">本月浏览</div>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📅</div>
-              <div class="stat-info">
-                <div class="stat-number" id="pvYear">0</div>
-                <div class="stat-label">今年浏览</div>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🔥</div>
-              <div class="stat-info">
-                <div class="stat-number" id="pvTotal">0</div>
-                <div class="stat-label">总浏览量</div>
-              </div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
-            <div class="admin-card">
-              <h3 style="margin-bottom:1rem;">近 7 日浏览趋势</h3>
-              <div style="height:220px;"><canvas id="chart7d"></canvas></div>
-            </div>
-            <div class="admin-card">
-              <h3 style="margin-bottom:1rem;">近 30 日浏览趋势</h3>
-              <div style="height:220px;"><canvas id="chart30d"></canvas></div>
-            </div>
-          </div>
-          <div class="stats-grid" style="margin-top:1.5rem;">
             <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('works')">
               <div class="stat-icon" style="background:rgba(233,69,96,0.1);color:var(--accent);">🎨</div>
               <div class="stat-info">
@@ -160,6 +120,46 @@
                 <div class="stat-number" id="statProjects">0</div>
                 <div class="stat-label">企划总数</div>
               </div>
+            </div>
+          </div>
+          <div class="stats-grid" style="margin-top:1.5rem;">
+            <div class="stat-card" style="cursor:pointer;" onclick="showPVDetail('today')">
+              <div class="stat-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;">👁</div>
+              <div class="stat-info">
+                <div class="stat-number" id="pvToday">0</div>
+                <div class="stat-label">今日浏览</div>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;" onclick="showPVDetail('month')">
+              <div class="stat-icon" style="background:rgba(52,152,219,0.1);color:#3498db;">📈</div>
+              <div class="stat-info">
+                <div class="stat-number" id="pvMonth">0</div>
+                <div class="stat-label">本月浏览</div>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;" onclick="showPVDetail('year')">
+              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📅</div>
+              <div class="stat-info">
+                <div class="stat-number" id="pvYear">0</div>
+                <div class="stat-label">今年浏览</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🔥</div>
+              <div class="stat-info">
+                <div class="stat-number" id="pvTotal">0</div>
+                <div class="stat-label">总浏览量</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+            <div class="admin-card">
+              <h3 style="margin-bottom:1rem;">近 7 日浏览趋势</h3>
+              <div style="height:220px;"><canvas id="chart7d"></canvas></div>
+            </div>
+            <div class="admin-card">
+              <h3 style="margin-bottom:1rem;">近 30 日浏览趋势</h3>
+              <div style="height:220px;"><canvas id="chart30d"></canvas></div>
             </div>
           </div>
           <div class="admin-card" style="margin-top:1.5rem;">
