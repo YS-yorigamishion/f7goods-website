@@ -587,7 +587,7 @@ function renderWorksTable(works) {
           </label>
         </div>
       </td>
-      <td class="editable-cell" onclick="makeEditable(this, '${w.id}', 'title', '${escapeHtml(w.title)}')">${w.title}</td>
+      <td class="editable-cell" onclick="makeEditable(this, '${w.id}', 'title', '${escapeHtml(w.title)}')">${w.title}<br><span style="font-size:0.6rem;color:var(--haze);">${w.id}</span></td>
       <td class="editable-cell" onclick="makeSelectCircles(this, '${w.id}', ${JSON.stringify(w.circles || []).replace(/"/g, '&quot;')})">${(w.circles || []).map(cid => adminCirclesMap[cid] || cid).join(', ') || '-'}</td>
       <td class="editable-cell" onclick="makeSelectCategory(this, '${w.id}', '${w.category}')">${CATEGORIES[w.category] || w.category}</td>
       <td class="editable-cell" onclick="makeEditable(this, '${w.id}', 'price', '${escapeHtml(w.price)}')">${w.price}</td>
