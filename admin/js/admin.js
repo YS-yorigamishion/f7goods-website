@@ -792,6 +792,18 @@ function openWorkModal(work = null, returnToCircleId = null) {
         <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageFromLibrary('work-more-images')">从图片库选择</button>
       </div>
     </div>
+    <div class="form-group">
+      <label>关联企划</label>
+      <input type="text" class="form-input" id="wProjectSearch" placeholder="搜索企划名称..." style="margin-bottom:0.5rem;padding:0.4rem 0.6rem;font-size:0.85rem;" oninput="filterWorkProjectsList(this.value)">
+      <div id="wProjectsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">
+        ${adminProjectsData.map(p => `
+          <label class="work-project-item" data-title="${(p.title || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;">
+            <input type="checkbox" class="w-project-cb" value="${p.id}" ${(work?.relatedProjects || []).includes(p.id) || false ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">
+            ${escapeHtml(p.title)}
+          </label>
+        `).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无企划</p>'}
+      </div>
+    </div>
   `;
 
   document.getElementById('modalSave').onclick = async () => {
@@ -827,7 +839,26 @@ function openWorkModal(work = null, returnToCircleId = null) {
 
     if (!data.title) { alert('请填写标题'); return; }
 
+    // Handle project association
+    const selectedProjectIds = [...document.querySelectorAll('.w-project-cb:checked')].map(cb => cb.value);
+
     if (isEdit) {
+      await adminAPI('PUT', `/api/admin/works/${work.id}`, data);
+      // Update project associations
+      const allProjects = await adminAPI('GET', '/api/admin/projects');
+      for (const proj of allProjects) {
+        const hasWork = (proj.works || []).includes(work.id);
+        const shouldHave = selectedProjectIds.includes(proj.id);
+        if (hasWork && !shouldHave) {
+          proj.works = proj.works.filter(id => id !== work.id);
+          await adminAPI('PUT', `/api/admin/projects/${proj.id}`, proj);
+        } else if (!hasWork && shouldHave) {
+          if (!proj.works) proj.works = [];
+          proj.works.push(work.id);
+          await adminAPI('PUT', `/api/admin/projects/${proj.id}`, proj);
+        }
+      }
+    } else {
       await adminAPI('PUT', `/api/admin/works/${work.id}`, data);
     } else {
       if (returnToCircleId && !data.circles.includes(returnToCircleId)) data.circles.push(returnToCircleId);
@@ -900,10 +931,25 @@ async function uploadWorkMoreImages() {
   input.value = '';
 }
 
+function filterWorkProjectsList(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('.work-project-item').forEach(item => {
+    const title = item.dataset.title || '';
+    item.style.display = title.includes(q) ? 'flex' : 'none';
+  });
+}
+
 async function editWork(id) {
-  const works = await adminAPI('GET', '/api/admin/works');
+  const [works, projects] = await Promise.all([
+    adminAPI('GET', '/api/admin/works'),
+    adminAPI('GET', '/api/admin/projects')
+  ]);
   const work = works.find(w => w.id === id);
-  if (work) openWorkModal(work);
+  if (work) {
+    // Compute related projects
+    work.relatedProjects = (projects || []).filter(p => (p.works || []).includes(id)).map(p => p.id);
+    openWorkModal(work);
+  }
 }
 
 async function deleteWork(id) {
