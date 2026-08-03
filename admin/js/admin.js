@@ -180,6 +180,39 @@ async function uploadImage(file) {
   return res.json();
 }
 
+// Helper: get current date in Chinese time (UTC+8)
+function getChinaDate() {
+  const now = new Date();
+  const chinaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return chinaTime.toISOString().slice(0, 10);
+}
+
+// Helper: get date N days ago in Chinese time
+function getChinaDateDaysAgo(days) {
+  const now = new Date();
+  const target = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const chinaTime = new Date(target.getTime() + 8 * 60 * 60 * 1000);
+  return chinaTime.toISOString().slice(0, 10);
+}
+
+// ===== Pageview Cleanup =====
+async function cleanupPageviews() {
+  if (!confirm('确定要清理365天前的历史浏览数据吗？')) return;
+  try {
+    const result = await adminAPI('POST', '/api/admin/pageviews/cleanup');
+    if (result.success) {
+      const removedDaily = result.before.dailyCount - result.after.dailyCount;
+      const removedVisitors = result.before.visitorCount - result.after.visitorCount;
+      alert(`清理完成！\n删除了 ${removedDaily} 天的浏览记录\n删除了 ${removedVisitors} 天的访客记录`);
+      loadDashboard(); // Refresh dashboard
+    } else {
+      alert('清理失败: ' + (result.error || '未知错误'));
+    }
+  } catch (e) {
+    alert('清理失败: ' + e.message);
+  }
+}
+
 // ===== Dashboard =====
 async function loadDashboard() {
   const [works, events, circles, projects, updates, pvData] = await Promise.all([
@@ -199,7 +232,7 @@ async function loadDashboard() {
   // Page view stats
   const daily = pvData?.daily || {};
   window._pvDaily = daily;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getChinaDate(); // Use Chinese time
   const thisMonth = today.slice(0, 7);
   const thisYear = today.slice(0, 4);
   let totalPV = 0, monthPV = 0, yearPV = 0;
@@ -233,13 +266,11 @@ async function loadDashboard() {
   document.getElementById('visYear').textContent = yearIPs.size;
   document.getElementById('visTotal').textContent = totalIPs.size;
 
-  // Helper: get last N days data
+  // Helper: get last N days data (Chinese time)
   function getLastNDays(n) {
     const labels = [], data = [];
     for (let i = n - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = getChinaDateDaysAgo(i);
       labels.push(key.slice(5)); // MM-DD
       data.push(daily[key] || 0);
     }
@@ -284,9 +315,7 @@ async function loadDashboard() {
     const labels = [], data = [];
     const visitors = window._pvVisitors || {};
     for (let i = n - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = getChinaDateDaysAgo(i);
       labels.push(key.slice(5));
       data.push((visitors[key] || []).length);
     }
@@ -315,10 +344,12 @@ async function loadDashboard() {
 // ===== Works =====
 function showPVDetail(type) {
   const daily = window._pvDaily || {};
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = getChinaDate(); // Use Chinese time
   const thisMonth = todayStr.slice(0, 7);
   const thisYear = todayStr.slice(0, 4);
+  // Parse Chinese date components
+  const todayYear = parseInt(thisYear);
+  const todayMonth = parseInt(thisMonth.split('-')[1]);
 
   let title = '', entries = [], chartLabels = [], chartData = [], colLabel = '';
   let currentMonthDays = [];
@@ -327,9 +358,7 @@ function showPVDetail(type) {
     title = '近 30 日每日浏览量';
     colLabel = '日期';
     for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = getChinaDateDaysAgo(i);
       const count = daily[key] || 0;
       entries.push([key, count]);
       chartLabels.push(key.slice(5));
@@ -347,8 +376,10 @@ function showPVDetail(type) {
     }
     // Generate last 12 months
     for (let i = 11; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const key = d.toISOString().slice(0, 7);
+      let m = todayMonth - i;
+      let y = todayYear;
+      while (m <= 0) { m += 12; y--; }
+      const key = `${y}-${String(m).padStart(2, '0')}`;
       const count = months[key] || 0;
       entries.push([key, count]);
       chartLabels.push(key);
@@ -356,7 +387,7 @@ function showPVDetail(type) {
     }
     entries.sort((a, b) => b[0].localeCompare(a[0]));
     // Current month daily breakdown
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const daysInMonth = new Date(todayYear, todayMonth, 0).getDate();
     for (let day = 1; day <= daysInMonth; day++) {
       const key = thisMonth + '-' + String(day).padStart(2, '0');
       if (key > todayStr) break;
@@ -382,9 +413,7 @@ function showPVDetail(type) {
     title = '近 30 日每日访客数';
     colLabel = '日期';
     for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = getChinaDateDaysAgo(i);
       const count = (visitors[key] || []).length;
       entries.push([key, count]);
       chartLabels.push(key.slice(5));
@@ -402,8 +431,10 @@ function showPVDetail(type) {
       ips.forEach(ip => months[m].add(ip));
     }
     for (let i = 11; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const key = d.toISOString().slice(0, 7);
+      let m = todayMonth - i;
+      let y = todayYear;
+      while (m <= 0) { m += 12; y--; }
+      const key = `${y}-${String(m).padStart(2, '0')}`;
       const count = months[key] ? months[key].size : 0;
       entries.push([key, count]);
       chartLabels.push(key);

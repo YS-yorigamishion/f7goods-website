@@ -745,8 +745,86 @@ function savePageviews() {
   writeJSON('pageviews.json', pageviews);
 }
 
+// Helper: get current date in Chinese time (UTC+8)
+function getChinaDate() {
+  const now = new Date();
+  // China is UTC+8, so add 8 hours
+  const chinaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return chinaTime.toISOString().slice(0, 10);
+}
+
+// Helper: get date string N days ago in Chinese time
+function getChinaDateDaysAgo(days) {
+  const now = new Date();
+  const target = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const chinaTime = new Date(target.getTime() + 8 * 60 * 60 * 1000);
+  return chinaTime.toISOString().slice(0, 10);
+}
+
+// Auto-cleanup: remove data older than 365 days (Chinese time)
+function cleanupOldPageviews() {
+  const cutoffStr = getChinaDateDaysAgo(365);
+  let cleaned = false;
+
+  // Clean daily views
+  for (const date of Object.keys(pageviews.daily)) {
+    if (date < cutoffStr) {
+      delete pageviews.daily[date];
+      cleaned = true;
+    }
+  }
+
+  // Clean visitor data
+  for (const date of Object.keys(pageviews.visitors)) {
+    if (date < cutoffStr) {
+      delete pageviews.visitors[date];
+      cleaned = true;
+    }
+  }
+
+  if (cleaned) {
+    savePageviews();
+    console.log('[Pageviews] Cleaned up data older than', cutoffStr);
+  }
+}
+
+// Run cleanup on server start
+cleanupOldPageviews();
+
+// Schedule cleanup to run daily at Chinese midnight (00:05 AM UTC+8)
+function scheduleDailyCleanup() {
+  const now = new Date();
+  // Calculate next Chinese midnight (00:05 AM UTC+8 = 16:05 UTC previous day)
+  const utcNow = now.getTime();
+  // Current UTC hour
+  const utcHour = now.getUTCHours();
+  const utcMinute = now.getUTCMinutes();
+
+  // Chinese midnight is 16:00 UTC
+  let msUntilChineseMidnight;
+  if (utcHour < 16 || (utcHour === 16 && utcMinute < 5)) {
+    // Before 16:05 UTC today, schedule for today 16:05 UTC
+    const target = new Date(now);
+    target.setUTCHours(16, 5, 0, 0);
+    msUntilChineseMidnight = target - now;
+  } else {
+    // After 16:05 UTC, schedule for tomorrow 16:05 UTC
+    const target = new Date(now);
+    target.setUTCDate(target.getUTCDate() + 1);
+    target.setUTCHours(16, 5, 0, 0);
+    msUntilChineseMidnight = target - now;
+  }
+
+  setTimeout(() => {
+    cleanupOldPageviews();
+    // Then run every 24 hours
+    setInterval(cleanupOldPageviews, 24 * 60 * 60 * 1000);
+  }, msUntilChineseMidnight);
+}
+scheduleDailyCleanup();
+
 app.post('/api/pageview', (req, res) => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getChinaDate(); // Use Chinese time
   pageviews.daily[today] = (pageviews.daily[today] || 0) + 1;
   // Track unique visitors by IP
   const ip = req.ip || req.connection.remoteAddress || 'unknown';
@@ -760,6 +838,25 @@ app.post('/api/pageview', (req, res) => {
 
 app.get('/api/admin/pageviews', authMiddleware, (req, res) => {
   res.json(pageviews);
+});
+
+// Manual trigger cleanup for admin
+app.post('/api/admin/pageviews/cleanup', authMiddleware, (req, res) => {
+  const before = {
+    dailyCount: Object.keys(pageviews.daily).length,
+    visitorCount: Object.keys(pageviews.visitors).length
+  };
+  cleanupOldPageviews();
+  const after = {
+    dailyCount: Object.keys(pageviews.daily).length,
+    visitorCount: Object.keys(pageviews.visitors).length
+  };
+  res.json({
+    success: true,
+    message: '清理完成',
+    before,
+    after
+  });
 });
 
 // Edit log

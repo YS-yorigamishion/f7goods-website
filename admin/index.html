@@ -139,7 +139,10 @@
 
           <!-- 浏览量统计 -->
           <div class="admin-card" style="margin-top:1.5rem;">
-            <h3 style="margin-bottom:1rem;">浏览量概览</h3>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h3 style="margin:0;">浏览量概览</h3>
+              <button onclick="cleanupPageviews()" class="btn btn-sm" style="font-size:0.75rem;padding:0.25rem 0.5rem;" title="清理365天前的历史数据">🧹 清理旧数据</button>
+            </div>
             <div class="pv-overview-grid">
               <div class="pv-overview-item" onclick="showPVDetail('today')" title="点击查看近 30 日每日浏览量">
                 <div class="pv-overview-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;">👁</div>
