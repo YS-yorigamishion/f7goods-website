@@ -1554,20 +1554,41 @@ textarea.form-input {
     font-size: 1.3rem;
   }
 
+  .detail-header {
+    display: flex;
+    flex-direction: column;
+  }
+
   .detail-header > div:first-child {
     flex-direction: column;
     gap: 0.5rem;
+    order: 1;
   }
 
-  .detail-header > div:first-child > div:last-child {
-    text-align: left;
+  .detail-header-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     align-items: center;
+    flex-wrap: wrap;
+    text-align: left !important;
+    padding-top: 0 !important;
+    order: 2;
+  }
+
+  .detail-meta {
+    order: 3;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+  }
+
+  .like-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
   }
 
   .want-btn {
-    padding: 0.35rem 0.9rem;
+    padding: 0.3rem 0.8rem;
     font-size: 0.8rem;
     margin-top: 0;
   }
