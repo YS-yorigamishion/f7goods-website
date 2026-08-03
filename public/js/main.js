@@ -379,18 +379,14 @@ function renderWantButton(workId, wants) {
   const wanted = isWanted(workId);
   const count = wants || 0;
   if (wanted) {
-    return '<div class="want-btn want-btn--done" data-work-id="' + workId + '"><span class="want-icon">🙋</span><span class="want-text">已想要</span><span class="want-count">' + (count > 0 ? count : '') + '</span></div>';
+    return '<button class="want-btn want-btn--done" data-work-id="' + workId + '">已想要' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
   }
-  return '<button class="want-btn" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();openWantModal(\'' + workId + '\',' + count + ')" title="我想要"><span class="want-icon">🙋</span><span class="want-text">我想要</span><span class="want-count">' + (count > 0 ? count : '') + '</span></button>';
+  return '<button class="want-btn" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();openWantModal(\'' + workId + '\',' + count + ')">我想要' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
 }
 
 function updateWantButtons(workId, wanted, count) {
   document.querySelectorAll('.want-btn[data-work-id="' + workId + '"]').forEach(function(b) {
-    if (wanted) {
-      b.outerHTML = renderWantButton(workId, count);
-    } else {
-      b.outerHTML = renderWantButton(workId, count);
-    }
+    b.outerHTML = renderWantButton(workId, count);
   });
 }
 

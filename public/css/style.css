@@ -456,47 +456,29 @@ body {
 
 /* Want button */
 .want-btn {
-  background: none;
+  background: var(--accent);
+  color: white;
   border: none;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.35rem 0.8rem;
+  display: inline-block;
+  padding: 0.45rem 1.2rem;
   border-radius: 100px;
   transition: var(--transition);
   font-size: 0.85rem;
-  color: var(--ink);
-  margin-top: 0.3rem;
+  font-weight: 600;
+  margin-top: 0.4rem;
 }
 
 .want-btn:hover {
-  background: rgba(52, 152, 219, 0.08);
-}
-
-.want-btn .want-icon {
-  font-size: 1rem;
-}
-
-.want-btn .want-text {
-  font-weight: 500;
-}
-
-.want-btn .want-count {
-  font-size: 0.78rem;
-  color: var(--haze);
-  font-weight: 500;
+  opacity: 0.85;
+  transform: translateY(-1px);
 }
 
 .want-btn--done {
+  background: var(--border);
+  color: var(--haze);
   cursor: default;
-  background: rgba(52, 152, 219, 0.08);
-  color: #3498db;
   pointer-events: none;
-}
-
-.want-btn--done .want-count {
-  color: #3498db;
 }
 
 /* Want modal */
