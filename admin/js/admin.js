@@ -4179,10 +4179,14 @@ async function loadEditLog() {
 
 function filterEditLog() {
   const query = document.getElementById('editLogSearch')?.value.toLowerCase().trim() || '';
+  const actionFilter = document.getElementById('editLogActionFilter')?.value || '';
   const rows = document.querySelectorAll('#editLogContainer > div');
   rows.forEach(row => {
     const user = row.querySelector('span:nth-child(2)')?.textContent.toLowerCase() || '';
-    row.style.display = !query || user.includes(query) ? '' : 'none';
+    const action = row.querySelector('span:nth-child(3)')?.textContent || '';
+    const matchUser = !query || user.includes(query);
+    const matchAction = !actionFilter || action.includes(actionFilter);
+    row.style.display = (matchUser && matchAction) ? '' : 'none';
   });
 }
 
