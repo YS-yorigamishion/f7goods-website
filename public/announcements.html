@@ -100,9 +100,9 @@
         }
 
         container.innerHTML = announcements.map(a => `
-          <div class="announcement-card">
+          <div class="announcement-card" ${a.pinned ? 'style="border-left:3px solid var(--accent);"' : ''}>
             <div class="announcement-header">
-              <h3 class="announcement-title">${escapeHtml(a.title)}</h3>
+              <h3 class="announcement-title">${a.pinned ? '📌 ' : ''}${escapeHtml(a.title)}</h3>
               <span class="announcement-date">${formatDate(a.publishDate)}</span>
             </div>
             <div class="announcement-content">${nl2br(a.content)}</div>

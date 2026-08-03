@@ -3491,15 +3491,16 @@ async function loadAnnouncements() {
     const announcements = await adminAPI('GET', '/api/admin/announcements');
     const tbody = document.getElementById('announcementsTableBody');
     if (!announcements || announcements.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--haze);padding:2rem;">暂无公告</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无公告</td></tr>';
       return;
     }
     tbody.innerHTML = announcements
       .sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate))
       .map(a => `
         <tr>
-          <td>${escapeHtml(a.title)}</td>
+          <td>${a.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escapeHtml(a.title)}</td>
           <td>${formatDateAdmin(a.publishDate)}</td>
+          <td style="text-align:center;">${a.pinned ? '<span style="color:var(--accent);font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
           <td style="text-align:center;">${a.popup ? '<span style="color:#2ecc71;font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
           <td class="truncate" style="max-width:300px;">${escapeHtml(a.content)}</td>
           <td>
@@ -3512,7 +3513,7 @@ async function loadAnnouncements() {
       `).join('');
   } catch (e) {
     document.getElementById('announcementsTableBody').innerHTML =
-      '<tr><td colspan="5" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
+      '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
   }
 }
 
@@ -3540,6 +3541,10 @@ function openAnnouncementModal(announcement = null) {
       <textarea class="form-input" id="annContent" style="min-height:150px;">${announcement?.content || ''}</textarea>
     </div>
     <div class="form-group" style="display:flex;align-items:center;gap:0.6rem;">
+      <input type="checkbox" id="annPinned" style="width:16px;height:16px;accent-color:var(--accent);" ${announcement?.pinned ? 'checked' : ''}>
+      <label for="annPinned" style="font-size:0.9rem;cursor:pointer;">置顶公告</label>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:0.6rem;">
       <input type="checkbox" id="annPopup" style="width:16px;height:16px;accent-color:var(--accent);" ${announcement?.popup ? 'checked' : ''}>
       <label for="annPopup" style="font-size:0.9rem;cursor:pointer;">首次访问时弹窗显示</label>
     </div>
@@ -3550,6 +3555,7 @@ function openAnnouncementModal(announcement = null) {
       title: document.getElementById('annTitle').value,
       publishDate: document.getElementById('annPublishDate').value,
       content: document.getElementById('annContent').value,
+      pinned: document.getElementById('annPinned').checked,
       popup: document.getElementById('annPopup').checked
     };
 

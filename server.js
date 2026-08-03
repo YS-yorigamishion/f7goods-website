@@ -398,7 +398,11 @@ app.get('/api/announcements', (req, res) => {
     let announcements = readJSON('announcements.json');
     const today = new Date().toISOString().split('T')[0];
     announcements = announcements.filter(a => a.publishDate <= today);
-    announcements.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate));
+    announcements.sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return new Date(b.publishDate) - new Date(a.publishDate);
+    });
     res.json(announcements);
   } catch (e) {
     res.json([]);
