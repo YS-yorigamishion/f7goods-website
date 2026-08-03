@@ -138,13 +138,7 @@
 
     function renderWorks() {
       const grid = document.getElementById('worksGrid');
-      // Deduplicate by ID to prevent duplicate cards
-      const seen = new Set();
-      let filtered = allWorks.filter(w => {
-        if (seen.has(w.id)) return false;
-        seen.add(w.id);
-        return true;
-      });
+      let filtered = [...allWorks];
       if (currentCategory !== 'all') {
         filtered = filtered.filter(w => w.category === currentCategory);
       }
