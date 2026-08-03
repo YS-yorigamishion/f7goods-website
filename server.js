@@ -359,6 +359,7 @@ app.post('/api/contact', (req, res) => {
 let pageviews = {};
 try { pageviews = readJSON('pageviews.json'); } catch {}
 if (!pageviews.daily) pageviews = { daily: {} };
+if (!pageviews.visitors) pageviews.visitors = {};
 
 function savePageviews() {
   writeJSON('pageviews.json', pageviews);
@@ -367,6 +368,12 @@ function savePageviews() {
 app.post('/api/pageview', (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
   pageviews.daily[today] = (pageviews.daily[today] || 0) + 1;
+  // Track unique visitors by IP
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  if (!pageviews.visitors[today]) pageviews.visitors[today] = [];
+  if (!pageviews.visitors[today].includes(ip)) {
+    pageviews.visitors[today].push(ip);
+  }
   savePageviews();
   res.json({ ok: true });
 });

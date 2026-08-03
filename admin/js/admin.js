@@ -212,6 +212,26 @@ async function loadDashboard() {
   document.getElementById('pvYear').textContent = yearPV;
   document.getElementById('pvTotal').textContent = totalPV;
 
+  // Visitor stats
+  const visitors = pvData?.visitors || {};
+  window._pvVisitors = visitors;
+  const todayVisitors = (visitors[today] || []).length;
+  // Merge all IPs for month/year/total and deduplicate
+  const monthIPs = new Set();
+  const yearIPs = new Set();
+  const totalIPs = new Set();
+  for (const [date, ips] of Object.entries(visitors)) {
+    ips.forEach(ip => {
+      totalIPs.add(ip);
+      if (date.startsWith(thisYear)) yearIPs.add(ip);
+      if (date.startsWith(thisMonth)) monthIPs.add(ip);
+    });
+  }
+  document.getElementById('visToday').textContent = todayVisitors;
+  document.getElementById('visMonth').textContent = monthIPs.size;
+  document.getElementById('visYear').textContent = yearIPs.size;
+  document.getElementById('visTotal').textContent = totalIPs.size;
+
   // Helper: get last N days data
   function getLastNDays(n) {
     const labels = [], data = [];
@@ -319,6 +339,56 @@ function showPVDetail(type) {
       entries.push([y, years[y]]);
       chartLabels.push(y + '年');
       chartData.push(years[y]);
+    }
+    entries.sort((a, b) => b[0].localeCompare(a[0]));
+  } else if (type === 'today-visitors') {
+    const visitors = window._pvVisitors || {};
+    title = '近 30 日每日访客数';
+    colLabel = '日期';
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const count = (visitors[key] || []).length;
+      entries.push([key, count]);
+      chartLabels.push(key.slice(5));
+      chartData.push(count);
+    }
+    entries.sort((a, b) => b[0].localeCompare(a[0]));
+  } else if (type === 'month-visitors') {
+    const visitors = window._pvVisitors || {};
+    title = '本月访客 · 往月对比';
+    colLabel = '月份';
+    const months = {};
+    for (const [d, ips] of Object.entries(visitors)) {
+      const m = d.slice(0, 7);
+      if (!months[m]) months[m] = new Set();
+      ips.forEach(ip => months[m].add(ip));
+    }
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const key = d.toISOString().slice(0, 7);
+      const count = months[key] ? months[key].size : 0;
+      entries.push([key, count]);
+      chartLabels.push(key);
+      chartData.push(count);
+    }
+    entries.sort((a, b) => b[0].localeCompare(a[0]));
+  } else if (type === 'year-visitors') {
+    const visitors = window._pvVisitors || {};
+    title = '历年访客数';
+    colLabel = '年份';
+    const years = {};
+    for (const [d, ips] of Object.entries(visitors)) {
+      const y = d.slice(0, 4);
+      if (!years[y]) years[y] = new Set();
+      ips.forEach(ip => years[y].add(ip));
+    }
+    const sortedYears = Object.keys(years).sort();
+    for (const y of sortedYears) {
+      entries.push([y, years[y].size]);
+      chartLabels.push(y + '年');
+      chartData.push(years[y].size);
     }
     entries.sort((a, b) => b[0].localeCompare(a[0]));
   }

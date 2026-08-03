@@ -169,6 +169,37 @@
                   <div class="pv-overview-label">总浏览量</div>
                 </div>
               </div>
+              <div class="pv-overview-item" onclick="showPVDetail('today-visitors')" title="点击查看近 30 日每日访客数">
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">👥</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="visToday">0</div>
+                  <div class="pv-overview-label">今日人数</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
+              </div>
+              <div class="pv-overview-item" onclick="showPVDetail('month-visitors')" title="点击查看近 12 月每月访客数">
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">📊</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="visMonth">0</div>
+                  <div class="pv-overview-label">本月人数</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
+              </div>
+              <div class="pv-overview-item" onclick="showPVDetail('year-visitors')" title="点击查看历年访客数">
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">👤</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="visYear">0</div>
+                  <div class="pv-overview-label">今年人数</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
+              </div>
+              <div class="pv-overview-item pv-overview-item--total">
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">🌐</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="visTotal">0</div>
+                  <div class="pv-overview-label">总人数</div>
+                </div>
+              </div>
             </div>
           </div>
 
