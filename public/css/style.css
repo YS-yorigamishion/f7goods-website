@@ -475,13 +475,13 @@ body {
 }
 
 .want-btn--done {
-  background: var(--border);
-  color: var(--haze);
+  background: rgba(52, 152, 219, 0.1);
+  color: #3498db;
   cursor: pointer;
 }
 
 .want-btn--done:hover {
-  opacity: 0.75;
+  background: rgba(52, 152, 219, 0.2);
 }
 
 /* Want modal */

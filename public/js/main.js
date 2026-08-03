@@ -379,7 +379,7 @@ function renderWantButton(workId, wants) {
   const wanted = isWanted(workId);
   const count = wants || 0;
   if (wanted) {
-    return '<button class="want-btn want-btn--done" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();confirmUnwant(\'' + workId + '\',' + count + ')">已想要' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
+    return '<button class="want-btn want-btn--done" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();confirmUnwant(\'' + workId + '\',' + count + ')">取消' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
   }
   return '<button class="want-btn" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();openWantModal(\'' + workId + '\',' + count + ')">我想要' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
 }
