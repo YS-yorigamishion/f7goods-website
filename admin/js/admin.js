@@ -131,7 +131,7 @@ function navigateTo(page) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${page}`)?.classList.add('active');
 
-  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', contacts: '联系消息' };
+  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
   // Load data for the page
@@ -145,6 +145,7 @@ function navigateTo(page) {
   else if (page === 'settings') loadSettings();
   else if (page === 'announcements') loadAnnouncements();
   else if (page === 'updates') loadUpdates();
+  else if (page === 'editlog') loadEditLog();
   else if (page === 'contacts') loadContacts();
 
   // Close mobile sidebar
@@ -4111,6 +4112,34 @@ function openChangePasswordModal() {
     }
   };
   openModal();
+}
+
+// ===== Edit History =====
+async function loadEditLog() {
+  try {
+    const log = await adminAPI('GET', '/api/admin/edit-log');
+    const container = document.getElementById('editLogContainer');
+    if (!log || log.length === 0) {
+      container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无编辑记录</p>';
+      return;
+    }
+    container.innerHTML = log.map(entry => {
+      const time = new Date(entry.time).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      let actionColor = 'var(--ink)';
+      if (entry.action.includes('上传')) actionColor = '#2ecc71';
+      else if (entry.action.includes('删除')) actionColor = 'var(--accent)';
+      else if (entry.action.includes('创建')) actionColor = '#3498db';
+      else if (entry.action.includes('编辑')) actionColor = '#f39c12';
+      return `<div style="display:flex;gap:1rem;padding:0.7rem 0;border-bottom:1px solid var(--border);font-size:0.85rem;align-items:flex-start;">
+        <span style="color:var(--haze);white-space:nowrap;min-width:140px;">${time}</span>
+        <span style="color:var(--accent-alt);font-weight:600;min-width:80px;">${escapeHtml(entry.user)}</span>
+        <span style="color:${actionColor};font-weight:500;min-width:80px;">${escapeHtml(entry.action)}</span>
+        <span style="flex:1;color:var(--ink);">${escapeHtml(entry.target)}${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('editLogContainer').innerHTML = '<p style="color:var(--accent);text-align:center;padding:2rem;">加载失败</p>';
+  }
 }
 
 // ===== Contacts =====

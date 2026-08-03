@@ -61,6 +61,24 @@ function writeJSON(file, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
+// Edit log system
+function logEdit(user, action, target, details) {
+  let log = [];
+  try { log = readJSON('edit-log.json'); } catch {}
+  if (!Array.isArray(log)) log = [];
+  log.push({
+    id: 'log' + Date.now(),
+    time: new Date().toISOString(),
+    user: user || '未知',
+    action: action || '',
+    target: target || '',
+    details: details || ''
+  });
+  // Keep max 500 entries
+  if (log.length > 500) log = log.slice(-500);
+  writeJSON('edit-log.json', log);
+}
+
 // Initialize admin password hash if placeholder
 function initAdmin() {
   const admin = readJSON('admin.json');
@@ -174,6 +192,7 @@ app.put('/api/author/profile', authorAuthMiddleware, (req, res) => {
 
   circles[index] = { ...circles[index], ...updates };
   writeJSON('circles.json', circles);
+  logEdit(circles[index].name || '作者', '修改资料', '', '');
   const { passwordHash, ...safe } = circles[index];
   res.json(safe);
 });
@@ -215,6 +234,10 @@ app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
     return res.status(403).json({ error: '无权编辑此作品' });
   }
 
+  const oldTitle = works[index].title;
+  const oldImages = works[index].images || [];
+  const oldMoreImages = works[index].moreImages || [];
+
   // Only allow updating specific fields
   const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'tags', 'images', 'moreImages', 'socialLinks'];
   const updates = {};
@@ -224,6 +247,36 @@ app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
 
   works[index] = { ...works[index], ...updates };
   writeJSON('works.json', works);
+
+  // Handle project associations if provided
+  if (req.body.relatedProjects !== undefined) {
+    let projects = readJSON('projects.json');
+    const newProjectIds = req.body.relatedProjects || [];
+    projects.forEach(proj => {
+      const hasWork = (proj.works || []).includes(req.params.id);
+      const shouldHave = newProjectIds.includes(proj.id);
+      if (hasWork && !shouldHave) {
+        proj.works = proj.works.filter(id => id !== req.params.id);
+      } else if (!hasWork && shouldHave) {
+        if (!proj.works) proj.works = [];
+        proj.works.push(req.params.id);
+      }
+    });
+    writeJSON('projects.json', projects);
+  }
+
+  // Log changes
+  const newImages = works[index].images || [];
+  const newMoreImages = works[index].moreImages || [];
+  const details = [];
+  if (newImages.length > oldImages.length) details.push('上传了' + (newImages.length - oldImages.length) + '张展示图片');
+  if (newImages.length < oldImages.length) details.push('删除了' + (oldImages.length - newImages.length) + '张展示图片');
+  if (newMoreImages.length > oldMoreImages.length) details.push('上传了' + (newMoreImages.length - oldMoreImages.length) + '张更多图片');
+  if (newMoreImages.length < oldMoreImages.length) details.push('删除了' + (oldMoreImages.length - newMoreImages.length) + '张更多图片');
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '编辑作品', oldTitle || req.params.id, details.join('、'));
+
   res.json(works[index]);
 });
 
@@ -245,6 +298,24 @@ app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
   };
   works.push(work);
   writeJSON('works.json', works);
+
+  // Handle project associations
+  if (req.body.relatedProjects && req.body.relatedProjects.length > 0) {
+    let projects = readJSON('projects.json');
+    req.body.relatedProjects.forEach(pid => {
+      const proj = projects.find(p => p.id === pid);
+      if (proj) {
+        if (!proj.works) proj.works = [];
+        proj.works.push(work.id);
+      }
+    });
+    writeJSON('projects.json', projects);
+  }
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '创建作品', work.title || work.id, '');
+
   res.json(work);
 });
 
@@ -253,9 +324,13 @@ app.get('/api/author/images', authorAuthMiddleware, (req, res) => {
   const uploadsDir = path.join(__dirname, 'uploads');
   let meta = {};
   try { meta = readJSON('uploads-meta.json'); } catch {}
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  const authorName = circle?.name || '未知作者';
   try {
     const files = fs.readdirSync(uploadsDir)
       .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f))
+      .filter(f => (meta[f]?.uploader || '') === authorName)
       .map(f => ({
         name: f,
         url: '/uploads/' + f,
@@ -269,6 +344,35 @@ app.get('/api/author/images', authorAuthMiddleware, (req, res) => {
   } catch (e) {
     res.json([]);
   }
+});
+
+// Author: delete own image
+app.delete('/api/author/images/:filename', authorAuthMiddleware, (req, res) => {
+  const filename = req.params.filename;
+  let meta = {};
+  try { meta = readJSON('uploads-meta.json'); } catch {}
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  const authorName = circle?.name || '未知作者';
+  if ((meta[filename]?.uploader || '') !== authorName) {
+    return res.status(403).json({ error: '只能删除自己上传的图片' });
+  }
+  const filePath = path.join(__dirname, 'uploads', filename);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+    delete meta[filename];
+    writeJSON('uploads-meta.json', meta);
+    logEdit(authorName, '删除图片', filename, '');
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: '文件不存在' });
+  }
+});
+
+// Author: get projects list
+app.get('/api/author/projects', authorAuthMiddleware, (req, res) => {
+  const projects = readJSON('projects.json');
+  res.json(projects);
 });
 
 // Author: get events list
@@ -621,6 +725,14 @@ app.get('/api/admin/pageviews', authMiddleware, (req, res) => {
   res.json(pageviews);
 });
 
+// Edit log
+app.get('/api/admin/edit-log', authMiddleware, (req, res) => {
+  let log = [];
+  try { log = readJSON('edit-log.json'); } catch {}
+  if (!Array.isArray(log)) log = [];
+  res.json(log.reverse().slice(0, 200));
+});
+
 // Settings
 app.get('/api/settings', (req, res) => {
   try {
@@ -750,6 +862,7 @@ app.post('/api/admin/works', authMiddleware, (req, res) => {
   };
   works.push(work);
   writeJSON('works.json', works);
+  logEdit('管理员', '创建作品', work.title || work.id, '');
   res.json(work);
 });
 
@@ -757,9 +870,11 @@ app.put('/api/admin/works/:id', authMiddleware, (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
+  const oldTitle = works[index].title;
   delete req.body.id;
   works[index] = { ...works[index], ...req.body };
   writeJSON('works.json', works);
+  logEdit('管理员', '编辑作品', oldTitle || req.params.id, '');
   res.json(works[index]);
 });
 
@@ -1259,6 +1374,7 @@ function saveUploadMeta(filename, uploader) {
 app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择文件' });
   saveUploadMeta(req.file.filename, '管理员');
+  logEdit('管理员', '上传图片', req.file.filename, '');
   res.json({ url: '/uploads/' + req.file.filename });
 });
 
@@ -1268,6 +1384,7 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), (re
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
   saveUploadMeta(req.file.filename, circle?.name || '未知作者');
+  logEdit(circle?.name || '作者', '上传图片', req.file.filename, '');
   res.json({ url: '/uploads/' + req.file.filename });
 });
 
@@ -1299,6 +1416,7 @@ app.delete('/api/admin/images/:filename', authMiddleware, (req, res) => {
   const filePath = path.join(__dirname, 'uploads', req.params.filename);
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
+    logEdit('管理员', '删除图片', req.params.filename, '');
     res.json({ success: true });
   } else {
     res.status(404).json({ error: '文件不存在' });

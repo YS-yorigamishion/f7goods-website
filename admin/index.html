@@ -70,6 +70,9 @@
         <a href="#" class="sidebar-link" data-page="announcements">
           <span class="sidebar-icon">📢</span> 公告管理
         </a>
+        <a href="#" class="sidebar-link" data-page="editlog">
+          <span class="sidebar-icon">📝</span> 编辑历史
+        </a>
         <a href="#" class="sidebar-link" data-page="contacts">
           <span class="sidebar-icon">💬</span> 联系消息
         </a>
@@ -433,6 +436,18 @@
               </thead>
               <tbody id="announcementsTableBody"></tbody>
             </table>
+          </div>
+        </div>
+        <!-- Edit History -->
+        <div id="page-editlog" class="admin-page">
+          <div class="page-toolbar">
+            <h3>编辑历史</h3>
+            <button class="btn btn-primary" onclick="loadEditLog()">刷新</button>
+          </div>
+          <div class="admin-card">
+            <div id="editLogContainer" style="max-height:600px;overflow-y:auto;">
+              <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+            </div>
           </div>
         </div>
 

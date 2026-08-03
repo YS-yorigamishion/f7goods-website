@@ -102,6 +102,7 @@
         <div class="mgmt-tab active" onclick="switchMgmtTab('profile')">作者资料</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('works')">我的作品</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('events')">活动关联</div>
+        <div class="mgmt-tab" onclick="switchMgmtTab('images')">图片管理</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('password')">修改密码</div>
       </div>
 
@@ -182,6 +183,20 @@
           <h3 style="margin-bottom:1rem;">活动关联</h3>
           <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">勾选要关联的活动，取消勾选可解除关联。</p>
           <div id="eventsList"></div>
+        </div>
+      </div>
+
+      <!-- Images Tab -->
+      <div id="tab-images" class="mgmt-section">
+        <div class="mgmt-card">
+          <h3 style="margin-bottom:1rem;">图片管理</h3>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">管理您上传的所有图片。点击图片可复制链接。</p>
+          <div style="display:flex;gap:0.5rem;margin-bottom:1rem;align-items:center;">
+            <input type="file" id="batchUploadInput" accept="image/*" multiple style="font-size:0.85rem;">
+            <button class="btn btn-primary" onclick="batchUploadAuthorImages()">批量上传</button>
+            <span id="imageCount" style="font-size:0.85rem;color:var(--haze);margin-left:auto;"></span>
+          </div>
+          <div id="authorImageGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.8rem;"></div>
         </div>
       </div>
 
@@ -316,6 +331,7 @@
       await loadAuthorProfile();
       await loadAuthorWorks();
       await loadAuthorEvents();
+      loadAuthorImages();
     }
 
     // Author API helper
@@ -481,12 +497,26 @@
       const works = await authorAPI('GET', '/api/author/works');
       const work = works.find(w => w.id === workId);
       if (!work) return;
+      // Compute related events and projects
+      const [allEvents, allProjects] = await Promise.all([
+        authorAPI('GET', '/api/author/events'),
+        authorAPI('GET', '/api/author/projects')
+      ]);
+      work._relatedEvents = (allEvents || []).filter(e => (e.relatedCircles || []).includes(authorCircleId)).map(e => e.id);
+      work._relatedProjects = (allProjects || []).filter(p => (p.works || []).includes(workId)).map(p => p.id);
       const el = document.getElementById('workEdit-' + workId);
-      el.innerHTML = buildWorkFormHTML(work);
+      el.innerHTML = await buildWorkFormHTML(work);
     }
 
-    function buildWorkFormHTML(work) {
+    async function buildWorkFormHTML(work) {
       const w = work || {};
+      // Load events and projects for association
+      const [allEvents, allProjects] = await Promise.all([
+        authorAPI('GET', '/api/author/events'),
+        authorAPI('GET', '/api/author/projects')
+      ]);
+      const relatedEventIds = w._relatedEvents || [];
+      const relatedProjectIds = w._relatedProjects || [];
       return `
         <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="wfTitle" value="${escapeHtml(w.title || '')}"></div>
         <div class="form-row">
@@ -530,16 +560,29 @@
             <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('wfMoreImagesPreview')">从图片库选择</button>
           </div>
         </div>
+        <div class="form-group">
+          <label>关联活动</label>
+          <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">
+            ${(allEvents||[]).map(e => '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="wf-event-cb" value="'+e.id+'"'+(relatedEventIds.includes(e.id)?' checked':'')+' style="width:14px;height:14px;accent-color:var(--accent);">'+escapeHtml(e.title)+'</label>').join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无活动</p>'}
+          </div>
+        </div>
+        <div class="form-group">
+          <label>关联企划</label>
+          <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">
+            ${(allProjects||[]).map(p => '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="wf-project-cb" value="'+p.id+'"'+(relatedProjectIds.includes(p.id)?' checked':'')+' style="width:14px;height:14px;accent-color:var(--accent);">'+escapeHtml(p.title)+'</label>').join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无企划</p>'}
+          </div>
+        </div>
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
           <button class="btn btn-primary" onclick="saveAuthorWorkForm('${w.id || ''}')">保存</button>
           ${w.id ? '<button class="btn" style="background:var(--border);color:var(--ink);" onclick="toggleWorkEdit(\''+w.id+'\')">取消</button>' : '<button class="btn" style="background:var(--border);color:var(--ink);" onclick="document.getElementById(\'workFormContainer\').style.display=\'none\'">取消</button>'}
         </div>`;
     }
 
-    function openAuthorWorkForm(workId) {
+    async function openAuthorWorkForm(workId) {
       const container = document.getElementById('workFormContainer');
       container.style.display = 'block';
-      container.innerHTML = '<div class="mgmt-card">' + buildWorkFormHTML({}) + '</div>';
+      container.innerHTML = '<div class="mgmt-card"><p style="color:var(--haze);">加载中...</p></div>';
+      container.innerHTML = '<div class="mgmt-card">' + await buildWorkFormHTML({}) + '</div>';
     }
 
     async function wfUploadImages(inputId, previewId) {
@@ -601,6 +644,9 @@
       };
       if (contactType && contactValue) socialLinks[contactType] = contactValue;
 
+      const selectedEventIds = [...document.querySelectorAll('.wf-event-cb:checked')].map(cb => cb.value);
+      const selectedProjectIds = [...document.querySelectorAll('.wf-project-cb:checked')].map(cb => cb.value);
+
       const data = {
         title: document.getElementById('wfTitle').value,
         category: document.getElementById('wfCategory').value,
@@ -611,7 +657,8 @@
         description: document.getElementById('wfDesc').value,
         images: [...document.querySelectorAll('#wfImagesPreview img')].map(img => img.src),
         moreImages: [...document.querySelectorAll('#wfMoreImagesPreview img')].map(img => img.src),
-        socialLinks
+        socialLinks,
+        relatedProjects: selectedProjectIds
       };
 
       if (!data.title) { alert('请填写标题'); return; }
@@ -619,8 +666,24 @@
       let result;
       if (workId) {
         result = await authorAPI('PUT', '/api/author/works/' + workId, data);
+        // Update event associations
+        const allEvents = await authorAPI('GET', '/api/author/events');
+        for (const evt of (allEvents || [])) {
+          const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
+          const shouldBeRelated = selectedEventIds.includes(evt.id);
+          if (isRelated !== shouldBeRelated) {
+            await authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
+          }
+        }
       } else {
         result = await authorAPI('POST', '/api/author/works', data);
+        // For new works, add event associations
+        for (const eventId of selectedEventIds) {
+          const evt = (await authorAPI('GET', '/api/author/events')).find(e => e.id === eventId);
+          if (evt && !(evt.relatedCircles || []).includes(authorCircleId)) {
+            await authorAPI('PUT', '/api/author/events/' + eventId + '/toggle');
+          }
+        }
       }
       if (result) {
         showToast('作品已保存', 'success');
@@ -654,6 +717,63 @@
         if (result) showToast(e.target.checked ? '已关联活动' : '已取消关联', 'success');
       }
     });
+
+    // Image management
+    async function loadAuthorImages() {
+      const images = await authorAPI('GET', '/api/author/images');
+      const grid = document.getElementById('authorImageGrid');
+      const count = document.getElementById('imageCount');
+      if (!images || images.length === 0) {
+        grid.innerHTML = '<p style="color:var(--haze);grid-column:1/-1;text-align:center;padding:2rem;">暂无上传的图片</p>';
+        if (count) count.textContent = '';
+        return;
+      }
+      if (count) count.textContent = '共 ' + images.length + ' 张';
+      grid.innerHTML = images.map(img => {
+        const sizeMB = img.size ? (img.size / 1024 / 1024).toFixed(2) : '?';
+        const date = img.uploadedAt ? new Date(img.uploadedAt).toLocaleDateString('zh-CN') : '';
+        return '<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--paper);">' +
+          '<img src="' + img.url + '" style="width:100%;height:120px;object-fit:cover;display:block;cursor:pointer;" onclick="copyAuthorImgUrl(\'' + img.url + '\')" title="点击复制链接">' +
+          '<div style="padding:0.4rem 0.5rem;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+              '<span style="font-size:0.65rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;" title="' + img.name + '">' + img.name + '</span>' +
+              '<button onclick="deleteAuthorImage(\'' + img.name + '\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;padding:0 0.3rem;" title="删除">&times;</button>' +
+            '</div>' +
+            '<div style="font-size:0.6rem;color:var(--haze);margin-top:0.15rem;">' + sizeMB + ' MB' + (date ? ' · ' + date : '') + '</div>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    async function batchUploadAuthorImages() {
+      const input = document.getElementById('batchUploadInput');
+      if (!input.files.length) { alert('请选择图片'); return; }
+      let uploaded = 0;
+      for (const file of input.files) {
+        const formData = new FormData();
+        formData.append('image', file);
+        const res = await fetch('/api/author/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authorToken }, body: formData });
+        if (res.ok) uploaded++;
+      }
+      input.value = '';
+      showToast('成功上传 ' + uploaded + ' 张图片', 'success');
+      loadAuthorImages();
+    }
+
+    async function deleteAuthorImage(filename) {
+      if (!confirm('确定删除图片 ' + filename + '？')) return;
+      const result = await authorAPI('DELETE', '/api/author/images/' + filename);
+      if (result && result.success) {
+        showToast('已删除', 'success');
+        loadAuthorImages();
+      } else {
+        alert(result?.error || '删除失败');
+      }
+    }
+
+    function copyAuthorImgUrl(url) {
+      const fullUrl = location.origin + url;
+      navigator.clipboard.writeText(fullUrl).then(() => showToast('链接已复制', 'success')).catch(() => prompt('复制此链接:', fullUrl));
+    }
 
     // Change password
     async function changeAuthorPassword() {
