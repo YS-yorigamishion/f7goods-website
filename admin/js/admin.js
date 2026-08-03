@@ -1765,19 +1765,23 @@ async function manageWorkRelations(workId, returnToCircleId) {
   document.getElementById('modalSave').onclick = async () => {
     // Add events to work
     const addEventIds = [...document.querySelectorAll('.work-event-checkbox:checked')].map(cb => cb.value);
+    console.log('[manageWorkRelations] Saving for workId:', workId, 'title:', work.title, 'events:', addEventIds);
     for (const eventId of addEventIds) {
       const event = allEvents.find(e => e.id === eventId);
       if (event) {
         const updatedWorks = [...new Set([...(event.relatedWorks || []), workId])];
+        console.log('[manageWorkRelations] Updating event', eventId, 'relatedWorks:', updatedWorks);
         await adminAPI('PUT', `/api/admin/events/${eventId}`, { ...event, relatedWorks: updatedWorks });
       }
     }
     // Add projects to work
     const addProjectIds = [...document.querySelectorAll('.work-project-checkbox:checked')].map(cb => cb.value);
+    console.log('[manageWorkRelations] Saving for workId:', workId, 'projects:', addProjectIds);
     for (const projectId of addProjectIds) {
       const project = allProjects.find(p => p.id === projectId);
       if (project) {
         const updatedWorks = [...new Set([...(project.works || []), workId])];
+        console.log('[manageWorkRelations] Updating project', projectId, 'works:', updatedWorks);
         await adminAPI('PUT', `/api/admin/projects/${projectId}`, { ...project, works: updatedWorks });
       }
     }
