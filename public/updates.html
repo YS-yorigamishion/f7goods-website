@@ -121,14 +121,16 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle">📰 同人动态</h1>
-    <p id="heroSubtitle">了解同人圈的最新动态和重要更新</p>
+    <h1 id="heroTitle" class="settings-pending">📰 同人动态</h1>
+    <p id="heroSubtitle" class="settings-pending">了解同人圈的最新动态和重要更新</p>
   </section>
 
   <main class="main-content">
-    <div class="page-header">
-      <h2 id="pageTitle">动态列表</h2>
-      <p id="pageSubtitle">按发布时间倒序排列</p>
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h2 id="pageTitle" class="settings-pending">动态列表</h2>
+        <p id="pageSubtitle" class="settings-pending">按发布时间倒序排列</p>
+      </div>
     </div>
 
     <div id="updatesContainer">
@@ -145,6 +147,15 @@
 
     async function loadUpdates() {
       try {
+        await loadSettingsFromAPI();
+        const ps = getPageSettings('updates');
+        if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
+        if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
+        if (ps.pageTitle) document.getElementById('pageTitle').textContent = ps.pageTitle;
+        if (ps.pageSubtitle) document.getElementById('pageSubtitle').textContent = ps.pageSubtitle;
+        applyHeroBg('updates');
+        document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+
         const [updates, allEvents, allProjects] = await Promise.all([
           fetch('/api/updates').then(r => r.json()),
           F7API.getEvents(),

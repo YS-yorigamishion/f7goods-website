@@ -3120,6 +3120,7 @@ function renderSettings() {
     { key: 'events', name: '近期活动' },
     { key: 'circles', name: '同人作者' },
     { key: 'projects', name: '同人企划' },
+    { key: 'updates', name: '同人动态' },
     { key: 'about', name: '关于我们' }
   ];
 
