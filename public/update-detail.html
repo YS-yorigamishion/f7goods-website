@@ -69,6 +69,21 @@
               ` : ''}
             </div>
             <div class="detail-sidebar">
+              <div class="sidebar-card">
+                <h3>动态信息</h3>
+                <div class="info-row">
+                  <span class="info-label">发布日期</span>
+                  <span class="info-value">${formatDate(update.publishDate)}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">作者</span>
+                  <span class="info-value">${relatedCircles.length > 0 ? relatedCircles.map(c => c.name).join('、') : '-'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">图片数</span>
+                  <span class="info-value">${(update.images || []).length} 张</span>
+                </div>
+              </div>
               ${relatedCircles.length > 0 ? `
               <div class="sidebar-card">
                 <h3>相关作者</h3>
