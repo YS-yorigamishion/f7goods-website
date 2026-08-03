@@ -4170,9 +4170,20 @@ async function loadEditLog() {
         <span style="flex:1;color:var(--ink);min-width:0;">${escapeHtml(entry.target)}${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
       </div>`;
     }).join('');
+    // Apply existing search filter if any
+    filterEditLog();
   } catch (e) {
     document.getElementById('editLogContainer').innerHTML = '<p style="color:var(--accent);text-align:center;padding:2rem;">加载失败</p>';
   }
+}
+
+function filterEditLog() {
+  const query = document.getElementById('editLogSearch')?.value.toLowerCase().trim() || '';
+  const rows = document.querySelectorAll('#editLogContainer > div');
+  rows.forEach(row => {
+    const user = row.querySelector('span:nth-child(2)')?.textContent.toLowerCase() || '';
+    row.style.display = !query || user.includes(query) ? '' : 'none';
+  });
 }
 
 // ===== Contacts =====

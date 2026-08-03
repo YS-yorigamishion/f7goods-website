@@ -445,7 +445,10 @@
         <div id="page-editlog" class="admin-page">
           <div class="page-toolbar">
             <h3>编辑历史</h3>
-            <button class="btn btn-primary" onclick="loadEditLog()">刷新</button>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <input type="text" class="form-input" id="editLogSearch" placeholder="搜索编辑人..." oninput="filterEditLog()" style="width:200px;font-size:0.85rem;">
+              <button class="btn btn-primary" onclick="loadEditLog()">刷新</button>
+            </div>
           </div>
           <div class="admin-card">
             <div id="editLogContainer" style="max-height:600px;overflow-y:auto;">
