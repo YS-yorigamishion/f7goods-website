@@ -644,6 +644,7 @@ app.get('/api/admin/circles/:id/export', authMiddleware, (req, res) => {
 
   const works = readJSON('works.json');
   const events = readJSON('events.json');
+  const projects = readJSON('projects.json');
   const circleWorks = works.filter(w => (w.circles || []).includes(circle.id));
 
   // Use categories.json for labels
@@ -658,11 +659,19 @@ app.get('/api/admin/circles/:id/export', authMiddleware, (req, res) => {
   const eventMap = {};
   events.forEach(e => eventMap[e.id] = e.title);
 
+  // Build projects map
+  const projectMap = {};
+  projects.forEach(p => projectMap[p.id] = p.title);
+
   const data = circleWorks.map(w => {
     // Find events that reference this work
     const relatedEventTitles = events
       .filter(e => (e.relatedWorks || []).includes(w.id))
       .map(e => e.title);
+    // Find projects that reference this work
+    const relatedProjectTitles = projects
+      .filter(p => (p.works || []).includes(w.id))
+      .map(p => p.title);
     return {
       '作品名称': w.title,
       '分类': catMap[w.category] || w.category,
@@ -678,6 +687,7 @@ app.get('/api/admin/circles/:id/export', authMiddleware, (req, res) => {
       '网站链接': w.socialLinks?.website || '',
       '网站显示名': w.socialLinks?.websiteLabel || '',
       '关联活动': relatedEventTitles.join(', '),
+      '关联企划': relatedProjectTitles.join(', '),
       '作品描述': w.description || ''
     };
   });
@@ -689,7 +699,7 @@ app.get('/api/admin/circles/:id/export', authMiddleware, (req, res) => {
     { wch: 30 }, { wch: 10 }, { wch: 12 },
     { wch: 10 }, { wch: 12 }, { wch: 25 },
     { wch: 25 }, { wch: 25 }, { wch: 10 }, { wch: 15 },
-    { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 50 }
+    { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 50 }
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, `${circle.name} - 作品列表`);
@@ -721,12 +731,17 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
 
     let works = readJSON('works.json');
     let events = readJSON('events.json');
+    let projects = readJSON('projects.json');
     const circleWorks = works.filter(w => (w.circles || []).includes(circle.id));
     const otherWorks = works.filter(w => !(w.circles || []).includes(circle.id));
 
     // Build event title -> id map
     const eventTitleMap = {};
     events.forEach(e => eventTitleMap[e.title] = e.id);
+
+    // Build project title -> id map
+    const projectTitleMap = {};
+    projects.forEach(p => projectTitleMap[p.title] = p.id);
 
     const importTitles = new Set();
     const result = { added: 0, updated: 0, deleted: 0, eventLinks: 0, details: [] };
@@ -777,6 +792,21 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
         });
       }
 
+      // Handle project association from Excel
+      const projectTitles = (row['关联企划'] || '').split(',').map(t => t.trim()).filter(Boolean);
+      if (projectTitles.length > 0) {
+        projectTitles.forEach(projectTitle => {
+          const projectId = projectTitleMap[projectTitle];
+          if (projectId) {
+            const proj = projects.find(p => p.id === projectId);
+            if (proj && !(proj.works || []).includes(workId)) {
+              if (!proj.works) proj.works = [];
+              proj.works.push(workId);
+            }
+          }
+        });
+      }
+
       if (existing) {
         result.updated++;
         result.details.push(`更新: ${title}`);
@@ -811,6 +841,7 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
     works = [...otherWorks, ...newCircleWorks];
     writeJSON('works.json', works);
     writeJSON('events.json', events);
+    writeJSON('projects.json', projects);
 
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
