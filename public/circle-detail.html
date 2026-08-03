@@ -209,7 +209,7 @@
               <div class="sidebar-card">
                 <h3>相关动态</h3>
                 ${relatedUpdates.map(u => `
-                  <a href="/updates.html" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
+                  <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
                     <div style="font-weight:600;font-size:0.9rem;">📰 ${escapeHtml(u.title)}</div>
                     <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(u.publishDate)}</div>

@@ -5,152 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>f7goods — 同人动态</title>
   <link rel="stylesheet" href="/css/style.css">
-  <style>
-    .update-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 1.5rem 2rem;
-      margin-bottom: 1.5rem;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border);
-      transition: var(--transition);
-      cursor: pointer;
-    }
-    .update-card:hover {
-      box-shadow: var(--shadow-md);
-    }
-    .update-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 0.6rem;
-      gap: 1rem;
-    }
-    .update-title {
-      font-family: 'Noto Serif SC', Georgia, serif;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-    .update-date {
-      display: inline-block;
-      padding: 0.2rem 0.7rem;
-      background: linear-gradient(135deg, var(--accent), var(--accent-alt));
-      color: white;
-      border-radius: 100px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .update-preview {
-      font-size: 0.9rem;
-      color: var(--haze);
-      line-height: 1.6;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-    .update-content {
-      font-size: 0.95rem;
-      color: #555;
-      line-height: 1.8;
-      display: none;
-      margin-top: 0.8rem;
-      padding-top: 0.8rem;
-      border-top: 1px solid var(--border);
-    }
-    .update-card.expanded .update-preview {
-      display: none;
-    }
-    .update-card.expanded .update-content {
-      display: block;
-    }
-    .update-card.expanded .update-header {
-      margin-bottom: 0.8rem;
-    }
-    .update-expand-hint {
-      font-size: 0.75rem;
-      color: var(--haze);
-      margin-top: 0.5rem;
-    }
-    .update-card.expanded .update-expand-hint {
-      display: none;
-    }
-    .update-related {
-      margin-top: 0.8rem;
-      padding-top: 0.8rem;
-      border-top: 1px solid var(--border);
-      display: none;
-    }
-    .update-cover {
-      display: none;
-      margin-bottom: 1rem;
-      border-radius: 8px;
-      overflow: hidden;
-      max-height: 250px;
-    }
-    .update-cover img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .update-card.expanded .update-cover {
-      display: block;
-    }
-    .update-images {
-      display: none;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
-    .update-card.expanded .update-images {
-      display: block;
-    }
-    .update-images-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 0.8rem;
-    }
-    .update-images-grid img {
-      width: 100%;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .update-card.expanded .update-related {
-      display: block;
-    }
-    .update-related a {
-      display: inline-block;
-      padding: 0.2rem 0.7rem;
-      background: rgba(233, 69, 96, 0.06);
-      color: var(--accent);
-      border-radius: 100px;
-      font-size: 0.8rem;
-      text-decoration: none;
-      margin: 0.2rem 0.2rem;
-      transition: var(--transition);
-    }
-    .update-related a:hover {
-      background: rgba(233, 69, 96, 0.12);
-    }
-    @media (max-width: 768px) {
-      .update-card {
-        padding: 1rem 1.2rem;
-      }
-      .update-header {
-        flex-direction: column;
-      }
-      .update-title {
-        font-size: 1.1rem;
-      }
-      .update-preview {
-        font-size: 0.85rem;
-      }
-    }
-  </style>
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -161,14 +15,16 @@
   </section>
 
   <main class="main-content">
-    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
-      <div>
-        <h2 id="pageTitle" class="settings-pending">动态列表</h2>
-        <p id="pageSubtitle" class="settings-pending">按发布时间倒序排列</p>
-      </div>
+    <div class="page-header">
+      <h2 id="pageTitle" class="settings-pending">动态列表</h2>
+      <p id="pageSubtitle" class="settings-pending">按发布时间倒序排列</p>
     </div>
 
-    <div id="updatesContainer">
+    <div class="filter-bar">
+      <input type="text" class="search-input" placeholder="搜索动态..." id="searchInput">
+    </div>
+
+    <div class="cards-grid" id="updatesGrid">
       <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
     </div>
   </main>
@@ -180,9 +36,11 @@
   <script>
     initPage('updates');
 
+    let allUpdates = [];
+
     async function loadUpdates() {
       try {
-        await loadSettingsFromAPI();
+        await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
         const ps = getPageSettings('updates');
         if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
         if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
@@ -191,57 +49,52 @@
         applyHeroBg('updates');
         document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
 
-        const [updates, allEvents, allProjects, allCircles] = await Promise.all([
-          fetch('/api/updates').then(r => r.json()),
-          F7API.getEvents(),
-          F7API.getProjects(),
-          F7API.getCircles()
-        ]);
-
-        const container = document.getElementById('updatesContainer');
-
-        if (!updates || updates.length === 0) {
-          container.innerHTML = '<div class="empty-state"><div class="icon">📰</div><p>暂无动态</p></div>';
-          return;
-        }
-
-        const eventsMap = {};
-        allEvents.forEach(e => eventsMap[e.id] = e.title);
-        const projectsMap = {};
-        allProjects.forEach(p => projectsMap[p.id] = p.title);
-        const circlesMap = {};
-        allCircles.forEach(c => circlesMap[c.id] = c.name);
-
-        container.innerHTML = updates.map(u => {
-          const preview = u.content.length > 80 ? u.content.substring(0, 80) + '...' : u.content;
-          const relatedLinks = [];
-          (u.relatedCircles || []).forEach(cid => {
-            if (circlesMap[cid]) relatedLinks.push('<a href="/circle-detail.html?id=' + cid + '">🏠 ' + escapeHtml(circlesMap[cid]) + '</a>');
-          });
-          (u.relatedEvents || []).forEach(eid => {
-            if (eventsMap[eid]) relatedLinks.push('<a href="/event-detail.html?id=' + eid + '">📅 ' + escapeHtml(eventsMap[eid]) + '</a>');
-          });
-          (u.relatedProjects || []).forEach(pid => {
-            if (projectsMap[pid]) relatedLinks.push('<a href="/project-detail.html?id=' + pid + '">📋 ' + escapeHtml(projectsMap[pid]) + '</a>');
-          });
-          return `
-          <div class="update-card" ${u.pinned ? 'style="border-left:3px solid var(--accent);"' : ''} onclick="this.classList.toggle('expanded')">
-            <div class="update-header">
-              <h3 class="update-title">${u.pinned ? '📌 ' : ''}${escapeHtml(u.title)}</h3>
-              <span class="update-date">${formatDate(u.publishDate)}</span>
-            </div>
-            <div class="update-preview">${escapeHtml(preview)}</div>
-            ${u.coverImage ? '<div class="update-cover"><img src="' + u.coverImage + '" alt="' + escapeHtml(u.title) + '"></div>' : ''}
-            <div class="update-content">${nl2br(u.content)}</div>
-            ${u.images && u.images.length > 0 ? '<div class="update-images"><div class="update-images-grid">' + u.images.map((img, i) => '<img src="' + img + '" onclick="event.stopPropagation();openLightbox(' + JSON.stringify(u.images).replace(/"/g, '&quot;') + ',' + i + ')">').join('') + '</div></div>' : ''}
-            ${relatedLinks.length > 0 ? '<div class="update-related">' + relatedLinks.join('') + '</div>' : ''}
-            <div class="update-expand-hint">点击查看详情 ›</div>
-          </div>`;
-        }).join('');
+        allUpdates = await fetch('/api/updates').then(r => r.json());
+        renderUpdates();
+        document.getElementById('searchInput').addEventListener('input', debounce(renderUpdates));
       } catch (e) {
-        document.getElementById('updatesContainer').innerHTML =
+        document.getElementById('updatesGrid').innerHTML =
           '<div class="empty-state"><div class="icon">⚠️</div><p>加载失败，请稍后重试</p></div>';
       }
+    }
+
+    function renderUpdates() {
+      const grid = document.getElementById('updatesGrid');
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      let filtered = allUpdates;
+      if (search) {
+        filtered = filtered.filter(u =>
+          u.title.toLowerCase().includes(search) ||
+          (u.content || '').toLowerCase().includes(search)
+        );
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><div class="icon">📰</div><p>暂无动态</p></div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(u => {
+        const preview = u.content.length > 60 ? u.content.substring(0, 60) + '...' : u.content;
+        return `
+        <div class="card" onclick="location.href='/update-detail.html?id=${u.id}'">
+          <div class="card-image" style="${(u.coverImage || (u.images && u.images.length > 0)) ? '' : 'background:linear-gradient(135deg,#9b59b6,#8e44ad);'}">
+            ${u.coverImage
+              ? `<img src="${u.coverImage}" alt="${u.title}">`
+              : (u.images && u.images.length > 0
+                ? `<img src="${u.images[0]}" alt="${u.title}">`
+                : '<span class="placeholder-icon" style="color:white;">📰</span>')}
+          </div>
+          <div class="card-body">
+            ${u.pinned ? '<span class="card-tag" style="background:var(--accent);color:white;">置顶</span>' : ''}
+            <h3 class="card-title">${escapeHtml(u.title)}</h3>
+            <p class="card-subtitle" style="color:var(--haze);font-size:0.8rem;">${escapeHtml(preview)}</p>
+          </div>
+          <div class="card-footer">
+            <span class="card-date">${formatDate(u.publishDate)}</span>
+          </div>
+        </div>`;
+      }).join('');
     }
 
     loadUpdates();
