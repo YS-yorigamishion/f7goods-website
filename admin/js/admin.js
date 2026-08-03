@@ -4130,11 +4130,13 @@ async function loadEditLog() {
       else if (entry.action.includes('删除')) actionColor = 'var(--accent)';
       else if (entry.action.includes('创建')) actionColor = '#3498db';
       else if (entry.action.includes('编辑')) actionColor = '#f39c12';
-      return `<div style="display:flex;gap:1rem;padding:0.7rem 0;border-bottom:1px solid var(--border);font-size:0.85rem;align-items:flex-start;">
-        <span style="color:var(--haze);white-space:nowrap;min-width:140px;">${time}</span>
-        <span style="color:var(--accent-alt);font-weight:600;min-width:80px;">${escapeHtml(entry.user)}</span>
-        <span style="color:${actionColor};font-weight:500;min-width:80px;">${escapeHtml(entry.action)}</span>
-        <span style="flex:1;color:var(--ink);">${escapeHtml(entry.target)}${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
+      const imgThumb = entry.imageUrl ? `<img src="${entry.imageUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex-shrink:0;">` : '';
+      return `<div style="display:flex;gap:0.8rem;padding:0.7rem 0;border-bottom:1px solid var(--border);font-size:0.85rem;align-items:center;">
+        <span style="color:var(--haze);white-space:nowrap;min-width:130px;">${time}</span>
+        <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
+        <span style="color:${actionColor};font-weight:500;min-width:70px;">${escapeHtml(entry.action)}</span>
+        ${imgThumb}
+        <span style="flex:1;color:var(--ink);min-width:0;">${escapeHtml(entry.target)}${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
       </div>`;
     }).join('');
   } catch (e) {

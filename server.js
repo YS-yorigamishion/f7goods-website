@@ -62,7 +62,7 @@ function writeJSON(file, data) {
 }
 
 // Edit log system
-function logEdit(user, action, target, details) {
+function logEdit(user, action, target, details, imageUrl) {
   let log = [];
   try { log = readJSON('edit-log.json'); } catch {}
   if (!Array.isArray(log)) log = [];
@@ -72,7 +72,8 @@ function logEdit(user, action, target, details) {
     user: user || '未知',
     action: action || '',
     target: target || '',
-    details: details || ''
+    details: details || '',
+    imageUrl: imageUrl || ''
   });
   // Keep max 500 entries
   if (log.length > 500) log = log.slice(-500);
@@ -183,6 +184,8 @@ app.put('/api/author/profile', authorAuthMiddleware, (req, res) => {
   const index = circles.findIndex(c => c.id === req.author.circleId);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
 
+  const old = { ...circles[index] };
+
   // Only allow updating specific fields
   const allowed = ['name', 'description', 'category', 'logo', 'images', 'socialLinks'];
   const updates = {};
@@ -192,7 +195,21 @@ app.put('/api/author/profile', authorAuthMiddleware, (req, res) => {
 
   circles[index] = { ...circles[index], ...updates };
   writeJSON('circles.json', circles);
-  logEdit(circles[index].name || '作者', '修改资料', '', '');
+
+  // Log specific changes
+  const changes = [];
+  if (updates.name && updates.name !== old.name) changes.push('修改了名称');
+  if (updates.description !== undefined && updates.description !== old.description) changes.push('修改了简介');
+  if (updates.logo && updates.logo !== old.logo) changes.push('更新了头像');
+  if (updates.images) {
+    const oldCount = (old.images || []).length;
+    const newCount = (updates.images || []).length;
+    if (newCount > oldCount) changes.push('新增了' + (newCount - oldCount) + '张图片');
+    else if (newCount < oldCount) changes.push('删除了' + (oldCount - newCount) + '张图片');
+  }
+  if (updates.category && updates.category !== old.category) changes.push('修改了分类');
+  logEdit(circles[index].name || '作者', '修改资料', '', changes.join('、') || '更新了资料');
+
   const { passwordHash, ...safe } = circles[index];
   res.json(safe);
 });
@@ -399,6 +416,26 @@ app.put('/api/author/events/:id/toggle', authorAuthMiddleware, (req, res) => {
 
   writeJSON('events.json', events);
   res.json(events[index]);
+});
+
+// Author: toggle project association
+app.put('/api/author/projects/:id/toggle', authorAuthMiddleware, (req, res) => {
+  let projects = readJSON('projects.json');
+  const index = projects.findIndex(p => p.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '企划未找到' });
+
+  const circleId = req.author.circleId;
+  if (!projects[index].circles) projects[index].circles = [];
+
+  const idx = projects[index].circles.indexOf(circleId);
+  if (idx === -1) {
+    projects[index].circles.push(circleId);
+  } else {
+    projects[index].circles.splice(idx, 1);
+  }
+
+  writeJSON('projects.json', projects);
+  res.json(projects[index]);
 });
 
 // Admin: approve author
@@ -1374,7 +1411,7 @@ function saveUploadMeta(filename, uploader) {
 app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择文件' });
   saveUploadMeta(req.file.filename, '管理员');
-  logEdit('管理员', '上传图片', req.file.filename, '');
+  logEdit('管理员', '上传图片', req.file.filename, '', '/uploads/' + req.file.filename);
   res.json({ url: '/uploads/' + req.file.filename });
 });
 
@@ -1384,7 +1421,7 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), (re
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
   saveUploadMeta(req.file.filename, circle?.name || '未知作者');
-  logEdit(circle?.name || '作者', '上传图片', req.file.filename, '');
+  logEdit(circle?.name || '作者', '上传图片', req.file.filename, '', '/uploads/' + req.file.filename);
   res.json({ url: '/uploads/' + req.file.filename });
 });
 

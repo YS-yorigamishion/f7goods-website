@@ -107,6 +107,7 @@
         <div class="mgmt-tab active" onclick="switchMgmtTab('profile')">作者资料</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('works')">我的作品</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('events')">活动关联</div>
+        <div class="mgmt-tab" onclick="switchMgmtTab('projects')">企划关联</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('images')">图片管理</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('password')">修改密码</div>
       </div>
@@ -199,6 +200,15 @@
         </div>
       </div>
 
+      <!-- Projects Tab -->
+      <div id="tab-projects" class="mgmt-section">
+        <div class="mgmt-card">
+          <h3 style="margin-bottom:1rem;">企划关联</h3>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">勾选要关联的企划，取消勾选可解除关联。</p>
+          <div id="projectsList"></div>
+        </div>
+      </div>
+
       <!-- Images Tab -->
       <div id="tab-images" class="mgmt-section">
         <div class="mgmt-card">
@@ -207,6 +217,7 @@
           <div style="display:flex;gap:0.5rem;margin-bottom:1rem;align-items:center;">
             <input type="file" id="batchUploadInput" accept="image/*" multiple style="font-size:0.85rem;">
             <button class="btn btn-primary" onclick="batchUploadAuthorImages()">批量上传</button>
+            <button class="btn" id="batchDeleteBtn" style="background:var(--accent);color:white;display:none;" onclick="batchDeleteAuthorImages()">批量删除</button>
             <span id="imageCount" style="font-size:0.85rem;color:var(--haze);margin-left:auto;"></span>
           </div>
           <div id="authorImageGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.8rem;"></div>
@@ -344,6 +355,7 @@
       await loadAuthorProfile();
       await loadAuthorWorks();
       await loadAuthorEvents();
+      loadAuthorProjects();
       loadAuthorImages();
     }
 
@@ -568,22 +580,14 @@
           <div id="wfImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
             ${(w.images||[]).map(img => '<div style="position:relative;"><img src="'+img+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}
           </div>
-          <input type="file" id="wfImageInput" accept="image/*" multiple style="font-size:0.85rem;">
-          <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
-            <button type="button" class="btn-sm btn-edit" onclick="wfUploadImages('wfImageInput','wfImagesPreview')">上传图片</button>
-            <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('wfImagesPreview')">从图片库选择</button>
-          </div>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('wfImagesPreview')">从图片库选择</button>
         </div>
         <div class="form-group">
           <label>更多图片</label>
           <div id="wfMoreImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
             ${(w.moreImages||[]).map(img => '<div style="position:relative;"><img src="'+img+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}
           </div>
-          <input type="file" id="wfMoreImageInput" accept="image/*" multiple style="font-size:0.85rem;">
-          <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
-            <button type="button" class="btn-sm btn-edit" onclick="wfUploadImages('wfMoreImageInput','wfMoreImagesPreview')">上传图片</button>
-            <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('wfMoreImagesPreview')">从图片库选择</button>
-          </div>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('wfMoreImagesPreview')">从图片库选择</button>
         </div>
         <div class="form-group">
           <label>关联活动</label>
@@ -743,13 +747,37 @@
         const result = await authorAPI('PUT', '/api/author/events/' + eventId + '/toggle');
         if (result) showToast(e.target.checked ? '已关联活动' : '已取消关联', 'success');
       }
+      if (e.target.classList.contains('project-cb')) {
+        const projectId = e.target.dataset.id;
+        const result = await authorAPI('PUT', '/api/author/projects/' + projectId + '/toggle');
+        if (result) showToast(e.target.checked ? '已关联企划' : '已取消关联', 'success');
+      }
     });
+
+    // Load projects
+    async function loadAuthorProjects() {
+      const projects = await authorAPI('GET', '/api/author/projects');
+      const container = document.getElementById('projectsList');
+      if (!projects || projects.length === 0) {
+        container.innerHTML = '<p style="color:var(--haze);">暂无企划</p>';
+        return;
+      }
+      container.innerHTML = projects.map(p => {
+        const isRelated = (p.circles || []).includes(authorCircleId);
+        return '<label class="event-item" style="cursor:pointer;">' +
+          '<input type="checkbox" class="project-cb" data-id="' + p.id + '"' + (isRelated ? ' checked' : '') + ' style="width:16px;height:16px;accent-color:var(--accent);">' +
+          '<div><div style="font-weight:600;font-size:0.9rem;">' + escapeHtml(p.title) + '</div>' +
+          '<div style="font-size:0.75rem;color:var(--haze);">' + (PROJECT_STATUS_LABELS[p.status] || p.status || '') + '</div></div></label>';
+      }).join('');
+    }
 
     // Image management
     async function loadAuthorImages() {
       const images = await authorAPI('GET', '/api/author/images');
       const grid = document.getElementById('authorImageGrid');
       const count = document.getElementById('imageCount');
+      const batchBtn = document.getElementById('batchDeleteBtn');
+      if (batchBtn) batchBtn.style.display = 'none';
       if (!images || images.length === 0) {
         grid.innerHTML = '<p style="color:var(--haze);grid-column:1/-1;text-align:center;padding:2rem;">暂无上传的图片</p>';
         if (count) count.textContent = '';
@@ -760,6 +788,7 @@
         const sizeMB = img.size ? (img.size / 1024 / 1024).toFixed(2) : '?';
         const date = img.uploadedAt ? new Date(img.uploadedAt).toLocaleDateString('zh-CN') : '';
         return '<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--paper);">' +
+          '<input type="checkbox" class="author-img-cb" data-name="' + img.name + '" onchange="updateAuthorImageBatchBtn()" style="position:absolute;top:6px;left:6px;z-index:2;width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">' +
           '<img src="' + img.url + '" style="width:100%;height:120px;object-fit:cover;display:block;cursor:pointer;" onclick="copyAuthorImgUrl(\'' + img.url + '\')" title="点击复制链接">' +
           '<div style="padding:0.4rem 0.5rem;">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;">' +
@@ -769,6 +798,28 @@
             '<div style="font-size:0.6rem;color:var(--haze);margin-top:0.15rem;">' + sizeMB + ' MB' + (date ? ' · ' + date : '') + '</div>' +
           '</div></div>';
       }).join('');
+    }
+
+    function updateAuthorImageBatchBtn() {
+      const checked = document.querySelectorAll('.author-img-cb:checked');
+      const btn = document.getElementById('batchDeleteBtn');
+      if (btn) {
+        btn.style.display = checked.length > 0 ? 'inline-flex' : 'none';
+        btn.textContent = checked.length > 0 ? '删除 ' + checked.length + ' 张' : '批量删除';
+      }
+    }
+
+    async function batchDeleteAuthorImages() {
+      const checked = document.querySelectorAll('.author-img-cb:checked');
+      if (checked.length === 0) return;
+      if (!confirm('确定删除选中的 ' + checked.length + ' 张图片？')) return;
+      let deleted = 0;
+      for (const cb of checked) {
+        const result = await authorAPI('DELETE', '/api/author/images/' + cb.dataset.name);
+        if (result && result.success) deleted++;
+      }
+      showToast('已删除 ' + deleted + ' 张图片', 'success');
+      loadAuthorImages();
     }
 
     async function batchUploadAuthorImages() {
