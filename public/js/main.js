@@ -366,6 +366,115 @@ async function toggleLike(workId, btn) {
   }
 }
 
+// Want (我想要) functionality
+function getWantedWorks() {
+  try { return JSON.parse(localStorage.getItem('f7wanted') || '[]'); } catch { return []; }
+}
+
+function isWanted(workId) {
+  return getWantedWorks().includes(workId);
+}
+
+function renderWantButton(workId, wants) {
+  const wanted = isWanted(workId);
+  const count = wants || 0;
+  if (wanted) {
+    return '<div class="want-btn want-btn--done" data-work-id="' + workId + '"><span class="want-icon">🙋</span><span class="want-text">已想要</span><span class="want-count">' + (count > 0 ? count : '') + '</span></div>';
+  }
+  return '<button class="want-btn" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();openWantModal(\'' + workId + '\',' + count + ')" title="我想要"><span class="want-icon">🙋</span><span class="want-text">我想要</span><span class="want-count">' + (count > 0 ? count : '') + '</span></button>';
+}
+
+function updateWantButtons(workId, wanted, count) {
+  document.querySelectorAll('.want-btn[data-work-id="' + workId + '"]').forEach(function(b) {
+    if (wanted) {
+      b.outerHTML = renderWantButton(workId, count);
+    } else {
+      b.outerHTML = renderWantButton(workId, count);
+    }
+  });
+}
+
+function openWantModal(workId, currentCount) {
+  var overlay = document.getElementById('wantModalOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'wantModalOverlay';
+    overlay.className = 'want-modal-overlay';
+    overlay.innerHTML = '<div class="want-modal">' +
+      '<button class="want-modal-close" onclick="closeWantModal()">&times;</button>' +
+      '<div class="want-modal-body">' +
+        '<h3 style="margin-bottom:1rem;font-size:1.1rem;">我想要</h3>' +
+        '<p style="color:var(--haze);font-size:0.85rem;line-height:1.8;margin-bottom:1rem;">本功能目前仅供作者确认周边购买意向人数，请勿将其视为购买订单。<br>如您确认购买意向，请在下方输入框输入"我想要"加入周边购买人数意向统计。</p>' +
+        '<input type="text" class="form-input want-modal-input" id="wantModalInput" placeholder="请输入" autocomplete="off">' +
+        '<div id="wantModalError" style="color:var(--accent);font-size:0.8rem;margin-top:0.4rem;display:none;"></div>' +
+        '<button class="btn btn-primary want-modal-submit" id="wantModalSubmit" onclick="submitWant()">确认</button>' +
+      '</div>' +
+    '</div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeWantModal(); });
+  }
+  document.getElementById('wantModalInput').value = '';
+  document.getElementById('wantModalError').style.display = 'none';
+  document.getElementById('wantModalSubmit').disabled = false;
+  document.getElementById('wantModalSubmit').textContent = '确认';
+  overlay.classList.add('open');
+  overlay.dataset.workId = workId;
+  overlay.dataset.currentCount = currentCount;
+  setTimeout(function() { document.getElementById('wantModalInput').focus(); }, 100);
+}
+
+function closeWantModal() {
+  var overlay = document.getElementById('wantModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+async function submitWant() {
+  var overlay = document.getElementById('wantModalOverlay');
+  var workId = overlay.dataset.workId;
+  var currentCount = parseInt(overlay.dataset.currentCount) || 0;
+  var input = document.getElementById('wantModalInput');
+  var errorEl = document.getElementById('wantModalError');
+  var btn = document.getElementById('wantModalSubmit');
+
+  if (input.value.trim() !== '我想要') {
+    errorEl.textContent = '请输入"我想要"以确认意向';
+    errorEl.style.display = 'block';
+    input.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '提交中...';
+  errorEl.style.display = 'none';
+
+  try {
+    var res = await fetch('/api/works/' + workId + '/want', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: getUid() })
+    });
+    var data = await res.json();
+
+    var wantedList = getWantedWorks();
+    if (wantedList.indexOf(workId) === -1) wantedList.push(workId);
+    localStorage.setItem('f7wanted', JSON.stringify(wantedList));
+
+    if (typeof allWorks !== 'undefined') {
+      var w = allWorks.find(function(w) { return w.id === workId; });
+      if (w) w.wants = data.wants;
+    }
+
+    updateWantButtons(workId, true, data.wants);
+    closeWantModal();
+  } catch (e) {
+    console.error('Want failed:', e);
+    btn.disabled = false;
+    btn.textContent = '确认';
+    errorEl.textContent = '提交失败，请重试';
+    errorEl.style.display = 'block';
+  }
+}
+
 // Debounce utility
 function debounce(fn, delay = 300) {
   let timer;

@@ -130,6 +130,14 @@ function saveLikes() {
   writeJSON('likes.json', likesCache);
 }
 
+// ===== Want System (我想要) =====
+let wantsCache = {};
+try { wantsCache = readJSON('wants.json'); } catch {}
+
+function saveWants() {
+  writeJSON('wants.json', wantsCache);
+}
+
 app.post('/api/works/:id/like', (req, res) => {
   const workId = req.params.id;
   const uid = req.body.uid;
@@ -180,6 +188,40 @@ app.post('/api/works/:id/unlike', (req, res) => {
   writeJSON('works.json', works);
   console.log('[UNLIKE] workId=%s uid=%s count=%d', workId, uid, works[index].likes);
   res.json({ likes: works[index].likes });
+});
+
+app.post('/api/works/:id/want', (req, res) => {
+  const workId = req.params.id;
+  const uid = req.body.uid;
+  if (!uid) return res.status(400).json({ error: 'missing uid' });
+
+  if (!wantsCache[workId]) wantsCache[workId] = [];
+
+  if (wantsCache[workId].includes(uid)) {
+    const works = readJSON('works.json');
+    const w = works.find(w => w.id === workId);
+    return res.json({ wants: w ? (w.wants || 0) : 0, alreadyWanted: true });
+  }
+
+  const works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === workId);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+  if (!works[index].wants) works[index].wants = 0;
+
+  wantsCache[workId].push(uid);
+  saveWants();
+  works[index].wants++;
+  writeJSON('works.json', works);
+  console.log('[WANT] workId=%s uid=%s count=%d', workId, uid, works[index].wants);
+  res.json({ wants: works[index].wants });
+});
+
+app.get('/api/works/:id/want-status', (req, res) => {
+  const workId = req.params.id;
+  const uid = req.query.uid;
+  if (!uid) return res.json({ wanted: false });
+  const wanted = wantsCache[workId] ? wantsCache[workId].includes(uid) : false;
+  res.json({ wanted });
 });
 
 // Events
@@ -449,6 +491,11 @@ app.delete('/api/admin/works/:id', authMiddleware, (req, res) => {
   try { likesData = readJSON('likes.json'); } catch {}
   delete likesData[workId];
   writeJSON('likes.json', likesData);
+  // Cascade: remove from wants.json
+  let wantsData = {};
+  try { wantsData = readJSON('wants.json'); } catch {}
+  delete wantsData[workId];
+  writeJSON('wants.json', wantsData);
   res.json({ success: true });
 });
 

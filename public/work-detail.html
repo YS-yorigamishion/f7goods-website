@@ -48,8 +48,9 @@
           <div class="detail-header">
             <div style="display:flex;align-items:flex-start;gap:1rem;">
               <h1 style="flex:1;">${work.title}</h1>
-              <div style="flex-shrink:0;padding-top:0.3rem;">
-                ${renderLikeButton(work.id, work.likes)}
+              <div style="flex-shrink:0;padding-top:0.3rem;text-align:right;">
+                <div>${renderLikeButton(work.id, work.likes)}</div>
+                <div>${renderWantButton(work.id, work.wants)}</div>
               </div>
             </div>
             <div class="detail-meta">

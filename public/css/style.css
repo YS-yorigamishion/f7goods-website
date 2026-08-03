@@ -454,6 +454,105 @@ body {
   color: var(--accent);
 }
 
+/* Want button */
+.want-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 100px;
+  transition: var(--transition);
+  font-size: 0.85rem;
+  color: var(--ink);
+  margin-top: 0.3rem;
+}
+
+.want-btn:hover {
+  background: rgba(52, 152, 219, 0.08);
+}
+
+.want-btn .want-icon {
+  font-size: 1rem;
+}
+
+.want-btn .want-text {
+  font-weight: 500;
+}
+
+.want-btn .want-count {
+  font-size: 0.78rem;
+  color: var(--haze);
+  font-weight: 500;
+}
+
+.want-btn--done {
+  cursor: default;
+  background: rgba(52, 152, 219, 0.08);
+  color: #3498db;
+  pointer-events: none;
+}
+
+.want-btn--done .want-count {
+  color: #3498db;
+}
+
+/* Want modal */
+.want-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(26, 26, 46, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.want-modal-overlay.open {
+  display: flex;
+}
+
+.want-modal {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 440px;
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+
+.want-modal-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: none; border: none;
+  font-size: 1.5rem; cursor: pointer;
+  color: var(--haze); padding: 0; line-height: 1;
+}
+
+.want-modal-close:hover {
+  color: var(--accent);
+}
+
+.want-modal-body p {
+  margin-bottom: 1rem;
+}
+
+.want-modal-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.want-modal-submit {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
 .card-date {
   font-size: 0.8rem;
   color: var(--haze);
