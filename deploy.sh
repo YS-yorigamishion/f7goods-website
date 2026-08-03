@@ -12,8 +12,8 @@ echo "=== f7goods deploy ==="
 echo "[1/5] 备份 data/ ..."
 cp -r data data.bak 2>/dev/null || true
 
-# 2. 暂存本地代码改动（如有）
-git stash --include-untracked 2>/dev/null || true
+# 2. 暂存本地代码改动（排除 data 目录）
+git stash --include-untracked -- ':(exclude)data' 2>/dev/null || true
 
 # 3. 拉取最新代码（这会删除 data/ 中的文件，因为它们不再被 git 跟踪）
 echo "[2/5] git pull ..."

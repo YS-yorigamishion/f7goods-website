@@ -29,5 +29,6 @@ data/*.json
 # Sensitive data
 data/admin.json
 data/likes.json
+data/wants.json
 data/contact.json
 data/pageviews.json
