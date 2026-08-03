@@ -25,6 +25,7 @@
     let circleWorksData = [];
     let cwCategory = 'all';
     let cwSearchText = '';
+    let cwSortBy = 'default';
 
     function renderCircleWorks() {
       let filtered = circleWorksData;
@@ -37,6 +38,16 @@
           w.title.toLowerCase().includes(q) ||
           (w.tags || []).some(t => t.toLowerCase().includes(q))
         );
+      }
+      // Sorting
+      if (cwSortBy === 'likes-desc') {
+        filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      } else if (cwSortBy === 'likes-asc') {
+        filtered.sort((a, b) => (a.likes || 0) - (b.likes || 0));
+      } else if (cwSortBy === 'wants-desc') {
+        filtered.sort((a, b) => (b.wants || 0) - (a.wants || 0));
+      } else if (cwSortBy === 'wants-asc') {
+        filtered.sort((a, b) => (a.wants || 0) - (b.wants || 0));
       }
       const grid = document.getElementById('circleWorksGrid');
       const count = document.getElementById('circleWorksCount');
@@ -59,7 +70,10 @@
           </div>
           <div class="card-footer" style="padding:0.5rem 0.8rem;">
             <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${work.price}</span>
-            ${renderLikeButton(work.id, work.likes)}
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">想要 ${work.wants}</span>` : ''}
+              ${renderLikeButton(work.id, work.likes)}
+            </div>
           </div>
         </div>
       `).join('');
@@ -125,9 +139,16 @@
                 return `
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">作品列表 <span id="circleWorksCount">(${circleWorks.length})</span></h3>
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
-                  <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">全部</button>
-                  ${catBtns.map(c => `<button class="filter-btn" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${c.name}</button>`).join('')}
-                  <input type="text" class="search-input" placeholder="搜索作品、标签..." style="margin-left:auto;max-width:200px;" oninput="cwSearchText=this.value;renderCircleWorks();">
+                  <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">全部</button>
+                  ${catBtns.map(c => `<button class="filter-btn" data-cat="${c.id}" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${c.name}</button>`).join('')}
+                  <select class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="cwSortBy=this.value;renderCircleWorks();">
+                    <option value="default">默认排序</option>
+                    <option value="likes-desc">喜爱数 ↓ 高→低</option>
+                    <option value="likes-asc">喜爱数 ↑ 低→高</option>
+                    <option value="wants-desc">想要数 ↓ 高→低</option>
+                    <option value="wants-asc">想要数 ↑ 低→高</option>
+                  </select>
+                  <input type="text" class="search-input" placeholder="搜索作品、标签..." style="max-width:200px;" oninput="cwSearchText=this.value;renderCircleWorks();">
                 </div>
                 <div class="cards-grid related-works-grid" id="circleWorksGrid"></div>
                 `;

@@ -104,7 +104,7 @@
       const searchInput = document.getElementById('searchInput');
       const sortSelect = document.getElementById('sortSelect');
       const searchHtml = searchInput ? searchInput.outerHTML : '<input type="text" class="search-input" placeholder="搜索作品..." id="searchInput">';
-      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">默认排序</option><option value="date-asc">发售时间 ↑ 早→晚</option><option value="date-desc">发售时间 ↓ 晚→早</option><option value="likes-desc">喜爱数 ↓ 高→低</option><option value="likes-asc">喜爱数 ↑ 低→高</option></select>`;
+      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">默认排序</option><option value="date-asc">发售时间 ↑ 早→晚</option><option value="date-desc">发售时间 ↓ 晚→早</option><option value="likes-desc">喜爱数 ↓ 高→低</option><option value="likes-asc">喜爱数 ↑ 低→高</option><option value="wants-desc">想要数 ↓ 高→低</option><option value="wants-asc">想要数 ↑ 低→高</option></select>`;
       catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部</button>' +
         CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('') +
         `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">${sortHtml}${searchHtml}</div>`;
@@ -179,6 +179,10 @@
         filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
       } else if (sortVal === 'likes-asc') {
         filtered.sort((a, b) => (a.likes || 0) - (b.likes || 0));
+      } else if (sortVal === 'wants-desc') {
+        filtered.sort((a, b) => (b.wants || 0) - (a.wants || 0));
+      } else if (sortVal === 'wants-asc') {
+        filtered.sort((a, b) => (a.wants || 0) - (b.wants || 0));
       }
 
       if (filtered.length === 0) {
@@ -201,6 +205,7 @@
           <div class="card-footer">
             <span class="card-price">${work.price}</span>
             <div style="display:flex;align-items:center;gap:0.5rem;">
+              ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">想要 ${work.wants}</span>` : ''}
               <span class="card-date">${formatDate(work.releaseDate)}</span>
               ${renderLikeButton(work.id, work.likes)}
             </div>
