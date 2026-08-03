@@ -1923,26 +1923,67 @@ async function loadCircles() {
 function renderCirclesTable(circles) {
   const tbody = document.getElementById('circlesTableBody');
   if (!circles || circles.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
     return;
   }
-  tbody.innerHTML = circles.map((c, i) => `
+  tbody.innerHTML = circles.map((c, i) => {
+    let accountHtml = '<span style="color:var(--haze);font-size:0.8rem;">未注册</span>';
+    if (c.username) {
+      if (c.authorStatus === 'approved') {
+        accountHtml = '<span style="color:#2ecc71;font-weight:600;font-size:0.8rem;">✓ 已批准</span><br><span style="font-size:0.7rem;color:var(--haze);">' + escapeHtml(c.username) + '</span>';
+      } else if (c.authorStatus === 'pending') {
+        accountHtml = '<span style="color:#f39c12;font-weight:600;font-size:0.8rem;">待审批</span><br><span style="font-size:0.7rem;color:var(--haze);">' + escapeHtml(c.username) + '</span>';
+      } else if (c.authorStatus === 'rejected') {
+        accountHtml = '<span style="color:var(--accent);font-weight:600;font-size:0.8rem;">已拒绝</span><br><span style="font-size:0.7rem;color:var(--haze);">' + escapeHtml(c.username) + '</span>';
+      }
+    }
+    let actionBtns = `
+      <button class="btn-sm btn-edit" onclick="manageCircleWorks('${c.id}')">关联</button>
+      <button class="btn-sm btn-edit" onclick="exportCircleExcel('${c.id}')" title="导出Excel">📥导出</button>
+      <button class="btn-sm btn-edit" onclick="importCircleExcel('${c.id}')" title="导入Excel">📤导入</button>
+      <button class="btn-sm btn-edit" onclick="editCircle('${c.id}')">编辑</button>
+      <button class="btn-sm btn-delete" onclick="deleteCircle('${c.id}')">删除</button>`;
+    if (c.username && c.authorStatus === 'pending') {
+      actionBtns = `<button class="btn-sm btn-edit" style="background:rgba(46,204,113,0.15);color:#2ecc71;" onclick="approveAuthor('${c.id}')">批准</button>
+        <button class="btn-sm btn-delete" onclick="rejectAuthor('${c.id}')">拒绝</button>` + actionBtns;
+    } else if (c.username && c.authorStatus === 'approved') {
+      actionBtns = `<button class="btn-sm btn-edit" onclick="resetAuthorPassword('${c.id}')">重置密码</button>` + actionBtns;
+    }
+    return `
     <tr>
       <td>${renderOrderControls('circles', c.id, i, circles.length)}</td>
       <td class="editable-cell" onclick="makeCircleEditable(this, '${c.id}', 'name', '${escapeHtml(c.name)}')">${c.name}</td>
       <td>${CIRCLE_CATEGORIES[c.category] || c.category || '-'}</td>
       <td>${c._worksCount || 0}</td>
+      <td>${accountHtml}</td>
       <td>
         <div class="table-actions">
-          <button class="btn-sm btn-edit" onclick="manageCircleWorks('${c.id}')">关联</button>
-          <button class="btn-sm btn-edit" onclick="exportCircleExcel('${c.id}')" title="导出Excel">📥导出</button>
-          <button class="btn-sm btn-edit" onclick="importCircleExcel('${c.id}')" title="导入Excel">📤导入</button>
-          <button class="btn-sm btn-edit" onclick="editCircle('${c.id}')">编辑</button>
-          <button class="btn-sm btn-delete" onclick="deleteCircle('${c.id}')">删除</button>
+          ${actionBtns}
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
+}
+
+async function approveAuthor(circleId) {
+  if (!confirm('确定批准该作者账号？')) return;
+  await adminAPI('POST', `/api/admin/circles/${circleId}/approve-author`);
+  showToast('已批准', 'success');
+  loadCircles();
+}
+
+async function rejectAuthor(circleId) {
+  if (!confirm('确定拒绝该作者账号？')) return;
+  await adminAPI('POST', `/api/admin/circles/${circleId}/reject-author`);
+  showToast('已拒绝', 'success');
+  loadCircles();
+}
+
+async function resetAuthorPassword(circleId) {
+  const newPw = prompt('请输入新密码（至少6位）：');
+  if (!newPw || newPw.length < 6) { if (newPw !== null) alert('密码至少6位'); return; }
+  await adminAPI('POST', `/api/admin/circles/${circleId}/reset-password`, { newPassword: newPw });
+  showToast('密码已重置', 'success');
 }
 
 async function inlineUpdateCircle(circleId, field, value) {

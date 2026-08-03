@@ -95,6 +95,201 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ token });
 });
 
+// ===== Author Auth =====
+function authorAuthMiddleware(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: '未授权' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role !== 'author') return res.status(403).json({ error: '权限不足' });
+    req.author = { circleId: decoded.circleId };
+    next();
+  } catch {
+    res.status(401).json({ error: 'Token无效或已过期' });
+  }
+}
+
+app.post('/api/author/register', (req, res) => {
+  const { circleId, username, password } = req.body;
+  if (!circleId || !username || !password) return res.status(400).json({ error: '请填写完整信息' });
+  if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === circleId);
+  if (!circle) return res.status(404).json({ error: '作者未找到' });
+  if (circle.username) return res.status(400).json({ error: '该作者已注册' });
+
+  // Check username uniqueness
+  if (circles.some(c => c.username === username)) {
+    return res.status(400).json({ error: '用户名已存在' });
+  }
+
+  circle.username = username;
+  circle.passwordHash = bcrypt.hashSync(password, 10);
+  circle.authorStatus = 'pending';
+  writeJSON('circles.json', circles);
+  res.json({ success: true, message: '注册成功，等待管理员审批' });
+});
+
+app.post('/api/author/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: '请填写完整信息' });
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.username === username);
+  if (!circle) return res.status(401).json({ error: '用户名或密码错误' });
+  if (!bcrypt.compareSync(password, circle.passwordHash)) {
+    return res.status(401).json({ error: '用户名或密码错误' });
+  }
+  if (circle.authorStatus !== 'approved') {
+    return res.status(403).json({ error: '账号待审批，请联系管理员' });
+  }
+
+  const token = jwt.sign({ circleId: circle.id, role: 'author' }, JWT_SECRET, { expiresIn: '24h' });
+  res.json({ token, circleId: circle.id, circleName: circle.name });
+});
+
+// Author: get own profile
+app.get('/api/author/profile', authorAuthMiddleware, (req, res) => {
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  if (!circle) return res.status(404).json({ error: '作者未找到' });
+  // Return safe fields only
+  const { passwordHash, ...safe } = circle;
+  res.json(safe);
+});
+
+// Author: update own profile
+app.put('/api/author/profile', authorAuthMiddleware, (req, res) => {
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.author.circleId);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  // Only allow updating specific fields
+  const allowed = ['name', 'description', 'category', 'logo', 'images', 'socialLinks'];
+  const updates = {};
+  allowed.forEach(field => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+
+  circles[index] = { ...circles[index], ...updates };
+  writeJSON('circles.json', circles);
+  const { passwordHash, ...safe } = circles[index];
+  res.json(safe);
+});
+
+// Author: change password
+app.post('/api/author/change-password', authorAuthMiddleware, (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) return res.status(400).json({ error: '请填写完整信息' });
+  if (newPassword.length < 6) return res.status(400).json({ error: '新密码至少6位' });
+
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.author.circleId);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  if (!bcrypt.compareSync(oldPassword, circles[index].passwordHash)) {
+    return res.status(401).json({ error: '旧密码错误' });
+  }
+
+  circles[index].passwordHash = bcrypt.hashSync(newPassword, 10);
+  writeJSON('circles.json', circles);
+  res.json({ success: true });
+});
+
+// Author: get own works
+app.get('/api/author/works', authorAuthMiddleware, (req, res) => {
+  const works = readJSON('works.json');
+  const circleWorks = works.filter(w => (w.circles || []).includes(req.author.circleId));
+  res.json(circleWorks);
+});
+
+// Author: update own work
+app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
+  let works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+
+  // Verify the work belongs to this author
+  if (!(works[index].circles || []).includes(req.author.circleId)) {
+    return res.status(403).json({ error: '无权编辑此作品' });
+  }
+
+  // Only allow updating specific fields
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'tags', 'images', 'moreImages', 'socialLinks'];
+  const updates = {};
+  allowed.forEach(field => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+
+  works[index] = { ...works[index], ...updates };
+  writeJSON('works.json', works);
+  res.json(works[index]);
+});
+
+// Author: get events list
+app.get('/api/author/events', authorAuthMiddleware, (req, res) => {
+  const events = readJSON('events.json');
+  res.json(events);
+});
+
+// Author: toggle event association
+app.put('/api/author/events/:id/toggle', authorAuthMiddleware, (req, res) => {
+  let events = readJSON('events.json');
+  const index = events.findIndex(e => e.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '活动未找到' });
+
+  const circleId = req.author.circleId;
+  if (!events[index].relatedCircles) events[index].relatedCircles = [];
+
+  const idx = events[index].relatedCircles.indexOf(circleId);
+  if (idx === -1) {
+    events[index].relatedCircles.push(circleId);
+  } else {
+    events[index].relatedCircles.splice(idx, 1);
+  }
+
+  writeJSON('events.json', events);
+  res.json(events[index]);
+});
+
+// Admin: approve author
+app.post('/api/admin/circles/:id/approve-author', authMiddleware, (req, res) => {
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+  if (!circles[index].username) return res.status(400).json({ error: '该作者未注册' });
+
+  circles[index].authorStatus = 'approved';
+  writeJSON('circles.json', circles);
+  res.json({ success: true });
+});
+
+// Admin: reject author
+app.post('/api/admin/circles/:id/reject-author', authMiddleware, (req, res) => {
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  circles[index].authorStatus = 'rejected';
+  writeJSON('circles.json', circles);
+  res.json({ success: true });
+});
+
+// Admin: reset author password
+app.post('/api/admin/circles/:id/reset-password', authMiddleware, (req, res) => {
+  const { newPassword } = req.body;
+  if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: '密码至少6位' });
+
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  circles[index].passwordHash = bcrypt.hashSync(newPassword, 10);
+  writeJSON('circles.json', circles);
+  res.json({ success: true });
+});
+
 // ===== Public API =====
 // Works
 app.get('/api/works', (req, res) => {
@@ -1011,6 +1206,12 @@ app.post('/api/admin/reorder/:type', authMiddleware, (req, res) => {
 
 // --- Upload ---
 app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '请选择文件' });
+  res.json({ url: '/uploads/' + req.file.filename });
+});
+
+// Author upload
+app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择文件' });
   res.json({ url: '/uploads/' + req.file.filename });
 });
