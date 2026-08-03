@@ -261,39 +261,107 @@ function showPVDetail(type) {
   const thisMonth = todayStr.slice(0, 7);
   const thisYear = todayStr.slice(0, 4);
 
-  let title = '', entries = [];
+  let title = '', entries = [], chartLabels = [], chartData = [], colLabel = '';
 
   if (type === 'today') {
-    title = '今日浏览详情';
-    entries = [[todayStr, daily[todayStr] || 0]];
+    title = '近 30 日每日浏览量';
+    colLabel = '日期';
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const count = daily[key] || 0;
+      entries.push([key, count]);
+      chartLabels.push(key.slice(5));
+      chartData.push(count);
+    }
+    entries.sort((a, b) => b[0].localeCompare(a[0]));
   } else if (type === 'month') {
-    title = '本月浏览详情';
+    title = '近 12 月每月浏览量';
+    colLabel = '月份';
+    const months = {};
     for (const [d, c] of Object.entries(daily)) {
-      if (d.startsWith(thisMonth)) entries.push([d, c]);
+      const m = d.slice(0, 7);
+      months[m] = (months[m] || 0) + c;
+    }
+    // Generate last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const key = d.toISOString().slice(0, 7);
+      const count = months[key] || 0;
+      entries.push([key, count]);
+      chartLabels.push(key);
+      chartData.push(count);
     }
     entries.sort((a, b) => b[0].localeCompare(a[0]));
   } else if (type === 'year') {
-    title = '今年浏览详情';
-    // Group by month
-    const months = {};
+    title = '历年浏览量';
+    colLabel = '年份';
+    const years = {};
     for (const [d, c] of Object.entries(daily)) {
-      if (d.startsWith(thisYear)) {
-        const m = d.slice(0, 7);
-        months[m] = (months[m] || 0) + c;
-      }
+      const y = d.slice(0, 4);
+      years[y] = (years[y] || 0) + c;
     }
-    entries = Object.entries(months).sort((a, b) => b[0].localeCompare(a[0]));
+    const sortedYears = Object.keys(years).sort();
+    for (const y of sortedYears) {
+      entries.push([y, years[y]]);
+      chartLabels.push(y + '年');
+      chartData.push(years[y]);
+    }
+    entries.sort((a, b) => b[0].localeCompare(a[0]));
   }
 
+  const total = chartData.reduce((s, v) => s + v, 0);
+  const avg = chartData.length > 0 ? Math.round(total / chartData.length) : 0;
+  const max = Math.max(...chartData, 1);
+
   document.getElementById('modalTitle').textContent = title;
+
   const rows = entries.length > 0
-    ? entries.map(([d, c]) => `<tr><td style="padding:0.5rem 1rem;border-bottom:1px solid var(--border);">${d}</td><td style="padding:0.5rem 1rem;border-bottom:1px solid var(--border);text-align:right;font-weight:600;">${c}</td></tr>`).join('')
+    ? entries.map(([d, c]) => `<tr><td style="padding:0.5rem 1rem;border-bottom:1px solid var(--border);">${d}</td><td style="padding:0.5rem 1rem;border-bottom:1px solid var(--border);text-align:right;font-weight:600;">${c.toLocaleString()}</td></tr>`).join('')
     : '<tr><td colspan="2" style="padding:1rem;text-align:center;color:var(--haze);">暂无数据</td></tr>';
+
+  const barRows = entries.length > 0
+    ? entries.map(([d, c]) => {
+        const pct = max > 0 ? (c / max * 100) : 0;
+        return `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.3rem 0;">
+          <span style="width:70px;font-size:0.8rem;color:var(--haze);text-align:right;flex-shrink:0;">${d}</span>
+          <div style="flex:1;height:20px;background:var(--paper);border-radius:4px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-alt));border-radius:4px;min-width:${c > 0 ? '2px' : '0'};"></div>
+          </div>
+          <span style="width:50px;font-size:0.8rem;font-weight:600;text-align:right;">${c.toLocaleString()}</span>
+        </div>`;
+      }).join('')
+    : '<p style="text-align:center;color:var(--haze);padding:1rem;">暂无数据</p>';
+
   document.getElementById('modalBody').innerHTML = `
-    <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
-      <thead><tr style="text-align:left;"><th style="padding:0.5rem 1rem;border-bottom:2px solid var(--border);">日期</th><th style="padding:0.5rem 1rem;border-bottom:2px solid var(--border);text-align:right;">浏览量</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <div style="display:flex;gap:1rem;margin-bottom:1.2rem;">
+      <div style="flex:1;text-align:center;padding:0.8rem;background:rgba(233,69,96,0.06);border-radius:var(--radius-sm);">
+        <div style="font-size:1.3rem;font-weight:700;color:var(--accent);">${total.toLocaleString()}</div>
+        <div style="font-size:0.75rem;color:var(--haze);">总计</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:0.8rem;background:rgba(52,152,219,0.06);border-radius:var(--radius-sm);">
+        <div style="font-size:1.3rem;font-weight:700;color:#3498db;">${avg.toLocaleString()}</div>
+        <div style="font-size:0.75rem;color:var(--haze);">平均</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:0.8rem;background:rgba(46,204,113,0.06);border-radius:var(--radius-sm);">
+        <div style="font-size:1.3rem;font-weight:700;color:#2ecc71;">${max.toLocaleString()}</div>
+        <div style="font-size:0.75rem;color:var(--haze);">最高</div>
+      </div>
+    </div>
+    <div style="margin-bottom:1.2rem;">
+      <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.6rem;color:var(--ink);">趋势图</div>
+      ${barRows}
+    </div>
+    <details>
+      <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;color:var(--haze);padding:0.3rem 0;">展开详细数据表</summary>
+      <div style="margin-top:0.6rem;max-height:240px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+          <thead><tr style="text-align:left;"><th style="padding:0.4rem 1rem;border-bottom:2px solid var(--border);">${colLabel}</th><th style="padding:0.4rem 1rem;border-bottom:2px solid var(--border);text-align:right;">浏览量</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </details>
   `;
   document.getElementById('modalSave').style.display = 'none';
   openModal();

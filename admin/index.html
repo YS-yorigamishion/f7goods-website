@@ -92,6 +92,7 @@
       <div class="admin-content" id="adminContent">
         <!-- Dashboard -->
         <div id="page-dashboard" class="admin-page active">
+          <!-- 内容统计 -->
           <div class="stats-grid">
             <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('works')">
               <div class="stat-icon" style="background:rgba(233,69,96,0.1);color:var(--accent);">🎨</div>
@@ -108,7 +109,7 @@
               </div>
             </div>
             <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('circles')">
-              <div class="stat-icon" style="background:rgba(46,204,113,0.1);color:var(--success);">🏠</div>
+              <div class="stat-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🏠</div>
               <div class="stat-info">
                 <div class="stat-number" id="statCircles">0</div>
                 <div class="stat-label">作者总数</div>
@@ -122,37 +123,47 @@
               </div>
             </div>
           </div>
-          <div class="stats-grid" style="margin-top:1.5rem;">
-            <div class="stat-card" style="cursor:pointer;" onclick="showPVDetail('today')">
-              <div class="stat-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;">👁</div>
-              <div class="stat-info">
-                <div class="stat-number" id="pvToday">0</div>
-                <div class="stat-label">今日浏览</div>
+
+          <!-- 浏览量统计 -->
+          <div class="admin-card" style="margin-top:1.5rem;">
+            <h3 style="margin-bottom:1rem;">浏览量概览</h3>
+            <div class="pv-overview-grid">
+              <div class="pv-overview-item" onclick="showPVDetail('today')" title="点击查看近 30 日每日浏览量">
+                <div class="pv-overview-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;">👁</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="pvToday">0</div>
+                  <div class="pv-overview-label">今日浏览</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
               </div>
-            </div>
-            <div class="stat-card" style="cursor:pointer;" onclick="showPVDetail('month')">
-              <div class="stat-icon" style="background:rgba(52,152,219,0.1);color:#3498db;">📈</div>
-              <div class="stat-info">
-                <div class="stat-number" id="pvMonth">0</div>
-                <div class="stat-label">本月浏览</div>
+              <div class="pv-overview-item" onclick="showPVDetail('month')" title="点击查看近 12 月每月浏览量">
+                <div class="pv-overview-icon" style="background:rgba(52,152,219,0.1);color:#3498db;">📈</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="pvMonth">0</div>
+                  <div class="pv-overview-label">本月浏览</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
               </div>
-            </div>
-            <div class="stat-card" style="cursor:pointer;" onclick="showPVDetail('year')">
-              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📅</div>
-              <div class="stat-info">
-                <div class="stat-number" id="pvYear">0</div>
-                <div class="stat-label">今年浏览</div>
+              <div class="pv-overview-item" onclick="showPVDetail('year')" title="点击查看历年浏览量">
+                <div class="pv-overview-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📅</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="pvYear">0</div>
+                  <div class="pv-overview-label">今年浏览</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
               </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🔥</div>
-              <div class="stat-info">
-                <div class="stat-number" id="pvTotal">0</div>
-                <div class="stat-label">总浏览量</div>
+              <div class="pv-overview-item pv-overview-item--total">
+                <div class="pv-overview-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🔥</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="pvTotal">0</div>
+                  <div class="pv-overview-label">总浏览量</div>
+                </div>
               </div>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+
+          <!-- 趋势图表 -->
+          <div class="dashboard-charts-grid" style="margin-top:1.5rem;">
             <div class="admin-card">
               <h3 style="margin-bottom:1rem;">近 7 日浏览趋势</h3>
               <div style="height:220px;"><canvas id="chart7d"></canvas></div>
@@ -161,10 +172,6 @@
               <h3 style="margin-bottom:1rem;">近 30 日浏览趋势</h3>
               <div style="height:220px;"><canvas id="chart30d"></canvas></div>
             </div>
-          </div>
-          <div class="admin-card" style="margin-top:1.5rem;">
-            <h3>欢迎使用 f7goods 管理后台</h3>
-            <p style="color:var(--haze);margin-top:0.5rem;">在这里管理你的作品、活动、作者和企划信息。点击左侧菜单开始操作。</p>
           </div>
         </div>
 
