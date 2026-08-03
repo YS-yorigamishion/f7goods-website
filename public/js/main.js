@@ -407,12 +407,19 @@ async function toggleLike(workId, btn) {
     }
     localStorage.setItem('f7liked', JSON.stringify(likedList));
 
+    // Update only the clicked button
+    var newLiked = !liked;
+    btn.disabled = false;
+    if (newLiked) btn.classList.add('liked'); else btn.classList.remove('liked');
+    btn.querySelector('.like-icon').textContent = newLiked ? '❤️' : '🤍';
+    btn.querySelector('.like-count').textContent = data.likes > 0 ? data.likes : '';
+    btn.title = newLiked ? '取消点赞' : '点赞';
+
+    // Update allWorks data
     if (typeof allWorks !== 'undefined') {
       var w = allWorks.find(function(w) { return w.id === workId; });
       if (w) w.likes = data.likes;
     }
-
-    updateLikeButtons(workId, !liked, data.likes);
   } catch (e) {
     console.error('Like failed:', e);
     btn.disabled = false;
