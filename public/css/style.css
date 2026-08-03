@@ -477,8 +477,11 @@ body {
 .want-btn--done {
   background: var(--border);
   color: var(--haze);
-  cursor: default;
-  pointer-events: none;
+  cursor: pointer;
+}
+
+.want-btn--done:hover {
+  opacity: 0.75;
 }
 
 /* Want modal */

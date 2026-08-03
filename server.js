@@ -224,6 +224,32 @@ app.get('/api/works/:id/want-status', (req, res) => {
   res.json({ wanted });
 });
 
+app.post('/api/works/:id/unwant', (req, res) => {
+  const workId = req.params.id;
+  const uid = req.body.uid;
+  if (!uid) return res.status(400).json({ error: 'missing uid' });
+
+  if (!wantsCache[workId]) wantsCache[workId] = [];
+
+  const idx = wantsCache[workId].indexOf(uid);
+  if (idx === -1) {
+    const works = readJSON('works.json');
+    const w = works.find(w => w.id === workId);
+    return res.json({ wants: w ? (w.wants || 0) : 0 });
+  }
+
+  const works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === workId);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+
+  wantsCache[workId].splice(idx, 1);
+  saveWants();
+  works[index].wants = Math.max(0, (works[index].wants || 0) - 1);
+  writeJSON('works.json', works);
+  console.log('[UNWANT] workId=%s uid=%s count=%d', workId, uid, works[index].wants);
+  res.json({ wants: works[index].wants });
+});
+
 // Events
 app.get('/api/events', (req, res) => {
   let events = readJSON('events.json');

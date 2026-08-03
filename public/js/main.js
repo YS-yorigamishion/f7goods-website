@@ -379,7 +379,7 @@ function renderWantButton(workId, wants) {
   const wanted = isWanted(workId);
   const count = wants || 0;
   if (wanted) {
-    return '<button class="want-btn want-btn--done" data-work-id="' + workId + '">已想要' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
+    return '<button class="want-btn want-btn--done" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();confirmUnwant(\'' + workId + '\',' + count + ')">已想要' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
   }
   return '<button class="want-btn" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();openWantModal(\'' + workId + '\',' + count + ')">我想要' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
 }
@@ -468,6 +468,35 @@ async function submitWant() {
     btn.textContent = '确认';
     errorEl.textContent = '提交失败，请重试';
     errorEl.style.display = 'block';
+  }
+}
+
+function confirmUnwant(workId, currentCount) {
+  if (!confirm('确定要取消"我想要"吗？')) return;
+  doUnwant(workId, currentCount);
+}
+
+async function doUnwant(workId, currentCount) {
+  try {
+    var res = await fetch('/api/works/' + workId + '/unwant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: getUid() })
+    });
+    var data = await res.json();
+
+    var wantedList = getWantedWorks();
+    wantedList = wantedList.filter(function(id) { return id !== workId; });
+    localStorage.setItem('f7wanted', JSON.stringify(wantedList));
+
+    if (typeof allWorks !== 'undefined') {
+      var w = allWorks.find(function(w) { return w.id === workId; });
+      if (w) w.wants = data.wants;
+    }
+
+    updateWantButtons(workId, false, data.wants);
+  } catch (e) {
+    console.error('Unwant failed:', e);
   }
 }
 
