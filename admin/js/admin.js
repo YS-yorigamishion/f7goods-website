@@ -734,10 +734,35 @@ function openWorkModal(work = null, returnToCircleId = null) {
       <textarea class="form-input" id="wDesc">${work?.description || ''}</textarea>
     </div>
     <div class="form-group">
-      <label>图片上传</label>
-      <input type="file" id="wImage" accept="image/*" style="font-size:0.85rem;">
-      <div id="wImagePreview" style="margin-top:0.5rem;">
-        ${work?.images?.length ? `<img src="${work.images[0]}" style="max-width:100px;border-radius:8px;">` : ''}
+      <label>展示图片</label>
+      <div id="wImagePreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+        ${(work?.images || []).map((img, i) => `
+          <div style="position:relative;">
+            <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+            <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>
+          </div>
+        `).join('')}
+      </div>
+      <input type="file" id="wImage" accept="image/*" multiple style="font-size:0.85rem;">
+      <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+        <button type="button" class="btn-sm btn-edit" onclick="uploadWorkImages()">上传图片</button>
+        <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageFromLibrary('work-images')">从图片库选择</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>更多图片</label>
+      <div id="wMoreImagePreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+        ${(work?.moreImages || []).map((img, i) => `
+          <div style="position:relative;">
+            <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+            <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>
+          </div>
+        `).join('')}
+      </div>
+      <input type="file" id="wMoreImage" accept="image/*" multiple style="font-size:0.85rem;">
+      <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+        <button type="button" class="btn-sm btn-edit" onclick="uploadWorkMoreImages()">上传图片</button>
+        <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageFromLibrary('work-more-images')">从图片库选择</button>
       </div>
     </div>
   `;
@@ -752,7 +777,8 @@ function openWorkModal(work = null, returnToCircleId = null) {
       circles: [...document.querySelectorAll('#wCirclesTags .circle-tag')].map(el => el.dataset.cid),
       tags: document.getElementById('wTags').value.split(',').map(t => t.trim()).filter(Boolean),
       description: document.getElementById('wDesc').value,
-      images: work?.images || []
+      images: [...document.querySelectorAll('#wImagePreview img')].map(img => img.src),
+      moreImages: [...document.querySelectorAll('#wMoreImagePreview img')].map(img => img.src)
     };
     if (isEdit) {
       const likesInput = document.getElementById('wLikes');
@@ -762,13 +788,6 @@ function openWorkModal(work = null, returnToCircleId = null) {
     }
 
     if (!data.title) { alert('请填写标题'); return; }
-
-    // Upload image if selected
-    const fileInput = document.getElementById('wImage');
-    if (fileInput.files.length > 0) {
-      const uploadRes = await uploadImage(fileInput.files[0]);
-      if (uploadRes.url) data.images = [uploadRes.url];
-    }
 
     if (isEdit) {
       await adminAPI('PUT', `/api/admin/works/${work.id}`, data);
@@ -809,6 +828,38 @@ function openWorkModal(work = null, returnToCircleId = null) {
   document.querySelectorAll('#wCirclesTags .rm-circle-tag').forEach(btn => {
     btn.addEventListener('click', () => btn.closest('.circle-tag').remove());
   });
+}
+
+async function uploadWorkImages() {
+  const input = document.getElementById('wImage');
+  const preview = document.getElementById('wImagePreview');
+  if (!input.files.length) { alert('请选择图片'); return; }
+  for (const file of input.files) {
+    const res = await uploadImage(file);
+    if (res.url) {
+      const div = document.createElement('div');
+      div.style.position = 'relative';
+      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
+      preview.appendChild(div);
+    }
+  }
+  input.value = '';
+}
+
+async function uploadWorkMoreImages() {
+  const input = document.getElementById('wMoreImage');
+  const preview = document.getElementById('wMoreImagePreview');
+  if (!input.files.length) { alert('请选择图片'); return; }
+  for (const file of input.files) {
+    const res = await uploadImage(file);
+    if (res.url) {
+      const div = document.createElement('div');
+      div.style.position = 'relative';
+      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
+      preview.appendChild(div);
+    }
+  }
+  input.value = '';
 }
 
 async function editWork(id) {
@@ -2244,6 +2295,12 @@ async function pickImageFromLibrary(type) {
       if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
     } else if (type === 'project-images') {
       const preview = document.getElementById('pImagesPreview');
+      if (preview) selected.forEach(url => appendImagePreview(preview, url));
+    } else if (type === 'work-images') {
+      const preview = document.getElementById('wImagePreview');
+      if (preview) selected.forEach(url => appendImagePreview(preview, url));
+    } else if (type === 'work-more-images') {
+      const preview = document.getElementById('wMoreImagePreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
     }
   };

@@ -653,6 +653,7 @@ app.get('/api/admin/circles/:id/export', authMiddleware, (req, res) => {
       '发售日期': w.releaseDate || '',
       '标签': (w.tags || []).join(', '),
       '图片': (w.images || []).map(img => img.replace('/uploads/', '')).join(', '),
+      '更多图片': (w.moreImages || []).map(img => img.replace('/uploads/', '')).join(', '),
       '关联活动': relatedEventTitles.join(', '),
       '作品描述': w.description || ''
     };
@@ -664,7 +665,7 @@ app.get('/api/admin/circles/:id/export', authMiddleware, (req, res) => {
   ws['!cols'] = [
     { wch: 30 }, { wch: 10 }, { wch: 12 },
     { wch: 10 }, { wch: 12 }, { wch: 25 },
-    { wch: 25 }, { wch: 30 }, { wch: 50 }
+    { wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 50 }
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, `${circle.name} - 作品列表`);
@@ -720,7 +721,8 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
         releaseDate: row['发售日期'] || row['发售日'] || '',
         tags: (row['标签'] || '').split(',').map(t => t.trim()).filter(Boolean),
         description: row['作品描述'] || row['描述'] || '',
-        images: (row['图片'] || '').split(',').map(f => f.trim()).filter(Boolean).map(f => f.startsWith('/uploads/') ? f : '/uploads/' + f)
+        images: (row['图片'] || '').split(',').map(f => f.trim()).filter(Boolean).map(f => f.startsWith('/uploads/') ? f : '/uploads/' + f),
+        moreImages: (row['更多图片'] || '').split(',').map(f => f.trim()).filter(Boolean).map(f => f.startsWith('/uploads/') ? f : '/uploads/' + f)
       };
 
       // Handle event association from Excel
@@ -747,11 +749,14 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
         if (!workData.images || workData.images.length === 0) {
           workData.images = existing.images || [];
         }
+        if (!workData.moreImages || workData.moreImages.length === 0) {
+          workData.moreImages = existing.moreImages || [];
+        }
         return { ...existing, ...workData };
       } else {
         result.added++;
         result.details.push(`新增: ${title}`);
-        return { id: workId, ...workData, circles: [circle.id], images: [], createdAt: new Date().toISOString() };
+        return { id: workId, ...workData, circles: [circle.id], images: workData.images || [], moreImages: workData.moreImages || [], createdAt: new Date().toISOString() };
       }
     }).filter(Boolean);
 
