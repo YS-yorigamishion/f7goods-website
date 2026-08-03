@@ -40,7 +40,11 @@
         );
       }
       // Sorting
-      if (cwSortBy === 'likes-desc') {
+      if (cwSortBy === 'date-asc') {
+        filtered.sort((a, b) => (a.releaseDate || 'z').localeCompare(b.releaseDate || 'z'));
+      } else if (cwSortBy === 'date-desc') {
+        filtered.sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
+      } else if (cwSortBy === 'likes-desc') {
         filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
       } else if (cwSortBy === 'likes-asc') {
         filtered.sort((a, b) => (a.likes || 0) - (b.likes || 0));
@@ -143,6 +147,8 @@
                   ${catBtns.map(c => `<button class="filter-btn" data-cat="${c.id}" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${c.name}</button>`).join('')}
                   <select class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="cwSortBy=this.value;renderCircleWorks();">
                     <option value="default">默认排序</option>
+                    <option value="date-asc">发售时间 ↑ 早→晚</option>
+                    <option value="date-desc">发售时间 ↓ 晚→早</option>
                     <option value="likes-desc">喜爱数 ↓ 高→低</option>
                     <option value="likes-asc">喜爱数 ↑ 低→高</option>
                     <option value="wants-desc">想要数 ↓ 高→低</option>
