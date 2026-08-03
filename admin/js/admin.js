@@ -2305,6 +2305,12 @@ async function pickImageFromLibrary(type) {
     } else if (type === 'work-more-images') {
       const preview = document.getElementById('wMoreImagePreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
+    } else if (type === 'update-cover') {
+      const preview = document.getElementById('updCoverPreview');
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+    } else if (type === 'update-images') {
+      const preview = document.getElementById('updImagesPreview');
+      if (preview) selected.forEach(url => appendImagePreview(preview, url));
     }
   };
   openModal();
@@ -3683,6 +3689,33 @@ function openUpdateModal(update = null) {
         <textarea class="form-input" id="updContent" style="min-height:150px;">${update?.content || ''}</textarea>
       </div>
       <div class="form-group">
+        <label>首图</label>
+        <div id="updCoverPreview" style="margin-bottom:0.5rem;">
+          ${update?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${update.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
+        </div>
+        <input type="file" id="updCoverInput" accept="image/*" style="font-size:0.85rem;">
+        <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+          <button type="button" class="btn-sm btn-edit" onclick="uploadUpdateCover()">上传首图</button>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageFromLibrary('update-cover')">从图片库选择</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>更多图片</label>
+        <div id="updImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+          ${(update?.images || []).map((img, i) => `
+            <div style="position:relative;">
+              <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+              <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>
+            </div>
+          `).join('')}
+        </div>
+        <input type="file" id="updImagesInput" accept="image/*" multiple style="font-size:0.85rem;">
+        <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+          <button type="button" class="btn-sm btn-edit" onclick="uploadUpdateImages()">上传图片</button>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageFromLibrary('update-images')">从图片库选择</button>
+        </div>
+      </div>
+      <div class="form-group">
         <label>关联作者</label>
         <input type="text" class="form-input" id="updCircleSearch" placeholder="搜索作者名称..." style="margin-bottom:0.5rem;padding:0.4rem 0.6rem;font-size:0.85rem;" oninput="filterUpdateCirclesList(this.value)">
         <div id="updCirclesList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">
@@ -3724,6 +3757,8 @@ function openUpdateModal(update = null) {
         publishDate: document.getElementById('updPublishDate').value,
         content: document.getElementById('updContent').value,
         pinned: document.getElementById('updPinned').checked,
+        coverImage: document.querySelector('#updCoverPreview img')?.src || '',
+        images: [...document.querySelectorAll('#updImagesPreview img')].map(img => img.src),
         relatedCircles: [...document.querySelectorAll('.upd-circle-cb:checked')].map(cb => cb.value),
         relatedEvents: [...document.querySelectorAll('.upd-event-cb:checked')].map(cb => cb.value),
         relatedProjects: [...document.querySelectorAll('.upd-project-cb:checked')].map(cb => cb.value)
@@ -3763,6 +3798,33 @@ function filterUpdateCirclesList(query) {
     const name = item.dataset.name || '';
     item.style.display = name.includes(q) ? 'flex' : 'none';
   });
+}
+
+async function uploadUpdateCover() {
+  const input = document.getElementById('updCoverInput');
+  const preview = document.getElementById('updCoverPreview');
+  if (!input.files.length) { alert('请选择首图'); return; }
+  const res = await uploadImage(input.files[0]);
+  if (res.url) {
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+  }
+  input.value = '';
+}
+
+async function uploadUpdateImages() {
+  const input = document.getElementById('updImagesInput');
+  const preview = document.getElementById('updImagesPreview');
+  if (!input.files.length) { alert('请选择图片'); return; }
+  for (const file of input.files) {
+    const res = await uploadImage(file);
+    if (res.url) {
+      const div = document.createElement('div');
+      div.style.position = 'relative';
+      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
+      preview.appendChild(div);
+    }
+  }
+  input.value = '';
 }
 
 // ===== Change Password =====

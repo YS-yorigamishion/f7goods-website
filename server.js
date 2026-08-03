@@ -886,6 +886,8 @@ app.post('/api/admin/updates', authMiddleware, (req, res) => {
     content: req.body.content || '',
     publishDate: req.body.publishDate || new Date().toISOString().split('T')[0],
     pinned: req.body.pinned || false,
+    coverImage: req.body.coverImage || '',
+    images: req.body.images || [],
     relatedCircles: req.body.relatedCircles || [],
     relatedEvents: req.body.relatedEvents || [],
     relatedProjects: req.body.relatedProjects || [],

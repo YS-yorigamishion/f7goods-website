@@ -84,6 +84,41 @@
       border-top: 1px solid var(--border);
       display: none;
     }
+    .update-cover {
+      display: none;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      overflow: hidden;
+      max-height: 250px;
+    }
+    .update-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .update-card.expanded .update-cover {
+      display: block;
+    }
+    .update-images {
+      display: none;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .update-card.expanded .update-images {
+      display: block;
+    }
+    .update-images-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.8rem;
+    }
+    .update-images-grid img {
+      width: 100%;
+      border-radius: 6px;
+      cursor: pointer;
+    }
     .update-card.expanded .update-related {
       display: block;
     }
@@ -176,7 +211,6 @@
         allProjects.forEach(p => projectsMap[p.id] = p.title);
         const circlesMap = {};
         allCircles.forEach(c => circlesMap[c.id] = c.name);
-        allProjects.forEach(p => projectsMap[p.id] = p.title);
 
         container.innerHTML = updates.map(u => {
           const preview = u.content.length > 80 ? u.content.substring(0, 80) + '...' : u.content;
@@ -197,7 +231,9 @@
               <span class="update-date">${formatDate(u.publishDate)}</span>
             </div>
             <div class="update-preview">${escapeHtml(preview)}</div>
+            ${u.coverImage ? '<div class="update-cover"><img src="' + u.coverImage + '" alt="' + escapeHtml(u.title) + '"></div>' : ''}
             <div class="update-content">${nl2br(u.content)}</div>
+            ${u.images && u.images.length > 0 ? '<div class="update-images"><div class="update-images-grid">' + u.images.map((img, i) => '<img src="' + img + '" onclick="event.stopPropagation();openLightbox(' + JSON.stringify(u.images).replace(/"/g, '&quot;') + ',' + i + ')">').join('') + '</div></div>' : ''}
             ${relatedLinks.length > 0 ? '<div class="update-related">' + relatedLinks.join('') + '</div>' : ''}
             <div class="update-expand-hint">点击查看详情 ›</div>
           </div>`;
