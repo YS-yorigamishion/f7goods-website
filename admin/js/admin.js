@@ -1052,6 +1052,8 @@ async function editWork(id) {
   if (work) {
     // Compute related projects
     work.relatedProjects = (projects || []).filter(p => (p.works || []).includes(id)).map(p => p.id);
+    console.log('[editWork] id:', id, 'title:', work.title, 'relatedProjects:', work.relatedProjects);
+    console.log('[editWork] projects data:', projects.map(p => ({id: p.id, title: p.title, works: p.works || []})));
     openWorkModal(work);
   }
 }
@@ -1696,8 +1698,12 @@ async function manageWorkRelations(workId, returnToCircleId) {
   const otherEvents = allEvents.filter(e => !relatedEvents.find(re => re.id === e.id));
   const relatedProjects = allProjects.filter(p => (p.works || []).includes(workId));
   const otherProjects = allProjects.filter(p => !relatedProjects.find(rp => rp.id === p.id));
+  console.log('[manageWorkRelations] workId:', workId, 'title:', work.title);
+  console.log('[manageWorkRelations] relatedProjects:', relatedProjects.map(p => p.id));
+  console.log('[manageWorkRelations] otherProjects:', otherProjects.map(p => p.id));
+  console.log('[manageWorkRelations] allProjects data:', allProjects.map(p => ({id: p.id, title: p.title, works: p.works || []})));
 
-  document.getElementById('modalTitle').textContent = `管理关联 — ${work.title}`;
+  document.getElementById('modalTitle').textContent = `管理关联 — ${work.title} (${workId})`;
   document.getElementById('modalBody').innerHTML = `
     <!-- 关联活动 -->
     <div style="margin-bottom:1.5rem;">
