@@ -380,6 +380,10 @@ function updateLikeButtons(workId, liked, count) {
     b.querySelector('.like-count').textContent = count > 0 ? count : '';
     b.title = liked ? '取消点赞' : '点赞';
   });
+  // Also update want buttons if like count changed
+  document.querySelectorAll('.want-btn[data-work-id="' + workId + '"]').forEach(function(b) {
+    b.disabled = false;
+  });
 }
 
 async function toggleLike(workId, btn) {
