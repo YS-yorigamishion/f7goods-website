@@ -596,6 +596,7 @@ function renderWorksTable(works) {
       <td class="editable-cell" onclick="makeSelectStatus(this, '${w.id}', '${w.status}')"><span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || w.status}</span></td>
       <td>
         <div class="table-actions">
+          <button class="btn-sm btn-edit" onclick="manageWorkRelations('${w.id}')">关联</button>
           <button class="btn-sm btn-edit" onclick="editWork('${w.id}')">编辑</button>
           <button class="btn-sm btn-delete" onclick="deleteWork('${w.id}')">删除</button>
         </div>
@@ -1682,13 +1683,14 @@ async function removeCircleProject(circleId, projectId) {
 }
 
 async function manageWorkRelations(workId, returnToCircleId) {
+  // Always fetch fresh data to avoid stale state
   const [works, allEvents, allProjects] = await Promise.all([
     adminAPI('GET', '/api/admin/works'),
     adminAPI('GET', '/api/admin/events'),
     adminAPI('GET', '/api/admin/projects')
   ]);
   const work = works.find(w => w.id === workId);
-  if (!work) return;
+  if (!work) { alert('作品未找到'); return; }
 
   const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(workId));
   const otherEvents = allEvents.filter(e => !relatedEvents.find(re => re.id === e.id));
