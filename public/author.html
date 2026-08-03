@@ -190,6 +190,8 @@
         </div>
         <!-- 分类筛选 -->
         <div id="authorCategoryFilters" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.8rem;"></div>
+        <!-- 状态筛选 -->
+        <div id="authorStatusFilters" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.8rem;"></div>
         <!-- 搜索、排序、全选 -->
         <div style="display:flex;gap:0.8rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
           <input type="text" class="form-input" id="authorWorksSearch" placeholder="搜索标题、标签、描述..." oninput="filterAuthorWorks()" style="flex:1;min-width:180px;font-size:0.85rem;padding:0.35rem 0.6rem;">
@@ -555,11 +557,13 @@
     // Load works
     let authorWorksData = [];
     let currentAuthorCategory = 'all';
+    let currentAuthorStatus = 'all';
 
     async function loadAuthorWorks() {
       const works = await authorAPI('GET', '/api/author/works');
       authorWorksData = works || [];
       buildAuthorCategoryFilters();
+      buildAuthorStatusFilters();
       renderAuthorWorks(authorWorksData);
     }
 
@@ -572,7 +576,7 @@
       grid.innerHTML = works.map((w, i) => {
         const hasImg = w.images && w.images.length > 0;
         return `
-        <div class="card" data-id="${w.id}" data-category="${w.category || ''}" data-date="${w.releaseDate || ''}" data-likes="${w.likes || 0}" data-wants="${w.wants || 0}" data-order="${w.order || i}" data-title="${escapeHtml(w.title)}" data-tags="${(w.tags||[]).join(',')}" data-desc="${escapeHtml(w.description || '')}">
+        <div class="card" data-id="${w.id}" data-category="${w.category || ''}" data-status="${w.status || ''}" data-date="${w.releaseDate || ''}" data-likes="${w.likes || 0}" data-wants="${w.wants || 0}" data-order="${w.order || i}" data-title="${escapeHtml(w.title)}" data-tags="${(w.tags||[]).join(',')}" data-desc="${escapeHtml(w.description || '')}">
           <input type="checkbox" class="author-work-cb" data-id="${w.id}" onchange="updateAuthorBatchBtn()" onclick="event.stopPropagation()">
           <div class="card-image" style="height:160px;${hasImg ? '' : 'background:linear-gradient(135deg,var(--accent),var(--accent-alt));'}" onclick="openWorkEditModal('${w.id}')">
             ${hasImg ? '<img src="'+w.images[0]+'" alt="'+escapeHtml(w.title)+'">' : '<span class="placeholder-icon" style="color:white;">🎨</span>'}
@@ -609,22 +613,42 @@
       });
     }
 
-    // Unified filter: category + search
+    // Build status filter buttons
+    function buildAuthorStatusFilters() {
+      const container = document.getElementById('authorStatusFilters');
+      const usedStatuses = new Set(authorWorksData.map(w => w.status).filter(Boolean));
+      const statuses = STATUS_ORDERED.filter(s => usedStatuses.has(s.id));
+      container.innerHTML = '<button class="filter-btn active" data-status="all">全部状态</button>' +
+        statuses.map(s => `<button class="filter-btn" data-status="${s.id}">${s.name}</button>`).join('');
+
+      container.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentAuthorStatus = btn.dataset.status;
+          applyAuthorWorksFilters();
+        });
+      });
+    }
+
+    // Unified filter: category + status + search
     function applyAuthorWorksFilters() {
       const query = document.getElementById('authorWorksSearch').value.toLowerCase().trim();
       const cards = document.querySelectorAll('#worksGrid .card');
       cards.forEach(card => {
         const cat = card.dataset.category || '';
+        const status = card.dataset.status || '';
         const matchCat = currentAuthorCategory === 'all' || cat === currentAuthorCategory;
+        const matchStatus = currentAuthorStatus === 'all' || status === currentAuthorStatus;
         if (!query) {
-          card.style.display = matchCat ? '' : 'none';
+          card.style.display = (matchCat && matchStatus) ? '' : 'none';
           return;
         }
         const title = (card.dataset.title || '').toLowerCase();
         const tags = (card.dataset.tags || '').toLowerCase();
         const desc = (card.dataset.desc || '').toLowerCase();
         const matchSearch = title.includes(query) || tags.includes(query) || desc.includes(query);
-        card.style.display = (matchCat && matchSearch) ? '' : 'none';
+        card.style.display = (matchCat && matchStatus && matchSearch) ? '' : 'none';
       });
     }
 
