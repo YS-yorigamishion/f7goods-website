@@ -84,13 +84,15 @@
       <form id="registerForm" style="display:none;" onsubmit="handleRegister(event)">
         <div class="form-group">
           <label>选择作者 <span style="color:var(--accent)">*</span></label>
-          <select class="form-input" name="circleId" required id="regCircleSelect">
-            <option value="">请选择...</option>
-          </select>
+          <div style="position:relative;">
+            <input type="text" class="form-input" id="regCircleSearch" placeholder="搜索作者名称..." oninput="filterCircleOptions()" onfocus="showCircleDropdown()" autocomplete="off" required>
+            <input type="hidden" name="circleId" id="regCircleId">
+            <div id="circleDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:200px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);z-index:10;margin-top:2px;box-shadow:var(--shadow);"></div>
+          </div>
         </div>
         <div class="form-group">
           <label>用户名 <span style="color:var(--accent)">*</span></label>
-          <input type="text" class="form-input" name="username" required placeholder="设置登录用户名">
+          <input type="text" class="form-input" name="username" id="regUsername" required placeholder="设置登录用户名">
         </div>
         <div class="form-group">
           <label>密码 <span style="color:var(--accent)">*</span></label>
@@ -335,20 +337,59 @@
     }
 
     // Load circles for registration
+    let availableCircles = [];
+
     async function loadCirclesForRegister() {
       try {
         const circles = await F7API.getCircles();
-        const select = document.getElementById('regCircleSelect');
-        circles.forEach(c => {
-          if (!c.username) { // Only show unregistered circles
-            const opt = document.createElement('option');
-            opt.value = c.id;
-            opt.textContent = c.name;
-            select.appendChild(opt);
-          }
-        });
+        availableCircles = circles.filter(c => !c.username); // Only unregistered circles
+        renderCircleDropdown(availableCircles);
       } catch (e) {}
     }
+
+    function renderCircleDropdown(circles) {
+      const dropdown = document.getElementById('circleDropdown');
+      if (!circles.length) {
+        dropdown.innerHTML = '<div style="padding:0.6rem 0.8rem;color:var(--haze);font-size:0.85rem;">没有找到匹配的作者</div>';
+        return;
+      }
+      dropdown.innerHTML = circles.map(c =>
+        `<div class="circle-option" data-id="${c.id}" data-name="${escapeHtml(c.name)}" onclick="selectCircle('${c.id}', '${escapeHtml(c.name)}')" style="padding:0.6rem 0.8rem;cursor:pointer;font-size:0.85rem;border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseover="this.style.background='var(--paper)'" onmouseout="this.style.background=''">${escapeHtml(c.name)}</div>`
+      ).join('');
+    }
+
+    function filterCircleOptions() {
+      const query = document.getElementById('regCircleSearch').value.toLowerCase().trim();
+      const filtered = availableCircles.filter(c => c.name.toLowerCase().includes(query));
+      renderCircleDropdown(filtered);
+      showCircleDropdown();
+    }
+
+    function showCircleDropdown() {
+      document.getElementById('circleDropdown').style.display = 'block';
+    }
+
+    function hideCircleDropdown() {
+      setTimeout(() => {
+        document.getElementById('circleDropdown').style.display = 'none';
+      }, 200);
+    }
+
+    function selectCircle(id, name) {
+      document.getElementById('regCircleId').value = id;
+      document.getElementById('regCircleSearch').value = name;
+      document.getElementById('regUsername').value = name;
+      document.getElementById('circleDropdown').style.display = 'none';
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const search = document.getElementById('regCircleSearch');
+      const dropdown = document.getElementById('circleDropdown');
+      if (search && dropdown && !search.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
 
     // Login
     async function handleLogin(e) {
@@ -390,6 +431,12 @@
       const successEl = document.getElementById('authSuccess');
       errEl.style.display = 'none';
       successEl.style.display = 'none';
+
+      if (!form.circleId.value) {
+        errEl.textContent = '请先搜索并选择作者';
+        errEl.style.display = 'block';
+        return;
+      }
 
       try {
         const res = await fetch('/api/author/register', {
