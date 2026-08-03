@@ -672,6 +672,11 @@ app.get('/api/admin/circles/:id/export', authMiddleware, (req, res) => {
       '标签': (w.tags || []).join(', '),
       '图片': (w.images || []).map(img => img.replace('/uploads/', '')).join(', '),
       '更多图片': (w.moreImages || []).map(img => img.replace('/uploads/', '')).join(', '),
+      '联系方式类型': w.socialLinks?.qq ? 'QQ' : w.socialLinks?.qqGroup ? 'QQ群' : '',
+      '联系方式': w.socialLinks?.qq || w.socialLinks?.qqGroup || '',
+      '联系显示名': w.socialLinks?.contactLabel || '',
+      '网站链接': w.socialLinks?.website || '',
+      '网站显示名': w.socialLinks?.websiteLabel || '',
       '关联活动': relatedEventTitles.join(', '),
       '作品描述': w.description || ''
     };
@@ -683,7 +688,8 @@ app.get('/api/admin/circles/:id/export', authMiddleware, (req, res) => {
   ws['!cols'] = [
     { wch: 30 }, { wch: 10 }, { wch: 12 },
     { wch: 10 }, { wch: 12 }, { wch: 25 },
-    { wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 50 }
+    { wch: 25 }, { wch: 25 }, { wch: 10 }, { wch: 15 },
+    { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 50 }
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, `${circle.name} - 作品列表`);
@@ -740,7 +746,18 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
         tags: (row['标签'] || '').split(',').map(t => t.trim()).filter(Boolean),
         description: row['作品描述'] || row['描述'] || '',
         images: (row['图片'] || '').split(',').map(f => f.trim()).filter(Boolean).map(f => f.startsWith('/uploads/') ? f : '/uploads/' + f),
-        moreImages: (row['更多图片'] || '').split(',').map(f => f.trim()).filter(Boolean).map(f => f.startsWith('/uploads/') ? f : '/uploads/' + f)
+        moreImages: (row['更多图片'] || '').split(',').map(f => f.trim()).filter(Boolean).map(f => f.startsWith('/uploads/') ? f : '/uploads/' + f),
+        socialLinks: (() => {
+          const sl = {
+            contactLabel: row['联系显示名'] || '',
+            website: row['网站链接'] || '',
+            websiteLabel: row['网站显示名'] || ''
+          };
+          const contactType = (row['联系方式类型'] || '').includes('群') ? 'qqGroup' : 'qq';
+          const contactValue = row['联系方式'] || '';
+          if (contactValue) sl[contactType] = contactValue;
+          return sl;
+        })()
       };
 
       // Handle event association from Excel
@@ -769,6 +786,11 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
         }
         if (!workData.moreImages || workData.moreImages.length === 0) {
           workData.moreImages = existing.moreImages || [];
+        }
+        // Keep existing socialLinks if Excel has empty values
+        const hasContact = workData.socialLinks && (workData.socialLinks.qq || workData.socialLinks.qqGroup || workData.socialLinks.website);
+        if (!hasContact && existing.socialLinks) {
+          workData.socialLinks = existing.socialLinks;
         }
         return { ...existing, ...workData };
       } else {

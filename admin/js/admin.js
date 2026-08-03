@@ -737,6 +737,30 @@ function openWorkModal(work = null, returnToCircleId = null) {
       <textarea class="form-input" id="wDesc">${work?.description || ''}</textarea>
     </div>
     <div class="form-group">
+      <label>联系方式类型</label>
+      <select class="form-input" id="wContactType">
+        <option value="" ${!work?.socialLinks?.qq && !work?.socialLinks?.qqGroup ? 'selected' : ''}>无</option>
+        <option value="qq" ${work?.socialLinks?.qq ? 'selected' : ''}>QQ</option>
+        <option value="qqGroup" ${work?.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>联系方式</label>
+      <input class="form-input" id="wContactValue" value="${work?.socialLinks?.qq || work?.socialLinks?.qqGroup || ''}" placeholder="QQ号或QQ群号">
+    </div>
+    <div class="form-group">
+      <label>显示名称（前台显示的中文）</label>
+      <input class="form-input" id="wContactLabel" value="${work?.socialLinks?.contactLabel || ''}" placeholder="如：QQ联系、加入QQ群">
+    </div>
+    <div class="form-group">
+      <label>网站链接</label>
+      <input class="form-input" id="wWebsite" value="${work?.socialLinks?.website || ''}" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>网站显示名称</label>
+      <input class="form-input" id="wWebsiteLabel" value="${work?.socialLinks?.websiteLabel || ''}" placeholder="如：访问官网、购买链接">
+    </div>
+    <div class="form-group">
       <label>展示图片</label>
       <div id="wImagePreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
         ${(work?.images || []).map((img, i) => `
@@ -781,7 +805,18 @@ function openWorkModal(work = null, returnToCircleId = null) {
       tags: document.getElementById('wTags').value.split(',').map(t => t.trim()).filter(Boolean),
       description: document.getElementById('wDesc').value,
       images: [...document.querySelectorAll('#wImagePreview img')].map(img => img.src),
-      moreImages: [...document.querySelectorAll('#wMoreImagePreview img')].map(img => img.src)
+      moreImages: [...document.querySelectorAll('#wMoreImagePreview img')].map(img => img.src),
+      socialLinks: (() => {
+        const type = document.getElementById('wContactType').value;
+        const value = document.getElementById('wContactValue').value;
+        const sl = {
+          contactLabel: document.getElementById('wContactLabel').value,
+          website: document.getElementById('wWebsite').value,
+          websiteLabel: document.getElementById('wWebsiteLabel').value
+        };
+        if (type && value) sl[type] = value;
+        return sl;
+      })()
     };
     if (isEdit) {
       const likesInput = document.getElementById('wLikes');
