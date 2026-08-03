@@ -274,6 +274,41 @@ async function loadDashboard() {
     data: { labels: d30.labels, datasets: [{ data: d30.data, borderColor: lineColor, backgroundColor: fillColor, fill: true }] },
     options: chartOpts()
   });
+
+  // Visitor charts
+  const visLine = 'rgb(26, 188, 156)';
+  const visFill = 'rgba(26, 188, 156, 0.1)';
+
+  function getVisitorLastNDays(n) {
+    const labels = [], data = [];
+    const visitors = window._pvVisitors || {};
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      labels.push(key.slice(5));
+      data.push((visitors[key] || []).length);
+    }
+    return { labels, data };
+  }
+
+  // 7-day visitor chart
+  const vd7 = getVisitorLastNDays(7);
+  if (window._chartVis7d) window._chartVis7d.destroy();
+  window._chartVis7d = new Chart(document.getElementById('chartVis7d'), {
+    type: 'line',
+    data: { labels: vd7.labels, datasets: [{ data: vd7.data, borderColor: visLine, backgroundColor: visFill, fill: true }] },
+    options: chartOpts()
+  });
+
+  // 30-day visitor chart
+  const vd30 = getVisitorLastNDays(30);
+  if (window._chartVis30d) window._chartVis30d.destroy();
+  window._chartVis30d = new Chart(document.getElementById('chartVis30d'), {
+    type: 'line',
+    data: { labels: vd30.labels, datasets: [{ data: vd30.data, borderColor: visLine, backgroundColor: visFill, fill: true }] },
+    options: chartOpts()
+  });
 }
 
 // ===== Works =====
