@@ -2906,6 +2906,16 @@ async function loadImages() {
       document.getElementById('batchDeleteImagesBtn').style.display = 'none';
       return;
     }
+    // Apply search filter
+    const search = (document.getElementById('imageSearchInput')?.value || '').toLowerCase().trim();
+    if (search) {
+      images = images.filter(img => img.name.toLowerCase().includes(search));
+    }
+    if (images.length === 0) {
+      gallery.innerHTML = '<p style="color:var(--haze);grid-column:1/-1;text-align:center;padding:2rem;">未找到匹配的图片</p>';
+      document.getElementById('batchDeleteImagesBtn').style.display = 'none';
+      return;
+    }
     // Apply sorting
     const sortVal = document.getElementById('imageSortSelect')?.value || 'time-desc';
     if (sortVal === 'time-asc') {
