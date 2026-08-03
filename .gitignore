@@ -30,3 +30,4 @@ data/*.json
 data/admin.json
 data/likes.json
 data/contact.json
+data/pageviews.json

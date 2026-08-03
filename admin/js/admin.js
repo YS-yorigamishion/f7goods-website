@@ -180,16 +180,76 @@ async function uploadImage(file) {
 
 // ===== Dashboard =====
 async function loadDashboard() {
-  const [works, events, circles, projects] = await Promise.all([
+  const [works, events, circles, projects, pvData] = await Promise.all([
     adminAPI('GET', '/api/admin/works'),
     adminAPI('GET', '/api/admin/events'),
     adminAPI('GET', '/api/admin/circles'),
-    adminAPI('GET', '/api/admin/projects')
+    adminAPI('GET', '/api/admin/projects'),
+    adminAPI('GET', '/api/admin/pageviews')
   ]);
   document.getElementById('statWorks').textContent = works?.length || 0;
   document.getElementById('statEvents').textContent = events?.length || 0;
   document.getElementById('statCircles').textContent = circles?.length || 0;
   document.getElementById('statProjects').textContent = projects?.length || 0;
+
+  // Page view stats
+  const daily = pvData?.daily || {};
+  const today = new Date().toISOString().slice(0, 10);
+  const thisMonth = today.slice(0, 7);
+  const thisYear = today.slice(0, 4);
+  let totalPV = 0, monthPV = 0, yearPV = 0;
+  for (const [date, count] of Object.entries(daily)) {
+    totalPV += count;
+    if (date.startsWith(thisMonth)) monthPV += count;
+    if (date.startsWith(thisYear)) yearPV += count;
+  }
+  document.getElementById('pvToday').textContent = daily[today] || 0;
+  document.getElementById('pvMonth').textContent = monthPV;
+  document.getElementById('pvYear').textContent = yearPV;
+  document.getElementById('pvTotal').textContent = totalPV;
+
+  // Helper: get last N days data
+  function getLastNDays(n) {
+    const labels = [], data = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      labels.push(key.slice(5)); // MM-DD
+      data.push(daily[key] || 0);
+    }
+    return { labels, data };
+  }
+
+  // Chart defaults
+  const chartOpts = (title) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, title: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+    elements: { line: { tension: 0.3 }, point: { radius: 3 } }
+  });
+
+  const lineColor = 'rgb(233, 69, 96)';
+  const fillColor = 'rgba(233, 69, 96, 0.1)';
+
+  // 7-day chart
+  const d7 = getLastNDays(7);
+  if (window._chart7d) window._chart7d.destroy();
+  window._chart7d = new Chart(document.getElementById('chart7d'), {
+    type: 'line',
+    data: { labels: d7.labels, datasets: [{ data: d7.data, borderColor: lineColor, backgroundColor: fillColor, fill: true }] },
+    options: chartOpts()
+  });
+
+  // 30-day chart
+  const d30 = getLastNDays(30);
+  if (window._chart30d) window._chart30d.destroy();
+  window._chart30d = new Chart(document.getElementById('chart30d'), {
+    type: 'line',
+    data: { labels: d30.labels, datasets: [{ data: d30.data, borderColor: lineColor, backgroundColor: fillColor, fill: true }] },
+    options: chartOpts()
+  });
 }
 
 // ===== Works =====

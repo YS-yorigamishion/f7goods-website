@@ -531,6 +531,10 @@
     grid-template-columns: 1fr;
   }
 
+  .admin-card canvas {
+    max-width: 100%;
+  }
+
   .modal-overlay {
     padding: 0.5rem;
   }

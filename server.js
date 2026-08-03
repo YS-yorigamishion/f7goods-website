@@ -287,6 +287,26 @@ app.post('/api/contact', (req, res) => {
   res.json({ success: true, message: '消息已发送，我们会尽快回复！' });
 });
 
+// ===== Page View Tracking =====
+let pageviews = {};
+try { pageviews = readJSON('pageviews.json'); } catch {}
+if (!pageviews.daily) pageviews = { daily: {} };
+
+function savePageviews() {
+  writeJSON('pageviews.json', pageviews);
+}
+
+app.post('/api/pageview', (req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+  pageviews.daily[today] = (pageviews.daily[today] || 0) + 1;
+  savePageviews();
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/pageviews', authMiddleware, (req, res) => {
+  res.json(pageviews);
+});
+
 // Settings
 app.get('/api/settings', (req, res) => {
   try {

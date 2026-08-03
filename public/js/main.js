@@ -258,6 +258,9 @@ async function initPage(activePage) {
 
   // Load categories from API (non-blocking)
   loadCategoriesFromAPI();
+
+  // Page view tracking (fire and forget)
+  fetch('/api/pageview', { method: 'POST' }).catch(() => {});
 }
 
 // Toast notification
