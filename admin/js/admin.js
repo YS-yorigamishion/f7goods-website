@@ -262,6 +262,7 @@ function showPVDetail(type) {
   const thisYear = todayStr.slice(0, 4);
 
   let title = '', entries = [], chartLabels = [], chartData = [], colLabel = '';
+  let currentMonthDays = [];
 
   if (type === 'today') {
     title = '近 30 日每日浏览量';
@@ -277,8 +278,9 @@ function showPVDetail(type) {
     }
     entries.sort((a, b) => b[0].localeCompare(a[0]));
   } else if (type === 'month') {
-    title = '近 12 月每月浏览量';
+    title = '本月浏览 · 往月对比';
     colLabel = '月份';
+    // Aggregate daily data by month
     const months = {};
     for (const [d, c] of Object.entries(daily)) {
       const m = d.slice(0, 7);
@@ -294,6 +296,13 @@ function showPVDetail(type) {
       chartData.push(count);
     }
     entries.sort((a, b) => b[0].localeCompare(a[0]));
+    // Current month daily breakdown
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = thisMonth + '-' + String(day).padStart(2, '0');
+      if (key > todayStr) break;
+      currentMonthDays.push([key, daily[key] || 0]);
+    }
   } else if (type === 'year') {
     title = '历年浏览量';
     colLabel = '年份';
@@ -334,6 +343,31 @@ function showPVDetail(type) {
       }).join('')
     : '<p style="text-align:center;color:var(--haze);padding:1rem;">暂无数据</p>';
 
+  // Current month daily breakdown section
+  let currentMonthSection = '';
+  if (type === 'month' && currentMonthDays.length > 0) {
+    const cmTotal = currentMonthDays.reduce((s, [, c]) => s + c, 0);
+    const cmMax = Math.max(...currentMonthDays.map(([, c]) => c), 1);
+    const cmBars = currentMonthDays.map(([d, c]) => {
+      const pct = cmMax > 0 ? (c / cmMax * 100) : 0;
+      return `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.2rem 0;">
+        <span style="width:50px;font-size:0.78rem;color:var(--haze);text-align:right;flex-shrink:0;">${d.slice(8)}日</span>
+        <div style="flex:1;height:16px;background:var(--paper);border-radius:4px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#9b59b6,#8e44ad);border-radius:4px;min-width:${c > 0 ? '2px' : '0'};"></div>
+        </div>
+        <span style="width:40px;font-size:0.78rem;font-weight:600;text-align:right;">${c.toLocaleString()}</span>
+      </div>`;
+    }).join('');
+    currentMonthSection = `
+      <details style="margin-bottom:1.2rem;" open>
+        <summary style="font-size:0.85rem;font-weight:600;cursor:pointer;color:#9b59b6;padding:0.3rem 0;">${thisMonth} 每日明细（本月累计 ${cmTotal.toLocaleString()}）</summary>
+        <div style="margin-top:0.6rem;max-height:280px;overflow-y:auto;">
+          ${cmBars}
+        </div>
+      </details>
+    `;
+  }
+
   document.getElementById('modalBody').innerHTML = `
     <div style="display:flex;gap:1rem;margin-bottom:1.2rem;">
       <div style="flex:1;text-align:center;padding:0.8rem;background:rgba(233,69,96,0.06);border-radius:var(--radius-sm);">
@@ -349,8 +383,9 @@ function showPVDetail(type) {
         <div style="font-size:0.75rem;color:var(--haze);">最高</div>
       </div>
     </div>
+    ${currentMonthSection}
     <div style="margin-bottom:1.2rem;">
-      <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.6rem;color:var(--ink);">趋势图</div>
+      <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.6rem;color:var(--ink);">月度趋势</div>
       ${barRows}
     </div>
     <details>
