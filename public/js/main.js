@@ -161,6 +161,52 @@ function renderAnnouncementButton() {
   return '<a href="/announcements.html" class="announcement-btn" title="查看公告">📢 公告</a>';
 }
 
+// Popup announcement system
+function getSeenPopups() {
+  try { return JSON.parse(localStorage.getItem('f7seenPopups') || '[]'); } catch { return []; }
+}
+
+async function checkPopupAnnouncements() {
+  try {
+    const res = await fetch('/api/announcements/popup');
+    const announcements = await res.json();
+    if (!announcements || announcements.length === 0) return;
+    const seen = getSeenPopups();
+    const unseen = announcements.filter(a => !seen.includes(a.id));
+    if (unseen.length === 0) return;
+    showAnnouncementPopup(unseen[0]);
+  } catch (e) {}
+}
+
+function showAnnouncementPopup(ann) {
+  var overlay = document.createElement('div');
+  overlay.id = 'annPopupOverlay';
+  overlay.className = 'ann-popup-overlay';
+  overlay.innerHTML = '<div class="ann-popup">' +
+    '<button class="ann-popup-close" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">&times;</button>' +
+    '<h3 class="ann-popup-title">' + escapeHtml(ann.title) + '</h3>' +
+    '<div class="ann-popup-date">' + formatDate(ann.publishDate) + '</div>' +
+    '<div class="ann-popup-content">' + nl2br(ann.content) + '</div>' +
+    '<button class="btn btn-primary ann-popup-btn" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">知道了</button>' +
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeAnnouncementPopup(ann.id); });
+  requestAnimationFrame(function() { overlay.classList.add('open'); });
+}
+
+function closeAnnouncementPopup(id) {
+  var overlay = document.getElementById('annPopupOverlay');
+  if (overlay) {
+    overlay.classList.remove('open');
+    setTimeout(function() { overlay.remove(); }, 200);
+  }
+  var seen = getSeenPopups();
+  if (!seen.includes(id)) {
+    seen.push(id);
+    localStorage.setItem('f7seenPopups', JSON.stringify(seen));
+  }
+}
+
 // Build navbar HTML
 function buildNavbar(activePage) {
   const site = getSiteSettings();
@@ -261,6 +307,9 @@ async function initPage(activePage) {
 
   // Page view tracking (fire and forget)
   fetch('/api/pageview', { method: 'POST' }).catch(() => {});
+
+  // Check for popup announcements
+  checkPopupAnnouncements();
 }
 
 // Toast notification

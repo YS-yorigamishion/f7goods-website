@@ -405,6 +405,19 @@ app.get('/api/announcements', (req, res) => {
   }
 });
 
+// Public: get popup announcements
+app.get('/api/announcements/popup', (req, res) => {
+  try {
+    let announcements = readJSON('announcements.json');
+    const today = new Date().toISOString().split('T')[0];
+    announcements = announcements.filter(a => a.popup && a.publishDate <= today);
+    announcements.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate));
+    res.json(announcements);
+  } catch (e) {
+    res.json([]);
+  }
+});
+
 // Admin: get all announcements
 app.get('/api/admin/announcements', authMiddleware, (req, res) => {
   try {
@@ -424,6 +437,7 @@ app.post('/api/admin/announcements', authMiddleware, (req, res) => {
     title: req.body.title || '',
     content: req.body.content || '',
     publishDate: req.body.publishDate || new Date().toISOString().split('T')[0],
+    popup: req.body.popup || false,
     createdAt: new Date().toISOString()
   };
   announcements.push(announcement);

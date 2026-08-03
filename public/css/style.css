@@ -540,6 +540,71 @@ body {
   margin-top: 0.5rem;
 }
 
+/* Announcement popup */
+.ann-popup-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(26, 26, 46, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ann-popup-overlay.open {
+  display: flex;
+  opacity: 1;
+}
+
+.ann-popup {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 480px;
+  padding: 1.8rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.ann-popup-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: none; border: none;
+  font-size: 1.5rem; cursor: pointer;
+  color: var(--haze); padding: 0; line-height: 1;
+}
+
+.ann-popup-close:hover { color: var(--accent); }
+
+.ann-popup-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  padding-right: 2rem;
+}
+
+.ann-popup-date {
+  font-size: 0.8rem;
+  color: var(--haze);
+  margin-bottom: 1rem;
+}
+
+.ann-popup-content {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #444;
+  margin-bottom: 1.2rem;
+}
+
+.ann-popup-btn {
+  width: 100%;
+}
+
 .card-date {
   font-size: 0.8rem;
   color: var(--haze);
@@ -1603,6 +1668,18 @@ textarea.form-input {
 
   .want-modal-body p {
     font-size: 0.8rem;
+  }
+
+  .ann-popup {
+    padding: 1.2rem;
+  }
+
+  .ann-popup-title {
+    font-size: 1rem;
+  }
+
+  .ann-popup-content {
+    font-size: 0.85rem;
   }
 
   .detail-main {
