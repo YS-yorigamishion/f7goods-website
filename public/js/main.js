@@ -264,6 +264,7 @@ function buildFooter() {
       <div class="footer-col">
         <h4>关于</h4>
         <ul class="footer-links">
+          <li><a href="/author.html">作者登录</a></li>
           <li><a href="/contact.html">关于我们</a></li>
         </ul>
       </div>

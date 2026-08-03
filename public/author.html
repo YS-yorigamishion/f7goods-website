@@ -243,6 +243,18 @@
               <label>发售日期</label>
               <input type="date" class="form-input" id="batchReleaseDate">
             </div>
+            <div class="form-group">
+              <label>关联活动</label>
+              <div id="batchEventsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;font-size:0.85rem;">
+                <p style="color:var(--haze);">加载中...</p>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>关联企划</label>
+              <div id="batchProjectsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;font-size:0.85rem;">
+                <p style="color:var(--haze);">加载中...</p>
+              </div>
+            </div>
             <div style="display:flex;gap:0.5rem;margin-top:1rem;">
               <button class="btn btn-primary" onclick="saveBatchEdit()">保存</button>
               <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeBatchEdit()">取消</button>
@@ -766,6 +778,32 @@
 
       document.getElementById('batchPrice').value = '';
       document.getElementById('batchReleaseDate').value = '';
+
+      // Load events and projects
+      const [allEvents, allProjects] = await Promise.all([
+        authorAPI('GET', '/api/author/events'),
+        authorAPI('GET', '/api/author/projects')
+      ]);
+
+      // Render events checkboxes
+      const eventsContainer = document.getElementById('batchEventsList');
+      if (allEvents && allEvents.length > 0) {
+        const authorEvents = allEvents.filter(e => (e.relatedCircles || []).includes(authorCircleId));
+        eventsContainer.innerHTML = authorEvents.length > 0
+          ? authorEvents.map(e => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;"><input type="checkbox" class="batch-event-cb" value="${e.id}" style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(e.title)}</label>`).join('')
+          : '<p style="color:var(--haze);margin:0;">暂无关联的活动</p>';
+      } else {
+        eventsContainer.innerHTML = '<p style="color:var(--haze);margin:0;">暂无活动</p>';
+      }
+
+      // Render projects checkboxes
+      const projectsContainer = document.getElementById('batchProjectsList');
+      if (allProjects && allProjects.length > 0) {
+        projectsContainer.innerHTML = allProjects.map(p => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;"><input type="checkbox" class="batch-project-cb" value="${p.id}" style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(p.title)}</label>`).join('');
+      } else {
+        projectsContainer.innerHTML = '<p style="color:var(--haze);margin:0;">暂无企划</p>';
+      }
+
       document.getElementById('batchEditOverlay').classList.add('open');
     }
 
@@ -785,14 +823,42 @@
       if (price) data.price = price;
       if (releaseDate) data.releaseDate = releaseDate;
 
-      if (Object.keys(data).length === 0) { alert('请至少修改一个字段'); return; }
+      // Get selected events and projects
+      const selectedEventIds = [...document.querySelectorAll('.batch-event-cb:checked')].map(cb => cb.value);
+      const selectedProjectIds = [...document.querySelectorAll('.batch-project-cb:checked')].map(cb => cb.value);
+
+      const hasBasicChanges = Object.keys(data).length > 0;
+      const hasEventChanges = selectedEventIds.length > 0;
+      const hasProjectChanges = selectedProjectIds.length > 0;
+
+      if (!hasBasicChanges && !hasEventChanges && !hasProjectChanges) { alert('请至少修改一个字段'); return; }
 
       let success = 0;
       for (const id of workIds) {
-        const result = await authorAPI('PUT', '/api/author/works/' + id, data);
-        if (result) success++;
+        // Update basic fields
+        if (hasBasicChanges) {
+          const result = await authorAPI('PUT', '/api/author/works/' + id, data);
+          if (result) success++;
+        }
+        // Update project associations
+        if (hasProjectChanges) {
+          await authorAPI('PUT', '/api/author/works/' + id, { relatedProjects: selectedProjectIds });
+        }
       }
 
+      // Update event associations (events are associated to circles, not individual works)
+      if (hasEventChanges) {
+        const allEvents = await authorAPI('GET', '/api/author/events');
+        for (const evt of (allEvents || [])) {
+          const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
+          const shouldBeRelated = selectedEventIds.includes(evt.id);
+          if (isRelated !== shouldBeRelated) {
+            await authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
+          }
+        }
+      }
+
+      if (!hasBasicChanges) success = workIds.length;
       showToast(`已更新 ${success} 个作品`, 'success');
       closeBatchEdit();
       loadAuthorWorks();
