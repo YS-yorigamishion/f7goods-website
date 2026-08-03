@@ -1798,8 +1798,6 @@ async function manageWorkRelations(workId, returnToCircleId) {
       saveBtn.disabled = false;
       saveBtn.textContent = '保存';
     }
-    closeModal();
-    if (returnToCircleId) manageCircleWorks(returnToCircleId);
   };
 
   openModal();
