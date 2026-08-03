@@ -180,14 +180,19 @@
                 `).join('')}
               </div>
               ` : ''}
-              ${project.tags && project.tags.length > 0 ? `
+              ${(() => {
+                const allTags = [...new Set([
+                  ...(project.tags || []),
+                  ...relatedWorks.flatMap(w => w.tags || [])
+                ])];
+                return allTags.length > 0 ? `
               <div class="sidebar-card">
                 <h3>标签</h3>
                 <div class="tag-list">
-                  ${project.tags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${t}</a>`).join('')}
+                  ${allTags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${t}</a>`).join('')}
                 </div>
-              </div>
-              ` : ''}
+              </div>` : '';
+              })()}
             </div>
           </div>
         `;
