@@ -2309,24 +2309,17 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
     }
   }
 
-  // Compress image with tiered strategy
+  // Compress image if larger than 1MB
   if (sharp) {
     const filePath = path.join(__dirname, 'uploads', req.file.filename);
     const ext = path.extname(req.file.filename).toLowerCase();
     if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
       try {
         const stats = fs.statSync(filePath);
-        let targetSize;
-        if (stats.size > 5 * 1024 * 1024) {
-          targetSize = 1024 * 1024; // >5MB -> 1MB
-        } else if (stats.size > 2 * 1024 * 1024) {
-          targetSize = 1024 * 1024; // >2MB -> 1MB
-        } else if (stats.size > 1024 * 1024) {
-          targetSize = 900 * 1024; // >1MB -> 900KB
-        }
-        if (targetSize) {
-          const image = sharp(filePath);
+        if (stats.size > 1024 * 1024) {
+          const targetSize = 950 * 1024; // 目标 950KB
           const quality = Math.max(60, Math.round((targetSize / stats.size) * 100));
+          const image = sharp(filePath);
           await image.jpeg({ quality }).toFile(filePath + '.tmp');
           fs.renameSync(filePath + '.tmp', filePath);
           console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024 / 1024).toFixed(2)}MB -> ${(fs.statSync(filePath).size / 1024 / 1024).toFixed(2)}MB`);
