@@ -6,6 +6,8 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const XLSX = require('xlsx');
+let sharp;
+try { sharp = require('sharp'); } catch (e) { console.warn('sharp not installed, watermark disabled'); }
 
 const app = express();
 app.set('trust proxy', true);
@@ -43,7 +45,7 @@ const fileFilter = (req, file, cb) => {
   if (allowedImages.includes(ext) || allowedExcel.includes(ext)) cb(null, true);
   else cb(new Error('只允许上传图片或Excel文件'), false);
 };
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter });
+const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 }, fileFilter });
 
 // Helper: read/write JSON files
 function readJSON(file) {
@@ -2128,12 +2130,36 @@ app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res)
 });
 
 // Author upload
-app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), (req, res) => {
+app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择文件' });
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
-  saveUploadMeta(req.file.filename, circle?.name || '未知作者');
-  logEdit(circle?.name || '作者', '上传图片', req.file.filename, '', '/uploads/' + req.file.filename);
+  const authorName = circle?.name || '未知作者';
+
+  // Add watermark if requested
+  const addWatermark = req.body.addWatermark === 'true';
+  if (addWatermark && sharp) {
+    const filePath = path.join(__dirname, 'uploads', req.file.filename);
+    const ext = path.extname(req.file.filename).toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
+      try {
+        const image = sharp(filePath);
+        const metadata = await image.metadata();
+        const { width, height } = metadata;
+        const fontSize = Math.max(12, Math.round(width / 40));
+        const padding = Math.round(width / 50);
+        const watermarkText = `@${authorName}`;
+        const svgWatermark = `<svg width="${width}" height="${height}"><style>text { font-size: ${fontSize}px; fill: rgba(255,255,255,0.5); font-family: sans-serif; }</style><text x="${width - padding}" y="${height - padding}" text-anchor="end" dominant-baseline="auto">${watermarkText}</text></svg>`;
+        await image.composite([{ input: Buffer.from(svgWatermark), gravity: 'southeast' }]).toFile(filePath + '.tmp');
+        fs.renameSync(filePath + '.tmp', filePath);
+      } catch (e) {
+        console.error('Watermark failed:', e.message);
+      }
+    }
+  }
+
+  saveUploadMeta(req.file.filename, authorName);
+  logEdit(authorName, '上传图片', req.file.filename, '', '/uploads/' + req.file.filename);
   res.json({ url: '/uploads/' + req.file.filename });
 });
 
@@ -2287,6 +2313,18 @@ app.get('/admin/*', (req, res) => {
   if (!req.path.includes('.')) {
     res.sendFile(path.join(__dirname, 'admin', 'index.html'));
   }
+});
+
+// Error handling for file size limit
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: '文件大小不能超过2MB' });
+    }
+    return res.status(400).json({ error: err.message });
+  }
+  if (err) return res.status(500).json({ error: err.message });
+  next();
 });
 
 app.listen(PORT, () => {
