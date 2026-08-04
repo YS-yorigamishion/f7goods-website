@@ -3518,7 +3518,8 @@ function renderSettings() {
     { key: 'circles', name: '同人作者' },
     { key: 'projects', name: '同人企划' },
     { key: 'updates', name: '同人动态' },
-    { key: 'about', name: '关于我们' }
+    { key: 'about', name: '关于我们' },
+    { key: 'author', name: '作者设置' }
   ];
 
   container.innerHTML = `
@@ -3670,6 +3671,18 @@ function renderSettings() {
         </div>
       </div>
     `).join('')}
+
+    <!-- Author Settings -->
+    <div id="settings-author" class="settings-tab" style="display:none;">
+      <div class="admin-card">
+        <h3 style="margin-bottom:1rem;">作者注册须知</h3>
+        <div class="form-group">
+          <label>注册须知内容</label>
+          <textarea class="form-input" id="setting_author_registrationNotice" style="min-height:200px;" placeholder="请输入注册须知内容...">${currentSettings.authorRegistrationNotice || ''}</textarea>
+          <p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">此内容将显示在作者登录页面的"注册须知"弹窗中</p>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -3725,12 +3738,15 @@ async function saveSettings() {
     socialLinks
   };
 
+  const authorRegistrationNotice = document.getElementById('setting_author_registrationNotice')?.value || '';
+
   try {
-    const result = await adminAPI('PUT', '/api/admin/settings', { site, footer, pages });
+    const result = await adminAPI('PUT', '/api/admin/settings', { site, footer, pages, authorRegistrationNotice });
     if (result && result.success) {
       currentSettings.site = site;
       currentSettings.footer = footer;
       currentSettings.pages = pages;
+      currentSettings.authorRegistrationNotice = authorRegistrationNotice;
       showToast('设置保存成功', 'success');
     } else {
       alert('保存失败');

@@ -78,6 +78,9 @@
         <div class="auth-tab active" onclick="switchAuthTab('login')">登录</div>
         <div class="auth-tab" onclick="switchAuthTab('register')">注册</div>
       </div>
+      <div style="text-align:center;margin-bottom:1rem;">
+        <button type="button" onclick="showRegistrationNotice()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.85rem;text-decoration:underline;">📋 注册须知</button>
+      </div>
       <div id="authError" class="auth-error"></div>
       <div id="authSuccess" class="auth-success"></div>
 
@@ -424,6 +427,31 @@
       document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
       document.getElementById('authError').style.display = 'none';
       document.getElementById('authSuccess').style.display = 'none';
+    }
+
+    // Registration notice
+    async function showRegistrationNotice() {
+      let content = '暂无注册须知';
+      try {
+        const res = await fetch('/api/settings');
+        const settings = await res.json();
+        if (settings.authorRegistrationNotice) {
+          content = settings.authorRegistrationNotice;
+        }
+      } catch (e) {}
+
+      const overlay = document.createElement('div');
+      overlay.id = 'regNoticeOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="margin:0;">📋 注册须知</h3>
+          <button onclick="document.getElementById('regNoticeOverlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
+        </div>
+        <div style="line-height:1.8;color:#555;white-space:pre-wrap;">${escapeHtml(content)}</div>
+        <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="document.getElementById('regNoticeOverlay').remove()">我知道了</button>
+      </div>`;
+      document.body.appendChild(overlay);
     }
 
     // Load circles for registration
