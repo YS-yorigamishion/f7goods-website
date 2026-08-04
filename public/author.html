@@ -312,6 +312,38 @@
               <input type="date" class="form-input" id="batchReleaseDate">
             </div>
             <div class="form-group">
+              <label>标签（逗号分隔，留空不修改）</label>
+              <input class="form-input" id="batchTags" placeholder="标签1, 标签2">
+            </div>
+            <div class="form-group">
+              <label>描述（留空不修改）</label>
+              <textarea class="form-input" id="batchDescription" style="min-height:60px;" placeholder="留空不修改"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>联系方式类型</label>
+                <select class="form-input" id="batchContactType">
+                  <option value="">— 不修改 —</option>
+                  <option value="qq">QQ</option>
+                  <option value="qqGroup">QQ群</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>联系方式</label>
+                <input class="form-input" id="batchContactValue" placeholder="留空不修改">
+              </div>
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+                <input type="checkbox" id="batchIsCommissioned" onchange="document.getElementById('batchCommissionedByGroup').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--accent);">
+                约稿作品
+              </label>
+            </div>
+            <div class="form-group" id="batchCommissionedByGroup" style="display:none;">
+              <label>约稿作者</label>
+              <input class="form-input" id="batchCommissionedBy" placeholder="约稿作者名字">
+            </div>
+            <div class="form-group">
               <label>关联活动</label>
               <div id="batchEventsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;font-size:0.85rem;">
                 <p style="color:var(--haze);">加载中...</p>
@@ -991,18 +1023,24 @@
     // Export works to Excel
     function exportWorksToExcel() {
       if (authorWorksData.length === 0) { alert('没有作品可导出'); return; }
-      const headers = ['作品名称', '分类', '状态', '价格', '发售日期', '标签', '喜爱数', '想要数', '描述'];
-      const rows = authorWorksData.map(w => [
-        w.title,
-        CATEGORIES[w.category] || w.category || '',
-        STATUS_LABELS[w.status] || w.status || '',
-        w.price || '',
-        w.releaseDate || '',
-        (w.tags || []).join(', '),
-        w.likes || 0,
-        w.wants || 0,
-        w.description || ''
-      ]);
+      const headers = ['作品名称', '分类', '状态', '价格', '发售日期', '标签', '描述', '约稿作品', '约稿作者', '联系方式类型', '联系方式'];
+      const rows = authorWorksData.map(w => {
+        const contactType = w.socialLinks?.qq ? 'QQ' : w.socialLinks?.qqGroup ? 'QQ群' : '';
+        const contactValue = w.socialLinks?.qq || w.socialLinks?.qqGroup || '';
+        return [
+          w.title,
+          CATEGORIES[w.category] || w.category || '',
+          STATUS_LABELS[w.status] || w.status || '',
+          w.price || '',
+          w.releaseDate || '',
+          (w.tags || []).join(', '),
+          w.description || '',
+          w.isCommissioned ? '是' : '否',
+          w.commissionedBy || '',
+          contactType,
+          contactValue
+        ];
+      });
 
       let csv = '\uFEFF' + headers.join(',') + '\n';
       rows.forEach(row => {
@@ -1431,11 +1469,31 @@
       const status = document.getElementById('batchStatus').value;
       const price = document.getElementById('batchPrice').value;
       const releaseDate = document.getElementById('batchReleaseDate').value;
+      const tags = document.getElementById('batchTags').value;
+      const description = document.getElementById('batchDescription').value;
+      const contactType = document.getElementById('batchContactType').value;
+      const contactValue = document.getElementById('batchContactValue').value;
+      const isCommissioned = document.getElementById('batchIsCommissioned').checked;
+      const commissionedBy = document.getElementById('batchCommissionedBy').value;
 
       if (category) data.category = category;
       if (status) data.status = status;
       if (price) data.price = price;
       if (releaseDate) data.releaseDate = releaseDate;
+      if (tags) data.tags = tags.split(',').map(t => t.trim()).filter(Boolean);
+      if (description) data.description = description;
+
+      // Handle contact info
+      if (contactType && contactValue) {
+        data.socialLinks = {};
+        data.socialLinks[contactType] = contactValue;
+      }
+
+      // Handle commissioned work
+      if (isCommissioned) {
+        data.isCommissioned = true;
+        data.commissionedBy = commissionedBy || '';
+      }
 
       // Get selected events and projects
       const selectedEventIds = [...document.querySelectorAll('.batch-event-cb:checked')].map(cb => cb.value);

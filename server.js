@@ -335,6 +335,13 @@ app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file')
       if (!title) return;
 
       const existing = works.find(w => w.title === title && (w.circles || []).includes(req.author.circleId));
+      const isCommissioned = (row['约稿作品'] || '').toString().trim() === '是';
+      const contactType = (row['联系方式类型'] || '').toString().trim();
+      const contactValue = (row['联系方式'] || '').toString().trim();
+      const socialLinks = {};
+      if (contactType === 'QQ' && contactValue) socialLinks.qq = contactValue;
+      else if (contactType === 'QQ群' && contactValue) socialLinks.qqGroup = contactValue;
+
       const workData = {
         title,
         category: CATEGORY_MAP[row['分类']] || 'other',
@@ -342,11 +349,15 @@ app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file')
         price: row['价格'] || '',
         releaseDate: row['发售日期'] || '',
         tags: (row['标签'] || '').split(',').map(t => t.trim()).filter(Boolean),
-        description: row['作品描述'] || row['描述'] || ''
+        description: row['作品描述'] || row['描述'] || '',
+        isCommissioned,
+        commissionedBy: isCommissioned ? (row['约稿作者'] || '') : '',
+        socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : undefined
       };
 
       if (existing) {
         Object.assign(existing, workData);
+        if (workData.socialLinks) existing.socialLinks = workData.socialLinks;
         updated++;
       } else {
         works.push({
