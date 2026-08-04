@@ -475,6 +475,198 @@ app.put('/api/author/projects/:id/toggle', authorAuthMiddleware, (req, res) => {
   res.json(projects[index]);
 });
 
+// ===== Author: Create Events/Projects/Updates (with approval) =====
+
+// Author: get own events
+app.get('/api/author/my-events', authorAuthMiddleware, (req, res) => {
+  const events = readJSON('events.json');
+  const myEvents = events.filter(e => e.submittedBy === req.author.circleId);
+  res.json(myEvents);
+});
+
+// Author: create event
+app.post('/api/author/my-events', authorAuthMiddleware, (req, res) => {
+  let events = readJSON('events.json');
+  const maxOrder = events.reduce((max, e) => Math.max(max, e.order ?? 0), 0);
+  const event = {
+    id: 'e' + Date.now(),
+    ...req.body,
+    relatedCircles: [req.author.circleId],
+    approvalStatus: 'pending',
+    submittedBy: req.author.circleId,
+    order: maxOrder + 1
+  };
+  events.push(event);
+  writeJSON('events.json', events);
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '提交活动', event.title || event.id, '待审核');
+
+  res.json(event);
+});
+
+// Author: update own event (only if pending)
+app.put('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
+  let events = readJSON('events.json');
+  const index = events.findIndex(e => e.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '活动未找到' });
+  if (events[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权编辑此活动' });
+  if (events[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能编辑待审核的活动' });
+
+  const allowed = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status'];
+  const updates = {};
+  allowed.forEach(field => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+
+  events[index] = { ...events[index], ...updates };
+  writeJSON('events.json', events);
+  res.json(events[index]);
+});
+
+// Author: delete own event (only if pending)
+app.delete('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
+  let events = readJSON('events.json');
+  const index = events.findIndex(e => e.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '活动未找到' });
+  if (events[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权删除此活动' });
+  if (events[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能删除待审核的活动' });
+
+  events.splice(index, 1);
+  writeJSON('events.json', events);
+  res.json({ success: true });
+});
+
+// Author: get own projects
+app.get('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
+  const projects = readJSON('projects.json');
+  const myProjects = projects.filter(p => p.submittedBy === req.author.circleId);
+  res.json(myProjects);
+});
+
+// Author: create project
+app.post('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
+  let projects = readJSON('projects.json');
+  const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
+  const project = {
+    id: 'p' + Date.now(),
+    ...req.body,
+    circles: [req.author.circleId],
+    approvalStatus: 'pending',
+    submittedBy: req.author.circleId,
+    order: maxOrder + 1,
+    createdAt: new Date().toISOString()
+  };
+  projects.push(project);
+  writeJSON('projects.json', projects);
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '提交企划', project.title || project.id, '待审核');
+
+  res.json(project);
+});
+
+// Author: update own project (only if pending)
+app.put('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
+  let projects = readJSON('projects.json');
+  const index = projects.findIndex(p => p.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '企划未找到' });
+  if (projects[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权编辑此企划' });
+  if (projects[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能编辑待审核的企划' });
+
+  const allowed = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage'];
+  const updates = {};
+  allowed.forEach(field => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+
+  projects[index] = { ...projects[index], ...updates };
+  writeJSON('projects.json', projects);
+  res.json(projects[index]);
+});
+
+// Author: delete own project (only if pending)
+app.delete('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
+  let projects = readJSON('projects.json');
+  const index = projects.findIndex(p => p.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '企划未找到' });
+  if (projects[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权删除此企划' });
+  if (projects[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能删除待审核的企划' });
+
+  projects.splice(index, 1);
+  writeJSON('projects.json', projects);
+  res.json({ success: true });
+});
+
+// Author: get own updates
+app.get('/api/author/my-updates', authorAuthMiddleware, (req, res) => {
+  const updates = readJSON('updates.json');
+  const myUpdates = updates.filter(u => u.submittedBy === req.author.circleId);
+  res.json(myUpdates);
+});
+
+// Author: create update
+app.post('/api/author/my-updates', authorAuthMiddleware, (req, res) => {
+  let updates = readJSON('updates.json');
+  const update = {
+    id: 'upd' + Date.now(),
+    title: req.body.title || '',
+    content: req.body.content || '',
+    publishDate: req.body.publishDate || new Date().toISOString().split('T')[0],
+    pinned: false,
+    coverImage: req.body.coverImage || '',
+    images: req.body.images || [],
+    relatedCircles: [req.author.circleId],
+    relatedEvents: req.body.relatedEvents || [],
+    relatedProjects: req.body.relatedProjects || [],
+    approvalStatus: 'pending',
+    submittedBy: req.author.circleId,
+    createdAt: new Date().toISOString()
+  };
+  updates.push(update);
+  writeJSON('updates.json', updates);
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '提交动态', update.title || update.id, '待审核');
+
+  res.json(update);
+});
+
+// Author: update own update (only if pending)
+app.put('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
+  let updates = readJSON('updates.json');
+  const index = updates.findIndex(u => u.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '动态未找到' });
+  if (updates[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权编辑此动态' });
+  if (updates[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能编辑待审核的动态' });
+
+  const allowed = ['title', 'content', 'publishDate', 'coverImage', 'images', 'relatedEvents', 'relatedProjects'];
+  const updates2 = {};
+  allowed.forEach(field => {
+    if (req.body[field] !== undefined) updates2[field] = req.body[field];
+  });
+
+  updates[index] = { ...updates[index], ...updates2 };
+  writeJSON('updates.json', updates);
+  res.json(updates[index]);
+});
+
+// Author: delete own update (only if pending)
+app.delete('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
+  let updates = readJSON('updates.json');
+  const index = updates.findIndex(u => u.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '动态未找到' });
+  if (updates[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权删除此动态' });
+  if (updates[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能删除待审核的动态' });
+
+  updates.splice(index, 1);
+  writeJSON('updates.json', updates);
+  res.json({ success: true });
+});
+
 // Admin: approve author
 app.post('/api/admin/circles/:id/approve-author', authMiddleware, (req, res) => {
   let circles = readJSON('circles.json');
@@ -670,6 +862,8 @@ app.post('/api/works/:id/unwant', (req, res) => {
 // Events
 app.get('/api/events', (req, res) => {
   let events = readJSON('events.json');
+  // Only return approved events (or legacy events without approvalStatus)
+  events = events.filter(e => !e.approvalStatus || e.approvalStatus === 'approved');
   if (ensureOrder(events)) writeJSON('events.json', events);
   events.sort((a, b) => a.order - b.order);
   res.json(events);
@@ -725,6 +919,8 @@ app.get('/api/circles/:id', (req, res) => {
 // Projects
 app.get('/api/projects', (req, res) => {
   let projects = readJSON('projects.json');
+  // Only return approved projects (or legacy projects without approvalStatus)
+  projects = projects.filter(p => !p.approvalStatus || p.approvalStatus === 'approved');
   if (ensureOrder(projects)) writeJSON('projects.json', projects);
   const { category, status, search } = req.query;
   if (category) projects = projects.filter(p => p.category === category);
@@ -1118,6 +1314,75 @@ app.delete('/api/admin/events/:id', authMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
+// Admin: approve event
+app.post('/api/admin/events/:id/approve', authMiddleware, (req, res) => {
+  let events = readJSON('events.json');
+  const index = events.findIndex(e => e.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '活动未找到' });
+  events[index].approvalStatus = 'approved';
+  writeJSON('events.json', events);
+  logEdit('管理员', '批准活动', events[index].title || req.params.id, '');
+  res.json({ success: true });
+});
+
+// Admin: reject event
+app.post('/api/admin/events/:id/reject', authMiddleware, (req, res) => {
+  let events = readJSON('events.json');
+  const index = events.findIndex(e => e.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '活动未找到' });
+  events[index].approvalStatus = 'rejected';
+  if (req.body.reason) events[index].rejectReason = req.body.reason;
+  writeJSON('events.json', events);
+  logEdit('管理员', '拒绝活动', events[index].title || req.params.id, req.body.reason || '');
+  res.json({ success: true });
+});
+
+// Admin: approve project
+app.post('/api/admin/projects/:id/approve', authMiddleware, (req, res) => {
+  let projects = readJSON('projects.json');
+  const index = projects.findIndex(p => p.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '企划未找到' });
+  projects[index].approvalStatus = 'approved';
+  writeJSON('projects.json', projects);
+  logEdit('管理员', '批准企划', projects[index].title || req.params.id, '');
+  res.json({ success: true });
+});
+
+// Admin: reject project
+app.post('/api/admin/projects/:id/reject', authMiddleware, (req, res) => {
+  let projects = readJSON('projects.json');
+  const index = projects.findIndex(p => p.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '企划未找到' });
+  projects[index].approvalStatus = 'rejected';
+  if (req.body.reason) projects[index].rejectReason = req.body.reason;
+  writeJSON('projects.json', projects);
+  logEdit('管理员', '拒绝企划', projects[index].title || req.params.id, req.body.reason || '');
+  res.json({ success: true });
+});
+
+// Admin: approve update
+app.post('/api/admin/updates/:id/approve', authMiddleware, (req, res) => {
+  let updates = readJSON('updates.json');
+  const index = updates.findIndex(u => u.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '动态未找到' });
+  updates[index].approvalStatus = 'approved';
+  writeJSON('updates.json', updates);
+  logEdit('管理员', '批准动态', updates[index].title || req.params.id, '');
+  res.json({ success: true });
+});
+
+// Admin: reject update
+app.post('/api/admin/updates/:id/reject', authMiddleware, (req, res) => {
+  let updates = readJSON('updates.json');
+  const index = updates.findIndex(u => u.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '动态未找到' });
+  updates[index].approvalStatus = 'rejected';
+  if (req.body.reason) updates[index].rejectReason = req.body.reason;
+  writeJSON('updates.json', updates);
+  logEdit('管理员', '拒绝动态', updates[index].title || req.params.id, req.body.reason || '');
+  res.json({ success: true });
+});
+
 // --- Circles ---
 app.get('/api/admin/circles', authMiddleware, (req, res) => {
   let circles = readJSON('circles.json');
@@ -1435,7 +1700,8 @@ app.get('/api/updates', (req, res) => {
   try {
     let updates = readJSON('updates.json');
     const today = new Date().toISOString().split('T')[0];
-    updates = updates.filter(u => u.publishDate <= today);
+    // Only return approved updates (or legacy updates without approvalStatus)
+    updates = updates.filter(u => (!u.approvalStatus || u.approvalStatus === 'approved') && u.publishDate <= today);
     updates.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;

@@ -126,6 +126,9 @@
       <div class="mgmt-tabs">
         <div class="mgmt-tab active" onclick="switchMgmtTab('profile')">作者资料</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('works')">我的作品</div>
+        <div class="mgmt-tab" onclick="switchMgmtTab('my-events')">我的活动</div>
+        <div class="mgmt-tab" onclick="switchMgmtTab('my-projects')">我的企划</div>
+        <div class="mgmt-tab" onclick="switchMgmtTab('my-updates')">我的动态</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('events')">活动关联</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('projects')">企划关联</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('images')">图片管理</div>
@@ -305,6 +308,33 @@
           </div>
           <div id="workModalBody"></div>
         </div>
+      </div>
+
+      <!-- My Events Tab -->
+      <div id="tab-my-events" class="mgmt-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="margin:0;">我的活动</h3>
+          <button class="btn btn-primary" onclick="openMyEventForm()">+ 提交活动</button>
+        </div>
+        <div id="myEventsGrid" class="works-grid"></div>
+      </div>
+
+      <!-- My Projects Tab -->
+      <div id="tab-my-projects" class="mgmt-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="margin:0;">我的企划</h3>
+          <button class="btn btn-primary" onclick="openMyProjectForm()">+ 提交企划</button>
+        </div>
+        <div id="myProjectsGrid" class="works-grid"></div>
+      </div>
+
+      <!-- My Updates Tab -->
+      <div id="tab-my-updates" class="mgmt-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="margin:0;">我的动态</h3>
+          <button class="btn btn-primary" onclick="openMyUpdateForm()">+ 发布动态</button>
+        </div>
+        <div id="myUpdatesGrid" class="works-grid"></div>
       </div>
 
       <!-- Events Tab -->
@@ -1429,6 +1459,219 @@
       }
     }
 
+    // ===== My Events =====
+    async function loadMyEvents() {
+      const events = await authorAPI('GET', '/api/author/my-events');
+      const grid = document.getElementById('myEventsGrid');
+      if (!events || events.length === 0) {
+        grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无活动，点击上方按钮提交</p>';
+        return;
+      }
+      grid.innerHTML = events.map(e => {
+        const statusBadge = e.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+          : e.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
+        return `
+        <div class="card">
+          <div class="card-body" style="padding:0.8rem;">
+            ${statusBadge}
+            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(e.title)}</h3>
+            <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${e.date || ''} ${e.location ? '· ' + escapeHtml(e.location) : ''}</p>
+            ${e.approvalStatus === 'pending' ? `<div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
+              <button class="btn-sm" onclick="deleteMyEvent('${e.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function openMyEventForm() {
+      const overlay = document.getElementById('workModalOverlay');
+      const body = document.getElementById('workModalBody');
+      document.getElementById('workModalTitle').textContent = '提交活动';
+      body.innerHTML = `
+        <div class="form-group"><label>活动名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myEventTitle" required></div>
+        <div class="form-row">
+          <div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="myEventDate"></div>
+          <div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="myEventEndDate"></div>
+        </div>
+        <div class="form-group"><label>地点</label><input class="form-input" id="myEventLocation"></div>
+        <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth"></div>
+        <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;"></textarea></div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <button class="btn btn-primary" onclick="submitMyEvent()">提交审核</button>
+          <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
+        </div>`;
+      overlay.classList.add('open');
+    }
+
+    async function submitMyEvent() {
+      const title = document.getElementById('myEventTitle').value;
+      if (!title) { alert('请填写活动名称'); return; }
+      const data = {
+        title,
+        date: document.getElementById('myEventDate').value,
+        endDate: document.getElementById('myEventEndDate').value,
+        location: document.getElementById('myEventLocation').value,
+        booth: document.getElementById('myEventBooth').value,
+        description: document.getElementById('myEventDesc').value
+      };
+      const result = await authorAPI('POST', '/api/author/my-events', data);
+      if (result) {
+        showToast('活动已提交，等待审核', 'success');
+        closeWorkModal();
+        loadMyEvents();
+      }
+    }
+
+    async function deleteMyEvent(id) {
+      if (!confirm('确定删除此活动？')) return;
+      const result = await authorAPI('DELETE', '/api/author/my-events/' + id);
+      if (result && result.success) {
+        showToast('已删除', 'success');
+        loadMyEvents();
+      }
+    }
+
+    // ===== My Projects =====
+    async function loadMyProjects() {
+      const projects = await authorAPI('GET', '/api/author/my-projects');
+      const grid = document.getElementById('myProjectsGrid');
+      if (!projects || projects.length === 0) {
+        grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无企划，点击上方按钮提交</p>';
+        return;
+      }
+      grid.innerHTML = projects.map(p => {
+        const statusBadge = p.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+          : p.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
+        return `
+        <div class="card">
+          <div class="card-body" style="padding:0.8rem;">
+            ${statusBadge}
+            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(p.title)}</h3>
+            <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${PROJECT_STATUS_LABELS[p.status] || p.status || ''}</p>
+            ${p.approvalStatus === 'pending' ? `<div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
+              <button class="btn-sm" onclick="deleteMyProject('${p.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function openMyProjectForm() {
+      const overlay = document.getElementById('workModalOverlay');
+      const body = document.getElementById('workModalBody');
+      document.getElementById('workModalTitle').textContent = '提交企划';
+      body.innerHTML = `
+        <div class="form-group"><label>企划名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myProjectTitle" required></div>
+        <div class="form-row">
+          <div class="form-group"><label>分类</label><select class="form-input" id="myProjectCategory">${PROJECT_CATEGORIES_ORDERED.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+          <div class="form-group"><label>状态</label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+        </div>
+        <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;"></textarea></div>
+        <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="myProjectTags" placeholder="标签1, 标签2"></div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <button class="btn btn-primary" onclick="submitMyProject()">提交审核</button>
+          <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
+        </div>`;
+      overlay.classList.add('open');
+    }
+
+    async function submitMyProject() {
+      const title = document.getElementById('myProjectTitle').value;
+      if (!title) { alert('请填写企划名称'); return; }
+      const data = {
+        title,
+        category: document.getElementById('myProjectCategory').value,
+        status: document.getElementById('myProjectStatus').value,
+        description: document.getElementById('myProjectDesc').value,
+        tags: document.getElementById('myProjectTags').value.split(',').map(t => t.trim()).filter(Boolean)
+      };
+      const result = await authorAPI('POST', '/api/author/my-projects', data);
+      if (result) {
+        showToast('企划已提交，等待审核', 'success');
+        closeWorkModal();
+        loadMyProjects();
+      }
+    }
+
+    async function deleteMyProject(id) {
+      if (!confirm('确定删除此企划？')) return;
+      const result = await authorAPI('DELETE', '/api/author/my-projects/' + id);
+      if (result && result.success) {
+        showToast('已删除', 'success');
+        loadMyProjects();
+      }
+    }
+
+    // ===== My Updates =====
+    async function loadMyUpdates() {
+      const updates = await authorAPI('GET', '/api/author/my-updates');
+      const grid = document.getElementById('myUpdatesGrid');
+      if (!updates || updates.length === 0) {
+        grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无动态，点击上方按钮发布</p>';
+        return;
+      }
+      grid.innerHTML = updates.map(u => {
+        const statusBadge = u.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+          : u.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
+        return `
+        <div class="card">
+          <div class="card-body" style="padding:0.8rem;">
+            ${statusBadge}
+            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(u.title)}</h3>
+            <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${u.publishDate || ''}</p>
+            ${u.approvalStatus === 'pending' ? `<div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
+              <button class="btn-sm" onclick="deleteMyUpdate('${u.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function openMyUpdateForm() {
+      const overlay = document.getElementById('workModalOverlay');
+      const body = document.getElementById('workModalBody');
+      document.getElementById('workModalTitle').textContent = '发布动态';
+      body.innerHTML = `
+        <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" required></div>
+        <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:120px;" required></textarea></div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <button class="btn btn-primary" onclick="submitMyUpdate()">提交审核</button>
+          <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
+        </div>`;
+      overlay.classList.add('open');
+    }
+
+    async function submitMyUpdate() {
+      const title = document.getElementById('myUpdateTitle').value;
+      const content = document.getElementById('myUpdateContent').value;
+      if (!title || !content) { alert('请填写标题和内容'); return; }
+      const data = {
+        title,
+        content,
+        publishDate: document.getElementById('myUpdateDate').value
+      };
+      const result = await authorAPI('POST', '/api/author/my-updates', data);
+      if (result) {
+        showToast('动态已提交，等待审核', 'success');
+        closeWorkModal();
+        loadMyUpdates();
+      }
+    }
+
+    async function deleteMyUpdate(id) {
+      if (!confirm('确定删除此动态？')) return;
+      const result = await authorAPI('DELETE', '/api/author/my-updates/' + id);
+      if (result && result.success) {
+        showToast('已删除', 'success');
+        loadMyUpdates();
+      }
+    }
+
     // Management tab switching
     function switchMgmtTab(tab) {
       document.querySelectorAll('.mgmt-tab').forEach(t => t.classList.remove('active'));
@@ -1436,6 +1679,9 @@
       document.querySelector('.mgmt-tab[onclick*="' + tab + '"]').classList.add('active');
       document.getElementById('tab-' + tab).classList.add('active');
       if (tab === 'history') loadAuthorHistory();
+      if (tab === 'my-events') loadMyEvents();
+      if (tab === 'my-projects') loadMyProjects();
+      if (tab === 'my-updates') loadMyUpdates();
     }
 
     // Logout

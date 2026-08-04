@@ -1279,22 +1279,29 @@ async function loadEvents() {
 function renderEventsTable(events) {
   const tbody = document.getElementById('eventsTableBody');
   if (!events || events.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无活动</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--haze);padding:2rem;">暂无活动</td></tr>';
     return;
   }
   tbody.innerHTML = events.map((e, i) => {
     const worksCount = (e.relatedWorks || []).length;
     const projectsCount = (e.relatedProjects || []).length;
+    const approvalBadge = e.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+      : e.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+      : e.approvalStatus === 'pending' ? '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>'
+      : '<span style="background:var(--haze);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">-</span>';
+    const approveBtn = e.approvalStatus === 'pending' ? `<button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveEvent('${e.id}')">批准</button><button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectEvent('${e.id}')">拒绝</button>` : '';
     return `
     <tr>
       <td>${renderOrderControls('events', e.id, i, events.length)}</td>
       <td class="editable-cell" onclick="makeEventEditable(this, '${e.id}', 'title', '${escapeHtml(e.title)}')">${e.title}</td>
+      <td>${approvalBadge}</td>
       <td><span class="card-tag ${e.status || ''}">${EVENT_STATUS_LABELS[e.status] || e.status || '-'}</span></td>
       <td class="editable-cell" onclick="makeEventEditable(this, '${e.id}', 'date', '${e.date || ''}')">${e.date || '-'}</td>
       <td class="editable-cell truncate" onclick="makeEventEditable(this, '${e.id}', 'location', '${escapeHtml(e.location || '')}')">${e.location || '-'}</td>
       <td>作品${worksCount} / 企划${projectsCount}</td>
       <td>
         <div class="table-actions">
+          ${approveBtn}
           <button class="btn-sm btn-edit" onclick="manageEventWorks('${e.id}')">关联</button>
           <button class="btn-sm btn-edit" onclick="editEvent('${e.id}')">编辑</button>
           <button class="btn-sm btn-delete" onclick="deleteEvent('${e.id}')">删除</button>
@@ -1302,6 +1309,17 @@ function renderEventsTable(events) {
       </td>
     </tr>
   `}).join('');
+}
+
+async function approveEvent(id) {
+  const result = await adminAPI('POST', `/api/admin/events/${id}/approve`);
+  if (result && result.success) { showToast('已批准', 'success'); loadEvents(); }
+}
+
+async function rejectEvent(id) {
+  const reason = prompt('拒绝原因（可选）');
+  const result = await adminAPI('POST', `/api/admin/events/${id}/reject`, { reason });
+  if (result && result.success) { showToast('已拒绝', 'success'); loadEvents(); }
 }
 
 async function inlineUpdateEvent(eventId, field, value) {
@@ -2610,21 +2628,28 @@ async function loadProjects() {
 function renderProjectsTable(projects) {
   const tbody = document.getElementById('projectsTableBody');
   if (!projects || projects.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无企划</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无企划</td></tr>';
     return;
   }
   tbody.innerHTML = projects.map((p, i) => {
     const circlesCount = (p.circles || []).length;
     const eventsCount = (p.events || []).length;
+    const approvalBadge = p.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+      : p.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+      : p.approvalStatus === 'pending' ? '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>'
+      : '<span style="background:var(--haze);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">-</span>';
+    const approveBtn = p.approvalStatus === 'pending' ? `<button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveProject('${p.id}')">批准</button><button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectProject('${p.id}')">拒绝</button>` : '';
     return `
     <tr>
       <td>${renderOrderControls('projects', p.id, i, projects.length)}</td>
       <td class="editable-cell" onclick="makeProjectEditable(this, '${p.id}', 'title', '${escapeHtml(p.title)}')">${p.title}</td>
+      <td>${approvalBadge}</td>
       <td class="editable-cell" onclick="makeSelectProjectCategory(this, '${p.id}', '${p.category}')">${PROJECT_CATEGORIES[p.category] || p.category}</td>
       <td class="editable-cell" onclick="makeSelectProjectStatus(this, '${p.id}', '${p.status}')"><span class="card-tag ${p.status}">${PROJECT_STATUS_LABELS[p.status] || p.status}</span></td>
       <td>作者${circlesCount} / 活动${eventsCount}</td>
       <td>
         <div class="table-actions">
+          ${approveBtn}
           <button class="btn-sm btn-edit" onclick="manageProjectRelations('${p.id}')">关联</button>
           <button class="btn-sm btn-edit" onclick="editProject('${p.id}')">编辑</button>
           <button class="btn-sm btn-delete" onclick="deleteProject('${p.id}')">删除</button>
@@ -2632,6 +2657,17 @@ function renderProjectsTable(projects) {
       </td>
     </tr>
   `}).join('');
+}
+
+async function approveProject(id) {
+  const result = await adminAPI('POST', `/api/admin/projects/${id}/approve`);
+  if (result && result.success) { showToast('已批准', 'success'); loadProjects(); }
+}
+
+async function rejectProject(id) {
+  const reason = prompt('拒绝原因（可选）');
+  const result = await adminAPI('POST', `/api/admin/projects/${id}/reject`, { reason });
+  if (result && result.success) { showToast('已拒绝', 'success'); loadProjects(); }
 }
 
 async function inlineUpdateProject(projectId, field, value) {
@@ -3898,7 +3934,7 @@ async function loadUpdates() {
 
     const tbody = document.getElementById('updatesTableBody');
     if (!updates || updates.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无动态</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无动态</td></tr>';
       return;
     }
     tbody.innerHTML = updates
@@ -3912,15 +3948,22 @@ async function loadUpdates() {
         (u.relatedCircles || []).forEach(cid => { if (circlesMap[cid]) related.push('🏠' + circlesMap[cid]); });
         (u.relatedEvents || []).forEach(eid => { if (eventsMap[eid]) related.push('📅' + eventsMap[eid]); });
         (u.relatedProjects || []).forEach(pid => { if (projectsMap[pid]) related.push('📋' + projectsMap[pid]); });
+        const approvalBadge = u.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+          : u.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+          : u.approvalStatus === 'pending' ? '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>'
+          : '<span style="background:var(--haze);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">-</span>';
+        const approveBtn = u.approvalStatus === 'pending' ? `<button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveUpdate('${u.id}')">批准</button><button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectUpdate('${u.id}')">拒绝</button>` : '';
         return `
         <tr>
           <td>${u.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escapeHtml(u.title)}</td>
+          <td>${approvalBadge}</td>
           <td>${formatDateAdmin(u.publishDate)}</td>
           <td style="text-align:center;">${u.pinned ? '<span style="color:var(--accent);font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
           <td style="font-size:0.8rem;">${related.length > 0 ? related.join(' ') : '<span style="color:var(--haze);">-</span>'}</td>
           <td class="truncate" style="max-width:250px;">${escapeHtml(u.content)}</td>
           <td>
             <div class="table-actions">
+              ${approveBtn}
               <button class="btn-sm btn-edit" onclick="editUpdate('${u.id}')">编辑</button>
               <button class="btn-sm btn-delete" onclick="deleteUpdate('${u.id}')">删除</button>
             </div>
@@ -3929,8 +3972,19 @@ async function loadUpdates() {
       }).join('');
   } catch (e) {
     document.getElementById('updatesTableBody').innerHTML =
-      '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
+      '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
   }
+}
+
+async function approveUpdate(id) {
+  const result = await adminAPI('POST', `/api/admin/updates/${id}/approve`);
+  if (result && result.success) { showToast('已批准', 'success'); loadUpdates(); }
+}
+
+async function rejectUpdate(id) {
+  const reason = prompt('拒绝原因（可选）');
+  const result = await adminAPI('POST', `/api/admin/updates/${id}/reject`, { reason });
+  if (result && result.success) { showToast('已拒绝', 'success'); loadUpdates(); }
 }
 
 function openUpdateModal(update = null) {
