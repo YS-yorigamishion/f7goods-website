@@ -1,6 +1,20 @@
 // f7goods Admin Panel JS
+// Theme management
+function applyTheme() {
+  const saved = localStorage.getItem('f7theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('f7theme', next);
+  document.querySelectorAll('.theme-toggle').forEach(btn => {
+    btn.textContent = next === 'dark' ? '☀️' : '🌙';
+  });
+}
 // Apply theme immediately
-if (typeof applyTheme === 'function') applyTheme();
+applyTheme();
 
 let CATEGORIES = {
   figure: '手办/模型', goods: '周边杂货', doujin: '同人志',

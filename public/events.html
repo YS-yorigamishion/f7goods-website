@@ -66,6 +66,7 @@
         // Sort: date descending (newest first)
         allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
         allWorks = works;
+        const now = new Date();
         calYear = now.getFullYear();
         calMonth = now.getMonth();
 
