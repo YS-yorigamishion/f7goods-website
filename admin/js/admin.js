@@ -752,6 +752,37 @@ async function rejectWork(id) {
   if (result && result.success) { showToast('已拒绝', 'success'); loadWorks(); }
 }
 
+// Batch approve/reject works
+async function batchApproveWorks() {
+  const pendingWorks = adminWorksData.filter(w => w.approvalStatus === 'pending');
+  if (pendingWorks.length === 0) { alert('没有待审核的作品'); return; }
+  if (!confirm(`确定批准全部 ${pendingWorks.length} 个待审核作品？`)) return;
+
+  let success = 0;
+  for (const w of pendingWorks) {
+    const result = await adminAPI('POST', `/api/admin/works/${w.id}/approve`);
+    if (result && result.success) success++;
+  }
+  showToast(`已批准 ${success} 个作品`, 'success');
+  loadWorks();
+}
+
+async function batchRejectWorks() {
+  const pendingWorks = adminWorksData.filter(w => w.approvalStatus === 'pending');
+  if (pendingWorks.length === 0) { alert('没有待审核的作品'); return; }
+  const reason = prompt('拒绝原因（可选）');
+  if (reason === null) return;
+  if (!confirm(`确定拒绝全部 ${pendingWorks.length} 个待审核作品？`)) return;
+
+  let success = 0;
+  for (const w of pendingWorks) {
+    const result = await adminAPI('POST', `/api/admin/works/${w.id}/reject`, { reason });
+    if (result && result.success) success++;
+  }
+  showToast(`已拒绝 ${success} 个作品`, 'success');
+  loadWorks();
+}
+
 function escapeHtml(str) {
   if (str == null) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
@@ -1578,6 +1609,37 @@ async function approveEvent(id) {
   if (result && result.success) { showToast('已批准', 'success'); loadEvents(); }
 }
 
+// Batch approve/reject events
+async function batchApproveEvents() {
+  const pendingEvents = adminEventsData.filter(e => e.approvalStatus === 'pending');
+  if (pendingEvents.length === 0) { alert('没有待审核的活动'); return; }
+  if (!confirm(`确定批准全部 ${pendingEvents.length} 个待审核活动？`)) return;
+
+  let success = 0;
+  for (const e of pendingEvents) {
+    const result = await adminAPI('POST', `/api/admin/events/${e.id}/approve`);
+    if (result && result.success) success++;
+  }
+  showToast(`已批准 ${success} 个活动`, 'success');
+  loadEvents();
+}
+
+async function batchRejectEvents() {
+  const pendingEvents = adminEventsData.filter(e => e.approvalStatus === 'pending');
+  if (pendingEvents.length === 0) { alert('没有待审核的活动'); return; }
+  const reason = prompt('拒绝原因（可选）');
+  if (reason === null) return;
+  if (!confirm(`确定拒绝全部 ${pendingEvents.length} 个待审核活动？`)) return;
+
+  let success = 0;
+  for (const e of pendingEvents) {
+    const result = await adminAPI('POST', `/api/admin/events/${e.id}/reject`, { reason });
+    if (result && result.success) success++;
+  }
+  showToast(`已拒绝 ${success} 个活动`, 'success');
+  loadEvents();
+}
+
 // Manage editable authors for events/projects/updates
 async function manageEditableAuthors(type, id) {
   const apiMap = { events: '/api/admin/events', projects: '/api/admin/projects', updates: '/api/admin/updates' };
@@ -2346,6 +2408,37 @@ async function removeAuthorAccount(circleId) {
   loadCircles();
 }
 
+// Batch approve/reject authors
+async function batchApproveAuthors() {
+  const pendingAuthors = adminCirclesData.filter(c => c.authorStatus === 'pending');
+  if (pendingAuthors.length === 0) { alert('没有待审核的作者'); return; }
+  if (!confirm(`确定批准全部 ${pendingAuthors.length} 个待审核作者？`)) return;
+
+  let success = 0;
+  for (const c of pendingAuthors) {
+    const result = await adminAPI('POST', `/api/admin/circles/${c.id}/approve-author`);
+    if (result && result.success) success++;
+  }
+  showToast(`已批准 ${success} 个作者`, 'success');
+  loadCircles();
+}
+
+async function batchRejectAuthors() {
+  const pendingAuthors = adminCirclesData.filter(c => c.authorStatus === 'pending');
+  if (pendingAuthors.length === 0) { alert('没有待审核的作者'); return; }
+  const reason = prompt('拒绝原因（可选）');
+  if (reason === null) return;
+  if (!confirm(`确定拒绝全部 ${pendingAuthors.length} 个待审核作者？`)) return;
+
+  let success = 0;
+  for (const c of pendingAuthors) {
+    const result = await adminAPI('POST', `/api/admin/circles/${c.id}/reject-author`, { reason });
+    if (result && result.success) success++;
+  }
+  showToast(`已拒绝 ${success} 个作者`, 'success');
+  loadCircles();
+}
+
 async function manageCircleEditors(circleId) {
   const circles = await adminAPI('GET', '/api/admin/circles');
   const circle = circles.find(c => c.id === circleId);
@@ -3026,6 +3119,37 @@ async function rejectProject(id) {
   const reason = prompt('拒绝原因（可选）');
   const result = await adminAPI('POST', `/api/admin/projects/${id}/reject`, { reason });
   if (result && result.success) { showToast('已拒绝', 'success'); loadProjects(); }
+}
+
+// Batch approve/reject projects
+async function batchApproveProjects() {
+  const pendingProjects = adminProjectsData.filter(p => p.approvalStatus === 'pending');
+  if (pendingProjects.length === 0) { alert('没有待审核的企划'); return; }
+  if (!confirm(`确定批准全部 ${pendingProjects.length} 个待审核企划？`)) return;
+
+  let success = 0;
+  for (const p of pendingProjects) {
+    const result = await adminAPI('POST', `/api/admin/projects/${p.id}/approve`);
+    if (result && result.success) success++;
+  }
+  showToast(`已批准 ${success} 个企划`, 'success');
+  loadProjects();
+}
+
+async function batchRejectProjects() {
+  const pendingProjects = adminProjectsData.filter(p => p.approvalStatus === 'pending');
+  if (pendingProjects.length === 0) { alert('没有待审核的企划'); return; }
+  const reason = prompt('拒绝原因（可选）');
+  if (reason === null) return;
+  if (!confirm(`确定拒绝全部 ${pendingProjects.length} 个待审核企划？`)) return;
+
+  let success = 0;
+  for (const p of pendingProjects) {
+    const result = await adminAPI('POST', `/api/admin/projects/${p.id}/reject`, { reason });
+    if (result && result.success) success++;
+  }
+  showToast(`已拒绝 ${success} 个企划`, 'success');
+  loadProjects();
 }
 
 async function inlineUpdateProject(projectId, field, value) {
@@ -4435,6 +4559,37 @@ async function rejectUpdate(id) {
   const reason = prompt('拒绝原因（可选）');
   const result = await adminAPI('POST', `/api/admin/updates/${id}/reject`, { reason });
   if (result && result.success) { showToast('已拒绝', 'success'); loadUpdates(); }
+}
+
+// Batch approve/reject updates
+async function batchApproveUpdates() {
+  const pendingUpdates = adminUpdatesData.filter(u => u.approvalStatus === 'pending');
+  if (pendingUpdates.length === 0) { alert('没有待审核的动态'); return; }
+  if (!confirm(`确定批准全部 ${pendingUpdates.length} 个待审核动态？`)) return;
+
+  let success = 0;
+  for (const u of pendingUpdates) {
+    const result = await adminAPI('POST', `/api/admin/updates/${u.id}/approve`);
+    if (result && result.success) success++;
+  }
+  showToast(`已批准 ${success} 个动态`, 'success');
+  loadUpdates();
+}
+
+async function batchRejectUpdates() {
+  const pendingUpdates = adminUpdatesData.filter(u => u.approvalStatus === 'pending');
+  if (pendingUpdates.length === 0) { alert('没有待审核的动态'); return; }
+  const reason = prompt('拒绝原因（可选）');
+  if (reason === null) return;
+  if (!confirm(`确定拒绝全部 ${pendingUpdates.length} 个待审核动态？`)) return;
+
+  let success = 0;
+  for (const u of pendingUpdates) {
+    const result = await adminAPI('POST', `/api/admin/updates/${u.id}/reject`, { reason });
+    if (result && result.success) success++;
+  }
+  showToast(`已拒绝 ${success} 个动态`, 'success');
+  loadUpdates();
 }
 
 function openUpdateModal(update = null) {

@@ -534,19 +534,43 @@
             <button class="btn btn-primary" onclick="loadApprovalPage()">刷新</button>
           </div>
           <div class="admin-card" style="margin-bottom:1.5rem;">
-            <h4 style="margin-bottom:1rem;">🏠 待审核作者账号</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h4 style="margin:0;">🏠 待审核作者账号</h4>
+              <div style="display:flex;gap:0.3rem;">
+                <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveAuthors()">全部批准</button>
+                <button class="btn-sm btn-delete" onclick="batchRejectAuthors()">全部拒绝</button>
+              </div>
+            </div>
             <div id="approvalAuthors"><p style="color:var(--haze);">加载中...</p></div>
           </div>
           <div class="admin-card" style="margin-bottom:1.5rem;">
-            <h4 style="margin-bottom:1rem;">📅 待审核活动</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h4 style="margin:0;">📅 待审核活动</h4>
+              <div style="display:flex;gap:0.3rem;">
+                <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveEvents()">全部批准</button>
+                <button class="btn-sm btn-delete" onclick="batchRejectEvents()">全部拒绝</button>
+              </div>
+            </div>
             <div id="approvalEvents"><p style="color:var(--haze);">加载中...</p></div>
           </div>
           <div class="admin-card" style="margin-bottom:1.5rem;">
-            <h4 style="margin-bottom:1rem;">📋 待审核企划</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h4 style="margin:0;">📋 待审核企划</h4>
+              <div style="display:flex;gap:0.3rem;">
+                <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveProjects()">全部批准</button>
+                <button class="btn-sm btn-delete" onclick="batchRejectProjects()">全部拒绝</button>
+              </div>
+            </div>
             <div id="approvalProjects"><p style="color:var(--haze);">加载中...</p></div>
           </div>
           <div class="admin-card">
-            <h4 style="margin-bottom:1rem;">📰 待审核动态</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h4 style="margin:0;">📰 待审核动态</h4>
+              <div style="display:flex;gap:0.3rem;">
+                <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveUpdates()">全部批准</button>
+                <button class="btn-sm btn-delete" onclick="batchRejectUpdates()">全部拒绝</button>
+              </div>
+            </div>
             <div id="approvalUpdates"><p style="color:var(--haze);">加载中...</p></div>
           </div>
         </div>
