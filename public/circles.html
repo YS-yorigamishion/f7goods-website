@@ -116,7 +116,7 @@
       grid.innerHTML = filtered.map(circle => `
         <div class="circle-card" onclick="location.href='/circle-detail.html?id=${circle.id}'">
           ${circle.logo
-            ? `<div style="width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 1rem;"><img src="${circle.logo}" alt="${circle.name}" style="width:100%;height:100%;object-fit:cover;"></div>`
+            ? `<div style="width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 1rem;"><img src="${circle.logo}" alt="${circle.name}" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></div>`
             : `<div class="circle-avatar">${circle.name.charAt(0)}</div>`}
           <h3 class="circle-name">${circle.name}</h3>
           ${circle.category ? `<p style="font-size:0.8rem;color:var(--accent);margin-bottom:0.3rem;">${CIRCLE_CATEGORIES[circle.category] || circle.category}</p>` : ''}

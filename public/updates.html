@@ -131,9 +131,9 @@
         <div class="card" onclick="location.href='/update-detail.html?id=${u.id}'">
           <div class="card-image" style="${(u.coverImage || (u.images && u.images.length > 0)) ? '' : 'background:linear-gradient(135deg,#9b59b6,#8e44ad);'}">
             ${u.coverImage
-              ? `<img src="${u.coverImage}" alt="${u.title}">`
+              ? `<img src="${u.coverImage}" alt="${u.title}" loading="lazy">`
               : (u.images && u.images.length > 0
-                ? `<img src="${u.images[0]}" alt="${u.title}">`
+                ? `<img src="${u.images[0]}" alt="${u.title}" loading="lazy">`
                 : '<span class="placeholder-icon" style="color:white;">📰</span>')}
           </div>
           <div class="card-body">

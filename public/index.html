@@ -192,11 +192,17 @@
         return;
       }
 
-      grid.innerHTML = filtered.map(work => `
+      // Pagination
+      const pageSize = 20;
+      const currentPage = window._worksPage || 1;
+      const totalPages = Math.ceil(filtered.length / pageSize);
+      const pageWorks = filtered.slice(0, currentPage * pageSize);
+
+      grid.innerHTML = pageWorks.map(work => `
         <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
           <div class="card-image">
             ${work.images && work.images.length > 0
-              ? `<img src="${work.images[0]}" alt="${work.title}">`
+              ? `<img src="${work.images[0]}" alt="${work.title}" loading="lazy">`
               : '<span class="placeholder-icon">🎨</span>'}
           </div>
           <div class="card-body">
@@ -213,7 +219,12 @@
             </div>
           </div>
         </div>
-      `).join('');
+      `).join('') + (currentPage < totalPages ? '<div id="loadMoreTrigger" style="grid-column:1/-1;text-align:center;padding:1rem;"><button class="btn" onclick="loadMoreWorks()">加载更多</button></div>' : '');
+    }
+
+    function loadMoreWorks() {
+      window._worksPage = (window._worksPage || 1) + 1;
+      renderWorks();
     }
 
     loadWorks();

@@ -94,9 +94,9 @@
         <div class="card" onclick="location.href='/project-detail.html?id=${project.id}'">
           <div class="card-image" style="${(project.coverImage || (project.images && project.images.length > 0)) ? '' : 'background:linear-gradient(135deg,var(--accent-alt),var(--ink));'}">
             ${project.coverImage
-              ? `<img src="${project.coverImage}" alt="${project.title}">`
+              ? `<img src="${project.coverImage}" alt="${project.title}" loading="lazy">`
               : (project.images && project.images.length > 0
-                ? `<img src="${project.images[0]}" alt="${project.title}">`
+                ? `<img src="${project.images[0]}" alt="${project.title}" loading="lazy">`
                 : '<span class="placeholder-icon" style="color:white;">📋</span>')}
           </div>
           <div class="card-body">

@@ -1298,6 +1298,40 @@ textarea.form-input {
   to { transform: rotate(360deg); }
 }
 
+/* ===== Skeleton Loading ===== */
+.skeleton {
+  background: linear-gradient(90deg, var(--paper) 25%, var(--border) 50%, var(--paper) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: var(--radius);
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.skeleton-card .skeleton-img {
+  height: 180px;
+}
+
+.skeleton-card .skeleton-text {
+  height: 14px;
+  margin: 0.8rem;
+  border-radius: 4px;
+}
+
+.skeleton-card .skeleton-text.short {
+  width: 60%;
+}
+
 /* ===== Empty State ===== */
 .empty-state {
   text-align: center;
