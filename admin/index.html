@@ -140,6 +140,38 @@
             </div>
           </div>
 
+          <!-- 待审批统计 -->
+          <div class="stats-grid" style="margin-top:1rem;">
+            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
+              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">⏳</div>
+              <div class="stat-info">
+                <div class="stat-number" id="statPendingAuthors">0</div>
+                <div class="stat-label">待审核作者</div>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
+              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📅</div>
+              <div class="stat-info">
+                <div class="stat-number" id="statPendingEvents">0</div>
+                <div class="stat-label">待审核活动</div>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
+              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📋</div>
+              <div class="stat-info">
+                <div class="stat-number" id="statPendingProjects">0</div>
+                <div class="stat-label">待审核企划</div>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
+              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📰</div>
+              <div class="stat-info">
+                <div class="stat-number" id="statPendingUpdates">0</div>
+                <div class="stat-label">待审核动态</div>
+              </div>
+            </div>
+          </div>
+
           <!-- 浏览量统计 -->
           <div class="admin-card" style="margin-top:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -285,6 +317,7 @@
                   <th>日期</th>
                   <th>地点</th>
                   <th>关联</th>
+                  <th>可编辑作者</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -338,6 +371,7 @@
                   <th>分类</th>
                   <th>状态</th>
                   <th>关联</th>
+                  <th>可编辑作者</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -361,6 +395,7 @@
                   <th>发布日期</th>
                   <th>置顶</th>
                   <th>关联</th>
+                  <th>可编辑作者</th>
                   <th>内容摘要</th>
                   <th>操作</th>
                 </tr>

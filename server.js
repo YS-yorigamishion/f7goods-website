@@ -511,9 +511,12 @@ app.put('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
-  if (events[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权编辑此活动' });
+  const circleId = req.author.circleId;
+  const isOwner = events[index].submittedBy === circleId;
+  const isEditable = (events[index].editableBy || []).includes(circleId);
+  if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此活动' });
 
-  const allowed = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status'];
+  const allowed = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'socialLinks'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -577,7 +580,10 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
-  if (projects[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权编辑此企划' });
+  const circleId = req.author.circleId;
+  const isOwner = projects[index].submittedBy === circleId;
+  const isEditable = (projects[index].editableBy || []).includes(circleId);
+  if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此企划' });
 
   const allowed = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage'];
   const updates = {};
@@ -648,7 +654,10 @@ app.put('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
-  if (updates[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权编辑此动态' });
+  const circleId = req.author.circleId;
+  const isOwner = updates[index].submittedBy === circleId;
+  const isEditable = (updates[index].editableBy || []).includes(circleId);
+  if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此动态' });
 
   const allowed = ['title', 'content', 'publishDate', 'coverImage', 'images', 'relatedEvents', 'relatedProjects'];
   const updates2 = {};

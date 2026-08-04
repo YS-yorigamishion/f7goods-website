@@ -230,6 +230,16 @@ async function loadDashboard() {
   document.getElementById('statProjects').textContent = projects?.length || 0;
   document.getElementById('statUpdates').textContent = updates?.length || 0;
 
+  // Pending approval counts
+  const pendingAuthors = (circles || []).filter(c => c.authorStatus === 'pending').length;
+  const pendingEvents = (events || []).filter(e => e.approvalStatus === 'pending').length;
+  const pendingProjects = (projects || []).filter(p => p.approvalStatus === 'pending').length;
+  const pendingUpdates = (updates || []).filter(u => u.approvalStatus === 'pending').length;
+  document.getElementById('statPendingAuthors').textContent = pendingAuthors;
+  document.getElementById('statPendingEvents').textContent = pendingEvents;
+  document.getElementById('statPendingProjects').textContent = pendingProjects;
+  document.getElementById('statPendingUpdates').textContent = pendingUpdates;
+
   // Page view stats
   const daily = pvData?.daily || {};
   window._pvDaily = daily;
@@ -1269,18 +1279,20 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
 
 // ===== Events =====
 async function loadEvents() {
-  const [events, allWorks] = await Promise.all([
+  const [events, allWorks, allCircles] = await Promise.all([
     adminAPI('GET', '/api/admin/events'),
-    adminAPI('GET', '/api/admin/works')
+    adminAPI('GET', '/api/admin/works'),
+    adminAPI('GET', '/api/admin/circles')
   ]);
   adminEventsData = events || [];
+  (allCircles || []).forEach(c => adminCirclesMap[c.id] = c.name);
   renderEventsTable(adminEventsData);
 }
 
 function renderEventsTable(events) {
   const tbody = document.getElementById('eventsTableBody');
   if (!events || events.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--haze);padding:2rem;">暂无活动</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--haze);padding:2rem;">暂无活动</td></tr>';
     return;
   }
   tbody.innerHTML = events.map((e, i) => {
@@ -1291,6 +1303,10 @@ function renderEventsTable(events) {
       : e.approvalStatus === 'pending' ? '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>'
       : '<span style="background:var(--haze);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">-</span>';
     const approveBtn = e.approvalStatus === 'pending' ? `<button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveEvent('${e.id}')">批准</button><button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectEvent('${e.id}')">拒绝</button>` : '';
+    const editableAuthors = (e.editableBy || []).map(cid => {
+      const circle = adminCirclesMap[cid];
+      return circle ? `<span style="background:var(--paper);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.7rem;margin-right:0.2rem;">${escapeHtml(circle)}</span>` : '';
+    }).join('') || '<span style="color:var(--haze);font-size:0.75rem;">-</span>';
     return `
     <tr>
       <td>${renderOrderControls('events', e.id, i, events.length)}</td>
@@ -1300,6 +1316,7 @@ function renderEventsTable(events) {
       <td class="editable-cell" onclick="makeEventEditable(this, '${e.id}', 'date', '${e.date || ''}')">${e.date || '-'}</td>
       <td class="editable-cell truncate" onclick="makeEventEditable(this, '${e.id}', 'location', '${escapeHtml(e.location || '')}')">${e.location || '-'}</td>
       <td>作品${worksCount} / 企划${projectsCount}</td>
+      <td>${editableAuthors} <button class="btn-sm" style="font-size:0.7rem;padding:0.1rem 0.3rem;" onclick="manageEditableAuthors('events','${e.id}')">管理</button></td>
       <td>
         <div class="table-actions">
           ${approveBtn}
@@ -1315,6 +1332,52 @@ function renderEventsTable(events) {
 async function approveEvent(id) {
   const result = await adminAPI('POST', `/api/admin/events/${id}/approve`);
   if (result && result.success) { showToast('已批准', 'success'); loadEvents(); }
+}
+
+// Manage editable authors for events/projects/updates
+async function manageEditableAuthors(type, id) {
+  const apiMap = { events: '/api/admin/events', projects: '/api/admin/projects', updates: '/api/admin/updates' };
+  const items = await adminAPI('GET', apiMap[type]);
+  const item = items?.find(i => i.id === id);
+  if (!item) return;
+
+  const circles = await adminAPI('GET', '/api/admin/circles');
+  const approvedAuthors = (circles || []).filter(c => c.authorStatus === 'approved');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'editableAuthorsOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="margin:0;">管理可编辑作者</h3>
+      <button onclick="document.getElementById('editableAuthorsOverlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
+    </div>
+    <p style="font-size:0.85rem;color:var(--haze);margin-bottom:1rem;">选择可以编辑「${escapeHtml(item.title)}」的作者：</p>
+    <div id="editableAuthorsList">
+      ${approvedAuthors.map(c => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;cursor:pointer;border-bottom:1px solid var(--border);">
+        <input type="checkbox" class="editable-author-cb" value="${c.id}" ${(item.editableBy || []).includes(c.id) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--accent);">
+        ${escapeHtml(c.name)}
+      </label>`).join('')}
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="saveEditableAuthors('${type}','${id}')">保存</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveEditableAuthors(type, id) {
+  const checked = [...document.querySelectorAll('.editable-author-cb:checked')].map(cb => cb.value);
+  const apiMap = { events: '/api/admin/events', projects: '/api/admin/projects', updates: '/api/admin/updates' };
+  const items = await adminAPI('GET', apiMap[type]);
+  const item = items?.find(i => i.id === id);
+  if (!item) return;
+
+  item.editableBy = checked;
+  await adminAPI('PUT', `${apiMap[type]}/${id}`, item);
+  showToast('已保存', 'success');
+  document.getElementById('editableAuthorsOverlay')?.remove();
+  if (type === 'events') loadEvents();
+  else if (type === 'projects') loadProjects();
+  else if (type === 'updates') loadUpdates();
 }
 
 async function rejectEvent(id) {
@@ -2623,13 +2686,14 @@ async function loadProjects() {
     adminAPI('GET', '/api/admin/events')
   ]);
   adminProjectsData = projects || [];
+  (circles || []).forEach(c => adminCirclesMap[c.id] = c.name);
   renderProjectsTable(adminProjectsData);
 }
 
 function renderProjectsTable(projects) {
   const tbody = document.getElementById('projectsTableBody');
   if (!projects || projects.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无企划</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--haze);padding:2rem;">暂无企划</td></tr>';
     return;
   }
   tbody.innerHTML = projects.map((p, i) => {
@@ -2640,6 +2704,10 @@ function renderProjectsTable(projects) {
       : p.approvalStatus === 'pending' ? '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>'
       : '<span style="background:var(--haze);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">-</span>';
     const approveBtn = p.approvalStatus === 'pending' ? `<button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveProject('${p.id}')">批准</button><button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectProject('${p.id}')">拒绝</button>` : '';
+    const editableAuthors = (p.editableBy || []).map(cid => {
+      const circle = adminCirclesMap[cid];
+      return circle ? `<span style="background:var(--paper);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.7rem;margin-right:0.2rem;">${escapeHtml(circle)}</span>` : '';
+    }).join('') || '<span style="color:var(--haze);font-size:0.75rem;">-</span>';
     return `
     <tr>
       <td>${renderOrderControls('projects', p.id, i, projects.length)}</td>
@@ -2648,6 +2716,7 @@ function renderProjectsTable(projects) {
       <td class="editable-cell" onclick="makeSelectProjectCategory(this, '${p.id}', '${p.category}')">${PROJECT_CATEGORIES[p.category] || p.category}</td>
       <td class="editable-cell" onclick="makeSelectProjectStatus(this, '${p.id}', '${p.status}')"><span class="card-tag ${p.status}">${PROJECT_STATUS_LABELS[p.status] || p.status}</span></td>
       <td>作者${circlesCount} / 活动${eventsCount}</td>
+      <td>${editableAuthors} <button class="btn-sm" style="font-size:0.7rem;padding:0.1rem 0.3rem;" onclick="manageEditableAuthors('projects','${p.id}')">管理</button></td>
       <td>
         <div class="table-actions">
           ${approveBtn}
@@ -3935,7 +4004,7 @@ async function loadUpdates() {
 
     const tbody = document.getElementById('updatesTableBody');
     if (!updates || updates.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无动态</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--haze);padding:2rem;">暂无动态</td></tr>';
       return;
     }
     tbody.innerHTML = updates
@@ -3954,6 +4023,10 @@ async function loadUpdates() {
           : u.approvalStatus === 'pending' ? '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>'
           : '<span style="background:var(--haze);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">-</span>';
         const approveBtn = u.approvalStatus === 'pending' ? `<button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveUpdate('${u.id}')">批准</button><button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectUpdate('${u.id}')">拒绝</button>` : '';
+        const editableAuthors = (u.editableBy || []).map(cid => {
+          const circle = circlesMap[cid];
+          return circle ? `<span style="background:var(--paper);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.7rem;margin-right:0.2rem;">${escapeHtml(circle)}</span>` : '';
+        }).join('') || '<span style="color:var(--haze);font-size:0.75rem;">-</span>';
         return `
         <tr>
           <td>${u.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escapeHtml(u.title)}</td>
@@ -3961,6 +4034,7 @@ async function loadUpdates() {
           <td>${formatDateAdmin(u.publishDate)}</td>
           <td style="text-align:center;">${u.pinned ? '<span style="color:var(--accent);font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
           <td style="font-size:0.8rem;">${related.length > 0 ? related.join(' ') : '<span style="color:var(--haze);">-</span>'}</td>
+          <td>${editableAuthors} <button class="btn-sm" style="font-size:0.7rem;padding:0.1rem 0.3rem;" onclick="manageEditableAuthors('updates','${u.id}')">管理</button></td>
           <td class="truncate" style="max-width:250px;">${escapeHtml(u.content)}</td>
           <td>
             <div class="table-actions">

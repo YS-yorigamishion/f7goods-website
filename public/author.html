@@ -33,8 +33,12 @@
     .work-item-info { flex:1; }
     .work-item-title { font-weight:600;font-size:0.9rem; }
     .work-item-meta { font-size:0.75rem;color:var(--haze);margin-top:0.2rem; }
-    .event-item { display:flex;align-items:center;gap:0.8rem;padding:0.6rem 0;border-bottom:1px solid var(--border); }
+    .event-item { display:flex;align-items:center;gap:0.8rem;padding:0.6rem 0.5rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s,border-color 0.2s;border-radius:var(--radius-sm); }
     .event-item:last-child { border-bottom:none; }
+    .event-item:hover { background:var(--paper); }
+    .event-item:active { background:rgba(233,69,96,0.05);transform:scale(0.99); }
+    .event-item:has(input:checked) { background:rgba(233,69,96,0.03);border-left:3px solid var(--accent); }
+    .event-item:has(input:checked) .event-item-title { color:var(--accent);font-weight:600; }
     .works-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem; }
     .works-grid .card { cursor:pointer; }
     .work-modal-overlay { display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:flex-start;justify-content:center;padding:2rem;overflow-y:auto; }
@@ -1310,9 +1314,9 @@
       }
       container.innerHTML = events.map(e => {
         const isRelated = (e.relatedCircles || []).includes(authorCircleId);
-        return '<label class="event-item" style="cursor:pointer;">' +
+        return '<label class="event-item">' +
           '<input type="checkbox" class="event-cb" data-id="' + e.id + '"' + (isRelated ? ' checked' : '') + ' style="width:16px;height:16px;accent-color:var(--accent);">' +
-          '<div><div style="font-weight:600;font-size:0.9rem;">' + escapeHtml(e.title) + '</div>' +
+          '<div><div class="event-item-title" style="font-size:0.9rem;">' + escapeHtml(e.title) + '</div>' +
           '<div style="font-size:0.75rem;color:var(--haze);">' + formatDate(e.date) + (e.location ? ' · ' + e.location : '') + '</div></div></label>';
       }).join('');
     }
@@ -1341,9 +1345,9 @@
       }
       container.innerHTML = projects.map(p => {
         const isRelated = (p.circles || []).includes(authorCircleId);
-        return '<label class="event-item" style="cursor:pointer;">' +
+        return '<label class="event-item">' +
           '<input type="checkbox" class="project-cb" data-id="' + p.id + '"' + (isRelated ? ' checked' : '') + ' style="width:16px;height:16px;accent-color:var(--accent);">' +
-          '<div><div style="font-weight:600;font-size:0.9rem;">' + escapeHtml(p.title) + '</div>' +
+          '<div><div class="event-item-title" style="font-size:0.9rem;">' + escapeHtml(p.title) + '</div>' +
           '<div style="font-size:0.75rem;color:var(--haze);">' + (PROJECT_STATUS_LABELS[p.status] || p.status || '') + '</div></div></label>';
       }).join('');
     }
@@ -1510,6 +1514,15 @@
         </div>
         <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth" value="${isEdit ? escapeHtml(eventData.booth || '') : ''}"></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;">${isEdit ? escapeHtml(eventData.description || '') : ''}</textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myEventContactType"><option value="" ${!isEdit || (!eventData.socialLinks?.qq && !eventData.socialLinks?.qqGroup) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && eventData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && eventData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option></select></div>
+          <div class="form-group"><label>联系方式</label><input class="form-input" id="myEventContactValue" value="${isEdit ? (eventData.socialLinks?.qq || eventData.socialLinks?.qqGroup || '') : ''}" placeholder="QQ号或QQ群号"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>联系显示名</label><input class="form-input" id="myEventContactLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.contactLabel || '') : ''}"></div>
+          <div class="form-group"><label>网站链接</label><input class="form-input" id="myEventWebsite" value="${isEdit ? escapeHtml(eventData.socialLinks?.website || '') : ''}" placeholder="https://..."></div>
+        </div>
+        <div class="form-group"><label>网站显示名</label><input class="form-input" id="myEventWebsiteLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.websiteLabel || '') : ''}"></div>
         <div class="form-group">
           <label>封面图片</label>
           <div id="myEventCoverPreview" style="margin-bottom:0.5rem;">${isEdit && eventData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + eventData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
@@ -1538,6 +1551,14 @@
       const coverImg = document.querySelector('#myEventCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-event-work-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myEventImagesPreview img')].map(img => img.src);
+      const contactType = document.getElementById('myEventContactType').value;
+      const contactValue = document.getElementById('myEventContactValue').value;
+      const socialLinks = {
+        contactLabel: document.getElementById('myEventContactLabel').value,
+        website: document.getElementById('myEventWebsite').value,
+        websiteLabel: document.getElementById('myEventWebsiteLabel').value
+      };
+      if (contactType && contactValue) socialLinks[contactType] = contactValue;
       const data = {
         title,
         date: document.getElementById('myEventDate').value,
@@ -1548,7 +1569,8 @@
         status: document.getElementById('myEventStatus').value,
         coverImage: coverImg ? coverImg.src : '',
         images,
-        relatedWorks
+        relatedWorks,
+        socialLinks
       };
       let result;
       if (eventId) {
@@ -1617,6 +1639,15 @@
         </div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;">${isEdit ? escapeHtml(projectData.description || '') : ''}</textarea></div>
         <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="myProjectTags" value="${isEdit ? (projectData.tags || []).join(', ') : ''}" placeholder="标签1, 标签2"></div>
+        <div class="form-row">
+          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="" ${!isEdit || (!projectData.socialLinks?.qq && !projectData.socialLinks?.qqGroup) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option></select></div>
+          <div class="form-group"><label>联系方式</label><input class="form-input" id="myProjectContactValue" value="${isEdit ? (projectData.socialLinks?.qq || projectData.socialLinks?.qqGroup || '') : ''}" placeholder="QQ号或QQ群号"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>联系显示名</label><input class="form-input" id="myProjectContactLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.contactLabel || '') : ''}"></div>
+          <div class="form-group"><label>网站链接</label><input class="form-input" id="myProjectWebsite" value="${isEdit ? escapeHtml(projectData.socialLinks?.website || '') : ''}" placeholder="https://..."></div>
+        </div>
+        <div class="form-group"><label>网站显示名</label><input class="form-input" id="myProjectWebsiteLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.websiteLabel || '') : ''}"></div>
         <div class="form-group">
           <label>封面图片</label>
           <div id="myProjectCoverPreview" style="margin-bottom:0.5rem;">${isEdit && projectData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + projectData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
@@ -1645,6 +1676,14 @@
       const coverImg = document.querySelector('#myProjectCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-project-work-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myProjectImagesPreview img')].map(img => img.src);
+      const contactType = document.getElementById('myProjectContactType').value;
+      const contactValue = document.getElementById('myProjectContactValue').value;
+      const socialLinks = {
+        contactLabel: document.getElementById('myProjectContactLabel').value,
+        website: document.getElementById('myProjectWebsite').value,
+        websiteLabel: document.getElementById('myProjectWebsiteLabel').value
+      };
+      if (contactType && contactValue) socialLinks[contactType] = contactValue;
       const data = {
         title,
         category: document.getElementById('myProjectCategory').value,
@@ -1653,7 +1692,8 @@
         tags: document.getElementById('myProjectTags').value.split(',').map(t => t.trim()).filter(Boolean),
         coverImage: coverImg ? coverImg.src : '',
         images,
-        works: relatedWorks
+        works: relatedWorks,
+        socialLinks
       };
       let result;
       if (projectId) {
