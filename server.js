@@ -84,6 +84,36 @@ setInterval(() => {
   }
 }, 60000);
 
+// Clean up like/want rate limit entries
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, attempts] of likeWantAttempts) {
+    const recent = attempts.filter(t => now - t < LIKE_WANT_RATE_LIMIT_WINDOW);
+    if (recent.length === 0) likeWantAttempts.delete(key);
+    else likeWantAttempts.set(key, recent);
+  }
+}, 60000);
+
+// Clean up contact rate limit entries
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, attempts] of contactAttempts) {
+    const recent = attempts.filter(t => now - t < CONTACT_RATE_LIMIT_WINDOW);
+    if (recent.length === 0) contactAttempts.delete(key);
+    else contactAttempts.set(key, recent);
+  }
+}, 300000); // 5 minutes for contact (1 hour window)
+
+// Clean up pageview rate limit entries
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, attempts] of pageviewAttempts) {
+    const recent = attempts.filter(t => now - t < PAGEVIEW_RATE_LIMIT_WINDOW);
+    if (recent.length === 0) pageviewAttempts.delete(key);
+    else pageviewAttempts.set(key, recent);
+  }
+}, 60000);
+
 // Middleware
 app.use(compression());
 app.use(cors({
@@ -189,7 +219,6 @@ function initAdmin() {
   if (admin.passwordHash === '$2a$10$placeholder') {
     admin.passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
     writeJSON('admin.json', admin);
-    console.log('Admin password initialized. Username: admin, Password: ' + ADMIN_PASSWORD);
   }
 }
 initAdmin();
@@ -1179,7 +1208,6 @@ app.post('/api/works/:id/like', likeWantRateLimit, (req, res) => {
   saveLikes();
   works[index].likes++;
   writeJSON('works.json', works);
-  console.log('[LIKE] workId=%s uid=%s count=%d', workId, uid, works[index].likes);
   res.json({ likes: works[index].likes });
 });
 
@@ -1205,7 +1233,6 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
   saveLikes();
   works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
   writeJSON('works.json', works);
-  console.log('[UNLIKE] workId=%s uid=%s count=%d', workId, uid, works[index].likes);
   res.json({ likes: works[index].likes });
 });
 
@@ -1231,7 +1258,6 @@ app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
   saveWants();
   works[index].wants++;
   writeJSON('works.json', works);
-  console.log('[WANT] workId=%s uid=%s count=%d', workId, uid, works[index].wants);
   res.json({ wants: works[index].wants });
 });
 
@@ -1265,7 +1291,6 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
   saveWants();
   works[index].wants = Math.max(0, (works[index].wants || 0) - 1);
   writeJSON('works.json', works);
-  console.log('[UNWANT] workId=%s uid=%s count=%d', workId, uid, works[index].wants);
   res.json({ wants: works[index].wants });
 });
 
@@ -1337,6 +1362,16 @@ app.get('/api/circles/:id', (req, res) => {
   // Remove sensitive fields
   const { passwordHash, username, authorStatus, editableBy, ...safe } = circle;
   res.json(safe);
+});
+
+// Circles available for registration (no username or rejected)
+app.get('/api/circles/registrable', (req, res) => {
+  const circles = readJSON('circles.json');
+  const registrable = circles
+    .filter(c => !c.username || c.authorStatus === 'rejected')
+    .sort((a, b) => a.order - b.order)
+    .map(c => ({ id: c.id, name: c.name, logo: c.logo }));
+  res.json(registrable);
 });
 
 // Projects
@@ -1726,9 +1761,17 @@ app.get('/api/admin/works', authMiddleware, (req, res) => {
 app.post('/api/admin/works', authMiddleware, (req, res) => {
   const works = readJSON('works.json');
   const maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
+  // Whitelist allowed fields
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const workData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) workData[field] = req.body[field];
+  });
   const work = {
     id: 'w' + Date.now(),
-    ...req.body,
+    ...workData,
+    likes: 0,
+    wants: 0,
     order: maxOrder + 1,
     createdAt: new Date().toISOString()
   };
@@ -1912,9 +1955,15 @@ app.get('/api/admin/events', authMiddleware, (req, res) => {
 app.post('/api/admin/events', authMiddleware, (req, res) => {
   const events = readJSON('events.json');
   const maxOrder = events.reduce((max, e) => Math.max(max, e.order ?? 0), 0);
+  // Whitelist allowed fields
+  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'editableBy'];
+  const eventData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) eventData[field] = req.body[field];
+  });
   const event = {
     id: 'e' + Date.now(),
-    ...req.body,
+    ...eventData,
     order: maxOrder + 1
   };
   events.push(event);
@@ -2104,9 +2153,15 @@ app.get('/api/admin/circles', authMiddleware, (req, res) => {
 app.post('/api/admin/circles', authMiddleware, (req, res) => {
   const circles = readJSON('circles.json');
   const maxOrder = circles.reduce((max, c) => Math.max(max, c.order ?? 0), 0);
+  // Whitelist allowed fields - NEVER allow passwordHash, username, authorStatus
+  const allowedFields = ['name', 'description', 'category', 'logo', 'images', 'socialLinks', 'editableBy'];
+  const circleData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) circleData[field] = req.body[field];
+  });
   const circle = {
     id: 'c' + Date.now(),
-    ...req.body,
+    ...circleData,
     order: maxOrder + 1
   };
   circles.push(circle);
@@ -2388,9 +2443,15 @@ app.get('/api/admin/projects', authMiddleware, (req, res) => {
 app.post('/api/admin/projects', authMiddleware, (req, res) => {
   const projects = readJSON('projects.json');
   const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
+  // Whitelist allowed fields
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'editableBy'];
+  const projectData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) projectData[field] = req.body[field];
+  });
   const project = {
     id: 'p' + Date.now(),
-    ...req.body,
+    ...projectData,
     order: maxOrder + 1,
     createdAt: new Date().toISOString()
   };

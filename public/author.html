@@ -530,8 +530,8 @@
 
     async function loadCirclesForRegister() {
       try {
-        const circles = await F7API.getCircles();
-        availableCircles = circles.filter(c => !c.username || c.authorStatus === 'rejected');
+        const res = await fetch('/api/circles/registrable');
+        availableCircles = await res.json();
         renderCircleDropdown(availableCircles);
       } catch (e) {}
     }
