@@ -52,31 +52,10 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
     }
-    .announcement-content {
-      font-size: 0.95rem;
-      color: #555;
-      line-height: 1.8;
-      display: none;
-      margin-top: 0.8rem;
-      padding-top: 0.8rem;
-      border-top: 1px solid var(--border);
-    }
-    .announcement-card.expanded .announcement-preview {
-      display: none;
-    }
-    .announcement-card.expanded .announcement-content {
-      display: block;
-    }
-    .announcement-card.expanded .announcement-header {
-      margin-bottom: 0.8rem;
-    }
     .announcement-expand-hint {
       font-size: 0.75rem;
       color: var(--haze);
       margin-top: 0.5rem;
-    }
-    .announcement-card.expanded .announcement-expand-hint {
-      display: none;
     }
     @media (max-width: 768px) {
       .announcement-card {
@@ -120,6 +99,21 @@
   <script>
     initPage('announcements');
 
+    function showAnnouncement(title, date, content) {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="margin:0;flex:1;">${title}</h3>
+          <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
+        </div>
+        <div style="font-size:0.8rem;color:var(--haze);margin-bottom:1rem;">${date}</div>
+        <div style="line-height:1.8;color:#555;white-space:pre-wrap;">${content}</div>
+      </div>`;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+    }
+
     async function loadAnnouncements() {
       try {
         const res = await fetch('/api/announcements');
@@ -136,13 +130,12 @@
         container.innerHTML = announcements.map(a => {
           const preview = a.content.length > 80 ? a.content.substring(0, 80) + '...' : a.content;
           return `
-          <div class="announcement-card" ${a.pinned ? 'style="border-left:3px solid var(--accent);"' : ''} onclick="this.classList.toggle('expanded')">
+          <div class="announcement-card" ${a.pinned ? 'style="border-left:3px solid var(--accent);"' : ''} onclick="showAnnouncement('${escapeHtml(a.title)}', '${formatDate(a.publishDate)}', '${escapeHtml(a.content).replace(/'/g, "\\'")}')">
             <div class="announcement-header">
               <h3 class="announcement-title">${a.pinned ? '📌 ' : ''}${escapeHtml(a.title)}</h3>
               <span class="announcement-date">${formatDate(a.publishDate)}</span>
             </div>
             <div class="announcement-preview">${escapeHtml(preview)}</div>
-            <div class="announcement-content">${nl2br(a.content)}</div>
             <div class="announcement-expand-hint">点击查看详情 ›</div>
           </div>`;
         }).join('');
