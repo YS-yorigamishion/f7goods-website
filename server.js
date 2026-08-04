@@ -240,6 +240,20 @@ app.get('/api/author/works', authorAuthMiddleware, (req, res) => {
   res.json(circleWorks);
 });
 
+// Author: get own edit history
+app.get('/api/author/history', authorAuthMiddleware, (req, res) => {
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  if (!circle) return res.json([]);
+
+  let log = [];
+  try { log = readJSON('edit-log.json'); } catch {}
+  if (!Array.isArray(log)) log = [];
+
+  const authorLog = log.filter(entry => entry.user === circle.name);
+  res.json(authorLog.reverse().slice(0, 100));
+});
+
 // Author: update own work
 app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
   let works = readJSON('works.json');

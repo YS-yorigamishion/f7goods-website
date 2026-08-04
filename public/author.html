@@ -130,6 +130,27 @@
         <div class="mgmt-tab" onclick="switchMgmtTab('projects')">企划关联</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('images')">图片管理</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('password')">修改密码</div>
+        <div class="mgmt-tab" onclick="switchMgmtTab('history')">操作日志</div>
+      </div>
+
+      <!-- Stats Overview -->
+      <div id="statsOverview" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.8rem;margin-bottom:1.5rem;">
+        <div class="mgmt-card" style="padding:1rem;text-align:center;">
+          <div style="font-size:1.5rem;font-weight:700;color:var(--accent);" id="statTotalWorks">0</div>
+          <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">作品总数</div>
+        </div>
+        <div class="mgmt-card" style="padding:1rem;text-align:center;">
+          <div style="font-size:1.5rem;font-weight:700;color:#e74c3c;" id="statTotalLikes">0</div>
+          <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">总喜爱数</div>
+        </div>
+        <div class="mgmt-card" style="padding:1rem;text-align:center;">
+          <div style="font-size:1.5rem;font-weight:700;color:#3498db;" id="statTotalWants">0</div>
+          <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">总想要数</div>
+        </div>
+        <div class="mgmt-card" style="padding:1rem;text-align:center;cursor:pointer;" onclick="window.open('/circle-detail.html?id='+authorCircleId,'_blank')">
+          <div style="font-size:1.5rem;">👁</div>
+          <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">预览主页</div>
+        </div>
       </div>
 
       <!-- Profile Tab -->
@@ -197,6 +218,7 @@
           <h3 style="margin:0;">我的作品</h3>
           <div style="display:flex;gap:0.5rem;">
             <button id="authorBatchEditBtn" class="btn" style="background:var(--accent-alt);color:white;display:none;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openAuthorBatchEdit()">批量编辑</button>
+            <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="exportWorksToExcel()">📥 导出</button>
             <button class="btn btn-primary" onclick="openAuthorWorkForm()">+ 新增作品</button>
           </div>
         </div>
@@ -336,6 +358,17 @@
             <input type="password" class="form-input" id="pwConfirm" required>
           </div>
           <button class="btn btn-primary" onclick="changeAuthorPassword()">修改密码</button>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div id="tab-history" class="mgmt-section">
+        <div class="mgmt-card">
+          <h3 style="margin-bottom:1rem;">操作日志</h3>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看您的最近操作记录。</p>
+          <div id="authorHistoryContainer" style="max-height:500px;overflow-y:auto;">
+            <p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>
+          </div>
         </div>
       </div>
     </div>
@@ -634,6 +667,17 @@
       buildAuthorCategoryFilters();
       buildAuthorStatusFilters();
       renderAuthorWorks(authorWorksData);
+      updateStats();
+    }
+
+    // Update stats overview
+    function updateStats() {
+      const totalWorks = authorWorksData.length;
+      const totalLikes = authorWorksData.reduce((sum, w) => sum + (w.likes || 0), 0);
+      const totalWants = authorWorksData.reduce((sum, w) => sum + (w.wants || 0), 0);
+      document.getElementById('statTotalWorks').textContent = totalWorks;
+      document.getElementById('statTotalLikes').textContent = totalLikes;
+      document.getElementById('statTotalWants').textContent = totalWants;
     }
 
     function renderAuthorWorks(works) {
@@ -651,7 +695,12 @@
             ${hasImg ? '<img src="'+w.images[0]+'" alt="'+escapeHtml(w.title)+'">' : '<span class="placeholder-icon" style="color:white;">🎨</span>'}
           </div>
           <div class="card-body" style="padding:0.8rem;" onclick="openWorkEditModal('${w.id}')">
-            <span class="card-tag ${w.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${STATUS_LABELS[w.status] || w.status || ''}</span>
+            <div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.3rem;">
+              <select class="form-input work-status-select" data-id="${w.id}" onchange="quickChangeStatus('${w.id}',this.value)" onclick="event.stopPropagation()" style="font-size:0.7rem;padding:0.15rem 0.3rem;width:auto;flex:1;">
+                ${Object.entries(STATUS_LABELS).map(([k,v]) => `<option value="${k}"${w.status===k?' selected':''}>${v}</option>`).join('')}
+              </select>
+              <button class="btn-sm" onclick="event.stopPropagation();duplicateWork('${w.id}')" title="复制作品" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--border);color:var(--ink);">📋</button>
+            </div>
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(w.title)}</h3>
             <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${w.price || ''}</p>
             <div class="work-stats">
@@ -662,6 +711,91 @@
         </div>`;
       }).join('');
       updateAuthorBatchBtn();
+    }
+
+    // Quick status change
+    async function quickChangeStatus(workId, newStatus) {
+      const result = await authorAPI('PUT', '/api/author/works/' + workId, { status: newStatus });
+      if (result) {
+        const work = authorWorksData.find(w => w.id === workId);
+        if (work) work.status = newStatus;
+        showToast('状态已更新', 'success');
+      }
+    }
+
+    // Duplicate work
+    async function duplicateWork(workId) {
+      const work = authorWorksData.find(w => w.id === workId);
+      if (!work) return;
+      if (!confirm(`确定复制作品"${work.title}"？`)) return;
+
+      const newWork = {
+        ...work,
+        id: undefined,
+        title: work.title + ' (副本)',
+        likes: 0,
+        wants: 0,
+        createdAt: undefined
+      };
+      delete newWork.id;
+      delete newWork.createdAt;
+
+      const result = await authorAPI('POST', '/api/author/works', newWork);
+      if (result) {
+        showToast('作品已复制', 'success');
+        loadAuthorWorks();
+      }
+    }
+
+    // Export works to Excel
+    function exportWorksToExcel() {
+      if (authorWorksData.length === 0) { alert('没有作品可导出'); return; }
+      const headers = ['作品名称', '分类', '状态', '价格', '发售日期', '标签', '喜爱数', '想要数', '描述'];
+      const rows = authorWorksData.map(w => [
+        w.title,
+        CATEGORIES[w.category] || w.category || '',
+        STATUS_LABELS[w.status] || w.status || '',
+        w.price || '',
+        w.releaseDate || '',
+        (w.tags || []).join(', '),
+        w.likes || 0,
+        w.wants || 0,
+        w.description || ''
+      ]);
+
+      let csv = '\uFEFF' + headers.join(',') + '\n';
+      rows.forEach(row => {
+        csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `作品列表_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+      showToast('导出成功', 'success');
+    }
+
+    // Load author history
+    async function loadAuthorHistory() {
+      const container = document.getElementById('authorHistoryContainer');
+      try {
+        const log = await authorAPI('GET', '/api/author/history');
+        if (!log || log.length === 0) {
+          container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无操作记录</p>';
+          return;
+        }
+        container.innerHTML = log.slice(0, 50).map(entry => {
+          const time = new Date(entry.time).toLocaleString('zh-CN');
+          return `<div style="display:flex;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.8rem;">
+            <span style="color:var(--haze);white-space:nowrap;">${time}</span>
+            <span style="color:var(--accent-alt);font-weight:500;">${escapeHtml(entry.action)}</span>
+            <span style="flex:1;">${escapeHtml(entry.target || '')}</span>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无操作记录</p>';
+      }
     }
 
     // Build category filter buttons
@@ -1258,6 +1392,7 @@
       document.querySelectorAll('.mgmt-section').forEach(s => s.classList.remove('active'));
       document.querySelector('.mgmt-tab[onclick*="' + tab + '"]').classList.add('active');
       document.getElementById('tab-' + tab).classList.add('active');
+      if (tab === 'history') loadAuthorHistory();
     }
 
     // Logout
