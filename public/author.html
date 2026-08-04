@@ -1492,21 +1492,33 @@
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑活动' : '提交活动';
       const worksCheckboxes = authorWorksData.map(w =>
-        `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-event-work-cb" value="${w.id}" style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
+        `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-event-work-cb" value="${w.id}" ${isEdit && (eventData.relatedWorks || []).includes(w.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
       ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
+      const eventStatusOptions = (typeof EVENT_STATUS_ORDERED !== 'undefined' && EVENT_STATUS_ORDERED.length > 0)
+        ? EVENT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && eventData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')
+        : '<option value="jijiangkaiqi" ' + (isEdit && eventData.status === 'jijiangkaiqi' ? 'selected' : '') + '>即将开启</option><option value="jinxingzhong" ' + (isEdit && eventData.status === 'jinxingzhong' ? 'selected' : '') + '>进行中</option><option value="yijiesu" ' + (isEdit && eventData.status === 'yijiesu' ? 'selected' : '') + '>已结束</option>';
+      const existingImages = isEdit ? (eventData.images || []) : [];
       body.innerHTML = `
         <div class="form-group"><label>活动名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myEventTitle" value="${isEdit ? escapeHtml(eventData.title) : ''}" required></div>
         <div class="form-row">
           <div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="myEventDate" value="${isEdit ? eventData.date || '' : ''}"></div>
           <div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="myEventEndDate" value="${isEdit ? eventData.endDate || '' : ''}"></div>
         </div>
-        <div class="form-group"><label>地点</label><input class="form-input" id="myEventLocation" value="${isEdit ? escapeHtml(eventData.location || '') : ''}"></div>
+        <div class="form-row">
+          <div class="form-group"><label>地点</label><input class="form-input" id="myEventLocation" value="${isEdit ? escapeHtml(eventData.location || '') : ''}"></div>
+          <div class="form-group"><label>状态</label><select class="form-input" id="myEventStatus">${eventStatusOptions}</select></div>
+        </div>
         <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth" value="${isEdit ? escapeHtml(eventData.booth || '') : ''}"></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;">${isEdit ? escapeHtml(eventData.description || '') : ''}</textarea></div>
         <div class="form-group">
           <label>封面图片</label>
           <div id="myEventCoverPreview" style="margin-bottom:0.5rem;">${isEdit && eventData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + eventData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
           <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myEventCoverPreview', true)">从图片库选择</button>
+        </div>
+        <div class="form-group">
+          <label>更多图片</label>
+          <div id="myEventImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">${existingImages.map(img => '<div style="position:relative;"><img src="' + img + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}</div>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myEventImagesPreview')">从图片库选择</button>
         </div>
         <div class="form-group">
           <label>关联作品</label>
@@ -1525,6 +1537,7 @@
       if (!title) { alert('请填写活动名称'); return; }
       const coverImg = document.querySelector('#myEventCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-event-work-cb:checked')].map(cb => cb.value);
+      const images = [...document.querySelectorAll('#myEventImagesPreview img')].map(img => img.src);
       const data = {
         title,
         date: document.getElementById('myEventDate').value,
@@ -1532,7 +1545,9 @@
         location: document.getElementById('myEventLocation').value,
         booth: document.getElementById('myEventBooth').value,
         description: document.getElementById('myEventDesc').value,
+        status: document.getElementById('myEventStatus').value,
         coverImage: coverImg ? coverImg.src : '',
+        images,
         relatedWorks
       };
       let result;
@@ -1593,6 +1608,7 @@
       const worksCheckboxes = authorWorksData.map(w =>
         `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-project-work-cb" value="${w.id}" ${isEdit && (projectData.works || []).includes(w.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
       ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
+      const existingImages = isEdit ? (projectData.images || []) : [];
       body.innerHTML = `
         <div class="form-group"><label>企划名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myProjectTitle" value="${isEdit ? escapeHtml(projectData.title) : ''}" required></div>
         <div class="form-row">
@@ -1605,6 +1621,11 @@
           <label>封面图片</label>
           <div id="myProjectCoverPreview" style="margin-bottom:0.5rem;">${isEdit && projectData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + projectData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
           <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myProjectCoverPreview', true)">从图片库选择</button>
+        </div>
+        <div class="form-group">
+          <label>更多图片</label>
+          <div id="myProjectImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">${existingImages.map(img => '<div style="position:relative;"><img src="' + img + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}</div>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myProjectImagesPreview')">从图片库选择</button>
         </div>
         <div class="form-group">
           <label>关联作品</label>
@@ -1623,6 +1644,7 @@
       if (!title) { alert('请填写企划名称'); return; }
       const coverImg = document.querySelector('#myProjectCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-project-work-cb:checked')].map(cb => cb.value);
+      const images = [...document.querySelectorAll('#myProjectImagesPreview img')].map(img => img.src);
       const data = {
         title,
         category: document.getElementById('myProjectCategory').value,
@@ -1630,6 +1652,7 @@
         description: document.getElementById('myProjectDesc').value,
         tags: document.getElementById('myProjectTags').value.split(',').map(t => t.trim()).filter(Boolean),
         coverImage: coverImg ? coverImg.src : '',
+        images,
         works: relatedWorks
       };
       let result;
@@ -1687,6 +1710,7 @@
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑动态' : '发布动态';
+      const existingImages = isEdit ? (updateData.images || []) : [];
       body.innerHTML = `
         <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" value="${isEdit ? escapeHtml(updateData.title) : ''}" required></div>
         <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${isEdit ? updateData.publishDate || '' : new Date().toISOString().split('T')[0]}"></div>
@@ -1695,6 +1719,11 @@
           <label>封面图片</label>
           <div id="myUpdateCoverPreview" style="margin-bottom:0.5rem;">${isEdit && updateData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + updateData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
           <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myUpdateCoverPreview', true)">从图片库选择</button>
+        </div>
+        <div class="form-group">
+          <label>更多图片</label>
+          <div id="myUpdateImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">${existingImages.map(img => '<div style="position:relative;"><img src="' + img + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}</div>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myUpdateImagesPreview')">从图片库选择</button>
         </div>
         ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
@@ -1709,11 +1738,13 @@
       const content = document.getElementById('myUpdateContent').value;
       if (!title || !content) { alert('请填写标题和内容'); return; }
       const coverImg = document.querySelector('#myUpdateCoverPreview img');
+      const images = [...document.querySelectorAll('#myUpdateImagesPreview img')].map(img => img.src);
       const data = {
         title,
         content,
         publishDate: document.getElementById('myUpdateDate').value,
-        coverImage: coverImg ? coverImg.src : ''
+        coverImage: coverImg ? coverImg.src : '',
+        images
       };
       let result;
       if (updateId) {
