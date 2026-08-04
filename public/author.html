@@ -1357,10 +1357,7 @@
       // Render events checkboxes
       const eventsContainer = document.getElementById('batchEventsList');
       if (allEvents && allEvents.length > 0) {
-        const authorEvents = allEvents.filter(e => (e.relatedCircles || []).includes(authorCircleId));
-        eventsContainer.innerHTML = authorEvents.length > 0
-          ? authorEvents.map(e => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;"><input type="checkbox" class="batch-event-cb" value="${e.id}" style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(e.title)}</label>`).join('')
-          : '<p style="color:var(--haze);margin:0;">暂无关联的活动</p>';
+        eventsContainer.innerHTML = allEvents.map(e => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;"><input type="checkbox" class="batch-event-cb" value="${e.id}" ${(e.relatedCircles || []).includes(authorCircleId) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(e.title)}</label>`).join('');
       } else {
         eventsContainer.innerHTML = '<p style="color:var(--haze);margin:0;">暂无活动</p>';
       }
