@@ -2147,9 +2147,19 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
         const metadata = await image.metadata();
         const { width, height } = metadata;
         const fontSize = Math.round(width / 20);
+        const smallFontSize = Math.round(width / 40);
+        const padding = Math.round(width / 50);
         const watermarkText = `@${authorName}`;
         const xmlEscapedText = watermarkText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const svgWatermark = `<svg width="${width}" height="${height}"><style>text { font-size: ${fontSize}px; fill: rgba(255,255,255,0.3); font-family: sans-serif; }</style><text x="${width/2}" y="${height/2}" text-anchor="middle" dominant-baseline="middle">${xmlEscapedText}</text></svg>`;
+        const svgWatermark = `<svg width="${width}" height="${height}">
+          <style>
+            .wm-center { font-size: ${fontSize}px; fill: rgba(255,255,255,0.15); font-family: sans-serif; }
+            .wm-corner { font-size: ${smallFontSize}px; fill: rgba(255,255,255,1); font-family: sans-serif; }
+          </style>
+          <text class="wm-center" x="${width/2}" y="${height/2}" text-anchor="middle" dominant-baseline="middle">${xmlEscapedText}</text>
+          <text class="wm-corner" x="${width - padding}" y="${height - padding}" text-anchor="end" dominant-baseline="auto">${xmlEscapedText}</text>
+          <text class="wm-corner" x="${padding}" y="${padding + smallFontSize}" text-anchor="start" dominant-baseline="auto">f7goods.com</text>
+        </svg>`;
         await image.composite([{ input: Buffer.from(svgWatermark) }]).toFile(filePath + '.tmp');
         fs.renameSync(filePath + '.tmp', filePath);
       } catch (e) {
