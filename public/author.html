@@ -785,12 +785,7 @@
     async function uploadAuthorImages() {
       const input = document.getElementById('pImagesInput');
       if (!input.files.length) { alert('请选择图片'); return; }
-      const maxSize = 2 * 1024 * 1024; // 2MB
       for (const file of input.files) {
-        if (file.size > maxSize) {
-          alert(`文件 "${file.name}" 超过2MB限制，请压缩后重试`);
-          continue;
-        }
         const formData = new FormData();
         formData.append('image', file);
         const res = await fetch('/api/author/upload', {
@@ -1661,12 +1656,7 @@
       const input = document.getElementById(inputId);
       const preview = document.getElementById(previewId);
       if (!input.files.length) { alert('请选择图片'); return; }
-      const maxSize = 2 * 1024 * 1024; // 2MB
       for (const file of input.files) {
-        if (file.size > maxSize) {
-          alert(`文件 "${file.name}" 超过2MB限制，请压缩后重试`);
-          continue;
-        }
         const formData = new FormData();
         formData.append('image', file);
         const res = await fetch('/api/author/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authorToken }, body: formData });
@@ -1884,15 +1874,8 @@
       const input = document.getElementById('batchUploadInput');
       if (!input.files.length) { alert('请选择图片'); return; }
       const addWatermark = document.getElementById('addWatermarkCheck')?.checked || false;
-      const maxSize = 2 * 1024 * 1024; // 2MB
       let uploaded = 0;
-      let skipped = 0;
       for (const file of input.files) {
-        if (file.size > maxSize) {
-          alert(`文件 "${file.name}" 超过2MB限制（${(file.size / 1024 / 1024).toFixed(2)}MB），请压缩后重试`);
-          skipped++;
-          continue;
-        }
         const formData = new FormData();
         formData.append('image', file);
         if (addWatermark) formData.append('addWatermark', 'true');
@@ -1900,8 +1883,7 @@
         if (res.ok) uploaded++;
       }
       input.value = '';
-      const msg = `成功上传 ${uploaded} 张图片` + (skipped > 0 ? `，${skipped} 张因超限跳过` : '');
-      showToast(msg, uploaded > 0 ? 'success' : 'error');
+      showToast(`成功上传 ${uploaded} 张图片`, uploaded > 0 ? 'success' : 'error');
       loadAuthorImages();
     }
 

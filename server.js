@@ -18,9 +18,9 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'f7goods2026';
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
-app.use('/admin', express.static('admin'));
-app.use('/uploads', express.static('uploads'));
+app.use(express.static('public', { maxAge: '1d', etag: true }));
+app.use('/admin', express.static('admin', { maxAge: '1d', etag: true }));
+app.use('/uploads', express.static('uploads', { maxAge: '7d', etag: true }));
 
 // Multer config for file uploads
 const storage = multer.diskStorage({
@@ -45,7 +45,7 @@ const fileFilter = (req, file, cb) => {
   if (allowedImages.includes(ext) || allowedExcel.includes(ext)) cb(null, true);
   else cb(new Error('只允许上传图片或Excel文件'), false);
 };
-const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 }, fileFilter });
+const upload = multer({ storage, fileFilter });
 
 // Helper: read/write JSON files
 function readJSON(file) {
@@ -2168,6 +2168,26 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
     }
   }
 
+  // Compress image if larger than 1MB
+  if (sharp) {
+    const filePath = path.join(__dirname, 'uploads', req.file.filename);
+    const ext = path.extname(req.file.filename).toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
+      try {
+        const stats = fs.statSync(filePath);
+        if (stats.size > 1024 * 1024) {
+          const image = sharp(filePath);
+          const quality = Math.max(60, Math.round((1024 * 1024 / stats.size) * 100));
+          await image.jpeg({ quality }).toFile(filePath + '.tmp');
+          fs.renameSync(filePath + '.tmp', filePath);
+          console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024 / 1024).toFixed(2)}MB -> ${(fs.statSync(filePath).size / 1024 / 1024).toFixed(2)}MB`);
+        }
+      } catch (e) {
+        console.error('Compression failed:', e.message);
+      }
+    }
+  }
+
   saveUploadMeta(req.file.filename, authorName);
   logEdit(authorName, '上传图片', req.file.filename, '', '/uploads/' + req.file.filename);
   res.json({ url: '/uploads/' + req.file.filename });
@@ -2325,12 +2345,9 @@ app.get('/admin/*', (req, res) => {
   }
 });
 
-// Error handling for file size limit
+// Error handling
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: '文件大小不能超过2MB' });
-    }
     return res.status(400).json({ error: err.message });
   }
   if (err) return res.status(500).json({ error: err.message });
