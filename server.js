@@ -2392,7 +2392,7 @@ app.get('/api/admin/images/unused', authMiddleware, (req, res) => {
       const f = extractFilename(settings.site?.favicon);
       if (f) referencedFiles.add(f);
     } catch {}
-    const dataFiles = ['works.json', 'events.json', 'circles.json', 'projects.json'];
+    const dataFiles = ['works.json', 'events.json', 'circles.json', 'projects.json', 'updates.json'];
     dataFiles.forEach(file => {
       try {
         const items = readJSON(file);
