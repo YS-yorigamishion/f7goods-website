@@ -216,6 +216,87 @@ async function cleanupPageviews() {
   }
 }
 
+// ===== Admin Notifications =====
+let adminNotifications = [];
+
+async function loadAdminNotifications() {
+  try {
+    const [circles, events, projects, updates, works] = await Promise.all([
+      adminAPI('GET', '/api/admin/circles'),
+      adminAPI('GET', '/api/admin/events'),
+      adminAPI('GET', '/api/admin/projects'),
+      adminAPI('GET', '/api/admin/updates'),
+      adminAPI('GET', '/api/admin/works')
+    ]);
+
+    adminNotifications = [];
+
+    // Pending authors
+    const pendingAuthors = (circles || []).filter(c => c.authorStatus === 'pending');
+    pendingAuthors.forEach(c => {
+      adminNotifications.push({ type: 'author', id: c.id, title: c.name, message: '新作者注册待审核' });
+    });
+
+    // Pending events
+    const pendingEvents = (events || []).filter(e => e.approvalStatus === 'pending');
+    pendingEvents.forEach(e => {
+      adminNotifications.push({ type: 'event', id: e.id, title: e.title, message: '新活动待审核' });
+    });
+
+    // Pending projects
+    const pendingProjects = (projects || []).filter(p => p.approvalStatus === 'pending');
+    pendingProjects.forEach(p => {
+      adminNotifications.push({ type: 'project', id: p.id, title: p.title, message: '新企划待审核' });
+    });
+
+    // Pending updates
+    const pendingUpdates = (updates || []).filter(u => u.approvalStatus === 'pending');
+    pendingUpdates.forEach(u => {
+      adminNotifications.push({ type: 'update', id: u.id, title: u.title, message: '新动态待审核' });
+    });
+
+    // Pending works
+    const pendingWorks = (works || []).filter(w => w.approvalStatus === 'pending');
+    pendingWorks.forEach(w => {
+      adminNotifications.push({ type: 'work', id: w.id, title: w.title, message: '新作品待审核' });
+    });
+
+    // Update badge
+    const badge = document.getElementById('adminNotifBadge');
+    if (badge) {
+      badge.textContent = adminNotifications.length;
+      badge.style.display = adminNotifications.length > 0 ? 'block' : 'none';
+    }
+  } catch (e) {
+    console.error('Failed to load notifications:', e);
+  }
+}
+
+function showAdminNotifications() {
+  const overlay = document.createElement('div');
+  overlay.id = 'adminNotifOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="margin:0;">🔔 通知</h3>
+      <button onclick="document.getElementById('adminNotifOverlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
+    </div>
+    ${adminNotifications.length === 0 ? '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无待处理通知</p>' :
+      adminNotifications.map(n => `<div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="document.getElementById('adminNotifOverlay').remove();navigateTo('${n.type === 'author' ? 'approval' : n.type === 'work' ? 'works' : n.type + 's'}');">
+        <span style="font-size:1.5rem;">${n.type === 'author' ? '🏠' : n.type === 'event' ? '📅' : n.type === 'project' ? '📋' : n.type === 'update' ? '📰' : '🎨'}</span>
+        <div style="flex:1;">
+          <div style="font-weight:600;">${escapeHtml(n.title)}</div>
+          <div style="font-size:0.75rem;color:var(--haze);">${n.message}</div>
+        </div>
+      </div>`).join('')}
+  </div>`;
+  document.body.appendChild(overlay);
+
+  // Mark as read
+  const badge = document.getElementById('adminNotifBadge');
+  if (badge) badge.style.display = 'none';
+}
+
 // ===== Dashboard =====
 async function loadDashboard() {
   const [works, events, circles, projects, updates, pvData] = await Promise.all([
@@ -241,6 +322,9 @@ async function loadDashboard() {
   document.getElementById('statPendingEvents').textContent = pendingEvents;
   document.getElementById('statPendingProjects').textContent = pendingProjects;
   document.getElementById('statPendingUpdates').textContent = pendingUpdates;
+
+  // Load notifications
+  loadAdminNotifications();
 
   // Page view stats
   const daily = pvData?.daily || {};
