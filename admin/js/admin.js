@@ -2473,9 +2473,9 @@ async function approveAuthor(circleId) {
 }
 
 async function rejectAuthor(circleId) {
-  if (!confirm('确定拒绝该作者账号？')) return;
+  if (!confirm('确定拒绝该作者账号？\n拒绝后将清除账号数据，作者需重新申请。')) return;
   await adminAPI('POST', `/api/admin/circles/${circleId}/reject-author`);
-  showToast('已拒绝', 'success');
+  showToast('已拒绝，账号已清除', 'success');
   loadCircles();
 }
 
@@ -2506,7 +2506,7 @@ async function batchRejectAuthors() {
   if (pendingAuthors.length === 0) { alert('没有待审核的作者'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
-  if (!confirm(`确定拒绝全部 ${pendingAuthors.length} 个待审核作者？`)) return;
+  if (!confirm(`确定拒绝全部 ${pendingAuthors.length} 个待审核作者？\n拒绝后将清除账号数据，作者需重新申请。`)) return;
 
   let success = 0;
   for (const c of pendingAuthors) {

@@ -897,8 +897,13 @@ app.post('/api/admin/circles/:id/reject-author', authMiddleware, (req, res) => {
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
 
-  circles[index].authorStatus = 'rejected';
+  const authorName = circles[index].username;
+  delete circles[index].username;
+  delete circles[index].passwordHash;
+  delete circles[index].authorStatus;
   writeJSON('circles.json', circles);
+
+  logEdit('管理员', '拒绝作者账号', circles[index].name, `原账号: ${authorName || '无'}`);
   res.json({ success: true });
 });
 
