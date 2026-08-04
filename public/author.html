@@ -1489,6 +1489,9 @@
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = '提交活动';
+      const worksCheckboxes = authorWorksData.map(w =>
+        `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-event-work-cb" value="${w.id}" style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
+      ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
       body.innerHTML = `
         <div class="form-group"><label>活动名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myEventTitle" required></div>
         <div class="form-row">
@@ -1498,6 +1501,15 @@
         <div class="form-group"><label>地点</label><input class="form-input" id="myEventLocation"></div>
         <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth"></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;"></textarea></div>
+        <div class="form-group">
+          <label>封面图片</label>
+          <div id="myEventCoverPreview" style="margin-bottom:0.5rem;"></div>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myEventCoverPreview', true)">从图片库选择</button>
+        </div>
+        <div class="form-group">
+          <label>关联作品</label>
+          <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
+        </div>
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
           <button class="btn btn-primary" onclick="submitMyEvent()">提交审核</button>
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
@@ -1508,13 +1520,17 @@
     async function submitMyEvent() {
       const title = document.getElementById('myEventTitle').value;
       if (!title) { alert('请填写活动名称'); return; }
+      const coverImg = document.querySelector('#myEventCoverPreview img');
+      const relatedWorks = [...document.querySelectorAll('.my-event-work-cb:checked')].map(cb => cb.value);
       const data = {
         title,
         date: document.getElementById('myEventDate').value,
         endDate: document.getElementById('myEventEndDate').value,
         location: document.getElementById('myEventLocation').value,
         booth: document.getElementById('myEventBooth').value,
-        description: document.getElementById('myEventDesc').value
+        description: document.getElementById('myEventDesc').value,
+        coverImage: coverImg ? coverImg.src : '',
+        relatedWorks
       };
       const result = await authorAPI('POST', '/api/author/my-events', data);
       if (result) {
@@ -1563,6 +1579,9 @@
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = '提交企划';
+      const worksCheckboxes = authorWorksData.map(w =>
+        `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-project-work-cb" value="${w.id}" style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
+      ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
       body.innerHTML = `
         <div class="form-group"><label>企划名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myProjectTitle" required></div>
         <div class="form-row">
@@ -1571,6 +1590,15 @@
         </div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;"></textarea></div>
         <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="myProjectTags" placeholder="标签1, 标签2"></div>
+        <div class="form-group">
+          <label>封面图片</label>
+          <div id="myProjectCoverPreview" style="margin-bottom:0.5rem;"></div>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myProjectCoverPreview', true)">从图片库选择</button>
+        </div>
+        <div class="form-group">
+          <label>关联作品</label>
+          <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
+        </div>
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
           <button class="btn btn-primary" onclick="submitMyProject()">提交审核</button>
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
@@ -1581,12 +1609,16 @@
     async function submitMyProject() {
       const title = document.getElementById('myProjectTitle').value;
       if (!title) { alert('请填写企划名称'); return; }
+      const coverImg = document.querySelector('#myProjectCoverPreview img');
+      const relatedWorks = [...document.querySelectorAll('.my-project-work-cb:checked')].map(cb => cb.value);
       const data = {
         title,
         category: document.getElementById('myProjectCategory').value,
         status: document.getElementById('myProjectStatus').value,
         description: document.getElementById('myProjectDesc').value,
-        tags: document.getElementById('myProjectTags').value.split(',').map(t => t.trim()).filter(Boolean)
+        tags: document.getElementById('myProjectTags').value.split(',').map(t => t.trim()).filter(Boolean),
+        coverImage: coverImg ? coverImg.src : '',
+        works: relatedWorks
       };
       const result = await authorAPI('POST', '/api/author/my-projects', data);
       if (result) {
@@ -1639,6 +1671,11 @@
         <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" required></div>
         <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${new Date().toISOString().split('T')[0]}"></div>
         <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:120px;" required></textarea></div>
+        <div class="form-group">
+          <label>封面图片</label>
+          <div id="myUpdateCoverPreview" style="margin-bottom:0.5rem;"></div>
+          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myUpdateCoverPreview', true)">从图片库选择</button>
+        </div>
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
           <button class="btn btn-primary" onclick="submitMyUpdate()">提交审核</button>
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
@@ -1650,10 +1687,12 @@
       const title = document.getElementById('myUpdateTitle').value;
       const content = document.getElementById('myUpdateContent').value;
       if (!title || !content) { alert('请填写标题和内容'); return; }
+      const coverImg = document.querySelector('#myUpdateCoverPreview img');
       const data = {
         title,
         content,
-        publishDate: document.getElementById('myUpdateDate').value
+        publishDate: document.getElementById('myUpdateDate').value,
+        coverImage: coverImg ? coverImg.src : ''
       };
       const result = await authorAPI('POST', '/api/author/my-updates', data);
       if (result) {

@@ -146,6 +146,7 @@ function navigateTo(page) {
   else if (page === 'announcements') loadAnnouncements();
   else if (page === 'updates') loadUpdates();
   else if (page === 'editlog') loadEditLog();
+  else if (page === 'approval') loadApprovalPage();
   else if (page === 'contacts') loadContacts();
 
   // Close mobile sidebar
@@ -4242,6 +4243,93 @@ function filterEditLog() {
     const matchAction = !actionFilter || action.includes(actionFilter);
     row.style.display = (matchUser && matchAction) ? '' : 'none';
   });
+}
+
+// ===== Approval Page =====
+async function loadApprovalPage() {
+  try {
+    const [circles, events, projects, updates] = await Promise.all([
+      adminAPI('GET', '/api/admin/circles'),
+      adminAPI('GET', '/api/admin/events'),
+      adminAPI('GET', '/api/admin/projects'),
+      adminAPI('GET', '/api/admin/updates')
+    ]);
+
+    // Pending authors
+    const pendingAuthors = (circles || []).filter(c => c.authorStatus === 'pending');
+    const authorsDiv = document.getElementById('approvalAuthors');
+    if (pendingAuthors.length === 0) {
+      authorsDiv.innerHTML = '<p style="color:var(--haze);">无待审核作者</p>';
+    } else {
+      authorsDiv.innerHTML = pendingAuthors.map(c => `
+        <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+          <span style="font-weight:600;flex:1;">${escapeHtml(c.name)}</span>
+          <span style="font-size:0.8rem;color:var(--haze);">${c.username || ''}</span>
+          <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveAuthor('${c.id}')">批准</button>
+          <button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectAuthor('${c.id}')">拒绝</button>
+        </div>
+      `).join('');
+    }
+
+    // Pending events
+    const pendingEvents = (events || []).filter(e => e.approvalStatus === 'pending');
+    const eventsDiv = document.getElementById('approvalEvents');
+    if (pendingEvents.length === 0) {
+      eventsDiv.innerHTML = '<p style="color:var(--haze);">无待审核活动</p>';
+    } else {
+      eventsDiv.innerHTML = pendingEvents.map(e => {
+        const author = circles?.find(c => c.id === e.submittedBy);
+        return `
+        <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+          <span style="font-weight:600;flex:1;">${escapeHtml(e.title)}</span>
+          <span style="font-size:0.8rem;color:var(--haze);">提交者: ${author ? escapeHtml(author.name) : '未知'}</span>
+          <span style="font-size:0.8rem;color:var(--haze);">${e.date || ''}</span>
+          <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveEvent('${e.id}')">批准</button>
+          <button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectEvent('${e.id}')">拒绝</button>
+        </div>`;
+      }).join('');
+    }
+
+    // Pending projects
+    const pendingProjects = (projects || []).filter(p => p.approvalStatus === 'pending');
+    const projectsDiv = document.getElementById('approvalProjects');
+    if (pendingProjects.length === 0) {
+      projectsDiv.innerHTML = '<p style="color:var(--haze);">无待审核企划</p>';
+    } else {
+      projectsDiv.innerHTML = pendingProjects.map(p => {
+        const author = circles?.find(c => c.id === p.submittedBy);
+        return `
+        <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+          <span style="font-weight:600;flex:1;">${escapeHtml(p.title)}</span>
+          <span style="font-size:0.8rem;color:var(--haze);">提交者: ${author ? escapeHtml(author.name) : '未知'}</span>
+          <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveProject('${p.id}')">批准</button>
+          <button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectProject('${p.id}')">拒绝</button>
+        </div>`;
+      }).join('');
+    }
+
+    // Pending updates
+    const pendingUpdates = (updates || []).filter(u => u.approvalStatus === 'pending');
+    const updatesDiv = document.getElementById('approvalUpdates');
+    if (pendingUpdates.length === 0) {
+      updatesDiv.innerHTML = '<p style="color:var(--haze);">无待审核动态</p>';
+    } else {
+      updatesDiv.innerHTML = pendingUpdates.map(u => {
+        const author = circles?.find(c => c.id === u.submittedBy);
+        return `
+        <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+          <span style="font-weight:600;flex:1;">${escapeHtml(u.title)}</span>
+          <span style="font-size:0.8rem;color:var(--haze);">提交者: ${author ? escapeHtml(author.name) : '未知'}</span>
+          <span style="font-size:0.8rem;color:var(--haze);">${u.publishDate || ''}</span>
+          <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveUpdate('${u.id}')">批准</button>
+          <button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectUpdate('${u.id}')">拒绝</button>
+        </div>`;
+      }).join('');
+    }
+
+  } catch (e) {
+    console.error('Load approval page failed:', e);
+  }
 }
 
 // ===== Contacts =====

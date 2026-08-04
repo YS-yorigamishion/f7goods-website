@@ -46,14 +46,17 @@
         <a href="#" class="sidebar-link" data-page="editlog">
           <span class="sidebar-icon">📝</span> 编辑历史
         </a>
+        <a href="#" class="sidebar-link" data-page="approval">
+          <span class="sidebar-icon">✅</span> 审核管理
+        </a>
         <a href="#" class="sidebar-link" data-page="works">
           <span class="sidebar-icon">🎨</span> 作品管理
         </a>
-        <a href="#" class="sidebar-link" data-page="events">
-          <span class="sidebar-icon">📅</span> 活动管理
-        </a>
         <a href="#" class="sidebar-link" data-page="circles">
           <span class="sidebar-icon">🏠</span> 作者管理
+        </a>
+        <a href="#" class="sidebar-link" data-page="events">
+          <span class="sidebar-icon">📅</span> 活动管理
         </a>
         <a href="#" class="sidebar-link" data-page="projects">
           <span class="sidebar-icon">📋</span> 企划管理
@@ -464,6 +467,30 @@
             <div id="editLogContainer" style="max-height:600px;overflow-y:auto;">
               <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
             </div>
+          </div>
+        </div>
+
+        <!-- Approval Management -->
+        <div id="page-approval" class="admin-page">
+          <div class="page-toolbar">
+            <h3>审核管理</h3>
+            <button class="btn btn-primary" onclick="loadApprovalPage()">刷新</button>
+          </div>
+          <div class="admin-card" style="margin-bottom:1.5rem;">
+            <h4 style="margin-bottom:1rem;">🏠 待审核作者账号</h4>
+            <div id="approvalAuthors"><p style="color:var(--haze);">加载中...</p></div>
+          </div>
+          <div class="admin-card" style="margin-bottom:1.5rem;">
+            <h4 style="margin-bottom:1rem;">📅 待审核活动</h4>
+            <div id="approvalEvents"><p style="color:var(--haze);">加载中...</p></div>
+          </div>
+          <div class="admin-card" style="margin-bottom:1.5rem;">
+            <h4 style="margin-bottom:1rem;">📋 待审核企划</h4>
+            <div id="approvalProjects"><p style="color:var(--haze);">加载中...</p></div>
+          </div>
+          <div class="admin-card">
+            <h4 style="margin-bottom:1rem;">📰 待审核动态</h4>
+            <div id="approvalUpdates"><p style="color:var(--haze);">加载中...</p></div>
           </div>
         </div>
 
