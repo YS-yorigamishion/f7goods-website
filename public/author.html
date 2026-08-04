@@ -894,9 +894,16 @@
       }
       grid.innerHTML = works.map((w, i) => {
         const hasImg = w.images && w.images.length > 0;
+        const approvalBadge = w.approvalStatus === 'approved' ? '<span style="position:absolute;top:8px;left:8px;background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;z-index:2;">✓ 已批准</span>'
+          : w.approvalStatus === 'rejected' ? '<span style="position:absolute;top:8px;left:8px;background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;z-index:2;">已拒绝</span>'
+          : w.approvalStatus === 'pending' ? '<span style="position:absolute;top:8px;left:8px;background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;z-index:2;">待审核</span>'
+          : '';
+        const rejectReasonHtml = w.approvalStatus === 'rejected' && w.rejectReason
+          ? `<p style="color:var(--accent);font-size:0.7rem;margin-top:0.2rem;background:rgba(233,69,96,0.1);padding:0.2rem;border-radius:3px;">拒绝原因: ${escapeHtml(w.rejectReason)}</p>` : '';
         return `
         <div class="card" draggable="true" data-id="${w.id}" data-category="${w.category || ''}" data-status="${w.status || ''}" data-date="${w.releaseDate || ''}" data-likes="${w.likes || 0}" data-wants="${w.wants || 0}" data-order="${w.order || i}" data-title="${escapeHtml(w.title)}" data-tags="${(w.tags||[]).join(',')}" data-desc="${escapeHtml(w.description || '')}" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
           <div class="drag-handle" style="position:absolute;top:8px;right:8px;cursor:grab;font-size:1.2rem;color:var(--haze);z-index:2;" onclick="event.stopPropagation()">⠿</div>
+          ${approvalBadge}
           <input type="checkbox" class="author-work-cb" data-id="${w.id}" onchange="updateAuthorBatchBtn()" onclick="event.stopPropagation()">
           <div class="card-image" style="height:160px;${hasImg ? '' : 'background:linear-gradient(135deg,var(--accent),var(--accent-alt));'}" onclick="openWorkEditModal('${w.id}')">
             ${hasImg ? '<img src="'+w.images[0]+'" alt="'+escapeHtml(w.title)+'">' : '<span class="placeholder-icon" style="color:white;">🎨</span>'}
@@ -911,6 +918,7 @@
             </div>
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(w.title)}</h3>
             <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${w.price || ''}</p>
+            ${rejectReasonHtml}
             <div class="work-stats">
               <span title="喜爱数">❤️ ${w.likes || 0}</span>
               <span title="想要数">⭐ ${w.wants || 0}</span>
@@ -1568,6 +1576,12 @@
       work._relatedProjects = (allProjects || []).filter(p => (p.works || []).includes(workId)).map(p => p.id);
 
       body.innerHTML = await buildWorkFormHTML(work);
+      // 添加草稿自动保存监听
+      const formInputs = body.querySelectorAll('input, textarea, select');
+      const debouncedAutoSave = debounce(autoSaveDraft, 2000);
+      formInputs.forEach(input => {
+        input.addEventListener('input', debouncedAutoSave);
+      });
     }
 
     async function openAuthorWorkForm() {
@@ -1578,6 +1592,12 @@
       body.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>';
       overlay.classList.add('open');
       body.innerHTML = await buildWorkFormHTML({});
+      // 添加草稿自动保存监听
+      const formInputs = body.querySelectorAll('input, textarea, select');
+      const debouncedAutoSave = debounce(autoSaveDraft, 2000);
+      formInputs.forEach(input => {
+        input.addEventListener('input', debouncedAutoSave);
+      });
     }
 
     async function buildWorkFormHTML(work) {
@@ -1944,12 +1964,15 @@
         const statusBadge = e.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
           : e.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
           : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
+        const rejectReasonHtml = e.approvalStatus === 'rejected' && e.rejectReason
+          ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(e.rejectReason)}</p>` : '';
         return `
         <div class="card" style="cursor:pointer;" onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">
           <div class="card-body" style="padding:0.8rem;">
             ${statusBadge}
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(e.title)}</h3>
             <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${e.date || ''} ${e.location ? '· ' + escapeHtml(e.location) : ''}</p>
+            ${rejectReasonHtml}
             <div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
               <button class="btn-sm" onclick="event.stopPropagation();openMyEventForm(${escapeHtml(JSON.stringify(e))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
               <button class="btn-sm" onclick="event.stopPropagation();deleteMyEvent('${e.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
@@ -2076,12 +2099,15 @@
         const statusBadge = p.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
           : p.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
           : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
+        const rejectReasonHtml = p.approvalStatus === 'rejected' && p.rejectReason
+          ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(p.rejectReason)}</p>` : '';
         return `
         <div class="card" style="cursor:pointer;" onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">
           <div class="card-body" style="padding:0.8rem;">
             ${statusBadge}
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(p.title)}</h3>
             <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${PROJECT_STATUS_LABELS[p.status] || p.status || ''}</p>
+            ${rejectReasonHtml}
             <div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
               <button class="btn-sm" onclick="event.stopPropagation();openMyProjectForm(${escapeHtml(JSON.stringify(p))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
               <button class="btn-sm" onclick="event.stopPropagation();deleteMyProject('${p.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
@@ -2199,12 +2225,15 @@
         const statusBadge = u.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
           : u.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
           : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
+        const rejectReasonHtml = u.approvalStatus === 'rejected' && u.rejectReason
+          ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(u.rejectReason)}</p>` : '';
         return `
         <div class="card" style="cursor:pointer;" onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">
           <div class="card-body" style="padding:0.8rem;">
             ${statusBadge}
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(u.title)}</h3>
             <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${u.publishDate || ''}</p>
+            ${rejectReasonHtml}
             <div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
               <button class="btn-sm" onclick="event.stopPropagation();openMyUpdateForm(${escapeHtml(JSON.stringify(u))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
               <button class="btn-sm" onclick="event.stopPropagation();deleteMyUpdate('${u.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>

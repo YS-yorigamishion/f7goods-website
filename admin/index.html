@@ -306,6 +306,7 @@
               </thead>
               <tbody id="worksTableBody"></tbody>
             </table>
+            <div id="worksPagination"></div>
           </div>
         </div>
 
@@ -337,6 +338,7 @@
               </thead>
               <tbody id="eventsTableBody"></tbody>
             </table>
+            <div id="eventsPagination"></div>
           </div>
         </div>
 
@@ -364,6 +366,7 @@
               </thead>
               <tbody id="circlesTableBody"></tbody>
             </table>
+            <div id="circlesPagination"></div>
           </div>
         </div>
 
@@ -394,6 +397,7 @@
               </thead>
               <tbody id="projectsTableBody"></tbody>
             </table>
+            <div id="projectsPagination"></div>
           </div>
         </div>
 
@@ -423,6 +427,7 @@
               </thead>
               <tbody id="updatesTableBody"></tbody>
             </table>
+            <div id="updatesPagination"></div>
           </div>
         </div>
 
@@ -485,7 +490,10 @@
         <div id="page-announcements" class="admin-page">
           <div class="page-toolbar">
             <h3>公告管理</h3>
-            <button class="btn btn-primary" onclick="openAnnouncementModal()">+ 新增公告</button>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <input type="text" class="form-input" id="announcementsSearch" placeholder="搜索公告..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterAnnouncements()">
+              <button class="btn btn-primary" onclick="openAnnouncementModal()">+ 新增公告</button>
+            </div>
           </div>
           <div class="admin-card">
             <table class="admin-table" id="announcementsTable">
@@ -609,11 +617,15 @@
         <div id="page-contacts" class="admin-page">
           <div class="page-toolbar">
             <h3>联系消息</h3>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <input type="text" class="form-input" id="contactsSearch" placeholder="搜索消息..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterContacts()">
+            </div>
           </div>
           <div class="admin-card">
             <table class="admin-table" id="contactsTable">
               <thead>
                 <tr>
+                  <th>状态</th>
                   <th>姓名</th>
                   <th>邮箱</th>
                   <th>主题</th>

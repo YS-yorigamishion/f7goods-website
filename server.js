@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const cors = require('cors');
+const compression = require('compression');
 const fs = require('fs');
 const path = require('path');
 const XLSX = require('xlsx');
@@ -31,8 +32,19 @@ function cacheMiddleware(duration = 60) {
   };
 }
 
-function clearApiCache() {
-  if (apiCache) apiCache.flushAll();
+function clearApiCache(type) {
+  if (!apiCache) return;
+  if (type) {
+    // Clear only related cache entries
+    const keys = apiCache.keys();
+    keys.forEach(key => {
+      if (key.includes(type)) {
+        apiCache.del(key);
+      }
+    });
+  } else {
+    apiCache.flushAll();
+  }
 }
 
 const app = express();
@@ -42,8 +54,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'f7goods_secret_2026';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'f7goods2026';
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(compression());
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public', { maxAge: '1d', etag: true }));
 app.use('/admin', express.static('admin', { maxAge: '1d', etag: true }));
 app.use('/uploads', express.static('uploads', { maxAge: '7d', etag: true }));
@@ -71,7 +87,7 @@ const fileFilter = (req, file, cb) => {
   if (allowedImages.includes(ext) || allowedExcel.includes(ext)) cb(null, true);
   else cb(new Error('只允许上传图片或Excel文件'), false);
 };
-const upload = multer({ storage, fileFilter });
+const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
 
 // Helper: read/write JSON files
 function readJSON(file) {
@@ -87,8 +103,9 @@ function readJSON(file) {
 function writeJSON(file, data) {
   const filePath = path.join(__dirname, 'data', file);
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-  // Clear API cache when data changes
-  clearApiCache();
+  // Clear related API cache when data changes
+  const type = file.replace('.json', '');
+  clearApiCache(type);
 }
 
 // Edit log system
@@ -963,9 +980,19 @@ app.post('/api/admin/circles/:id/reset-password', authMiddleware, (req, res) => 
 app.get('/api/works', cacheMiddleware(60), (req, res) => {
   let works = readJSON('works.json');
   if (ensureOrder(works)) writeJSON('works.json', works);
-  const { category, search, status } = req.query;
+  const { category, search, status, circleId, eventId } = req.query;
   if (category) works = works.filter(w => w.category === category);
   if (status) works = works.filter(w => w.status === status);
+  if (circleId) works = works.filter(w => (w.circles || []).includes(circleId));
+  if (eventId) {
+    const events = readJSON('events.json');
+    const event = events.find(e => e.id === eventId);
+    if (event && event.relatedWorks) {
+      works = works.filter(w => event.relatedWorks.includes(w.id));
+    } else {
+      works = [];
+    }
+  }
   if (search) {
     const s = search.toLowerCase();
     works = works.filter(w =>
@@ -1118,6 +1145,8 @@ app.get('/api/events', cacheMiddleware(60), (req, res) => {
   let events = readJSON('events.json');
   // Only return approved events (or legacy events without approvalStatus)
   events = events.filter(e => !e.approvalStatus || e.approvalStatus === 'approved');
+  const { circleId } = req.query;
+  if (circleId) events = events.filter(e => (e.relatedCircles || []).includes(circleId));
   if (ensureOrder(events)) writeJSON('events.json', events);
   events.sort((a, b) => a.order - b.order);
   res.json(events);
@@ -1451,7 +1480,34 @@ app.get('/api/admin/contacts', authMiddleware, (req, res) => {
   let contacts = [];
   try { contacts = readJSON('contact.json'); } catch {}
   if (!Array.isArray(contacts)) contacts = [];
+
+  // Search filter
+  const { search } = req.query;
+  if (search) {
+    const s = search.toLowerCase();
+    contacts = contacts.filter(c =>
+      (c.name && c.name.toLowerCase().includes(s)) ||
+      (c.email && c.email.toLowerCase().includes(s)) ||
+      (c.subject && c.subject.toLowerCase().includes(s)) ||
+      (c.message && c.message.toLowerCase().includes(s))
+    );
+  }
+
+  // Sort by date descending
+  contacts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
   res.json(contacts);
+});
+
+app.put('/api/admin/contacts/:id/read', authMiddleware, (req, res) => {
+  let contacts = [];
+  try { contacts = readJSON('contact.json'); } catch {}
+  if (!Array.isArray(contacts)) contacts = [];
+  const index = contacts.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '消息未找到' });
+  contacts[index].read = true;
+  writeJSON('contact.json', contacts);
+  res.json({ success: true });
 });
 
 app.delete('/api/admin/contacts/:id', authMiddleware, (req, res) => {
@@ -1469,6 +1525,18 @@ app.get('/api/admin/works', authMiddleware, (req, res) => {
   let works = readJSON('works.json');
   if (ensureOrder(works)) writeJSON('works.json', works);
   works.sort((a, b) => a.order - b.order);
+
+  // Pagination (only if page/limit params provided)
+  if (req.query.page || req.query.limit) {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const total = works.length;
+    const totalPages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const items = works.slice(start, start + limit);
+    return res.json({ items, total, page, limit, totalPages });
+  }
+
   res.json(works);
 });
 
@@ -1630,6 +1698,18 @@ app.get('/api/admin/events', authMiddleware, (req, res) => {
   let events = readJSON('events.json');
   if (ensureOrder(events)) writeJSON('events.json', events);
   events.sort((a, b) => a.order - b.order);
+
+  // Pagination (only if page/limit params provided)
+  if (req.query.page || req.query.limit) {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const total = events.length;
+    const totalPages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const items = events.slice(start, start + limit);
+    return res.json({ items, total, page, limit, totalPages });
+  }
+
   res.json(events);
 });
 
@@ -1781,6 +1861,18 @@ app.get('/api/admin/circles', authMiddleware, (req, res) => {
   let circles = readJSON('circles.json');
   if (ensureOrder(circles)) writeJSON('circles.json', circles);
   circles.sort((a, b) => a.order - b.order);
+
+  // Pagination (only if page/limit params provided)
+  if (req.query.page || req.query.limit) {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const total = circles.length;
+    const totalPages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const items = circles.slice(start, start + limit);
+    return res.json({ items, total, page, limit, totalPages });
+  }
+
   res.json(circles);
 });
 
@@ -2048,6 +2140,18 @@ app.get('/api/admin/projects', authMiddleware, (req, res) => {
   let projects = readJSON('projects.json');
   if (ensureOrder(projects)) writeJSON('projects.json', projects);
   projects.sort((a, b) => a.order - b.order);
+
+  // Pagination (only if page/limit params provided)
+  if (req.query.page || req.query.limit) {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const total = projects.length;
+    const totalPages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const items = projects.slice(start, start + limit);
+    return res.json({ items, total, page, limit, totalPages });
+  }
+
   res.json(projects);
 });
 
@@ -2153,7 +2257,19 @@ app.get('/api/updates/:id', (req, res) => {
 // Admin: CRUD for updates
 app.get('/api/admin/updates', authMiddleware, (req, res) => {
   try {
-    const updates = readJSON('updates.json');
+    let updates = readJSON('updates.json');
+
+    // Pagination (only if page/limit params provided)
+    if (req.query.page || req.query.limit) {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const total = updates.length;
+      const totalPages = Math.ceil(total / limit);
+      const start = (page - 1) * limit;
+      const items = updates.slice(start, start + limit);
+      return res.json({ items, total, page, limit, totalPages });
+    }
+
     res.json(updates);
   } catch (e) { res.json([]); }
 });

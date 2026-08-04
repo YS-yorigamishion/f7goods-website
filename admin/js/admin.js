@@ -60,6 +60,63 @@ let adminProjectsData = [];
 let adminUpdatesData = [];
 let adminCirclesMap = {};
 
+// Pagination state
+const PAGE_LIMIT = 20;
+let pagination = {
+  works: { page: 1, total: 0, totalPages: 0 },
+  events: { page: 1, total: 0, totalPages: 0 },
+  circles: { page: 1, total: 0, totalPages: 0 },
+  projects: { page: 1, total: 0, totalPages: 0 },
+  updates: { page: 1, total: 0, totalPages: 0 }
+};
+
+// Pagination control renderer
+function renderPagination(type, loadFunc) {
+  const p = pagination[type];
+  if (p.totalPages <= 1) return '';
+
+  let html = '<div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-top:1rem;padding:0.5rem;">';
+
+  // Previous button
+  if (p.page > 1) {
+    html += `<button class="btn-sm" onclick="${loadFunc}(${p.page - 1})" style="padding:0.3rem 0.6rem;">上一页</button>`;
+  }
+
+  // Page numbers
+  const maxVisible = 5;
+  let startPage = Math.max(1, p.page - Math.floor(maxVisible / 2));
+  let endPage = Math.min(p.totalPages, startPage + maxVisible - 1);
+  if (endPage - startPage + 1 < maxVisible) {
+    startPage = Math.max(1, endPage - maxVisible + 1);
+  }
+
+  if (startPage > 1) {
+    html += `<button class="btn-sm" onclick="${loadFunc}(1)" style="padding:0.3rem 0.6rem;">1</button>`;
+    if (startPage > 2) html += '<span style="color:var(--haze);">...</span>';
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    const isActive = i === p.page;
+    html += `<button class="btn-sm" onclick="${loadFunc}(${i})" style="padding:0.3rem 0.6rem;${isActive ? 'background:var(--accent);color:white;' : ''}">${i}</button>`;
+  }
+
+  if (endPage < p.totalPages) {
+    if (endPage < p.totalPages - 1) html += '<span style="color:var(--haze);">...</span>';
+    html += `<button class="btn-sm" onclick="${loadFunc}(${p.totalPages})" style="padding:0.3rem 0.6rem;">${p.totalPages}</button>`;
+  }
+
+  // Next button
+  if (p.page < p.totalPages) {
+    html += `<button class="btn-sm" onclick="${loadFunc}(${p.page + 1})" style="padding:0.3rem 0.6rem;">下一页</button>`;
+  }
+
+  // Info
+  html += `<span style="color:var(--haze);font-size:0.85rem;margin-left:1rem;">共 ${p.total} 条</span>`;
+
+  html += '</div>';
+  return html;
+}
+
 // ===== Auth =====
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -640,16 +697,28 @@ function showPVDetail(type) {
   document.getElementById('modalSave').style.display = '';
 }
 
-async function loadWorks() {
-  const [works, circles] = await Promise.all([
-    adminAPI('GET', '/api/admin/works'),
+async function loadWorks(page = 1) {
+  const [worksResp, circles] = await Promise.all([
+    adminAPI('GET', `/api/admin/works?page=${page}&limit=${PAGE_LIMIT}`),
     adminAPI('GET', '/api/admin/circles')
   ]);
   adminCirclesMap = {};
   adminCirclesData = circles || [];
   adminCirclesData.forEach(c => adminCirclesMap[c.id] = c.name);
-  adminWorksData = works || [];
+
+  // Handle paginated response
+  if (worksResp && worksResp.items) {
+    adminWorksData = worksResp.items;
+    pagination.works = { page: worksResp.page, total: worksResp.total, totalPages: worksResp.totalPages };
+  } else {
+    adminWorksData = worksResp || [];
+    pagination.works = { page: 1, total: adminWorksData.length, totalPages: 1 };
+  }
+
   renderWorksTable(adminWorksData);
+  // Render pagination
+  const paginationEl = document.getElementById('worksPagination');
+  if (paginationEl) paginationEl.innerHTML = renderPagination('works', 'loadWorks');
 }
 
 // Reorder function
@@ -1077,7 +1146,7 @@ async function importAdminWorks(input) {
     showToast('导入中...', 'info');
     const res = await fetch('/api/admin/works/import', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + adminToken },
+      headers: { 'Authorization': 'Bearer ' + token },
       body: formData
     });
     const result = await res.json();
@@ -1103,7 +1172,7 @@ async function importAdminEvents(input) {
     showToast('导入中...', 'info');
     const res = await fetch('/api/admin/events/import', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + adminToken },
+      headers: { 'Authorization': 'Bearer ' + token },
       body: formData
     });
     const result = await res.json();
@@ -1129,7 +1198,7 @@ async function importAdminProjects(input) {
     showToast('导入中...', 'info');
     const res = await fetch('/api/admin/projects/import', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + adminToken },
+      headers: { 'Authorization': 'Bearer ' + token },
       body: formData
     });
     const result = await res.json();
@@ -1155,7 +1224,7 @@ async function importAdminUpdates(input) {
     showToast('导入中...', 'info');
     const res = await fetch('/api/admin/updates/import', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + adminToken },
+      headers: { 'Authorization': 'Bearer ' + token },
       body: formData
     });
     const result = await res.json();
@@ -1631,15 +1700,27 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
 }
 
 // ===== Events =====
-async function loadEvents() {
-  const [events, allWorks, allCircles] = await Promise.all([
-    adminAPI('GET', '/api/admin/events'),
+async function loadEvents(page = 1) {
+  const [eventsResp, allWorks, allCircles] = await Promise.all([
+    adminAPI('GET', `/api/admin/events?page=${page}&limit=${PAGE_LIMIT}`),
     adminAPI('GET', '/api/admin/works'),
     adminAPI('GET', '/api/admin/circles')
   ]);
-  adminEventsData = events || [];
+
+  // Handle paginated response
+  if (eventsResp && eventsResp.items) {
+    adminEventsData = eventsResp.items;
+    pagination.events = { page: eventsResp.page, total: eventsResp.total, totalPages: eventsResp.totalPages };
+  } else {
+    adminEventsData = eventsResp || [];
+    pagination.events = { page: 1, total: adminEventsData.length, totalPages: 1 };
+  }
+
   (allCircles || []).forEach(c => adminCirclesMap[c.id] = c.name);
   renderEventsTable(adminEventsData);
+  // Render pagination
+  const paginationEl = document.getElementById('eventsPagination');
+  if (paginationEl) paginationEl.innerHTML = renderPagination('events', 'loadEvents');
 }
 
 function renderEventsTable(events) {
@@ -2406,16 +2487,28 @@ async function uploadEventImages() {
 }
 
 // ===== Circles =====
-async function loadCircles() {
-  const [circles, allWorks] = await Promise.all([
-    adminAPI('GET', '/api/admin/circles'),
+async function loadCircles(page = 1) {
+  const [circlesResp, allWorks] = await Promise.all([
+    adminAPI('GET', `/api/admin/circles?page=${page}&limit=${PAGE_LIMIT}`),
     adminAPI('GET', '/api/admin/works')
   ]);
-  adminCirclesData = circles || [];
+
+  // Handle paginated response
+  if (circlesResp && circlesResp.items) {
+    adminCirclesData = circlesResp.items;
+    pagination.circles = { page: circlesResp.page, total: circlesResp.total, totalPages: circlesResp.totalPages };
+  } else {
+    adminCirclesData = circlesResp || [];
+    pagination.circles = { page: 1, total: adminCirclesData.length, totalPages: 1 };
+  }
+
   const worksCountMap = {};
   (allWorks || []).forEach(w => { (w.circles || []).forEach(cid => { worksCountMap[cid] = (worksCountMap[cid] || 0) + 1; }); });
   adminCirclesData.forEach(c => { c._worksCount = worksCountMap[c.id] || 0; });
   renderCirclesTable(adminCirclesData);
+  // Render pagination
+  const paginationEl = document.getElementById('circlesPagination');
+  if (paginationEl) paginationEl.innerHTML = renderPagination('circles', 'loadCircles');
 }
 
 function renderCirclesTable(circles) {
@@ -3138,15 +3231,27 @@ async function pickImageFromLibrary(type) {
 }
 
 // ===== Projects =====
-async function loadProjects() {
-  const [projects, circles, events] = await Promise.all([
-    adminAPI('GET', '/api/admin/projects'),
+async function loadProjects(page = 1) {
+  const [projectsResp, circles, events] = await Promise.all([
+    adminAPI('GET', `/api/admin/projects?page=${page}&limit=${PAGE_LIMIT}`),
     adminAPI('GET', '/api/admin/circles'),
     adminAPI('GET', '/api/admin/events')
   ]);
-  adminProjectsData = projects || [];
+
+  // Handle paginated response
+  if (projectsResp && projectsResp.items) {
+    adminProjectsData = projectsResp.items;
+    pagination.projects = { page: projectsResp.page, total: projectsResp.total, totalPages: projectsResp.totalPages };
+  } else {
+    adminProjectsData = projectsResp || [];
+    pagination.projects = { page: 1, total: adminProjectsData.length, totalPages: 1 };
+  }
+
   (circles || []).forEach(c => adminCirclesMap[c.id] = c.name);
   renderProjectsTable(adminProjectsData);
+  // Render pagination
+  const paginationEl = document.getElementById('projectsPagination');
+  if (paginationEl) paginationEl.innerHTML = renderPagination('projects', 'loadProjects');
 }
 
 function renderProjectsTable(projects) {
@@ -4391,35 +4496,55 @@ function selectHeroBgFromLibrary(el, pageKey) {
 }
 
 // ===== Announcements =====
+let adminAnnouncementsData = [];
+
 async function loadAnnouncements() {
   try {
     const announcements = await adminAPI('GET', '/api/admin/announcements');
-    const tbody = document.getElementById('announcementsTableBody');
-    if (!announcements || announcements.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无公告</td></tr>';
-      return;
-    }
-    tbody.innerHTML = announcements
-      .sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate))
-      .map(a => `
-        <tr>
-          <td>${a.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escapeHtml(a.title)}</td>
-          <td>${formatDateAdmin(a.publishDate)}</td>
-          <td style="text-align:center;">${a.pinned ? '<span style="color:var(--accent);font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
-          <td style="text-align:center;">${a.popup ? '<span style="color:#2ecc71;font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
-          <td class="truncate" style="max-width:300px;">${escapeHtml(a.content)}</td>
-          <td>
-            <div class="table-actions">
-              <button class="btn-sm btn-edit" onclick="editAnnouncement('${a.id}')">编辑</button>
-              <button class="btn-sm btn-delete" onclick="deleteAnnouncement('${a.id}')">删除</button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+    adminAnnouncementsData = announcements || [];
+    renderAnnouncementsTable(adminAnnouncementsData);
   } catch (e) {
     document.getElementById('announcementsTableBody').innerHTML =
       '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
   }
+}
+
+function renderAnnouncementsTable(announcements) {
+  const tbody = document.getElementById('announcementsTableBody');
+  if (!announcements || announcements.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无公告</td></tr>';
+    return;
+  }
+  tbody.innerHTML = announcements
+    .sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate))
+    .map(a => `
+      <tr>
+        <td>${a.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escapeHtml(a.title)}</td>
+        <td>${formatDateAdmin(a.publishDate)}</td>
+        <td style="text-align:center;">${a.pinned ? '<span style="color:var(--accent);font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
+        <td style="text-align:center;">${a.popup ? '<span style="color:#2ecc71;font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
+        <td class="truncate" style="max-width:300px;">${escapeHtml(a.content)}</td>
+        <td>
+          <div class="table-actions">
+            <button class="btn-sm btn-edit" onclick="editAnnouncement('${a.id}')">编辑</button>
+            <button class="btn-sm btn-delete" onclick="deleteAnnouncement('${a.id}')">删除</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+}
+
+function filterAnnouncements() {
+  const search = (document.getElementById('announcementsSearch')?.value || '').toLowerCase();
+  if (!search) {
+    renderAnnouncementsTable(adminAnnouncementsData);
+    return;
+  }
+  const filtered = adminAnnouncementsData.filter(a =>
+    (a.title && a.title.toLowerCase().includes(search)) ||
+    (a.content && a.content.toLowerCase().includes(search))
+  );
+  renderAnnouncementsTable(filtered);
 }
 
 function formatDateAdmin(dateStr) {
@@ -4493,15 +4618,26 @@ async function deleteAnnouncement(id) {
 }
 
 // ===== Updates (同人动态) =====
-async function loadUpdates() {
+async function loadUpdates(page = 1) {
   try {
-    const [updates, allEvents, allProjects, allCircles] = await Promise.all([
-      adminAPI('GET', '/api/admin/updates'),
+    const [updatesResp, allEvents, allProjects, allCircles] = await Promise.all([
+      adminAPI('GET', `/api/admin/updates?page=${page}&limit=${PAGE_LIMIT}`),
       adminAPI('GET', '/api/admin/events'),
       adminAPI('GET', '/api/admin/projects'),
       adminAPI('GET', '/api/admin/circles')
     ]);
-    adminUpdatesData = updates || [];
+
+    // Handle paginated response
+    let updates;
+    if (updatesResp && updatesResp.items) {
+      updates = updatesResp.items;
+      pagination.updates = { page: updatesResp.page, total: updatesResp.total, totalPages: updatesResp.totalPages };
+    } else {
+      updates = updatesResp || [];
+      pagination.updates = { page: 1, total: updates.length, totalPages: 1 };
+    }
+
+    adminUpdatesData = updates;
     const eventsMap = {};
     (allEvents || []).forEach(e => eventsMap[e.id] = e.title);
     const projectsMap = {};
@@ -4552,6 +4688,10 @@ async function loadUpdates() {
           </td>
         </tr>`;
       }).join('');
+
+    // Render pagination
+    const paginationEl = document.getElementById('updatesPagination');
+    if (paginationEl) paginationEl.innerHTML = renderPagination('updates', 'loadUpdates');
   } catch (e) {
     document.getElementById('updatesTableBody').innerHTML =
       '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
@@ -5172,18 +5312,19 @@ async function loadApprovalPage() {
 }
 
 // ===== Contacts =====
-async function loadContacts() {
+async function loadContacts(search = '') {
   try {
-    const contacts = await adminAPI('GET', '/api/admin/contacts');
+    const url = search ? `/api/admin/contacts?search=${encodeURIComponent(search)}` : '/api/admin/contacts';
+    const contacts = await adminAPI('GET', url);
     const tbody = document.getElementById('contactsTableBody');
     if (!contacts || contacts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无联系消息</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无联系消息</td></tr>';
       return;
     }
     tbody.innerHTML = contacts
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .map((c, i) => `
-        <tr>
+        <tr style="${!c.read ? 'background:rgba(52,152,219,0.05);' : ''}">
+          <td style="text-align:center;">${c.read ? '<span style="color:var(--haze);">已读</span>' : '<span style="color:#3498db;font-weight:600;">未读</span>'}</td>
           <td>${escapeHtml(c.name || '')}</td>
           <td>${escapeHtml(c.email || '')}</td>
           <td>${escapeHtml(c.subject || '-')}</td>
@@ -5200,8 +5341,13 @@ async function loadContacts() {
     window._contactsData = contacts;
   } catch (e) {
     document.getElementById('contactsTableBody').innerHTML =
-      '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
+      '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
   }
+}
+
+function filterContacts() {
+  const search = document.getElementById('contactsSearch')?.value || '';
+  loadContacts(search);
 }
 
 async function deleteContact(id) {
@@ -5210,9 +5356,16 @@ async function deleteContact(id) {
   loadContacts();
 }
 
-function viewContactMessage(index) {
+async function viewContactMessage(index) {
   const c = (window._contactsData || [])[index];
   if (!c) return;
+
+  // Mark as read
+  if (!c.read) {
+    await adminAPI('PUT', `/api/admin/contacts/${c.id}/read`);
+    c.read = true;
+  }
+
   document.getElementById('modalTitle').textContent = '查看消息';
   document.getElementById('modalBody').innerHTML = `
     <div style="margin-bottom:1rem;">

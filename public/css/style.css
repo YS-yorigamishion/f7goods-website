@@ -1780,7 +1780,15 @@ textarea.form-input {
   }
 
   .calendar-event {
-    display: none;
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 1px;
+    overflow: hidden;
+    font-size: 0;
+    padding: 0;
   }
 
   .calendar-weekday {
