@@ -53,7 +53,10 @@
           </div>
           <div class="detail-header">
             ${project.coverImage ? `<img src="${project.coverImage}" alt="${project.title}" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px;margin-bottom:1rem;cursor:pointer;" class="clickable-img" onclick="openLightbox(['${project.coverImage}'], 0)">` : ''}
-            <h1>${project.title}</h1>
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+              <h1 style="flex:1;">${project.title}</h1>
+              ${renderShareButton(project.title, location.href)}
+            </div>
             <div class="detail-meta">
               <span class="card-tag ${project.status}">${PROJECT_STATUS_LABELS[project.status] || project.status}</span>
               <span>${PROJECT_CATEGORIES[project.category] || project.category}</span>

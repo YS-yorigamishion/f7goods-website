@@ -121,10 +121,11 @@
               ${circle.logo
                 ? `<div style="width:70px;height:70px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${circle.logo}" alt="${circle.name}" style="width:100%;height:100%;object-fit:cover;"></div>`
                 : `<div class="circle-avatar" style="width:70px;height:70px;font-size:1.5rem;flex-shrink:0;">${circle.name.charAt(0)}</div>`}
-              <div>
+              <div style="flex:1;">
                 <h1 style="margin-bottom:0.25rem;">${circle.name}</h1>
                 ${circle.category ? `<span class="card-tag" style="font-size:0.8rem;padding:0.2rem 0.6rem;">${CIRCLE_CATEGORIES[circle.category] || circle.category}</span>` : ''}
               </div>
+              <div>${renderShareButton(circle.name, location.href)}</div>
             </div>
           </div>
           <div class="detail-content">

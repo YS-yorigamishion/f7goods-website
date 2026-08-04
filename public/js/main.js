@@ -351,6 +351,26 @@ function nl2br(str) {
   return escapeHtml(str).replace(/\n/g, '<br>');
 }
 
+// Share functionality
+async function sharePage(title, url) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, url });
+      return;
+    } catch (e) {}
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('链接已复制到剪贴板', 'success');
+  } catch (e) {
+    prompt('复制此链接:', url);
+  }
+}
+
+function renderShareButton(title, url) {
+  return `<button class="btn-sm" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.6rem;" onclick="sharePage('${escapeHtml(title)}', '${url}')">🔗 分享</button>`;
+}
+
 // Like functionality
 function getUid() {
   var uid = localStorage.getItem('f7uid');
