@@ -99,16 +99,18 @@
   <script>
     initPage('announcements');
 
-    function showAnnouncement(title, date, content) {
+    function showAnnouncement(index) {
+      const a = window._announcements[index];
+      if (!a) return;
       const overlay = document.createElement('div');
       overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
       overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;flex:1;">${title}</h3>
+          <h3 style="margin:0;flex:1;">${a.pinned ? '📌 ' : ''}${escapeHtml(a.title)}</h3>
           <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
         </div>
-        <div style="font-size:0.8rem;color:var(--haze);margin-bottom:1rem;">${date}</div>
-        <div style="line-height:1.8;color:#555;white-space:pre-wrap;">${content}</div>
+        <div style="font-size:0.8rem;color:var(--haze);margin-bottom:1rem;">${formatDate(a.publishDate)}</div>
+        <div style="line-height:1.8;color:#555;white-space:pre-wrap;">${nl2br(a.content)}</div>
       </div>`;
       overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
@@ -127,10 +129,13 @@
           return;
         }
 
-        container.innerHTML = announcements.map(a => {
+        // Store announcements data for popup
+        window._announcements = announcements;
+
+        container.innerHTML = announcements.map((a, i) => {
           const preview = a.content.length > 80 ? a.content.substring(0, 80) + '...' : a.content;
           return `
-          <div class="announcement-card" ${a.pinned ? 'style="border-left:3px solid var(--accent);"' : ''} onclick="showAnnouncement('${escapeHtml(a.title)}', '${formatDate(a.publishDate)}', '${escapeHtml(a.content).replace(/'/g, "\\'")}')">
+          <div class="announcement-card" ${a.pinned ? 'style="border-left:3px solid var(--accent);"' : ''} onclick="showAnnouncement(${i})">
             <div class="announcement-header">
               <h3 class="announcement-title">${a.pinned ? '📌 ' : ''}${escapeHtml(a.title)}</h3>
               <span class="announcement-date">${formatDate(a.publishDate)}</span>
