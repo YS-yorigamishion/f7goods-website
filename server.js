@@ -248,6 +248,90 @@ app.get('/api/author/works', authorAuthMiddleware, (req, res) => {
   res.json(circleWorks);
 });
 
+// Author: reorder works
+app.post('/api/author/works/reorder', authorAuthMiddleware, (req, res) => {
+  const { orderedIds } = req.body;
+  if (!Array.isArray(orderedIds)) return res.status(400).json({ error: '无效的排序数据' });
+
+  let works = readJSON('works.json');
+  orderedIds.forEach((id, index) => {
+    const work = works.find(w => w.id === id);
+    if (work && (work.circles || []).includes(req.author.circleId)) {
+      work.order = index;
+    }
+  });
+  writeJSON('works.json', works);
+  res.json({ success: true });
+});
+
+// Author: import works from Excel
+app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '请上传文件' });
+
+  try {
+    const wb = XLSX.readFile(req.file.path);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws);
+
+    let works = readJSON('works.json');
+    let categories = { works: [], workStatus: [] };
+    try { categories = readJSON('categories.json'); } catch {}
+
+    const CATEGORY_MAP = {};
+    categories.works.forEach(c => { CATEGORY_MAP[c.name] = c.id; CATEGORY_MAP[c.id] = c.id; });
+    const STATUS_MAP = {};
+    categories.workStatus.forEach(c => { STATUS_MAP[c.name] = c.id; STATUS_MAP[c.id] = c.id; });
+
+    let added = 0, updated = 0;
+
+    rows.forEach(row => {
+      const title = row['作品名称'] || row['标题'] || '';
+      if (!title) return;
+
+      const existing = works.find(w => w.title === title && (w.circles || []).includes(req.author.circleId));
+      const workData = {
+        title,
+        category: CATEGORY_MAP[row['分类']] || 'other',
+        status: STATUS_MAP[row['状态']] || 'on_sale',
+        price: row['价格'] || '',
+        releaseDate: row['发售日期'] || '',
+        tags: (row['标签'] || '').split(',').map(t => t.trim()).filter(Boolean),
+        description: row['作品描述'] || row['描述'] || ''
+      };
+
+      if (existing) {
+        Object.assign(existing, workData);
+        updated++;
+      } else {
+        works.push({
+          id: 'w' + Date.now() + Math.random().toString(36).substr(2, 5),
+          ...workData,
+          circles: [req.author.circleId],
+          images: [],
+          moreImages: [],
+          likes: 0,
+          wants: 0,
+          order: works.length,
+          createdAt: new Date().toISOString()
+        });
+        added++;
+      }
+    });
+
+    writeJSON('works.json', works);
+    fs.unlinkSync(req.file.path);
+
+    const circles = readJSON('circles.json');
+    const circle = circles.find(c => c.id === req.author.circleId);
+    logEdit(circle?.name || '作者', '导入作品', '', `新增${added}个，更新${updated}个`);
+
+    res.json({ success: true, added, updated });
+  } catch (e) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    res.status(500).json({ error: '导入失败: ' + e.message });
+  }
+});
+
 // Author: get own edit history
 app.get('/api/author/history', authorAuthMiddleware, (req, res) => {
   const circles = readJSON('circles.json');
