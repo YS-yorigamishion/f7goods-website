@@ -1428,7 +1428,7 @@ textarea.form-input {
   }
 
   .related-works-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(3, 1fr) !important;
   }
 
   .events-timeline {
@@ -1796,9 +1796,24 @@ textarea.form-input {
     padding: 0.3rem;
   }
 
-  /* Cards grid - single column on small screens */
+  /* Cards grid - 2 columns on small screens */
   .cards-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Circles grid - 2 columns */
+  .circles-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Projects grid - 2 columns */
+  .projects-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Updates grid - 2 columns */
+  .updates-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 
   /* Larger tap targets for filter buttons */
@@ -2026,7 +2041,7 @@ textarea.form-input {
   --accent: #ff6b81;
   --accent-dark: #ff4757;
   --accent-alt: #70a1ff;
-  --haze: #8a8a9a;
+  --haze: #b0b0c0;
   --card-bg: #252540;
   --border: #3a3a50;
   --glass: rgba(26, 26, 46, 0.9);
@@ -2132,7 +2147,7 @@ textarea.form-input {
     --accent: #ff6b81;
     --accent-dark: #ff4757;
     --accent-alt: #70a1ff;
-    --haze: #8a8a9a;
+    --haze: #b0b0c0;
     --card-bg: #252540;
     --border: #3a3a50;
     --glass: rgba(26, 26, 46, 0.9);
