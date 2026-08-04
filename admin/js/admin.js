@@ -1023,10 +1023,14 @@ function filterWorks() {
 }
 
 // Export works to Excel
-function exportAdminWorks() {
-  if (!adminWorksData || adminWorksData.length === 0) { alert('没有作品可导出'); return; }
+async function exportAdminWorks() {
+  showToast('正在获取全部数据...', 'info');
+  // Fetch all works without pagination
+  const allWorks = await adminAPI('GET', '/api/admin/works');
+  if (!allWorks || allWorks.length === 0) { alert('没有作品可导出'); return; }
+
   const headers = ['作品名称', '作者', '分类', '状态', '价格', '发售日期', '标签', '喜爱数', '想要数', '描述'];
-  const rows = adminWorksData.map(w => [
+  const rows = allWorks.map(w => [
     w.title,
     (w.circles || []).map(cid => adminCirclesMap[cid] || cid).join(', '),
     CATEGORIES[w.category] || w.category || '',
@@ -1049,14 +1053,16 @@ function exportAdminWorks() {
   link.href = URL.createObjectURL(blob);
   link.download = `作品列表_${new Date().toISOString().slice(0,10)}.csv`;
   link.click();
-  showToast('导出成功', 'success');
+  showToast(`导出成功，共 ${allWorks.length} 条`, 'success');
 }
 
 // Export events to Excel
-function exportAdminEvents() {
-  if (!adminEventsData || adminEventsData.length === 0) { alert('没有活动可导出'); return; }
+async function exportAdminEvents() {
+  showToast('正在获取全部数据...', 'info');
+  const allEvents = await adminAPI('GET', '/api/admin/events');
+  if (!allEvents || allEvents.length === 0) { alert('没有活动可导出'); return; }
   const headers = ['活动名称', '状态', '开始日期', '结束日期', '地点', '描述'];
-  const rows = adminEventsData.map(e => [
+  const rows = allEvents.map(e => [
     e.title,
     EVENT_STATUS_LABELS[e.status] || e.status || '',
     e.date || '',
@@ -1071,14 +1077,16 @@ function exportAdminEvents() {
   link.href = URL.createObjectURL(blob);
   link.download = `活动列表_${new Date().toISOString().slice(0,10)}.csv`;
   link.click();
-  showToast('导出成功', 'success');
+  showToast(`导出成功，共 ${allEvents.length} 条`, 'success');
 }
 
 // Export circles to Excel
-function exportAdminCircles() {
-  if (!adminCirclesData || adminCirclesData.length === 0) { alert('没有作者可导出'); return; }
+async function exportAdminCircles() {
+  showToast('正在获取全部数据...', 'info');
+  const allCircles = await adminAPI('GET', '/api/admin/circles');
+  if (!allCircles || allCircles.length === 0) { alert('没有作者可导出'); return; }
   const headers = ['作者名称', '分类', '描述', '联系方式'];
-  const rows = adminCirclesData.map(c => [
+  const rows = allCircles.map(c => [
     c.name,
     CIRCLE_CATEGORIES[c.category] || c.category || '',
     c.description || '',
@@ -1091,14 +1099,16 @@ function exportAdminCircles() {
   link.href = URL.createObjectURL(blob);
   link.download = `作者列表_${new Date().toISOString().slice(0,10)}.csv`;
   link.click();
-  showToast('导出成功', 'success');
+  showToast(`导出成功，共 ${allCircles.length} 条`, 'success');
 }
 
 // Export projects to Excel
-function exportAdminProjects() {
-  if (!adminProjectsData || adminProjectsData.length === 0) { alert('没有企划可导出'); return; }
+async function exportAdminProjects() {
+  showToast('正在获取全部数据...', 'info');
+  const allProjects = await adminAPI('GET', '/api/admin/projects');
+  if (!allProjects || allProjects.length === 0) { alert('没有企划可导出'); return; }
   const headers = ['企划名称', '分类', '状态', '描述'];
-  const rows = adminProjectsData.map(p => [
+  const rows = allProjects.map(p => [
     p.title,
     PROJECT_CATEGORIES[p.category] || p.category || '',
     PROJECT_STATUS_LABELS[p.status] || p.status || '',
@@ -1111,15 +1121,16 @@ function exportAdminProjects() {
   link.href = URL.createObjectURL(blob);
   link.download = `企划列表_${new Date().toISOString().slice(0,10)}.csv`;
   link.click();
-  showToast('导出成功', 'success');
+  showToast(`导出成功，共 ${allProjects.length} 条`, 'success');
 }
 
 // Export updates to Excel
-function exportAdminUpdates() {
-  const updates = adminUpdatesData || [];
-  if (updates.length === 0) { alert('没有动态可导出'); return; }
+async function exportAdminUpdates() {
+  showToast('正在获取全部数据...', 'info');
+  const allUpdates = await adminAPI('GET', '/api/admin/updates');
+  if (!allUpdates || allUpdates.length === 0) { alert('没有动态可导出'); return; }
   const headers = ['标题', '发布日期', '置顶', '内容'];
-  const rows = updates.map(u => [
+  const rows = allUpdates.map(u => [
     u.title,
     u.publishDate || '',
     u.pinned ? '是' : '否',
@@ -1132,7 +1143,7 @@ function exportAdminUpdates() {
   link.href = URL.createObjectURL(blob);
   link.download = `动态列表_${new Date().toISOString().slice(0,10)}.csv`;
   link.click();
-  showToast('导出成功', 'success');
+  showToast(`导出成功，共 ${allUpdates.length} 条`, 'success');
 }
 
 // Import works from Excel

@@ -53,6 +53,37 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'f7goods_secret_2026';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'f7goods2026';
 
+// Rate limiting for login endpoints
+const loginAttempts = new Map();
+const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes
+const RATE_LIMIT_MAX = 10; // max attempts per window
+
+function rateLimitMiddleware(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress;
+  const key = `${ip}_${req.path}`;
+  const now = Date.now();
+  const attempts = loginAttempts.get(key) || [];
+  const recentAttempts = attempts.filter(t => now - t < RATE_LIMIT_WINDOW);
+
+  if (recentAttempts.length >= RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: '登录尝试过于频繁，请5分钟后再试' });
+  }
+
+  recentAttempts.push(now);
+  loginAttempts.set(key, recentAttempts);
+  next();
+}
+
+// Clean up old rate limit entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, attempts] of loginAttempts) {
+    const recent = attempts.filter(t => now - t < RATE_LIMIT_WINDOW);
+    if (recent.length === 0) loginAttempts.delete(key);
+    else loginAttempts.set(key, recent);
+  }
+}, 60000);
+
 // Middleware
 app.use(compression());
 app.use(cors({
@@ -151,7 +182,7 @@ function authMiddleware(req, res, next) {
 }
 
 // ===== Admin Auth =====
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', rateLimitMiddleware, (req, res) => {
   const { username, password } = req.body;
   const admin = readJSON('admin.json');
   if (username !== admin.username || !bcrypt.compareSync(password, admin.passwordHash)) {
@@ -226,7 +257,7 @@ app.post('/api/author/register', (req, res) => {
   res.json({ success: true, message: '注册成功，等待管理员审批' });
 });
 
-app.post('/api/author/login', (req, res) => {
+app.post('/api/author/login', rateLimitMiddleware, (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: '请填写完整信息' });
 
@@ -979,6 +1010,8 @@ app.post('/api/admin/circles/:id/reset-password', authMiddleware, (req, res) => 
 // Works
 app.get('/api/works', cacheMiddleware(60), (req, res) => {
   let works = readJSON('works.json');
+  // Only return approved works (or legacy works without approvalStatus)
+  works = works.filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
   if (ensureOrder(works)) writeJSON('works.json', works);
   const { category, search, status, circleId, eventId } = req.query;
   if (category) works = works.filter(w => w.category === category);
@@ -996,9 +1029,9 @@ app.get('/api/works', cacheMiddleware(60), (req, res) => {
   if (search) {
     const s = search.toLowerCase();
     works = works.filter(w =>
-      w.title.toLowerCase().includes(s) ||
+      (w.title || '').toLowerCase().includes(s) ||
       (w.titleEn && w.titleEn.toLowerCase().includes(s)) ||
-      w.tags.some(t => t.toLowerCase().includes(s))
+      (w.tags || []).some(t => (t || '').toLowerCase().includes(s))
     );
   }
   works.sort((a, b) => a.order - b.order);
@@ -1196,7 +1229,9 @@ app.get('/api/circles/:id', (req, res) => {
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.params.id);
   if (!circle) return res.status(404).json({ error: '作者未找到' });
-  res.json(circle);
+  // Remove sensitive fields
+  const { passwordHash, username, authorStatus, editableBy, ...safe } = circle;
+  res.json(safe);
 });
 
 // Projects
@@ -1211,9 +1246,9 @@ app.get('/api/projects', cacheMiddleware(60), (req, res) => {
   if (search) {
     const s = search.toLowerCase();
     projects = projects.filter(p =>
-      p.title.toLowerCase().includes(s) ||
-      p.description.toLowerCase().includes(s) ||
-      p.tags.some(t => t.toLowerCase().includes(s))
+      (p.title || '').toLowerCase().includes(s) ||
+      (p.description || '').toLowerCase().includes(s) ||
+      (p.tags || []).some(t => (t || '').toLowerCase().includes(s))
     );
   }
   projects.sort((a, b) => a.order - b.order);
@@ -1660,8 +1695,13 @@ app.put('/api/admin/works/:id', authMiddleware, (req, res) => {
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
   const oldTitle = works[index].title;
-  delete req.body.id;
-  works[index] = { ...works[index], ...req.body };
+  // Whitelist allowed fields to prevent mass assignment
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'likes', 'wants', 'order', 'isCommissioned', 'commissionedBy', 'socialLinks', 'approvalStatus', 'rejectReason', 'submittedBy'];
+  const updates = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+  works[index] = { ...works[index], ...updates };
   writeJSON('works.json', works);
   logEdit('管理员', '编辑作品', oldTitle || req.params.id, '');
   res.json(works[index]);
@@ -1769,8 +1809,13 @@ app.put('/api/admin/events/:id', authMiddleware, (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
-  delete req.body.id;
-  events[index] = { ...events[index], ...req.body };
+  // Whitelist allowed fields to prevent mass assignment
+  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'order', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
+  const updates = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+  events[index] = { ...events[index], ...updates };
   writeJSON('events.json', events);
   res.json(events[index]);
 });
@@ -1893,8 +1938,13 @@ app.put('/api/admin/circles/:id', authMiddleware, (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
-  delete req.body.id;
-  circles[index] = { ...circles[index], ...req.body };
+  // Whitelist allowed fields - NEVER allow passwordHash, username, authorStatus to be set directly
+  const allowedFields = ['name', 'description', 'category', 'logo', 'images', 'socialLinks', 'order', 'editableBy'];
+  const updates = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+  circles[index] = { ...circles[index], ...updates };
   writeJSON('circles.json', circles);
   res.json(circles[index]);
 });
@@ -2210,8 +2260,13 @@ app.put('/api/admin/projects/:id', authMiddleware, (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
-  delete req.body.id;
-  projects[index] = { ...projects[index], ...req.body };
+  // Whitelist allowed fields
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'order', 'socialLinks', 'coverImage', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
+  const updates = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+  projects[index] = { ...projects[index], ...updates };
   writeJSON('projects.json', projects);
   res.json(projects[index]);
 });
@@ -2336,8 +2391,13 @@ app.put('/api/admin/updates/:id', authMiddleware, (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
-  delete req.body.id;
-  updates[index] = { ...updates[index], ...req.body };
+  // Whitelist allowed fields
+  const allowedFields = ['title', 'content', 'publishDate', 'pinned', 'coverImage', 'images', 'relatedCircles', 'relatedEvents', 'relatedProjects', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
+  const updates2 = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) updates2[field] = req.body[field];
+  });
+  updates[index] = { ...updates[index], ...updates2 };
   writeJSON('updates.json', updates);
   res.json(updates[index]);
 });
@@ -2509,6 +2569,12 @@ app.delete('/api/admin/images/:filename', authMiddleware, (req, res) => {
   const filePath = path.join(__dirname, 'uploads', req.params.filename);
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
+    // Clean up uploads-meta.json
+    try {
+      const meta = readJSON('uploads-meta.json');
+      delete meta[req.params.filename];
+      writeJSON('uploads-meta.json', meta);
+    } catch {}
     logEdit('管理员', '删除图片', req.params.filename, '');
     res.json({ success: true });
   } else {
@@ -2576,13 +2642,15 @@ app.post('/api/admin/images/cleanup', authMiddleware, (req, res) => {
     } catch {}
 
     // Check all entity files for image references
-    const dataFiles = ['works.json', 'events.json', 'circles.json', 'projects.json'];
+    const dataFiles = ['works.json', 'events.json', 'circles.json', 'projects.json', 'updates.json'];
     dataFiles.forEach(file => {
       try {
         const items = readJSON(file);
         items.forEach(item => {
           // Check images array
           if (item.images) item.images.forEach(img => { const f = extractFilename(img); if (f) referencedFiles.add(f); });
+          // Check moreImages array (works)
+          if (item.moreImages) item.moreImages.forEach(img => { const f = extractFilename(img); if (f) referencedFiles.add(f); });
           // Check logo field
           if (item.logo) { const f = extractFilename(item.logo); if (f) referencedFiles.add(f); }
           // Check coverImage field
@@ -2640,6 +2708,15 @@ app.use((err, req, res, next) => {
   }
   if (err) return res.status(500).json({ error: err.message });
   next();
+});
+
+// 404 handler for HTML pages
+app.get('*', (req, res) => {
+  if (req.accepts('html')) {
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+  } else {
+    res.status(404).json({ error: '未找到' });
+  }
 });
 
 app.listen(PORT, () => {

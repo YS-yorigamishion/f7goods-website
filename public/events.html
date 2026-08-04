@@ -63,7 +63,17 @@
           F7API.getWorks()
         ]);
         allEvents = events;
-        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // Sort: upcoming events first (ascending), past events at the end
+        const now = new Date();
+        allEvents.sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          const isPastA = dateA < now;
+          const isPastB = dateB < now;
+          if (isPastA && !isPastB) return 1;
+          if (!isPastA && isPastB) return -1;
+          return dateA - dateB;
+        });
         allWorks = works;
         const now = new Date();
         calYear = now.getFullYear();
