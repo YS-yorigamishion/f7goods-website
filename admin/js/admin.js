@@ -611,11 +611,16 @@ function renderOrderControls(type, id, index, total) {
 function renderWorksTable(works) {
   const tbody = document.getElementById('worksTableBody');
   if (!works || works.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--haze);padding:2rem;">暂无作品</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--haze);padding:2rem;">暂无作品</td></tr>';
     return;
   }
   tbody.innerHTML = works.map((w, i) => {
     const hasImg = w.images && w.images.length > 0;
+    const approvalBadge = w.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+      : w.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+      : w.approvalStatus === 'pending' ? '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>'
+      : '<span style="background:var(--haze);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">-</span>';
+    const approveBtn = w.approvalStatus === 'pending' ? `<button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveWork('${w.id}')">批准</button><button class="btn-sm btn-delete" onclick="rejectWork('${w.id}')">拒绝</button>` : '';
     return `
     <tr data-work-id="${w.id}">
       <td>${renderOrderControls('works', w.id, i, works.length)}</td>
@@ -633,6 +638,7 @@ function renderWorksTable(works) {
         </div>
       </td>
       <td class="editable-cell" onclick="makeEditable(this, '${w.id}', 'title', '${escapeHtml(w.title)}')">${w.title}<br><span style="font-size:0.6rem;color:var(--haze);">${w.id}</span></td>
+      <td>${approvalBadge}</td>
       <td class="editable-cell" onclick="makeSelectCircles(this, '${w.id}', ${JSON.stringify(w.circles || []).replace(/"/g, '&quot;')})">${(w.circles || []).map(cid => adminCirclesMap[cid] || cid).join(', ') || '-'}</td>
       <td class="editable-cell" onclick="makeSelectCategory(this, '${w.id}', '${w.category}')">${CATEGORIES[w.category] || w.category}</td>
       <td class="editable-cell" onclick="makeEditable(this, '${w.id}', 'price', '${escapeHtml(w.price)}')">${w.price}</td>
@@ -641,6 +647,7 @@ function renderWorksTable(works) {
       <td class="editable-cell" onclick="makeSelectStatus(this, '${w.id}', '${w.status}')"><span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || w.status}</span></td>
       <td>
         <div class="table-actions">
+          ${approveBtn}
           <button class="btn-sm btn-edit" onclick="manageWorkRelations('${w.id}')">关联</button>
           <button class="btn-sm btn-edit" onclick="editWork('${w.id}')">编辑</button>
           <button class="btn-sm btn-delete" onclick="deleteWork('${w.id}')">删除</button>
@@ -648,6 +655,17 @@ function renderWorksTable(works) {
       </td>
     </tr>
   `}).join('');
+}
+
+async function approveWork(id) {
+  const result = await adminAPI('POST', `/api/admin/works/${id}/approve`);
+  if (result && result.success) { showToast('已批准', 'success'); loadWorks(); }
+}
+
+async function rejectWork(id) {
+  const reason = prompt('拒绝原因（可选）');
+  const result = await adminAPI('POST', `/api/admin/works/${id}/reject`, { reason });
+  if (result && result.success) { showToast('已拒绝', 'success'); loadWorks(); }
 }
 
 function escapeHtml(str) {

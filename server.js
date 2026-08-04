@@ -1522,6 +1522,29 @@ app.post('/api/admin/works/import', authMiddleware, upload.single('file'), (req,
   }
 });
 
+// Admin: approve work
+app.post('/api/admin/works/:id/approve', authMiddleware, (req, res) => {
+  let works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+  works[index].approvalStatus = 'approved';
+  writeJSON('works.json', works);
+  logEdit('管理员', '批准作品', works[index].title || req.params.id, '');
+  res.json({ success: true });
+});
+
+// Admin: reject work
+app.post('/api/admin/works/:id/reject', authMiddleware, (req, res) => {
+  let works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+  works[index].approvalStatus = 'rejected';
+  if (req.body.reason) works[index].rejectReason = req.body.reason;
+  writeJSON('works.json', works);
+  logEdit('管理员', '拒绝作品', works[index].title || req.params.id, req.body.reason || '');
+  res.json({ success: true });
+});
+
 app.put('/api/admin/works/:id', authMiddleware, (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
