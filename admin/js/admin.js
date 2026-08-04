@@ -4891,6 +4891,10 @@ function exportEditLog() {
 }
 
 // ===== Author Statistics =====
+let authorStatsData = [];
+let authorStatsSortBy = 'totalLikes';
+let authorStatsSortDir = 'desc';
+
 async function loadAuthorStats() {
   try {
     const [circles, works] = await Promise.all([
@@ -4898,13 +4902,12 @@ async function loadAuthorStats() {
       adminAPI('GET', '/api/admin/works')
     ]);
 
-    const tbody = document.getElementById('authorStatsBody');
     if (!circles || circles.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
+      document.getElementById('authorStatsBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
       return;
     }
 
-    const stats = circles.map(c => {
+    authorStatsData = circles.map(c => {
       const circleWorks = (works || []).filter(w => (w.circles || []).includes(c.id));
       const totalLikes = circleWorks.reduce((sum, w) => sum + (w.likes || 0), 0);
       const totalWants = circleWorks.reduce((sum, w) => sum + (w.wants || 0), 0);
@@ -4918,23 +4921,62 @@ async function loadAuthorStats() {
         avgLikes: workCount > 0 ? Math.round(totalLikes / workCount) : 0,
         avgWants: workCount > 0 ? Math.round(totalWants / workCount) : 0
       };
-    }).sort((a, b) => b.totalLikes - a.totalLikes);
+    });
 
-    tbody.innerHTML = stats.map(s => `
-      <tr>
-        <td style="font-weight:600;">${escapeHtml(s.name)}</td>
-        <td>${s.category}</td>
-        <td>${s.workCount}</td>
-        <td>${s.totalLikes}</td>
-        <td>${s.totalWants}</td>
-        <td>${s.avgLikes}</td>
-        <td>${s.avgWants}</td>
-      </tr>
-    `).join('');
+    renderAuthorStatsTable();
   } catch (e) {
     document.getElementById('authorStatsBody').innerHTML =
       '<tr><td colspan="7" style="text-align:center;color:var(--accent);padding:2rem;">加载失败</td></tr>';
   }
+}
+
+function sortAuthorStats(field) {
+  if (authorStatsSortBy === field) {
+    authorStatsSortDir = authorStatsSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    authorStatsSortBy = field;
+    authorStatsSortDir = 'desc';
+  }
+  renderAuthorStatsTable();
+}
+
+function renderAuthorStatsTable() {
+  const sorted = [...authorStatsData].sort((a, b) => {
+    const aVal = a[authorStatsSortBy] || 0;
+    const bVal = b[authorStatsSortBy] || 0;
+    return authorStatsSortDir === 'desc' ? bVal - aVal : aVal - bVal;
+  });
+
+  const getArrow = (field) => {
+    if (authorStatsSortBy !== field) return '↕';
+    return authorStatsSortDir === 'desc' ? '↓' : '↑';
+  };
+
+  const thead = document.querySelector('#authorStatsTable thead tr');
+  if (thead) {
+    thead.innerHTML = `
+      <th>作者名称</th>
+      <th>分类</th>
+      <th style="cursor:pointer;" onclick="sortAuthorStats('workCount')">作品数 ${getArrow('workCount')}</th>
+      <th style="cursor:pointer;" onclick="sortAuthorStats('totalLikes')">总喜爱数 ${getArrow('totalLikes')}</th>
+      <th style="cursor:pointer;" onclick="sortAuthorStats('totalWants')">总想要数 ${getArrow('totalWants')}</th>
+      <th style="cursor:pointer;" onclick="sortAuthorStats('avgLikes')">平均喜爱 ${getArrow('avgLikes')}</th>
+      <th style="cursor:pointer;" onclick="sortAuthorStats('avgWants')">平均想要 ${getArrow('avgWants')}</th>
+    `;
+  }
+
+  const tbody = document.getElementById('authorStatsBody');
+  tbody.innerHTML = sorted.map(s => `
+    <tr>
+      <td style="font-weight:600;">${escapeHtml(s.name)}</td>
+      <td>${s.category}</td>
+      <td>${s.workCount}</td>
+      <td>${s.totalLikes}</td>
+      <td>${s.totalWants}</td>
+      <td>${s.avgLikes}</td>
+      <td>${s.avgWants}</td>
+    </tr>
+  `).join('');
 }
 
 function exportAuthorStats() {
