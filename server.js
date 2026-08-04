@@ -129,7 +129,21 @@ function authorAuthMiddleware(req, res, next) {
       return res.status(403).json({ error: '账号已被禁用，请重新申请', needReapply: true });
     }
 
-    req.author = { circleId: decoded.circleId };
+    // Support X-Act-As header for switching author identity
+    const actAs = req.headers['x-act-as'];
+    if (actAs && actAs !== decoded.circleId) {
+      const targetCircle = circles.find(c => c.id === actAs);
+      if (!targetCircle) return res.status(404).json({ error: '目标作者不存在' });
+      if (targetCircle.authorStatus !== 'approved') return res.status(403).json({ error: '目标作者账号未激活' });
+
+      const isEditable = (targetCircle.editableBy || []).includes(decoded.circleId);
+      if (!isEditable) return res.status(403).json({ error: '无权操作该作者后台' });
+
+      req.author = { circleId: actAs, realCircleId: decoded.circleId };
+    } else {
+      req.author = { circleId: decoded.circleId };
+    }
+
     next();
   } catch {
     res.status(401).json({ error: 'Token无效或已过期' });
@@ -184,6 +198,38 @@ app.get('/api/author/profile', authorAuthMiddleware, (req, res) => {
   // Return safe fields only
   const { passwordHash, ...safe } = circle;
   res.json(safe);
+});
+
+// Get accessible author accounts
+app.get('/api/author/accessible-accounts', authorAuthMiddleware, (req, res) => {
+  const circles = readJSON('circles.json');
+  const realCircleId = req.author.realCircleId || req.author.circleId;
+  const currentCircle = circles.find(c => c.id === realCircleId);
+  if (!currentCircle) return res.json([]);
+
+  const accounts = [];
+
+  // Own account
+  accounts.push({
+    id: currentCircle.id,
+    name: currentCircle.name,
+    isOwner: true,
+    isActive: req.author.circleId === currentCircle.id
+  });
+
+  // Authorized accounts
+  circles.forEach(c => {
+    if (c.id !== realCircleId && (c.editableBy || []).includes(realCircleId) && c.authorStatus === 'approved') {
+      accounts.push({
+        id: c.id,
+        name: c.name,
+        isOwner: false,
+        isActive: req.author.circleId === c.id
+      });
+    }
+  });
+
+  res.json(accounts);
 });
 
 // Author: update own profile
