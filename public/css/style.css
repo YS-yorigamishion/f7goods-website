@@ -2036,12 +2036,12 @@ textarea.form-input {
 
 /* ===== Dark Mode ===== */
 [data-theme="dark"] {
-  --ink: #e8e2d8;
+  --ink: #f0ece4;
   --paper: #1a1a2e;
   --accent: #ff6b81;
   --accent-dark: #ff4757;
   --accent-alt: #70a1ff;
-  --haze: #b0b0c0;
+  --haze: #c8c8d8;
   --card-bg: #252540;
   --border: #3a3a50;
   --glass: rgba(26, 26, 46, 0.9);
@@ -2063,6 +2063,30 @@ textarea.form-input {
 [data-theme="dark"] .card {
   background: var(--card-bg);
   border-color: var(--border);
+}
+
+[data-theme="dark"] p {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .card-desc {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .circle-desc {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .event-location {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .detail-main p {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .about-section p {
+  color: var(--ink);
 }
 
 [data-theme="dark"] .mgmt-card {
@@ -2142,12 +2166,12 @@ textarea.form-input {
 /* Auto dark mode based on system preference */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ink: #e8e2d8;
+    --ink: #f0ece4;
     --paper: #1a1a2e;
     --accent: #ff6b81;
     --accent-dark: #ff4757;
     --accent-alt: #70a1ff;
-    --haze: #b0b0c0;
+    --haze: #c8c8d8;
     --card-bg: #252540;
     --border: #3a3a50;
     --glass: rgba(26, 26, 46, 0.9);
