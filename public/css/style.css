@@ -1795,6 +1795,63 @@ textarea.form-input {
     font-size: 0.55rem;
     padding: 0.3rem;
   }
+
+  /* Cards grid - single column on small screens */
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Larger tap targets for filter buttons */
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    min-height: 44px;
+  }
+
+  /* Larger like/want buttons */
+  .like-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    min-height: 44px;
+  }
+
+  .want-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    min-height: 44px;
+  }
+
+  /* Toast notification mobile positioning */
+  .toast {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    font-size: 0.85rem;
+  }
+
+  /* Navigation dropdown scroll */
+  .nav-links.open {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  /* Search input larger */
+  .search-input {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    min-height: 44px;
+  }
+
+  /* Filter bar spacing */
+  .filter-bar {
+    gap: 0.5rem;
+  }
+
+  /* Calendar improvements */
+  .calendar-event {
+    width: 8px;
+    height: 8px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

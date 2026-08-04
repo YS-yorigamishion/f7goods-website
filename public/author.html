@@ -65,6 +65,25 @@
       .auth-card { padding:1.5rem;margin:0 0.5rem; }
       #tab-images > .mgmt-card > div:nth-child(3) { flex-wrap:wrap; }
       #batchUploadInput { font-size:0.75rem; max-width:60%; }
+
+      /* Stats grid - single column on mobile */
+      .statistics-grid { grid-template-columns:1fr !important; }
+
+      /* Larger action buttons */
+      .work-actions .btn-sm { padding:0.25rem 0.5rem;font-size:0.75rem;min-height:36px; }
+
+      /* Header flex wrap */
+      .mgmt-header-content { flex-wrap:wrap; }
+
+      /* Account switcher smaller */
+      .account-switcher select { max-width:120px;font-size:0.8rem; }
+    }
+
+    @media (max-width:480px) {
+      .works-grid { grid-template-columns:1fr !important; }
+      .stats-overview { grid-template-columns:repeat(2,1fr) !important; }
+      .mgmt-tabs { gap:0.2rem; }
+      .mgmt-tab { padding:0.4rem 0.6rem;font-size:0.75rem; }
     }
   </style>
 </head>
