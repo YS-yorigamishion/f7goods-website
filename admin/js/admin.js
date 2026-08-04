@@ -2053,7 +2053,7 @@ function renderCirclesTable(circles) {
     }
     let actionBtns = `
       <button class="btn-sm btn-edit" onclick="manageCircleWorks('${c.id}')">关联</button>
-      <button class="btn-sm btn-edit" onclick="manageCircleEditors('${c.id}')">编辑者</button>
+      ${c.username && c.authorStatus === 'approved' ? `<button class="btn-sm btn-edit" onclick="manageCircleEditors('${c.id}')">编辑者</button>` : ''}
       <button class="btn-sm btn-edit" onclick="exportCircleExcel('${c.id}')" title="导出Excel">📥导出</button>
       <button class="btn-sm btn-edit" onclick="importCircleExcel('${c.id}')" title="导入Excel">📤导入</button>
       <button class="btn-sm btn-edit" onclick="editCircle('${c.id}')">编辑</button>
