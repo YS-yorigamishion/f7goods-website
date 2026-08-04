@@ -1002,25 +1002,34 @@
         const works = await authorAPI('GET', '/api/author/works');
         if (!works) return;
 
-        // Check for new likes and wants
-        const lastCheck = localStorage.getItem('f7author_lastNotifCheck') || '0';
-        const lastCheckTime = parseInt(lastCheck);
+        // Get previous stats from localStorage
+        let prevStats = {};
+        try {
+          prevStats = JSON.parse(localStorage.getItem('f7author_worksStats') || '{}');
+        } catch { prevStats = {}; }
 
+        // Check for new likes and wants (only if counts increased)
         notifications = [];
         works.forEach(w => {
-          if ((w.likes || 0) > 0) {
+          const prev = prevStats[w.id] || { likes: 0, wants: 0 };
+          const currentLikes = w.likes || 0;
+          const currentWants = w.wants || 0;
+
+          if (currentLikes > prev.likes) {
             notifications.push({
               type: 'like',
               workTitle: w.title,
-              count: w.likes,
+              count: currentLikes,
+              increase: currentLikes - prev.likes,
               time: Date.now()
             });
           }
-          if ((w.wants || 0) > 0) {
+          if (currentWants > prev.wants) {
             notifications.push({
               type: 'want',
               workTitle: w.title,
-              count: w.wants,
+              count: currentWants,
+              increase: currentWants - prev.wants,
               time: Date.now()
             });
           }
@@ -1033,6 +1042,13 @@
           badge.textContent = unreadCount;
           badge.style.display = unreadCount > 0 ? 'block' : 'none';
         }
+
+        // Save current stats for next comparison
+        const currentStats = {};
+        works.forEach(w => {
+          currentStats[w.id] = { likes: w.likes || 0, wants: w.wants || 0 };
+        });
+        localStorage.setItem('f7author_worksStats', JSON.stringify(currentStats));
       } catch (e) {}
     }
 
@@ -1045,19 +1061,18 @@
           <h3 style="margin:0;">🔔 通知</h3>
           <button onclick="document.getElementById('notifOverlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
         </div>
-        ${notifications.length === 0 ? '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无通知</p>' :
+        ${notifications.length === 0 ? '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无新通知</p>' :
           notifications.map(n => `<div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
             <span style="font-size:1.5rem;">${n.type === 'like' ? '❤️' : '⭐'}</span>
             <div style="flex:1;">
               <div style="font-weight:600;">${escapeHtml(n.workTitle)}</div>
-              <div style="font-size:0.75rem;color:var(--haze);">${n.type === 'like' ? '被喜爱' : '被想要'} ${n.count} 次</div>
+              <div style="font-size:0.75rem;color:var(--haze);">新增 ${n.increase} 次${n.type === 'like' ? '喜爱' : '想要'}</div>
             </div>
           </div>`).join('')}
       </div>`;
       document.body.appendChild(overlay);
 
       // Mark as read
-      localStorage.setItem('f7author_lastNotifCheck', Date.now().toString());
       const badge = document.getElementById('notifBadge');
       if (badge) badge.style.display = 'none';
     }
