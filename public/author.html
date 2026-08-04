@@ -144,6 +144,7 @@
     <header class="mgmt-header">
       <h2 id="mgmtTitle">作者管理</h2>
       <div style="display:flex;gap:0.5rem;align-items:center;">
+        <button onclick="toggleTheme()" title="切换暗色模式" style="font-size:1.1rem;background:none;border:none;cursor:pointer;padding:0.3rem;">🌙</button>
         <div id="accountSwitcher" style="display:none;">
           <select id="accountSelect" onchange="switchAuthorAccount(this.value)" style="font-size:0.8rem;padding:0.2rem 0.5rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--card-bg);max-width:150px;">
           </select>
@@ -505,6 +506,9 @@
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260803"></script>
   <script>
+    // Apply theme immediately
+    if (typeof applyTheme === 'function') applyTheme();
+
     let authorToken = localStorage.getItem('f7author_token');
     let authorCircleId = localStorage.getItem('f7author_circleId');
     let authorProfile = null;

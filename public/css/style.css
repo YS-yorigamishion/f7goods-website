@@ -2099,6 +2099,15 @@ textarea.form-input {
   background: linear-gradient(135deg, #16213e, var(--accent-alt));
 }
 
+[data-theme="dark"] .mgmt-page {
+  background: #1a1a2e;
+}
+
+[data-theme="dark"] .mgmt-card {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
 /* Dark mode toggle button */
 .theme-toggle {
   background: none;

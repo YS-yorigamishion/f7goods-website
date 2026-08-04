@@ -1,4 +1,7 @@
 // f7goods Admin Panel JS
+// Apply theme immediately
+if (typeof applyTheme === 'function') applyTheme();
+
 let CATEGORIES = {
   figure: '手办/模型', goods: '周边杂货', doujin: '同人志',
   cd: '音乐CD', apparel: '服饰', other: '其他'

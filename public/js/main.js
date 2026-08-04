@@ -296,9 +296,13 @@ function toggleTheme() {
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('f7theme', next);
-  // Rebuild navbar to update icon
+  // Update all theme toggle buttons
+  document.querySelectorAll('.theme-toggle').forEach(btn => {
+    btn.textContent = next === 'dark' ? '☀️' : '🌙';
+  });
+  // Rebuild navbar if it exists (frontend pages)
   const navbar = document.getElementById('navbar');
-  if (navbar) {
+  if (navbar && typeof buildNavbar === 'function') {
     const activePage = navbar.dataset.activePage || 'works';
     navbar.innerHTML = buildNavbar(activePage);
   }

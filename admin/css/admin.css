@@ -698,6 +698,10 @@
 }
 
 /* Dark mode support */
+[data-theme="dark"] .admin-body {
+  background: #1a1a2e;
+}
+
 [data-theme="dark"] .sidebar {
   background: #16213e;
 }
@@ -732,6 +736,40 @@
 [data-theme="dark"] .form-input {
   background: var(--card-bg);
   color: var(--ink);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .login-screen {
+  background: linear-gradient(135deg, #16213e, #0f3460);
+}
+
+[data-theme="dark"] .login-card {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .sidebar-link {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .sidebar-link:hover,
+[data-theme="dark"] .sidebar-link.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+[data-theme="dark"] .admin-header {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .stats-grid .stat-card {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .pv-overview-item {
+  background: var(--card-bg);
   border-color: var(--border);
 }
 
