@@ -8,6 +8,32 @@ const path = require('path');
 const XLSX = require('xlsx');
 let sharp;
 try { sharp = require('sharp'); } catch (e) { console.warn('sharp not installed, watermark disabled'); }
+let NodeCache;
+try { NodeCache = require('node-cache'); } catch (e) { console.warn('node-cache not installed, caching disabled'); }
+
+// Cache setup
+const apiCache = NodeCache ? new NodeCache({ stdTTL: 60, checkperiod: 120 }) : null;
+
+function cacheMiddleware(duration = 60) {
+  return (req, res, next) => {
+    if (!apiCache) return next();
+    const key = req.originalUrl;
+    const cached = apiCache.get(key);
+    if (cached) {
+      return res.json(cached);
+    }
+    const originalJson = res.json.bind(res);
+    res.json = (body) => {
+      apiCache.set(key, body, duration);
+      originalJson(body);
+    };
+    next();
+  };
+}
+
+function clearApiCache() {
+  if (apiCache) apiCache.flushAll();
+}
 
 const app = express();
 app.set('trust proxy', true);
@@ -61,6 +87,8 @@ function readJSON(file) {
 function writeJSON(file, data) {
   const filePath = path.join(__dirname, 'data', file);
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  // Clear API cache when data changes
+  clearApiCache();
 }
 
 // Edit log system
@@ -920,7 +948,7 @@ app.post('/api/admin/circles/:id/reset-password', authMiddleware, (req, res) => 
 
 // ===== Public API =====
 // Works
-app.get('/api/works', (req, res) => {
+app.get('/api/works', cacheMiddleware(60), (req, res) => {
   let works = readJSON('works.json');
   if (ensureOrder(works)) writeJSON('works.json', works);
   const { category, search, status } = req.query;
@@ -1074,7 +1102,7 @@ app.post('/api/works/:id/unwant', (req, res) => {
 });
 
 // Events
-app.get('/api/events', (req, res) => {
+app.get('/api/events', cacheMiddleware(60), (req, res) => {
   let events = readJSON('events.json');
   // Only return approved events (or legacy events without approvalStatus)
   events = events.filter(e => !e.approvalStatus || e.approvalStatus === 'approved');
@@ -1109,7 +1137,7 @@ function reindexOrder(items) {
   items.forEach((item, i) => item.order = i);
 }
 
-app.get('/api/circles', (req, res) => {
+app.get('/api/circles', cacheMiddleware(60), (req, res) => {
   let circles = readJSON('circles.json');
   if (ensureOrder(circles)) writeJSON('circles.json', circles);
   const { search } = req.query;
@@ -1131,7 +1159,7 @@ app.get('/api/circles/:id', (req, res) => {
 });
 
 // Projects
-app.get('/api/projects', (req, res) => {
+app.get('/api/projects', cacheMiddleware(60), (req, res) => {
   let projects = readJSON('projects.json');
   // Only return approved projects (or legacy projects without approvalStatus)
   projects = projects.filter(p => !p.approvalStatus || p.approvalStatus === 'approved');
@@ -2010,7 +2038,7 @@ app.delete('/api/admin/projects/:id', authMiddleware, (req, res) => {
 
 // ===== Updates (同人动态) =====
 // Public: get published updates
-app.get('/api/updates', (req, res) => {
+app.get('/api/updates', cacheMiddleware(60), (req, res) => {
   try {
     let updates = readJSON('updates.json');
     const today = new Date().toISOString().split('T')[0];
