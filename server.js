@@ -1445,6 +1445,83 @@ app.post('/api/admin/works', authMiddleware, (req, res) => {
   res.json(work);
 });
 
+// Admin: import works from Excel
+app.post('/api/admin/works/import', authMiddleware, upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '请上传文件' });
+
+  try {
+    const wb = XLSX.readFile(req.file.path);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws);
+
+    let works = readJSON('works.json');
+    let categories = { works: [], workStatus: [] };
+    try { categories = readJSON('categories.json'); } catch {}
+
+    const CATEGORY_MAP = {};
+    categories.works.forEach(c => { CATEGORY_MAP[c.name] = c.id; CATEGORY_MAP[c.id] = c.id; });
+    const STATUS_MAP = {};
+    categories.workStatus.forEach(c => { STATUS_MAP[c.name] = c.id; STATUS_MAP[c.id] = c.id; });
+
+    // Build circles name->id map
+    const circles = readJSON('circles.json');
+    const circlesNameMap = {};
+    circles.forEach(c => { circlesNameMap[c.name] = c.id; });
+
+    let added = 0, updated = 0;
+
+    rows.forEach(row => {
+      const title = row['作品名称'] || row['标题'] || '';
+      if (!title) return;
+
+      const authorName = row['作者'] || '';
+      const circleIds = authorName.split(',').map(name => {
+        const trimmed = name.trim();
+        return circlesNameMap[trimmed] || null;
+      }).filter(Boolean);
+
+      const existing = works.find(w => w.title === title);
+      const workData = {
+        title,
+        category: CATEGORY_MAP[row['分类']] || 'other',
+        status: STATUS_MAP[row['状态']] || 'on_sale',
+        price: row['价格'] || '',
+        releaseDate: row['发售日期'] || '',
+        tags: (row['标签'] || '').split(',').map(t => t.trim()).filter(Boolean),
+        description: row['描述'] || ''
+      };
+
+      if (existing) {
+        Object.assign(existing, workData);
+        if (circleIds.length > 0) existing.circles = circleIds;
+        updated++;
+      } else {
+        works.push({
+          id: 'w' + Date.now() + Math.random().toString(36).substr(2, 5),
+          ...workData,
+          circles: circleIds.length > 0 ? circleIds : [],
+          images: [],
+          moreImages: [],
+          likes: 0,
+          wants: 0,
+          order: works.length,
+          createdAt: new Date().toISOString()
+        });
+        added++;
+      }
+    });
+
+    writeJSON('works.json', works);
+    fs.unlinkSync(req.file.path);
+
+    logEdit('管理员', '导入作品', '', `新增${added}个，更新${updated}个`);
+    res.json({ success: true, added, updated });
+  } catch (e) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    res.status(500).json({ error: '导入失败: ' + e.message });
+  }
+});
+
 app.put('/api/admin/works/:id', authMiddleware, (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);

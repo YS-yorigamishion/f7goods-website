@@ -57,6 +57,7 @@ let adminWorksData = [];
 let adminEventsData = [];
 let adminCirclesData = [];
 let adminProjectsData = [];
+let adminUpdatesData = [];
 let adminCirclesMap = {};
 
 // ===== Auth =====
@@ -147,6 +148,7 @@ function navigateTo(page) {
   else if (page === 'updates') loadUpdates();
   else if (page === 'editlog') loadEditLog();
   else if (page === 'approval') loadApprovalPage();
+  else if (page === 'author-stats') loadAuthorStats();
   else if (page === 'contacts') loadContacts();
 
   // Close mobile sidebar
@@ -816,6 +818,146 @@ function filterWorks() {
     w.price.toLowerCase().includes(search)
   );
   renderWorksTable(filtered);
+}
+
+// Export works to Excel
+function exportAdminWorks() {
+  if (!adminWorksData || adminWorksData.length === 0) { alert('没有作品可导出'); return; }
+  const headers = ['作品名称', '作者', '分类', '状态', '价格', '发售日期', '标签', '喜爱数', '想要数', '描述'];
+  const rows = adminWorksData.map(w => [
+    w.title,
+    (w.circles || []).map(cid => adminCirclesMap[cid] || cid).join(', '),
+    CATEGORIES[w.category] || w.category || '',
+    STATUS_LABELS[w.status] || w.status || '',
+    w.price || '',
+    w.releaseDate || '',
+    (w.tags || []).join(', '),
+    w.likes || 0,
+    w.wants || 0,
+    w.description || ''
+  ]);
+
+  let csv = '\uFEFF' + headers.join(',') + '\n';
+  rows.forEach(row => {
+    csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `作品列表_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  showToast('导出成功', 'success');
+}
+
+// Export events to Excel
+function exportAdminEvents() {
+  if (!adminEventsData || adminEventsData.length === 0) { alert('没有活动可导出'); return; }
+  const headers = ['活动名称', '状态', '开始日期', '结束日期', '地点', '描述'];
+  const rows = adminEventsData.map(e => [
+    e.title,
+    EVENT_STATUS_LABELS[e.status] || e.status || '',
+    e.date || '',
+    e.endDate || '',
+    e.location || '',
+    e.description || ''
+  ]);
+  let csv = '\uFEFF' + headers.join(',') + '\n';
+  rows.forEach(row => { csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n'; });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `活动列表_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  showToast('导出成功', 'success');
+}
+
+// Export circles to Excel
+function exportAdminCircles() {
+  if (!adminCirclesData || adminCirclesData.length === 0) { alert('没有作者可导出'); return; }
+  const headers = ['作者名称', '分类', '描述', '联系方式'];
+  const rows = adminCirclesData.map(c => [
+    c.name,
+    CIRCLE_CATEGORIES[c.category] || c.category || '',
+    c.description || '',
+    c.socialLinks?.qq || c.socialLinks?.qqGroup || ''
+  ]);
+  let csv = '\uFEFF' + headers.join(',') + '\n';
+  rows.forEach(row => { csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n'; });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `作者列表_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  showToast('导出成功', 'success');
+}
+
+// Export projects to Excel
+function exportAdminProjects() {
+  if (!adminProjectsData || adminProjectsData.length === 0) { alert('没有企划可导出'); return; }
+  const headers = ['企划名称', '分类', '状态', '描述'];
+  const rows = adminProjectsData.map(p => [
+    p.title,
+    PROJECT_CATEGORIES[p.category] || p.category || '',
+    PROJECT_STATUS_LABELS[p.status] || p.status || '',
+    p.description || ''
+  ]);
+  let csv = '\uFEFF' + headers.join(',') + '\n';
+  rows.forEach(row => { csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n'; });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `企划列表_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  showToast('导出成功', 'success');
+}
+
+// Export updates to Excel
+function exportAdminUpdates() {
+  const updates = adminUpdatesData || [];
+  if (updates.length === 0) { alert('没有动态可导出'); return; }
+  const headers = ['标题', '发布日期', '置顶', '内容'];
+  const rows = updates.map(u => [
+    u.title,
+    u.publishDate || '',
+    u.pinned ? '是' : '否',
+    u.content || ''
+  ]);
+  let csv = '\uFEFF' + headers.join(',') + '\n';
+  rows.forEach(row => { csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n'; });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `动态列表_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  showToast('导出成功', 'success');
+}
+
+// Import works from Excel
+async function importAdminWorks(input) {
+  if (!input.files.length) return;
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    showToast('导入中...', 'info');
+    const res = await fetch('/api/admin/works/import', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + adminToken },
+      body: formData
+    });
+    const result = await res.json();
+    if (result.error) {
+      alert('导入失败: ' + result.error);
+    } else {
+      showToast(`导入完成：新增 ${result.added || 0}，更新 ${result.updated || 0}`, 'success');
+      loadWorks();
+    }
+  } catch (e) {
+    alert('导入失败: ' + e.message);
+  }
+  input.value = '';
 }
 
 function openWorkModal(work = null, returnToCircleId = null) {
@@ -4055,6 +4197,7 @@ async function loadUpdates() {
       adminAPI('GET', '/api/admin/projects'),
       adminAPI('GET', '/api/admin/circles')
     ]);
+    adminUpdatesData = updates || [];
     const eventsMap = {};
     (allEvents || []).forEach(e => eventsMap[e.id] = e.title);
     const projectsMap = {};
@@ -4439,14 +4582,125 @@ async function loadEditLog() {
 function filterEditLog() {
   const query = document.getElementById('editLogSearch')?.value.toLowerCase().trim() || '';
   const actionFilter = document.getElementById('editLogActionFilter')?.value || '';
+  const dateFrom = document.getElementById('editLogDateFrom')?.value || '';
+  const dateTo = document.getElementById('editLogDateTo')?.value || '';
   const rows = document.querySelectorAll('#editLogContainer > div');
   rows.forEach(row => {
     const user = row.querySelector('span:nth-child(2)')?.textContent.toLowerCase() || '';
     const action = row.querySelector('span:nth-child(3)')?.textContent || '';
+    const timeStr = row.querySelector('span:nth-child(1)')?.textContent || '';
     const matchUser = !query || user.includes(query);
     const matchAction = !actionFilter || action.includes(actionFilter);
-    row.style.display = (matchUser && matchAction) ? '' : 'none';
+    let matchDate = true;
+    if (dateFrom || dateTo) {
+      // Parse the time string (format: YYYY/MM/DD HH:MM:SS)
+      const dateParts = timeStr.split(' ')[0]?.replace(/\//g, '-') || '';
+      if (dateFrom && dateParts < dateFrom) matchDate = false;
+      if (dateTo && dateParts > dateTo) matchDate = false;
+    }
+    row.style.display = (matchUser && matchAction && matchDate) ? '' : 'none';
   });
+}
+
+// Export edit log
+function exportEditLog() {
+  const rows = document.querySelectorAll('#editLogContainer > div');
+  const visibleRows = [...rows].filter(r => r.style.display !== 'none');
+  if (visibleRows.length === 0) { alert('没有可导出的记录'); return; }
+
+  const headers = ['时间', '编辑人', '操作', '目标', '详情'];
+  const data = visibleRows.map(row => {
+    const spans = row.querySelectorAll('span');
+    return [
+      spans[0]?.textContent || '',
+      spans[1]?.textContent || '',
+      spans[2]?.textContent || '',
+      spans[3]?.textContent || '',
+      spans[4]?.textContent || ''
+    ];
+  });
+
+  let csv = '\uFEFF' + headers.join(',') + '\n';
+  data.forEach(row => {
+    csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `编辑历史_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  showToast('导出成功', 'success');
+}
+
+// ===== Author Statistics =====
+async function loadAuthorStats() {
+  try {
+    const [circles, works] = await Promise.all([
+      adminAPI('GET', '/api/admin/circles'),
+      adminAPI('GET', '/api/admin/works')
+    ]);
+
+    const tbody = document.getElementById('authorStatsBody');
+    if (!circles || circles.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
+      return;
+    }
+
+    const stats = circles.map(c => {
+      const circleWorks = (works || []).filter(w => (w.circles || []).includes(c.id));
+      const totalLikes = circleWorks.reduce((sum, w) => sum + (w.likes || 0), 0);
+      const totalWants = circleWorks.reduce((sum, w) => sum + (w.wants || 0), 0);
+      const workCount = circleWorks.length;
+      return {
+        name: c.name,
+        category: CIRCLE_CATEGORIES[c.category] || c.category || '-',
+        workCount,
+        totalLikes,
+        totalWants,
+        avgLikes: workCount > 0 ? Math.round(totalLikes / workCount) : 0,
+        avgWants: workCount > 0 ? Math.round(totalWants / workCount) : 0
+      };
+    }).sort((a, b) => b.totalLikes - a.totalLikes);
+
+    tbody.innerHTML = stats.map(s => `
+      <tr>
+        <td style="font-weight:600;">${escapeHtml(s.name)}</td>
+        <td>${s.category}</td>
+        <td>${s.workCount}</td>
+        <td>${s.totalLikes}</td>
+        <td>${s.totalWants}</td>
+        <td>${s.avgLikes}</td>
+        <td>${s.avgWants}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    document.getElementById('authorStatsBody').innerHTML =
+      '<tr><td colspan="7" style="text-align:center;color:var(--accent);padding:2rem;">加载失败</td></tr>';
+  }
+}
+
+function exportAuthorStats() {
+  const rows = document.querySelectorAll('#authorStatsBody tr');
+  if (rows.length === 0) { alert('没有数据可导出'); return; }
+
+  const headers = ['作者名称', '分类', '作品数', '总喜爱数', '总想要数', '平均喜爱', '平均想要'];
+  const data = [...rows].map(row => {
+    const cells = row.querySelectorAll('td');
+    return [...cells].map(cell => cell.textContent);
+  });
+
+  let csv = '\uFEFF' + headers.join(',') + '\n';
+  data.forEach(row => {
+    csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `作者统计_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  showToast('导出成功', 'success');
 }
 
 // ===== Approval Page =====

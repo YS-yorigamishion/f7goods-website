@@ -55,6 +55,9 @@
         <a href="#" class="sidebar-link" data-page="circles">
           <span class="sidebar-icon">🏠</span> 作者管理
         </a>
+        <a href="#" class="sidebar-link" data-page="author-stats">
+          <span class="sidebar-icon">📈</span> 作者统计
+        </a>
         <a href="#" class="sidebar-link" data-page="events">
           <span class="sidebar-icon">📅</span> 活动管理
         </a>
@@ -271,6 +274,8 @@
             <h3>作品列表</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
               <input type="text" class="form-input" id="worksSearch" placeholder="搜索作品..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterWorks()">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminWorks()">📥 导出</button>
+              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminWorks(this)"></label>
               <button class="btn btn-primary" id="batchEditBtn" style="display:none;background:var(--accent-alt);" onclick="openBatchEditModal()">批量编辑</button>
               <button class="btn btn-primary" onclick="openWorkModal()">+ 新增作品</button>
             </div>
@@ -303,6 +308,7 @@
             <h3>活动列表</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
               <input type="text" class="form-input" id="eventsSearch" placeholder="搜索活动..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterEvents()">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminEvents()">📥 导出</button>
               <button class="btn btn-primary" onclick="openEventModal()">+ 新增活动</button>
             </div>
           </div>
@@ -332,6 +338,7 @@
             <h3>作者列表</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
               <input type="text" class="form-input" id="circlesSearch" placeholder="搜索作者..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterCircles()">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminCircles()">📥 导出</button>
               <button class="btn btn-primary" onclick="openCircleModal()">+ 新增作者</button>
             </div>
           </div>
@@ -358,6 +365,7 @@
             <h3>企划列表</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
               <input type="text" class="form-input" id="projectsSearch" placeholder="搜索企划..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterProjects()">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminProjects()">📥 导出</button>
               <button class="btn btn-primary" onclick="openProjectModal()">+ 新增企划</button>
             </div>
           </div>
@@ -384,7 +392,10 @@
         <div id="page-updates" class="admin-page">
           <div class="page-toolbar">
             <h3>动态管理</h3>
-            <button class="btn btn-primary" onclick="openUpdateModal()">+ 新增动态</button>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminUpdates()">📥 导出</button>
+              <button class="btn btn-primary" onclick="openUpdateModal()">+ 新增动态</button>
+            </div>
           </div>
           <div class="admin-card">
             <table class="admin-table" id="updatesTable">
@@ -486,8 +497,8 @@
         <div id="page-editlog" class="admin-page">
           <div class="page-toolbar">
             <h3>编辑历史</h3>
-            <div style="display:flex;gap:0.5rem;align-items:center;">
-              <input type="text" class="form-input" id="editLogSearch" placeholder="搜索编辑人..." oninput="filterEditLog()" style="width:180px;font-size:0.85rem;">
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <input type="text" class="form-input" id="editLogSearch" placeholder="搜索编辑人..." oninput="filterEditLog()" style="width:150px;font-size:0.85rem;">
               <select class="form-input" id="editLogActionFilter" onchange="filterEditLog()" style="width:auto;font-size:0.85rem;">
                 <option value="">全部操作</option>
                 <option value="上传">上传</option>
@@ -495,6 +506,10 @@
                 <option value="创建">创建</option>
                 <option value="编辑">编辑</option>
               </select>
+              <input type="date" class="form-input" id="editLogDateFrom" onchange="filterEditLog()" style="width:140px;font-size:0.85rem;" title="开始日期">
+              <span style="color:var(--haze);">至</span>
+              <input type="date" class="form-input" id="editLogDateTo" onchange="filterEditLog()" style="width:140px;font-size:0.85rem;" title="结束日期">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportEditLog()">📥 导出</button>
               <button class="btn btn-primary" onclick="loadEditLog()">刷新</button>
             </div>
           </div>
@@ -526,6 +541,33 @@
           <div class="admin-card">
             <h4 style="margin-bottom:1rem;">📰 待审核动态</h4>
             <div id="approvalUpdates"><p style="color:var(--haze);">加载中...</p></div>
+          </div>
+        </div>
+
+        <!-- Author Statistics -->
+        <div id="page-author-stats" class="admin-page">
+          <div class="page-toolbar">
+            <h3>📊 作者数据统计</h3>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAuthorStats()">📥 导出</button>
+              <button class="btn btn-primary" onclick="loadAuthorStats()">刷新</button>
+            </div>
+          </div>
+          <div class="admin-card">
+            <table class="admin-table" id="authorStatsTable">
+              <thead>
+                <tr>
+                  <th>作者名称</th>
+                  <th>分类</th>
+                  <th>作品数</th>
+                  <th>总喜爱数</th>
+                  <th>总想要数</th>
+                  <th>平均喜爱</th>
+                  <th>平均想要</th>
+                </tr>
+              </thead>
+              <tbody id="authorStatsBody"></tbody>
+            </table>
           </div>
         </div>
 
