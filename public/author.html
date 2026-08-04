@@ -218,6 +218,7 @@
           <h3 style="margin:0;">我的作品</h3>
           <div style="display:flex;gap:0.5rem;">
             <button id="authorBatchEditBtn" class="btn" style="background:var(--accent-alt);color:white;display:none;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openAuthorBatchEdit()">批量编辑</button>
+            <button id="authorBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="batchDeleteWorks()">批量删除</button>
             <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="exportWorksToExcel()">📥 导出</button>
             <button class="btn btn-primary" onclick="openAuthorWorkForm()">+ 新增作品</button>
           </div>
@@ -908,11 +909,37 @@
     // Update batch button
     function updateAuthorBatchBtn() {
       const checked = document.querySelectorAll('.author-work-cb:checked');
-      const btn = document.getElementById('authorBatchEditBtn');
-      if (btn) {
-        btn.style.display = checked.length > 1 ? 'inline-flex' : 'none';
-        btn.textContent = `批量编辑 (${checked.length})`;
+      const editBtn = document.getElementById('authorBatchEditBtn');
+      const deleteBtn = document.getElementById('authorBatchDeleteBtn');
+      if (editBtn) {
+        editBtn.style.display = checked.length > 1 ? 'inline-flex' : 'none';
+        editBtn.textContent = `批量编辑 (${checked.length})`;
       }
+      if (deleteBtn) {
+        deleteBtn.style.display = checked.length > 0 ? 'inline-flex' : 'none';
+        deleteBtn.textContent = `批量删除 (${checked.length})`;
+      }
+    }
+
+    // Batch delete works
+    async function batchDeleteWorks() {
+      const checked = document.querySelectorAll('.author-work-cb:checked');
+      if (checked.length === 0) { alert('请至少选择1个作品'); return; }
+
+      const workIds = [...checked].map(cb => cb.dataset.id);
+      const selectedWorks = authorWorksData.filter(w => workIds.includes(w.id));
+      const titles = selectedWorks.map(w => w.title).join('、');
+
+      if (!confirm(`确定删除以下 ${selectedWorks.length} 个作品？\n${titles}\n\n此操作不可撤销。`)) return;
+
+      let success = 0;
+      for (const id of workIds) {
+        const result = await authorAPI('DELETE', '/api/author/works/' + id);
+        if (result && result.success) success++;
+      }
+
+      showToast(`已删除 ${success} 个作品`, 'success');
+      loadAuthorWorks();
     }
 
     // Open batch edit
