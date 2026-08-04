@@ -2146,9 +2146,10 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
         const image = sharp(filePath);
         const metadata = await image.metadata();
         const { width, height } = metadata;
-        const fontSize = Math.round(width / 40);
+        const fontSize = Math.round(width / 20);
         const watermarkText = `@${authorName}`;
-        const svgWatermark = `<svg width="${width}" height="${height}"><style>text { font-size: ${fontSize}px; fill: rgba(255,255,255,0.5); font-family: sans-serif; }</style><text x="${width/2}" y="${height/2}" text-anchor="middle" dominant-baseline="middle">${watermarkText}</text></svg>`;
+        const encodedText = encodeURIComponent(watermarkText);
+        const svgWatermark = `<svg width="${width}" height="${height}"><style>text { font-size: ${fontSize}px; fill: rgba(255,255,255,0.3); font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif; }</style><text x="${width/2}" y="${height/2}" text-anchor="middle" dominant-baseline="middle">${encodedText}</text></svg>`;
         await image.composite([{ input: Buffer.from(svgWatermark), gravity: 'southeast' }]).toFile(filePath + '.tmp');
         fs.renameSync(filePath + '.tmp', filePath);
       } catch (e) {
