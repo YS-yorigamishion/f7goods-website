@@ -531,8 +531,14 @@ app.delete('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
   if (events[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权删除此活动' });
 
+  const eventTitle = events[index].title;
   events.splice(index, 1);
   writeJSON('events.json', events);
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '删除活动', eventTitle || req.params.id, '');
+
   res.json({ success: true });
 });
 
@@ -591,8 +597,14 @@ app.delete('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
   if (projects[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权删除此企划' });
 
+  const projectTitle = projects[index].title;
   projects.splice(index, 1);
   writeJSON('projects.json', projects);
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '删除企划', projectTitle || req.params.id, '');
+
   res.json({ success: true });
 });
 
@@ -656,8 +668,14 @@ app.delete('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
   if (updates[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权删除此动态' });
 
+  const updateTitle = updates[index].title;
   updates.splice(index, 1);
   writeJSON('updates.json', updates);
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '删除动态', updateTitle || req.params.id, '');
+
   res.json({ success: true });
 });
 
