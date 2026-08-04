@@ -549,6 +549,12 @@ app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
 app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
   let works = readJSON('works.json');
   const maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
+  // Whitelist allowed fields to prevent mass assignment
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const workData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) workData[field] = req.body[field];
+  });
   const work = {
     id: 'w' + Date.now(),
     circles: [req.author.circleId],
@@ -559,7 +565,9 @@ app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
     wants: 0,
     order: maxOrder + 1,
     createdAt: new Date().toISOString(),
-    ...req.body
+    approvalStatus: 'pending',
+    submittedBy: req.author.circleId,
+    ...workData
   };
   works.push(work);
   writeJSON('works.json', works);
@@ -1042,6 +1050,10 @@ app.get('/api/works/:id', (req, res) => {
   const works = readJSON('works.json');
   const work = works.find(w => w.id === req.params.id);
   if (!work) return res.status(404).json({ error: '作品未找到' });
+  // Only return approved works (or legacy works without approvalStatus)
+  if (work.approvalStatus && work.approvalStatus !== 'approved') {
+    return res.status(404).json({ error: '作品未找到' });
+  }
   res.json(work);
 });
 
@@ -1189,6 +1201,10 @@ app.get('/api/events/:id', (req, res) => {
   const events = readJSON('events.json');
   const event = events.find(e => e.id === req.params.id);
   if (!event) return res.status(404).json({ error: '活动未找到' });
+  // Only return approved events (or legacy events without approvalStatus)
+  if (event.approvalStatus && event.approvalStatus !== 'approved') {
+    return res.status(404).json({ error: '活动未找到' });
+  }
   res.json(event);
 });
 
@@ -1218,11 +1234,16 @@ app.get('/api/circles', cacheMiddleware(60), (req, res) => {
   if (search) {
     const s = search.toLowerCase();
     circles = circles.filter(c =>
-      c.name.toLowerCase().includes(s)
+      (c.name || '').toLowerCase().includes(s)
     );
   }
   circles.sort((a, b) => a.order - b.order);
-  res.json(circles);
+  // Remove sensitive fields
+  const safeCircles = circles.map(c => {
+    const { passwordHash, username, authorStatus, editableBy, ...safe } = c;
+    return safe;
+  });
+  res.json(safeCircles);
 });
 
 app.get('/api/circles/:id', (req, res) => {
@@ -1259,6 +1280,10 @@ app.get('/api/projects/:id', (req, res) => {
   const projects = readJSON('projects.json');
   const project = projects.find(p => p.id === req.params.id);
   if (!project) return res.status(404).json({ error: '企划未找到' });
+  // Only return approved projects (or legacy projects without approvalStatus)
+  if (project.approvalStatus && project.approvalStatus !== 'approved') {
+    return res.status(404).json({ error: '企划未找到' });
+  }
   res.json(project);
 });
 
@@ -1267,8 +1292,27 @@ app.get('/api/categories', (req, res) => {
   res.json(readJSON('categories.json'));
 });
 
-// Contact form
-app.post('/api/contact', (req, res) => {
+// Contact form with rate limiting
+const contactAttempts = new Map();
+const CONTACT_RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
+const CONTACT_RATE_LIMIT_MAX = 5; // max 5 submissions per hour
+
+function contactRateLimit(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const attempts = contactAttempts.get(ip) || [];
+  const recentAttempts = attempts.filter(t => now - t < CONTACT_RATE_LIMIT_WINDOW);
+
+  if (recentAttempts.length >= CONTACT_RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: '提交过于频繁，请1小时后再试' });
+  }
+
+  recentAttempts.push(now);
+  contactAttempts.set(ip, recentAttempts);
+  next();
+}
+
+app.post('/api/contact', contactRateLimit, (req, res) => {
   const { name, email, subject, message } = req.body;
   if (!message) {
     return res.status(400).json({ error: '请填写消息内容' });
@@ -2305,6 +2349,10 @@ app.get('/api/updates/:id', (req, res) => {
     const updates = readJSON('updates.json');
     const update = updates.find(u => u.id === req.params.id);
     if (!update) return res.status(404).json({ error: '动态未找到' });
+    // Only return approved updates (or legacy updates without approvalStatus)
+    if (update.approvalStatus && update.approvalStatus !== 'approved') {
+      return res.status(404).json({ error: '动态未找到' });
+    }
     res.json(update);
   } catch (e) { res.status(404).json({ error: '动态未找到' }); }
 });
@@ -2603,6 +2651,7 @@ app.get('/api/admin/images/unused', authMiddleware, (req, res) => {
         const items = readJSON(file);
         items.forEach(item => {
           if (item.images) item.images.forEach(img => { const f = extractFilename(img); if (f) referencedFiles.add(f); });
+          if (item.moreImages) item.moreImages.forEach(img => { const f = extractFilename(img); if (f) referencedFiles.add(f); });
           if (item.logo) { const f = extractFilename(item.logo); if (f) referencedFiles.add(f); }
           if (item.coverImage) { const f = extractFilename(item.coverImage); if (f) referencedFiles.add(f); }
         });
