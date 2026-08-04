@@ -2309,26 +2309,60 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
     }
   }
 
-  // Compress image based on 3Mbps bandwidth strategy
+  // Compress image based on target size ranges
   if (sharp) {
     const filePath = path.join(__dirname, 'uploads', req.file.filename);
     const ext = path.extname(req.file.filename).toLowerCase();
     if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
       try {
         const stats = fs.statSync(filePath);
-        let quality;
-        if (stats.size > 2 * 1024 * 1024) {
-          quality = 75; // >2MB -> ~500KB, ~1.3s load
-        } else if (stats.size > 1024 * 1024) {
-          quality = 70; // >1MB -> ~300KB, ~0.8s load
-        } else if (stats.size > 500 * 1024) {
-          quality = 65; // >500KB -> ~200KB, ~0.5s load
-        }
-        if (quality) {
+        if (stats.size > 500 * 1024) {
           const image = sharp(filePath);
-          await image.jpeg({ quality }).toFile(filePath + '.tmp');
-          fs.renameSync(filePath + '.tmp', filePath);
-          console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024 / 1024).toFixed(2)}MB -> ${(fs.statSync(filePath).size / 1024 / 1024).toFixed(2)}MB`);
+          let targetMin, targetMax, startQuality;
+
+          if (stats.size > 2 * 1024 * 1024) {
+            targetMin = 400 * 1024;
+            targetMax = 600 * 1024;
+            startQuality = 85;
+          } else if (stats.size > 1024 * 1024) {
+            targetMin = 250 * 1024;
+            targetMax = 400 * 1024;
+            startQuality = 80;
+          } else {
+            targetMin = 150 * 1024;
+            targetMax = 250 * 1024;
+            startQuality = 75;
+          }
+
+          let quality = startQuality;
+          let compressed = false;
+
+          while (quality >= 50) {
+            await image.jpeg({ quality }).toFile(filePath + '.tmp');
+            const resultSize = fs.statSync(filePath + '.tmp').size;
+            if (resultSize >= targetMin && resultSize <= targetMax) {
+              fs.renameSync(filePath + '.tmp', filePath);
+              compressed = true;
+              console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024 / 1024).toFixed(2)}MB -> ${(resultSize / 1024 / 1024).toFixed(2)}MB (quality: ${quality})`);
+              break;
+            }
+            if (resultSize > targetMax) {
+              quality -= 5;
+            } else {
+              fs.renameSync(filePath + '.tmp', filePath);
+              compressed = true;
+              console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024 / 1024).toFixed(2)}MB -> ${(resultSize / 1024 / 1024).toFixed(2)}MB (quality: ${quality})`);
+              break;
+            }
+          }
+
+          if (!compressed) {
+            // Fallback: use minimum quality
+            await image.jpeg({ quality: 50 }).toFile(filePath + '.tmp');
+            fs.renameSync(filePath + '.tmp', filePath);
+            const finalSize = fs.statSync(filePath).size;
+            console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024 / 1024).toFixed(2)}MB -> ${(finalSize / 1024 / 1024).toFixed(2)}MB (quality: 50)`);
+          }
         }
       } catch (e) {
         console.error('Compression failed:', e.message);
