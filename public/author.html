@@ -700,6 +700,7 @@
                 ${Object.entries(STATUS_LABELS).map(([k,v]) => `<option value="${k}"${w.status===k?' selected':''}>${v}</option>`).join('')}
               </select>
               <button class="btn-sm" onclick="event.stopPropagation();duplicateWork('${w.id}')" title="复制作品" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--border);color:var(--ink);">📋</button>
+              <button class="btn-sm" onclick="event.stopPropagation();deleteAuthorWork('${w.id}')" title="删除作品" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">🗑</button>
             </div>
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(w.title)}</h3>
             <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${w.price || ''}</p>
@@ -744,6 +745,21 @@
       if (result) {
         showToast('作品已复制', 'success');
         loadAuthorWorks();
+      }
+    }
+
+    // Delete work
+    async function deleteAuthorWork(workId) {
+      const work = authorWorksData.find(w => w.id === workId);
+      if (!work) return;
+      if (!confirm(`确定删除作品"${work.title}"？此操作不可撤销。`)) return;
+
+      const result = await authorAPI('DELETE', '/api/author/works/' + workId);
+      if (result && result.success) {
+        showToast('作品已删除', 'success');
+        loadAuthorWorks();
+      } else {
+        alert(result?.error || '删除失败');
       }
     }
 

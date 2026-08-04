@@ -350,6 +350,29 @@ app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
   res.json(work);
 });
 
+// Author: delete own work
+app.delete('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
+  let works = readJSON('works.json');
+  const index = works.findIndex(w => w.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作品未找到' });
+
+  // Verify the work belongs to this author
+  if (!(works[index].circles || []).includes(req.author.circleId)) {
+    return res.status(403).json({ error: '无权删除此作品' });
+  }
+
+  const workTitle = works[index].title;
+  works.splice(index, 1);
+  writeJSON('works.json', works);
+
+  // Log the deletion
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '删除作品', workTitle || req.params.id, '');
+
+  res.json({ success: true });
+});
+
 // Author: get images list
 app.get('/api/author/images', authorAuthMiddleware, (req, res) => {
   const uploadsDir = path.join(__dirname, 'uploads');
