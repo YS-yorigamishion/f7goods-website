@@ -2063,7 +2063,7 @@ function renderCirclesTable(circles) {
         <button class="btn-sm btn-delete" onclick="rejectAuthor('${c.id}')">拒绝</button>` + actionBtns;
     } else if (c.username && c.authorStatus === 'approved') {
       actionBtns = `<button class="btn-sm btn-edit" onclick="resetAuthorPassword('${c.id}')">重置密码</button>
-        <button class="btn-sm btn-delete" style="background:var(--accent);" onclick="removeAuthorAccount('${c.id}')">删除账号</button>` + actionBtns;
+        <button class="btn-sm btn-delete" onclick="removeAuthorAccount('${c.id}')">删除账号</button>` + actionBtns;
     }
     return `
     <tr>
@@ -4111,6 +4111,76 @@ async function loadUpdates() {
   }
 }
 
+// View approval detail
+async function viewApprovalDetail(type, id) {
+  let item = null;
+  let html = '';
+
+  if (type === 'author') {
+    const circles = await adminAPI('GET', '/api/admin/circles');
+    item = circles?.find(c => c.id === id);
+    if (!item) return;
+    html = `
+      <div style="margin-bottom:1rem;"><strong>作者名称：</strong>${escapeHtml(item.name)}</div>
+      <div style="margin-bottom:1rem;"><strong>用户名：</strong>${escapeHtml(item.username || '无')}</div>
+      <div style="margin-bottom:1rem;"><strong>分类：</strong>${CIRCLE_CATEGORIES[item.category] || item.category || '未分类'}</div>
+      <div style="margin-bottom:1rem;"><strong>描述：</strong>${escapeHtml(item.description || '无')}</div>
+      <div style="margin-bottom:1rem;"><strong>联系方式：</strong>${item.socialLinks?.qq || item.socialLinks?.qqGroup || '无'}</div>
+      ${item.logo ? `<div style="margin-bottom:1rem;"><strong>头像：</strong><br><img src="${item.logo}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;margin-top:0.5rem;"></div>` : ''}
+    `;
+  } else if (type === 'event') {
+    const events = await adminAPI('GET', '/api/admin/events');
+    item = events?.find(e => e.id === id);
+    if (!item) return;
+    html = `
+      <div style="margin-bottom:1rem;"><strong>活动名称：</strong>${escapeHtml(item.title)}</div>
+      <div style="margin-bottom:1rem;"><strong>开始日期：</strong>${item.date || '未设置'}</div>
+      <div style="margin-bottom:1rem;"><strong>结束日期：</strong>${item.endDate || '未设置'}</div>
+      <div style="margin-bottom:1rem;"><strong>地点：</strong>${escapeHtml(item.location || '未设置')}</div>
+      <div style="margin-bottom:1rem;"><strong>状态：</strong>${EVENT_STATUS_LABELS[item.status] || item.status || '未设置'}</div>
+      <div style="margin-bottom:1rem;"><strong>描述：</strong>${escapeHtml(item.description || '无')}</div>
+      ${item.coverImage ? `<div style="margin-bottom:1rem;"><strong>封面图：</strong><br><img src="${item.coverImage}" style="max-width:100%;max-height:200px;object-fit:contain;margin-top:0.5rem;border-radius:8px;"></div>` : ''}
+    `;
+  } else if (type === 'project') {
+    const projects = await adminAPI('GET', '/api/admin/projects');
+    item = projects?.find(p => p.id === id);
+    if (!item) return;
+    html = `
+      <div style="margin-bottom:1rem;"><strong>企划名称：</strong>${escapeHtml(item.title)}</div>
+      <div style="margin-bottom:1rem;"><strong>分类：</strong>${PROJECT_CATEGORIES[item.category] || item.category || '未分类'}</div>
+      <div style="margin-bottom:1rem;"><strong>状态：</strong>${PROJECT_STATUS_LABELS[item.status] || item.status || '未设置'}</div>
+      <div style="margin-bottom:1rem;"><strong>标签：</strong>${(item.tags || []).join(', ') || '无'}</div>
+      <div style="margin-bottom:1rem;"><strong>描述：</strong>${escapeHtml(item.description || '无')}</div>
+      ${item.coverImage ? `<div style="margin-bottom:1rem;"><strong>封面图：</strong><br><img src="${item.coverImage}" style="max-width:100%;max-height:200px;object-fit:contain;margin-top:0.5rem;border-radius:8px;"></div>` : ''}
+    `;
+  } else if (type === 'update') {
+    const updates = await adminAPI('GET', '/api/admin/updates');
+    item = updates?.find(u => u.id === id);
+    if (!item) return;
+    html = `
+      <div style="margin-bottom:1rem;"><strong>标题：</strong>${escapeHtml(item.title)}</div>
+      <div style="margin-bottom:1rem;"><strong>发布日期：</strong>${item.publishDate || '未设置'}</div>
+      <div style="margin-bottom:1rem;"><strong>内容：</strong><div style="background:var(--paper);padding:1rem;border-radius:8px;margin-top:0.5rem;white-space:pre-wrap;max-height:300px;overflow-y:auto;">${escapeHtml(item.content || '无')}</div></div>
+      ${item.coverImage ? `<div style="margin-bottom:1rem;"><strong>封面图：</strong><br><img src="${item.coverImage}" style="max-width:100%;max-height:200px;object-fit:contain;margin-top:0.5rem;border-radius:8px;"></div>` : ''}
+    `;
+  }
+
+  if (!item) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'approvalDetailOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="margin:0;">查看详情</h3>
+      <button onclick="document.getElementById('approvalDetailOverlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
+    </div>
+    ${html}
+    <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="document.getElementById('approvalDetailOverlay').remove()">关闭</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
 async function approveUpdate(id) {
   const result = await adminAPI('POST', `/api/admin/updates/${id}/approve`);
   if (result && result.success) { showToast('已批准', 'success'); loadUpdates(); }
@@ -4399,8 +4469,9 @@ async function loadApprovalPage() {
         <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
           <span style="font-weight:600;flex:1;">${escapeHtml(c.name)}</span>
           <span style="font-size:0.8rem;color:var(--haze);">${c.username || ''}</span>
+          <button class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="viewApprovalDetail('author','${c.id}')">查看</button>
           <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveAuthor('${c.id}')">批准</button>
-          <button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectAuthor('${c.id}')">拒绝</button>
+          <button class="btn-sm btn-delete" onclick="rejectAuthor('${c.id}')">拒绝</button>
         </div>
       `).join('');
     }
@@ -4418,8 +4489,9 @@ async function loadApprovalPage() {
           <span style="font-weight:600;flex:1;">${escapeHtml(e.title)}</span>
           <span style="font-size:0.8rem;color:var(--haze);">提交者: ${author ? escapeHtml(author.name) : '未知'}</span>
           <span style="font-size:0.8rem;color:var(--haze);">${e.date || ''}</span>
+          <button class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="viewApprovalDetail('event','${e.id}')">查看</button>
           <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveEvent('${e.id}')">批准</button>
-          <button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectEvent('${e.id}')">拒绝</button>
+          <button class="btn-sm btn-delete" onclick="rejectEvent('${e.id}')">拒绝</button>
         </div>`;
       }).join('');
     }
@@ -4436,8 +4508,9 @@ async function loadApprovalPage() {
         <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
           <span style="font-weight:600;flex:1;">${escapeHtml(p.title)}</span>
           <span style="font-size:0.8rem;color:var(--haze);">提交者: ${author ? escapeHtml(author.name) : '未知'}</span>
+          <button class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="viewApprovalDetail('project','${p.id}')">查看</button>
           <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveProject('${p.id}')">批准</button>
-          <button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectProject('${p.id}')">拒绝</button>
+          <button class="btn-sm btn-delete" onclick="rejectProject('${p.id}')">拒绝</button>
         </div>`;
       }).join('');
     }
@@ -4455,8 +4528,9 @@ async function loadApprovalPage() {
           <span style="font-weight:600;flex:1;">${escapeHtml(u.title)}</span>
           <span style="font-size:0.8rem;color:var(--haze);">提交者: ${author ? escapeHtml(author.name) : '未知'}</span>
           <span style="font-size:0.8rem;color:var(--haze);">${u.publishDate || ''}</span>
+          <button class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="viewApprovalDetail('update','${u.id}')">查看</button>
           <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveUpdate('${u.id}')">批准</button>
-          <button class="btn-sm" style="background:var(--accent);color:white;" onclick="rejectUpdate('${u.id}')">拒绝</button>
+          <button class="btn-sm btn-delete" onclick="rejectUpdate('${u.id}')">拒绝</button>
         </div>`;
       }).join('');
     }
