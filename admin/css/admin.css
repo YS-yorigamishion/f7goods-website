@@ -695,3 +695,41 @@
     display: block;
   }
 }
+
+/* Dark mode support */
+[data-theme="dark"] .sidebar {
+  background: #16213e;
+}
+
+[data-theme="dark"] .auth-page {
+  background: linear-gradient(135deg, #16213e, var(--accent-alt));
+}
+
+[data-theme="dark"] .admin-content {
+  background: var(--paper);
+}
+
+[data-theme="dark"] .admin-card {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .admin-table th {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .admin-table td {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .page-toolbar {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .form-input {
+  background: var(--card-bg);
+  color: var(--ink);
+  border-color: var(--border);
+}

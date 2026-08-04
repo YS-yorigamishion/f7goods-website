@@ -2034,6 +2034,14 @@ textarea.form-input {
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
 }
 
+[data-theme="dark"] .footer {
+  background: #16213e;
+}
+
+[data-theme="dark"] .auth-page {
+  background: linear-gradient(135deg, #16213e, var(--accent-alt));
+}
+
 /* Dark mode toggle button */
 .theme-toggle {
   background: none;
