@@ -162,8 +162,8 @@ async function showAdmin() {
 
 // Check existing token on load
 if (token) {
-  // Verify token by making a simple API call
-  fetch('/api/admin/works', {
+  // Verify token by making a lightweight API call
+  fetch('/api/admin/pageviews', {
     headers: { 'Authorization': `Bearer ${token}` }
   }).then(res => {
     if (res.ok) showAdmin();

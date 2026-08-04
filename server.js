@@ -731,10 +731,13 @@ app.delete('/api/author/images/:filename', authorAuthMiddleware, (req, res) => {
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
   const authorName = circle?.name || '未知作者';
-  if ((meta[filename]?.uploader || '') !== authorName) {
+  const safeFilename = path.basename(filename); // Prevent path traversal
+  if ((meta[safeFilename]?.uploader || '') !== authorName) {
     return res.status(403).json({ error: '只能删除自己上传的图片' });
   }
-  const filePath = path.join(__dirname, 'uploads', filename);
+  const uploadsDir = path.join(__dirname, 'uploads');
+  const filePath = path.join(uploadsDir, safeFilename);
+  if (!filePath.startsWith(uploadsDir)) return res.status(403).json({ error: '禁止访问' });
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
     delete meta[filename];
@@ -1113,7 +1116,6 @@ app.get('/api/works', cacheMiddleware(60), (req, res) => {
   let works = readJSON('works.json');
   // Only return approved works (or legacy works without approvalStatus)
   works = works.filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
-  if (ensureOrder(works)) writeJSON('works.json', works);
   const { category, search, status, circleId, eventId } = req.query;
   if (category) works = works.filter(w => w.category === category);
   if (status) works = works.filter(w => w.status === status);
@@ -1301,7 +1303,6 @@ app.get('/api/events', cacheMiddleware(60), (req, res) => {
   events = events.filter(e => !e.approvalStatus || e.approvalStatus === 'approved');
   const { circleId } = req.query;
   if (circleId) events = events.filter(e => (e.relatedCircles || []).includes(circleId));
-  if (ensureOrder(events)) writeJSON('events.json', events);
   events.sort((a, b) => a.order - b.order);
   res.json(events);
 });
@@ -1336,9 +1337,19 @@ function reindexOrder(items) {
   items.forEach((item, i) => item.order = i);
 }
 
+// Ensure order on startup (not during public GET requests)
+function ensureAllOrders() {
+  ['works.json', 'events.json', 'circles.json', 'projects.json'].forEach(file => {
+    try {
+      const items = readJSON(file);
+      if (ensureOrder(items)) writeJSON(file, items);
+    } catch {}
+  });
+}
+ensureAllOrders();
+
 app.get('/api/circles', cacheMiddleware(60), (req, res) => {
   let circles = readJSON('circles.json');
-  if (ensureOrder(circles)) writeJSON('circles.json', circles);
   const { search } = req.query;
   if (search) {
     const s = search.toLowerCase();
@@ -1379,7 +1390,6 @@ app.get('/api/projects', cacheMiddleware(60), (req, res) => {
   let projects = readJSON('projects.json');
   // Only return approved projects (or legacy projects without approvalStatus)
   projects = projects.filter(p => !p.approvalStatus || p.approvalStatus === 'approved');
-  if (ensureOrder(projects)) writeJSON('projects.json', projects);
   const { category, status, search } = req.query;
   if (category) projects = projects.filter(p => p.category === category);
   if (status) projects = projects.filter(p => p.status === status);
@@ -1622,7 +1632,7 @@ app.put('/api/admin/settings', authMiddleware, (req, res) => {
 app.get('/api/announcements', (req, res) => {
   try {
     let announcements = readJSON('announcements.json');
-    const today = new Date().toISOString().split('T')[0];
+    const today = getChinaDate();
     announcements = announcements.filter(a => a.publishDate <= today);
     announcements.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
@@ -1639,7 +1649,7 @@ app.get('/api/announcements', (req, res) => {
 app.get('/api/announcements/popup', (req, res) => {
   try {
     let announcements = readJSON('announcements.json');
-    const today = new Date().toISOString().split('T')[0];
+    const today = getChinaDate();
     announcements = announcements.filter(a => a.popup && a.publishDate <= today);
     announcements.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate));
     res.json(announcements);
@@ -1680,7 +1690,13 @@ app.put('/api/admin/announcements/:id', authMiddleware, (req, res) => {
   let announcements = readJSON('announcements.json');
   const index = announcements.findIndex(a => a.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '公告未找到' });
-  announcements[index] = { ...announcements[index], ...req.body };
+  // Whitelist allowed fields
+  const allowedFields = ['title', 'content', 'publishDate', 'pinned', 'popup'];
+  const updates = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+  announcements[index] = { ...announcements[index], ...updates };
   writeJSON('announcements.json', announcements);
   res.json(announcements[index]);
 });
@@ -2529,7 +2545,7 @@ app.delete('/api/admin/projects/:id', authMiddleware, (req, res) => {
 app.get('/api/updates', cacheMiddleware(60), (req, res) => {
   try {
     let updates = readJSON('updates.json');
-    const today = new Date().toISOString().split('T')[0];
+    const today = getChinaDate();
     // Only return approved updates (or legacy updates without approvalStatus)
     updates = updates.filter(u => (!u.approvalStatus || u.approvalStatus === 'approved') && u.publishDate <= today);
     updates.sort((a, b) => {
@@ -2811,7 +2827,10 @@ app.get('/api/admin/images', authMiddleware, (req, res) => {
 
 // Delete an uploaded image
 app.delete('/api/admin/images/:filename', authMiddleware, (req, res) => {
-  const filePath = path.join(__dirname, 'uploads', req.params.filename);
+  const filename = path.basename(req.params.filename); // Prevent path traversal
+  const uploadsDir = path.join(__dirname, 'uploads');
+  const filePath = path.join(uploadsDir, filename);
+  if (!filePath.startsWith(uploadsDir)) return res.status(403).json({ error: '禁止访问' });
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
     // Clean up uploads-meta.json
