@@ -2205,7 +2205,7 @@
     function switchMgmtTab(tab) {
       document.querySelectorAll('.mgmt-tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.mgmt-section').forEach(s => s.classList.remove('active'));
-      document.querySelector('.mgmt-tab[onclick*="' + tab + '"]').classList.add('active');
+      document.querySelector('.mgmt-tab[onclick*="switchMgmtTab(\'' + tab + '\')"]').classList.add('active');
       document.getElementById('tab-' + tab).classList.add('active');
       if (tab === 'history') loadAuthorHistory();
       if (tab === 'my-events') loadMyEvents();
