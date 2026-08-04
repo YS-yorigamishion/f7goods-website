@@ -5248,6 +5248,7 @@ function openModal() {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
+  document.getElementById('modalSave').textContent = '保存';
 }
 
 // Close modal on overlay click
