@@ -147,6 +147,7 @@
         <div class="mgmt-tab" onclick="switchMgmtTab('events')">活动关联</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('projects')">企划关联</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('images')">图片管理</div>
+        <div class="mgmt-tab" onclick="switchMgmtTab('notifications')">审核通知</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('password')">修改密码</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('history')">操作日志</div>
       </div>
@@ -455,6 +456,17 @@
             <input type="password" class="form-input" id="pwConfirm" required>
           </div>
           <button class="btn btn-primary" onclick="changeAuthorPassword()">修改密码</button>
+        </div>
+      </div>
+
+      <!-- Notifications Tab -->
+      <div id="tab-notifications" class="mgmt-section">
+        <div class="mgmt-card">
+          <h3 style="margin-bottom:1rem;">审核通知</h3>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看您的作品/活动/企划/动态的审核结果。</p>
+          <div id="authorNotificationsContainer" style="max-height:500px;overflow-y:auto;">
+            <p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>
+          </div>
         </div>
       </div>
 
@@ -1173,6 +1185,44 @@
       // Mark as read
       const badge = document.getElementById('notifBadge');
       if (badge) badge.style.display = 'none';
+    }
+
+    // Load author notifications
+    async function loadAuthorNotifications() {
+      const container = document.getElementById('authorNotificationsContainer');
+      try {
+        const notifications = await authorAPI('GET', '/api/author/notifications');
+        if (!notifications || notifications.length === 0) {
+          container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无审核通知</p>';
+          return;
+        }
+        const typeLabels = { work: '作品', event: '活动', project: '企划', update: '动态' };
+        container.innerHTML = notifications.map(n => {
+          const time = new Date(n.createdAt).toLocaleString('zh-CN');
+          const isApproved = n.message.includes('通过');
+          const statusColor = isApproved ? '#2ecc71' : 'var(--accent)';
+          const statusIcon = isApproved ? '✓' : '✗';
+          return `<div style="display:flex;gap:0.8rem;padding:0.8rem 0;border-bottom:1px solid var(--border);${!n.read ? 'background:rgba(52,152,219,0.05);' : ''}" onclick="markNotifRead('${n.id}', this)">
+            <div style="width:24px;height:24px;border-radius:50%;background:${statusColor};color:white;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;">${statusIcon}</div>
+            <div style="flex:1;">
+              <div style="font-size:0.85rem;margin-bottom:0.2rem;">
+                <span style="color:var(--accent-alt);font-weight:500;">${typeLabels[n.type] || n.type}</span>
+                <span style="font-weight:600;">「${escapeHtml(n.title)}」</span>
+                <span style="color:${statusColor};">${escapeHtml(n.message)}</span>
+              </div>
+              ${n.rejectReason ? `<div style="font-size:0.8rem;color:var(--accent);background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;margin-top:0.3rem;">拒绝原因: ${escapeHtml(n.rejectReason)}</div>` : ''}
+              <div style="font-size:0.75rem;color:var(--haze);margin-top:0.3rem;">${time}</div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无审核通知</p>';
+      }
+    }
+
+    async function markNotifRead(notifId, el) {
+      await authorAPI('PUT', `/api/author/notifications/${notifId}/read`);
+      if (el) el.style.background = '';
     }
 
     // Load author history
@@ -2205,6 +2255,7 @@
       document.querySelector('.mgmt-tab[onclick*="switchMgmtTab(\'' + tab + '\')"]').classList.add('active');
       document.getElementById('tab-' + tab).classList.add('active');
       if (tab === 'history') loadAuthorHistory();
+      if (tab === 'notifications') loadAuthorNotifications();
       if (tab === 'my-events') loadMyEvents();
       if (tab === 'my-projects') loadMyProjects();
       if (tab === 'my-updates') loadMyUpdates();

@@ -158,6 +158,31 @@ function logEdit(user, action, target, details, imageUrl) {
   writeJSON('edit-log.json', log);
 }
 
+// Author notifications system
+function addAuthorNotification(circleId, type, title, message, rejectReason) {
+  let notifications = [];
+  try { notifications = readJSON('author-notifications.json'); } catch {}
+  if (!Array.isArray(notifications)) notifications = [];
+  notifications.push({
+    id: 'notif' + Date.now(),
+    circleId,
+    type, // 'work', 'event', 'project', 'update'
+    title,
+    message,
+    rejectReason: rejectReason || '',
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+  // Keep max 200 notifications per author
+  const authorNotifs = notifications.filter(n => n.circleId === circleId);
+  if (authorNotifs.length > 200) {
+    const toRemove = authorNotifs.slice(0, authorNotifs.length - 200);
+    const removeIds = new Set(toRemove.map(n => n.id));
+    notifications = notifications.filter(n => !removeIds.has(n.id) || n.circleId !== circleId);
+  }
+  writeJSON('author-notifications.json', notifications);
+}
+
 // Initialize admin password hash if placeholder
 function initAdmin() {
   const admin = readJSON('admin.json');
@@ -228,7 +253,7 @@ function authorAuthMiddleware(req, res, next) {
   }
 }
 
-app.post('/api/author/register', (req, res) => {
+app.post('/api/author/register', rateLimitMiddleware, (req, res) => {
   const { circleId, username, password } = req.body;
   if (!circleId || !username || !password) return res.status(400).json({ error: '请填写完整信息' });
   if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
@@ -488,6 +513,33 @@ app.get('/api/author/history', authorAuthMiddleware, (req, res) => {
   res.json(authorLog.reverse().slice(0, 100));
 });
 
+// Author: get notifications
+app.get('/api/author/notifications', authorAuthMiddleware, (req, res) => {
+  let notifications = [];
+  try { notifications = readJSON('author-notifications.json'); } catch {}
+  if (!Array.isArray(notifications)) notifications = [];
+
+  const authorNotifs = notifications
+    .filter(n => n.circleId === req.author.circleId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 50);
+  res.json(authorNotifs);
+});
+
+// Author: mark notification as read
+app.put('/api/author/notifications/:id/read', authorAuthMiddleware, (req, res) => {
+  let notifications = [];
+  try { notifications = readJSON('author-notifications.json'); } catch {}
+  if (!Array.isArray(notifications)) notifications = [];
+
+  const index = notifications.findIndex(n => n.id === req.params.id && n.circleId === req.author.circleId);
+  if (index === -1) return res.status(404).json({ error: '通知未找到' });
+
+  notifications[index].read = true;
+  writeJSON('author-notifications.json', notifications);
+  res.json({ success: true });
+});
+
 // Author: update own work
 app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
   let works = readJSON('works.json');
@@ -734,9 +786,15 @@ app.get('/api/author/my-events', authorAuthMiddleware, (req, res) => {
 app.post('/api/author/my-events', authorAuthMiddleware, (req, res) => {
   let events = readJSON('events.json');
   const maxOrder = events.reduce((max, e) => Math.max(max, e.order ?? 0), 0);
+  // Whitelist allowed fields to prevent mass assignment
+  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status'];
+  const eventData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) eventData[field] = req.body[field];
+  });
   const event = {
     id: 'e' + Date.now(),
-    ...req.body,
+    ...eventData,
     relatedCircles: [req.author.circleId],
     approvalStatus: 'pending',
     submittedBy: req.author.circleId,
@@ -806,9 +864,15 @@ app.get('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
 app.post('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
   let projects = readJSON('projects.json');
   const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
+  // Whitelist allowed fields to prevent mass assignment
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage'];
+  const projectData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) projectData[field] = req.body[field];
+  });
   const project = {
     id: 'p' + Date.now(),
-    ...req.body,
+    ...projectData,
     circles: [req.author.circleId],
     approvalStatus: 'pending',
     submittedBy: req.author.circleId,
@@ -1073,7 +1137,27 @@ function saveWants() {
   writeJSON('wants.json', wantsCache);
 }
 
-app.post('/api/works/:id/like', (req, res) => {
+// Rate limiting for like/want endpoints
+const likeWantAttempts = new Map();
+const LIKE_WANT_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const LIKE_WANT_RATE_LIMIT_MAX = 10; // max 10 operations per minute per IP
+
+function likeWantRateLimit(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const attempts = likeWantAttempts.get(ip) || [];
+  const recentAttempts = attempts.filter(t => now - t < LIKE_WANT_RATE_LIMIT_WINDOW);
+
+  if (recentAttempts.length >= LIKE_WANT_RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: '操作过于频繁，请稍后再试' });
+  }
+
+  recentAttempts.push(now);
+  likeWantAttempts.set(ip, recentAttempts);
+  next();
+}
+
+app.post('/api/works/:id/like', likeWantRateLimit, (req, res) => {
   const workId = req.params.id;
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: 'missing uid' });
@@ -1099,7 +1183,7 @@ app.post('/api/works/:id/like', (req, res) => {
   res.json({ likes: works[index].likes });
 });
 
-app.post('/api/works/:id/unlike', (req, res) => {
+app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
   const workId = req.params.id;
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: 'missing uid' });
@@ -1125,7 +1209,7 @@ app.post('/api/works/:id/unlike', (req, res) => {
   res.json({ likes: works[index].likes });
 });
 
-app.post('/api/works/:id/want', (req, res) => {
+app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
   const workId = req.params.id;
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: 'missing uid' });
@@ -1159,7 +1243,7 @@ app.get('/api/works/:id/want-status', (req, res) => {
   res.json({ wanted });
 });
 
-app.post('/api/works/:id/unwant', (req, res) => {
+app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
   const workId = req.params.id;
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: 'missing uid' });
@@ -1418,7 +1502,27 @@ function scheduleDailyCleanup() {
 }
 scheduleDailyCleanup();
 
-app.post('/api/pageview', (req, res) => {
+// Rate limiting for pageview tracking
+const pageviewAttempts = new Map();
+const PAGEVIEW_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const PAGEVIEW_RATE_LIMIT_MAX = 30; // max 30 pageviews per minute per IP
+
+function pageviewRateLimit(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const attempts = pageviewAttempts.get(ip) || [];
+  const recentAttempts = attempts.filter(t => now - t < PAGEVIEW_RATE_LIMIT_WINDOW);
+
+  if (recentAttempts.length >= PAGEVIEW_RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: '请求过于频繁' });
+  }
+
+  recentAttempts.push(now);
+  pageviewAttempts.set(ip, recentAttempts);
+  next();
+}
+
+app.post('/api/pageview', pageviewRateLimit, (req, res) => {
   const today = getChinaDate(); // Use Chinese time
   pageviews.daily[today] = (pageviews.daily[today] || 0) + 1;
   // Track unique visitors by IP
@@ -1719,6 +1823,10 @@ app.post('/api/admin/works/:id/approve', authMiddleware, (req, res) => {
   works[index].approvalStatus = 'approved';
   writeJSON('works.json', works);
   logEdit('管理员', '批准作品', works[index].title || req.params.id, '');
+  // Notify author
+  if (works[index].submittedBy) {
+    addAuthorNotification(works[index].submittedBy, 'work', works[index].title, '已通过审核');
+  }
   res.json({ success: true });
 });
 
@@ -1731,6 +1839,10 @@ app.post('/api/admin/works/:id/reject', authMiddleware, (req, res) => {
   if (req.body.reason) works[index].rejectReason = req.body.reason;
   writeJSON('works.json', works);
   logEdit('管理员', '拒绝作品', works[index].title || req.params.id, req.body.reason || '');
+  // Notify author
+  if (works[index].submittedBy) {
+    addAuthorNotification(works[index].submittedBy, 'work', works[index].title, '未通过审核', req.body.reason);
+  }
   res.json({ success: true });
 });
 
@@ -1884,6 +1996,10 @@ app.post('/api/admin/events/:id/approve', authMiddleware, (req, res) => {
   events[index].approvalStatus = 'approved';
   writeJSON('events.json', events);
   logEdit('管理员', '批准活动', events[index].title || req.params.id, '');
+  // Notify author
+  if (events[index].submittedBy) {
+    addAuthorNotification(events[index].submittedBy, 'event', events[index].title, '已通过审核');
+  }
   res.json({ success: true });
 });
 
@@ -1896,6 +2012,10 @@ app.post('/api/admin/events/:id/reject', authMiddleware, (req, res) => {
   if (req.body.reason) events[index].rejectReason = req.body.reason;
   writeJSON('events.json', events);
   logEdit('管理员', '拒绝活动', events[index].title || req.params.id, req.body.reason || '');
+  // Notify author
+  if (events[index].submittedBy) {
+    addAuthorNotification(events[index].submittedBy, 'event', events[index].title, '未通过审核', req.body.reason);
+  }
   res.json({ success: true });
 });
 
@@ -1907,6 +2027,10 @@ app.post('/api/admin/projects/:id/approve', authMiddleware, (req, res) => {
   projects[index].approvalStatus = 'approved';
   writeJSON('projects.json', projects);
   logEdit('管理员', '批准企划', projects[index].title || req.params.id, '');
+  // Notify author
+  if (projects[index].submittedBy) {
+    addAuthorNotification(projects[index].submittedBy, 'project', projects[index].title, '已通过审核');
+  }
   res.json({ success: true });
 });
 
@@ -1919,6 +2043,10 @@ app.post('/api/admin/projects/:id/reject', authMiddleware, (req, res) => {
   if (req.body.reason) projects[index].rejectReason = req.body.reason;
   writeJSON('projects.json', projects);
   logEdit('管理员', '拒绝企划', projects[index].title || req.params.id, req.body.reason || '');
+  // Notify author
+  if (projects[index].submittedBy) {
+    addAuthorNotification(projects[index].submittedBy, 'project', projects[index].title, '未通过审核', req.body.reason);
+  }
   res.json({ success: true });
 });
 
@@ -1930,6 +2058,10 @@ app.post('/api/admin/updates/:id/approve', authMiddleware, (req, res) => {
   updates[index].approvalStatus = 'approved';
   writeJSON('updates.json', updates);
   logEdit('管理员', '批准动态', updates[index].title || req.params.id, '');
+  // Notify author
+  if (updates[index].submittedBy) {
+    addAuthorNotification(updates[index].submittedBy, 'update', updates[index].title, '已通过审核');
+  }
   res.json({ success: true });
 });
 
@@ -1942,6 +2074,10 @@ app.post('/api/admin/updates/:id/reject', authMiddleware, (req, res) => {
   if (req.body.reason) updates[index].rejectReason = req.body.reason;
   writeJSON('updates.json', updates);
   logEdit('管理员', '拒绝动态', updates[index].title || req.params.id, req.body.reason || '');
+  // Notify author
+  if (updates[index].submittedBy) {
+    addAuthorNotification(updates[index].submittedBy, 'update', updates[index].title, '未通过审核', req.body.reason);
+  }
   res.json({ success: true });
 });
 

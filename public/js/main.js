@@ -368,7 +368,9 @@ async function sharePage(title, url) {
 }
 
 function renderShareButton(title, url) {
-  return `<button class="want-btn" style="font-size:0.85rem;padding:0.45rem 1.2rem;" onclick="sharePage('${escapeHtml(title)}', '${url}')">分享</button>`;
+  const safeTitle = encodeURIComponent(title);
+  const safeUrl = encodeURIComponent(url);
+  return `<button class="want-btn" style="font-size:0.85rem;padding:0.45rem 1.2rem;" data-share-title="${safeTitle}" data-share-url="${safeUrl}" onclick="sharePage(decodeURIComponent(this.dataset.shareTitle), decodeURIComponent(this.dataset.shareUrl))">分享</button>`;
 }
 
 // Like functionality
