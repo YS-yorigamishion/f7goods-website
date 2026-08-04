@@ -2309,16 +2309,24 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
     }
   }
 
-  // Compress image if larger than 1MB
+  // Compress image based on 3Mbps bandwidth strategy
   if (sharp) {
     const filePath = path.join(__dirname, 'uploads', req.file.filename);
     const ext = path.extname(req.file.filename).toLowerCase();
     if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
       try {
         const stats = fs.statSync(filePath);
-        if (stats.size > 1024 * 1024) {
+        let quality;
+        if (stats.size > 2 * 1024 * 1024) {
+          quality = 75; // >2MB -> ~500KB, ~1.3s load
+        } else if (stats.size > 1024 * 1024) {
+          quality = 70; // >1MB -> ~300KB, ~0.8s load
+        } else if (stats.size > 500 * 1024) {
+          quality = 65; // >500KB -> ~200KB, ~0.5s load
+        }
+        if (quality) {
           const image = sharp(filePath);
-          await image.jpeg({ quality: 80 }).toFile(filePath + '.tmp');
+          await image.jpeg({ quality }).toFile(filePath + '.tmp');
           fs.renameSync(filePath + '.tmp', filePath);
           console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024 / 1024).toFixed(2)}MB -> ${(fs.statSync(filePath).size / 1024 / 1024).toFixed(2)}MB`);
         }
