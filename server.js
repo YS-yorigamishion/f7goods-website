@@ -121,6 +121,14 @@ function authorAuthMiddleware(req, res, next) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     if (decoded.role !== 'author') return res.status(403).json({ error: '权限不足' });
+
+    // Check if author account is still approved
+    const circles = readJSON('circles.json');
+    const circle = circles.find(c => c.id === decoded.circleId);
+    if (!circle || circle.authorStatus !== 'approved') {
+      return res.status(403).json({ error: '账号已被禁用，请重新申请', needReapply: true });
+    }
+
     req.author = { circleId: decoded.circleId };
     next();
   } catch {
@@ -708,6 +716,36 @@ app.post('/api/admin/circles/:id/reject-author', authMiddleware, (req, res) => {
 
   circles[index].authorStatus = 'rejected';
   writeJSON('circles.json', circles);
+  res.json({ success: true });
+});
+
+// Admin: remove author account
+app.post('/api/admin/circles/:id/remove-author', authMiddleware, (req, res) => {
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  const authorName = circles[index].username;
+  delete circles[index].username;
+  delete circles[index].passwordHash;
+  delete circles[index].authorStatus;
+  writeJSON('circles.json', circles);
+
+  logEdit('管理员', '删除作者账号', circles[index].name, `原账号: ${authorName || '无'}`);
+  res.json({ success: true });
+});
+
+// Admin: set editors for author
+app.post('/api/admin/circles/:id/set-editors', authMiddleware, (req, res) => {
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  const { editorIds } = req.body;
+  circles[index].editableBy = Array.isArray(editorIds) ? editorIds : [];
+  writeJSON('circles.json', circles);
+
+  logEdit('管理员', '修改作者编辑者', circles[index].name, `编辑者数量: ${circles[index].editableBy.length}`);
   res.json({ success: true });
 });
 

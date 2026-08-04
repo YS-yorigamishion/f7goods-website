@@ -2053,6 +2053,7 @@ function renderCirclesTable(circles) {
     }
     let actionBtns = `
       <button class="btn-sm btn-edit" onclick="manageCircleWorks('${c.id}')">关联</button>
+      <button class="btn-sm btn-edit" onclick="manageCircleEditors('${c.id}')">编辑者</button>
       <button class="btn-sm btn-edit" onclick="exportCircleExcel('${c.id}')" title="导出Excel">📥导出</button>
       <button class="btn-sm btn-edit" onclick="importCircleExcel('${c.id}')" title="导入Excel">📤导入</button>
       <button class="btn-sm btn-edit" onclick="editCircle('${c.id}')">编辑</button>
@@ -2061,7 +2062,8 @@ function renderCirclesTable(circles) {
       actionBtns = `<button class="btn-sm btn-edit" style="background:rgba(46,204,113,0.15);color:#2ecc71;" onclick="approveAuthor('${c.id}')">批准</button>
         <button class="btn-sm btn-delete" onclick="rejectAuthor('${c.id}')">拒绝</button>` + actionBtns;
     } else if (c.username && c.authorStatus === 'approved') {
-      actionBtns = `<button class="btn-sm btn-edit" onclick="resetAuthorPassword('${c.id}')">重置密码</button>` + actionBtns;
+      actionBtns = `<button class="btn-sm btn-edit" onclick="resetAuthorPassword('${c.id}')">重置密码</button>
+        <button class="btn-sm btn-delete" style="background:var(--accent);" onclick="removeAuthorAccount('${c.id}')">删除账号</button>` + actionBtns;
     }
     return `
     <tr>
@@ -2090,6 +2092,48 @@ async function rejectAuthor(circleId) {
   if (!confirm('确定拒绝该作者账号？')) return;
   await adminAPI('POST', `/api/admin/circles/${circleId}/reject-author`);
   showToast('已拒绝', 'success');
+  loadCircles();
+}
+
+async function removeAuthorAccount(circleId) {
+  if (!confirm('确定删除该作者的登录账号？\n删除后作者需重新申请才能登录。')) return;
+  await adminAPI('POST', `/api/admin/circles/${circleId}/remove-author`);
+  showToast('作者账号已删除', 'success');
+  loadCircles();
+}
+
+async function manageCircleEditors(circleId) {
+  const circles = await adminAPI('GET', '/api/admin/circles');
+  const circle = circles.find(c => c.id === circleId);
+  if (!circle) return;
+
+  const approvedAuthors = circles.filter(c => c.authorStatus === 'approved' && c.id !== circleId);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'circleEditorsOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="margin:0;">管理编辑者</h3>
+      <button onclick="document.getElementById('circleEditorsOverlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
+    </div>
+    <p style="font-size:0.85rem;color:var(--haze);margin-bottom:1rem;">选择可以编辑「${escapeHtml(circle.name)}」后台的其他作者：</p>
+    <div id="circleEditorsList">
+      ${approvedAuthors.length > 0 ? approvedAuthors.map(c => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;cursor:pointer;border-bottom:1px solid var(--border);">
+        <input type="checkbox" class="circle-editor-cb" value="${c.id}" ${(circle.editableBy || []).includes(c.id) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--accent);">
+        ${escapeHtml(c.name)}
+      </label>`).join('') : '<p style="color:var(--haze);">暂无其他已批准的作者</p>'}
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="saveCircleEditors('${circleId}')">保存</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveCircleEditors(circleId) {
+  const checked = [...document.querySelectorAll('.circle-editor-cb:checked')].map(cb => cb.value);
+  await adminAPI('POST', `/api/admin/circles/${circleId}/set-editors`, { editorIds: checked });
+  showToast('编辑者已保存', 'success');
+  document.getElementById('circleEditorsOverlay')?.remove();
   loadCircles();
 }
 

@@ -605,6 +605,14 @@
         authorLogout();
         return null;
       }
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.needReapply) {
+          alert('您的作者账号已被管理员删除，请重新申请。');
+          authorLogout();
+          return null;
+        }
+      }
       return res.json();
     }
 
@@ -1869,6 +1877,16 @@
           if (res.ok) {
             showMgmtPage();
             return;
+          }
+          // Check if account was deleted
+          if (res.status === 403) {
+            const data = await res.json();
+            if (data.needReapply) {
+              alert('您的作者账号已被管理员删除，请重新申请。');
+              authorLogout();
+              loadCirclesForRegister();
+              return;
+            }
           }
         } catch (e) {}
         authorLogout();
