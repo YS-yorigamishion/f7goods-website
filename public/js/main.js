@@ -212,6 +212,8 @@ function buildNavbar(activePage) {
   const site = getSiteSettings();
   const logoText = site.logoText || 'F7';
   const brandName = site.brandName || 'f7goods';
+  const currentTheme = document.documentElement.getAttribute('data-theme') || '';
+  const themeIcon = currentTheme === 'dark' ? '☀️' : '🌙';
   return `
     <div class="brand-bar"></div>
     <div class="nav-inner">
@@ -219,6 +221,7 @@ function buildNavbar(activePage) {
         <div class="logo-icon">${logoText}</div>
         <span>${brandName}</span>
       </a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="切换暗色模式">${themeIcon}</button>
       <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="菜单">
         <span></span><span></span><span></span>
       </button>
@@ -287,14 +290,43 @@ function buildFooter() {
   `;
 }
 
+// Theme toggle (dark mode)
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('f7theme', next);
+  // Rebuild navbar to update icon
+  const navbar = document.getElementById('navbar');
+  if (navbar) {
+    const activePage = navbar.dataset.activePage || 'works';
+    navbar.innerHTML = buildNavbar(activePage);
+  }
+}
+
+// Apply saved theme on load
+function applyTheme() {
+  const saved = localStorage.getItem('f7theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+  }
+  // If no saved preference, CSS will use prefers-color-scheme
+}
+
 // Init page structure
 async function initPage(activePage) {
+  // Apply theme before anything else
+  applyTheme();
+
   // Load settings first
   await loadSettingsFromAPI();
   applyFavicon();
 
   const navbar = document.getElementById('navbar');
-  if (navbar) navbar.innerHTML = buildNavbar(activePage);
+  if (navbar) {
+    navbar.dataset.activePage = activePage;
+    navbar.innerHTML = buildNavbar(activePage);
+  }
 
   const footer = document.getElementById('footer');
   if (footer) footer.innerHTML = buildFooter();

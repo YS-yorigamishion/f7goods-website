@@ -316,6 +316,7 @@
             <h3>活动列表</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
               <input type="text" class="form-input" id="eventsSearch" placeholder="搜索活动..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterEvents()">
+              <button id="eventsBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteEvents()">批量删除</button>
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminEvents()">📥 导出</button>
               <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminEvents(this)"></label>
               <button class="btn btn-primary" onclick="openEventModal()">+ 新增活动</button>
@@ -326,6 +327,7 @@
               <thead>
                 <tr>
                   <th>排序</th>
+                  <th><input type="checkbox" id="eventsSelectAll" onchange="toggleSelectAllEvents()" style="width:16px;height:16px;accent-color:var(--accent);"></th>
                   <th>活动名称</th>
                   <th>审核</th>
                   <th>状态</th>
@@ -376,6 +378,7 @@
             <h3>企划列表</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
               <input type="text" class="form-input" id="projectsSearch" placeholder="搜索企划..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterProjects()">
+              <button id="projectsBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteProjects()">批量删除</button>
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminProjects()">📥 导出</button>
               <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminProjects(this)"></label>
               <button class="btn btn-primary" onclick="openProjectModal()">+ 新增企划</button>
@@ -386,6 +389,7 @@
               <thead>
                 <tr>
                   <th>排序</th>
+                  <th><input type="checkbox" id="projectsSelectAll" onchange="toggleSelectAllProjects()" style="width:16px;height:16px;accent-color:var(--accent);"></th>
                   <th>企划名称</th>
                   <th>审核</th>
                   <th>分类</th>

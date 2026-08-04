@@ -1735,7 +1735,7 @@ async function loadEvents(page = 1) {
 function renderEventsTable(events) {
   const tbody = document.getElementById('eventsTableBody');
   if (!events || events.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--haze);padding:2rem;">暂无活动</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--haze);padding:2rem;">暂无活动</td></tr>';
     return;
   }
   tbody.innerHTML = events.map((e, i) => {
@@ -1753,6 +1753,7 @@ function renderEventsTable(events) {
     return `
     <tr>
       <td>${renderOrderControls('events', e.id, i, events.length)}</td>
+      <td><input type="checkbox" class="event-checkbox" value="${e.id}" onchange="updateEventBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
       <td class="editable-cell" onclick="makeEventEditable(this, '${e.id}', 'title', '${escapeHtml(e.title)}')">${e.title}</td>
       <td>${approvalBadge}</td>
       <td><span class="card-tag ${e.status || ''}">${EVENT_STATUS_LABELS[e.status] || e.status || '-'}</span></td>
@@ -1805,6 +1806,33 @@ async function batchRejectEvents() {
     if (result && result.success) success++;
   }
   showToast(`已拒绝 ${success} 个活动`, 'success');
+  loadEvents();
+}
+
+// Batch delete events
+function updateEventBatchBtn() {
+  const checked = document.querySelectorAll('.event-checkbox:checked');
+  const btn = document.getElementById('eventsBatchDeleteBtn');
+  if (btn) btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
+}
+
+function toggleSelectAllEvents() {
+  const selectAll = document.getElementById('eventsSelectAll');
+  document.querySelectorAll('.event-checkbox').forEach(cb => cb.checked = selectAll.checked);
+  updateEventBatchBtn();
+}
+
+async function batchDeleteEvents() {
+  const checked = document.querySelectorAll('.event-checkbox:checked');
+  if (checked.length === 0) { alert('请先选择要删除的活动'); return; }
+  if (!confirm(`确定删除选中的 ${checked.length} 个活动？此操作不可撤销。`)) return;
+
+  let success = 0;
+  for (const cb of checked) {
+    const result = await adminAPI('DELETE', `/api/admin/events/${cb.value}`);
+    if (result && result.success) success++;
+  }
+  showToast(`已删除 ${success} 个活动`, 'success');
   loadEvents();
 }
 
@@ -3258,7 +3286,7 @@ async function loadProjects(page = 1) {
 function renderProjectsTable(projects) {
   const tbody = document.getElementById('projectsTableBody');
   if (!projects || projects.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--haze);padding:2rem;">暂无企划</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--haze);padding:2rem;">暂无企划</td></tr>';
     return;
   }
   tbody.innerHTML = projects.map((p, i) => {
@@ -3276,6 +3304,7 @@ function renderProjectsTable(projects) {
     return `
     <tr>
       <td>${renderOrderControls('projects', p.id, i, projects.length)}</td>
+      <td><input type="checkbox" class="project-checkbox" value="${p.id}" onchange="updateProjectBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
       <td class="editable-cell" onclick="makeProjectEditable(this, '${p.id}', 'title', '${escapeHtml(p.title)}')">${p.title}</td>
       <td>${approvalBadge}</td>
       <td class="editable-cell" onclick="makeSelectProjectCategory(this, '${p.id}', '${p.category}')">${PROJECT_CATEGORIES[p.category] || p.category}</td>
@@ -3333,6 +3362,33 @@ async function batchRejectProjects() {
     if (result && result.success) success++;
   }
   showToast(`已拒绝 ${success} 个企划`, 'success');
+  loadProjects();
+}
+
+// Batch delete projects
+function updateProjectBatchBtn() {
+  const checked = document.querySelectorAll('.project-checkbox:checked');
+  const btn = document.getElementById('projectsBatchDeleteBtn');
+  if (btn) btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
+}
+
+function toggleSelectAllProjects() {
+  const selectAll = document.getElementById('projectsSelectAll');
+  document.querySelectorAll('.project-checkbox').forEach(cb => cb.checked = selectAll.checked);
+  updateProjectBatchBtn();
+}
+
+async function batchDeleteProjects() {
+  const checked = document.querySelectorAll('.project-checkbox:checked');
+  if (checked.length === 0) { alert('请先选择要删除的企划'); return; }
+  if (!confirm(`确定删除选中的 ${checked.length} 个企划？此操作不可撤销。`)) return;
+
+  let success = 0;
+  for (const cb of checked) {
+    const result = await adminAPI('DELETE', `/api/admin/projects/${cb.value}`);
+    if (result && result.success) success++;
+  }
+  showToast(`已删除 ${success} 个企划`, 'success');
   loadProjects();
 }
 
