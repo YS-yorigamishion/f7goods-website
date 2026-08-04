@@ -2,7 +2,6 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <script>(function(){var t=localStorage.getItem('f7theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.setAttribute('data-theme','dark');else document.documentElement.setAttribute('data-theme','light')})()</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>f7goods — 管理后台</title>
   <link rel="stylesheet" href="/css/style.css">
@@ -100,7 +99,6 @@
         <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
         <h2 id="pageTitle">仪表盘</h2>
         <div style="display:flex;align-items:center;gap:0.8rem;">
-          <button class="theme-toggle" onclick="toggleTheme()" title="切换暗色模式" style="font-size:1.1rem;background:none;border:none;cursor:pointer;padding:0.3rem;">🌙</button>
           <div style="position:relative;cursor:pointer;" onclick="showAdminNotifications()">
             <span style="font-size:1.2rem;">🔔</span>
             <span id="adminNotifBadge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--accent);color:white;font-size:0.6rem;padding:0.1rem 0.3rem;border-radius:50%;">0</span>

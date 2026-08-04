@@ -2,7 +2,6 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <script>(function(){var t=localStorage.getItem('f7theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.setAttribute('data-theme','dark');else document.documentElement.setAttribute('data-theme','light')})()</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>f7goods — 作者管理</title>
   <link rel="stylesheet" href="/css/style.css">
@@ -145,7 +144,6 @@
     <header class="mgmt-header">
       <h2 id="mgmtTitle">作者管理</h2>
       <div style="display:flex;gap:0.5rem;align-items:center;">
-        <button onclick="toggleTheme()" title="切换暗色模式" style="font-size:1.1rem;background:none;border:none;cursor:pointer;padding:0.3rem;">🌙</button>
         <div id="accountSwitcher" style="display:none;">
           <select id="accountSelect" onchange="switchAuthorAccount(this.value)" style="font-size:0.8rem;padding:0.2rem 0.5rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--card-bg);max-width:150px;">
           </select>
