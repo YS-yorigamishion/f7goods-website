@@ -188,7 +188,7 @@ app.post('/api/author/register', (req, res) => {
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === circleId);
   if (!circle) return res.status(404).json({ error: '作者未找到' });
-  if (circle.username) return res.status(400).json({ error: '该作者已注册' });
+  if (circle.username && circle.authorStatus !== 'rejected') return res.status(400).json({ error: '该作者已注册' });
 
   // Check username uniqueness
   if (circles.some(c => c.username === username)) {
