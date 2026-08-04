@@ -2317,10 +2317,8 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
       try {
         const stats = fs.statSync(filePath);
         if (stats.size > 1024 * 1024) {
-          const targetSize = 950 * 1024; // 目标 950KB
-          const quality = Math.max(60, Math.round((targetSize / stats.size) * 100));
           const image = sharp(filePath);
-          await image.jpeg({ quality }).toFile(filePath + '.tmp');
+          await image.jpeg({ quality: 80 }).toFile(filePath + '.tmp');
           fs.renameSync(filePath + '.tmp', filePath);
           console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024 / 1024).toFixed(2)}MB -> ${(fs.statSync(filePath).size / 1024 / 1024).toFixed(2)}MB`);
         }
