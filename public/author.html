@@ -520,7 +520,7 @@
     async function loadCirclesForRegister() {
       try {
         const circles = await F7API.getCircles();
-        availableCircles = circles.filter(c => !c.username); // Only unregistered circles
+        availableCircles = circles.filter(c => !c.username || c.authorStatus === 'rejected');
         renderCircleDropdown(availableCircles);
       } catch (e) {}
     }
