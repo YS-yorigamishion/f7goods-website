@@ -368,7 +368,7 @@ async function sharePage(title, url) {
 }
 
 function renderShareButton(title, url) {
-  return `<button class="btn-sm" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.6rem;" onclick="sharePage('${escapeHtml(title)}', '${url}')">🔗 分享</button>`;
+  return `<button class="want-btn" style="font-size:0.85rem;padding:0.45rem 1.2rem;" onclick="sharePage('${escapeHtml(title)}', '${url}')">分享</button>`;
 }
 
 // Like functionality
