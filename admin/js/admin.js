@@ -720,7 +720,7 @@ async function toggleWorkApproval() {
   const settings = await adminAPI('GET', '/api/settings') || {};
   if (!settings.site) settings.site = {};
   settings.site.requireWorkApproval = checked;
-  await adminAPI('PUT', '/api/settings', settings);
+  await adminAPI('PUT', '/api/admin/settings', settings);
   showToast(checked ? '已开启作品审核' : '已关闭作品审核', 'success');
 }
 
