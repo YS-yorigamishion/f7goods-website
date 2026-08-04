@@ -629,7 +629,11 @@ app.put('/api/author/projects/:id/toggle', authorAuthMiddleware, (req, res) => {
 // Author: get own events
 app.get('/api/author/my-events', authorAuthMiddleware, (req, res) => {
   const events = readJSON('events.json');
-  const myEvents = events.filter(e => e.submittedBy === req.author.circleId);
+  const circleId = req.author.circleId;
+  const myEvents = events.filter(e =>
+    e.submittedBy === circleId ||
+    (e.editableBy || []).includes(circleId)
+  );
   res.json(myEvents);
 });
 
@@ -697,7 +701,11 @@ app.delete('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
 // Author: get own projects
 app.get('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
   const projects = readJSON('projects.json');
-  const myProjects = projects.filter(p => p.submittedBy === req.author.circleId);
+  const circleId = req.author.circleId;
+  const myProjects = projects.filter(p =>
+    p.submittedBy === circleId ||
+    (p.editableBy || []).includes(circleId)
+  );
   res.json(myProjects);
 });
 
@@ -766,7 +774,11 @@ app.delete('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
 // Author: get own updates
 app.get('/api/author/my-updates', authorAuthMiddleware, (req, res) => {
   const updates = readJSON('updates.json');
-  const myUpdates = updates.filter(u => u.submittedBy === req.author.circleId);
+  const circleId = req.author.circleId;
+  const myUpdates = updates.filter(u =>
+    u.submittedBy === circleId ||
+    (u.editableBy || []).includes(circleId)
+  );
   res.json(myUpdates);
 });
 
