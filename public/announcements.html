@@ -110,7 +110,7 @@
           <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
         </div>
         <div style="font-size:0.8rem;color:var(--haze);margin-bottom:1rem;">${formatDate(a.publishDate)}</div>
-        <div style="line-height:1.8;color:#555;white-space:pre-wrap;">${nl2br(a.content)}</div>
+        <div style="line-height:1.8;color:var(--ink);white-space:pre-wrap;">${nl2br(a.content)}</div>
       </div>`;
       overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);

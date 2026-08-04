@@ -542,7 +542,7 @@
           <h3 style="margin:0;">📋 注册须知</h3>
           <button onclick="document.getElementById('regNoticeOverlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
         </div>
-        <div style="line-height:1.8;color:#555;white-space:pre-wrap;">${escapeHtml(content)}</div>
+        <div style="line-height:1.8;color:var(--ink);white-space:pre-wrap;">${escapeHtml(content)}</div>
         <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="document.getElementById('regNoticeOverlay').remove()">我知道了</button>
       </div>`;
       document.body.appendChild(overlay);

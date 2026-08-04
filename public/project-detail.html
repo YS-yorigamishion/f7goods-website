@@ -68,7 +68,7 @@
           <div class="detail-content">
             <div class="detail-main">
               <h3 style="margin-bottom:1rem;font-size:1.1rem;">企划简介</h3>
-              <p style="line-height:1.8;color:#444;">${nl2br(project.description)}</p>
+              <p style="line-height:1.8;color:var(--ink);">${nl2br(project.description)}</p>
 
               ${project.images && project.images.length > 0 ? `
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">企划图片</h3>
@@ -79,7 +79,7 @@
 
               ${project.contactInfo ? `
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">参与方式</h3>
-                <p style="line-height:1.8;color:#444;">${nl2br(project.contactInfo)}</p>
+                <p style="line-height:1.8;color:var(--ink);">${nl2br(project.contactInfo)}</p>
               ` : ''}
 
               ${relatedWorks.length > 0 ? `
