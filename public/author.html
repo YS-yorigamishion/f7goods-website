@@ -1472,52 +1472,55 @@
           : e.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
           : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
         return `
-        <div class="card">
+        <div class="card" style="cursor:pointer;" onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">
           <div class="card-body" style="padding:0.8rem;">
             ${statusBadge}
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(e.title)}</h3>
             <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${e.date || ''} ${e.location ? '· ' + escapeHtml(e.location) : ''}</p>
-            ${e.approvalStatus === 'pending' ? `<div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
-              <button class="btn-sm" onclick="deleteMyEvent('${e.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
-            </div>` : ''}
+            <div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
+              <button class="btn-sm" onclick="event.stopPropagation();openMyEventForm(${escapeHtml(JSON.stringify(e))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
+              <button class="btn-sm" onclick="event.stopPropagation();deleteMyEvent('${e.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
+            </div>
           </div>
         </div>`;
       }).join('');
     }
 
-    function openMyEventForm() {
+    function openMyEventForm(eventData = null) {
+      const isEdit = !!eventData;
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
-      document.getElementById('workModalTitle').textContent = '提交活动';
+      document.getElementById('workModalTitle').textContent = isEdit ? '编辑活动' : '提交活动';
       const worksCheckboxes = authorWorksData.map(w =>
         `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-event-work-cb" value="${w.id}" style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
       ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
       body.innerHTML = `
-        <div class="form-group"><label>活动名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myEventTitle" required></div>
+        <div class="form-group"><label>活动名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myEventTitle" value="${isEdit ? escapeHtml(eventData.title) : ''}" required></div>
         <div class="form-row">
-          <div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="myEventDate"></div>
-          <div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="myEventEndDate"></div>
+          <div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="myEventDate" value="${isEdit ? eventData.date || '' : ''}"></div>
+          <div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="myEventEndDate" value="${isEdit ? eventData.endDate || '' : ''}"></div>
         </div>
-        <div class="form-group"><label>地点</label><input class="form-input" id="myEventLocation"></div>
-        <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth"></div>
-        <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;"></textarea></div>
+        <div class="form-group"><label>地点</label><input class="form-input" id="myEventLocation" value="${isEdit ? escapeHtml(eventData.location || '') : ''}"></div>
+        <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth" value="${isEdit ? escapeHtml(eventData.booth || '') : ''}"></div>
+        <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;">${isEdit ? escapeHtml(eventData.description || '') : ''}</textarea></div>
         <div class="form-group">
           <label>封面图片</label>
-          <div id="myEventCoverPreview" style="margin-bottom:0.5rem;"></div>
+          <div id="myEventCoverPreview" style="margin-bottom:0.5rem;">${isEdit && eventData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + eventData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
           <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myEventCoverPreview', true)">从图片库选择</button>
         </div>
         <div class="form-group">
           <label>关联作品</label>
           <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
         </div>
+        ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-          <button class="btn btn-primary" onclick="submitMyEvent()">提交审核</button>
+          <button class="btn btn-primary" onclick="submitMyEvent('${isEdit ? eventData.id : ''}')">${isEdit ? '保存修改' : '提交审核'}</button>
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>`;
       overlay.classList.add('open');
     }
 
-    async function submitMyEvent() {
+    async function submitMyEvent(eventId = '') {
       const title = document.getElementById('myEventTitle').value;
       if (!title) { alert('请填写活动名称'); return; }
       const coverImg = document.querySelector('#myEventCoverPreview img');
@@ -1532,9 +1535,15 @@
         coverImage: coverImg ? coverImg.src : '',
         relatedWorks
       };
-      const result = await authorAPI('POST', '/api/author/my-events', data);
+      let result;
+      if (eventId) {
+        result = await authorAPI('PUT', '/api/author/my-events/' + eventId, data);
+        if (result) showToast('已保存，需重新审核', 'success');
+      } else {
+        result = await authorAPI('POST', '/api/author/my-events', data);
+        if (result) showToast('活动已提交，等待审核', 'success');
+      }
       if (result) {
-        showToast('活动已提交，等待审核', 'success');
         closeWorkModal();
         loadMyEvents();
       }
@@ -1562,51 +1571,54 @@
           : p.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
           : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
         return `
-        <div class="card">
+        <div class="card" style="cursor:pointer;" onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">
           <div class="card-body" style="padding:0.8rem;">
             ${statusBadge}
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(p.title)}</h3>
             <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${PROJECT_STATUS_LABELS[p.status] || p.status || ''}</p>
-            ${p.approvalStatus === 'pending' ? `<div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
-              <button class="btn-sm" onclick="deleteMyProject('${p.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
-            </div>` : ''}
+            <div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
+              <button class="btn-sm" onclick="event.stopPropagation();openMyProjectForm(${escapeHtml(JSON.stringify(p))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
+              <button class="btn-sm" onclick="event.stopPropagation();deleteMyProject('${p.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
+            </div>
           </div>
         </div>`;
       }).join('');
     }
 
-    function openMyProjectForm() {
+    function openMyProjectForm(projectData = null) {
+      const isEdit = !!projectData;
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
-      document.getElementById('workModalTitle').textContent = '提交企划';
+      document.getElementById('workModalTitle').textContent = isEdit ? '编辑企划' : '提交企划';
       const worksCheckboxes = authorWorksData.map(w =>
-        `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-project-work-cb" value="${w.id}" style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
+        `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-project-work-cb" value="${w.id}" ${isEdit && (projectData.works || []).includes(w.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
       ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
       body.innerHTML = `
-        <div class="form-group"><label>企划名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myProjectTitle" required></div>
+        <div class="form-group"><label>企划名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myProjectTitle" value="${isEdit ? escapeHtml(projectData.title) : ''}" required></div>
         <div class="form-row">
-          <div class="form-group"><label>分类</label><select class="form-input" id="myProjectCategory">${PROJECT_CATEGORIES_ORDERED.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
-          <div class="form-group"><label>状态</label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+          <div class="form-group"><label>分类</label><select class="form-input" id="myProjectCategory">${PROJECT_CATEGORIES_ORDERED.map(c => `<option value="${c.id}" ${isEdit && projectData.category === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
+          <div class="form-group"><label>状态</label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && projectData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div>
         </div>
-        <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;"></textarea></div>
-        <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="myProjectTags" placeholder="标签1, 标签2"></div>
+        <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;">${isEdit ? escapeHtml(projectData.description || '') : ''}</textarea></div>
+        <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="myProjectTags" value="${isEdit ? (projectData.tags || []).join(', ') : ''}" placeholder="标签1, 标签2"></div>
         <div class="form-group">
           <label>封面图片</label>
-          <div id="myProjectCoverPreview" style="margin-bottom:0.5rem;"></div>
+          <div id="myProjectCoverPreview" style="margin-bottom:0.5rem;">${isEdit && projectData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + projectData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
           <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myProjectCoverPreview', true)">从图片库选择</button>
         </div>
         <div class="form-group">
           <label>关联作品</label>
           <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
         </div>
+        ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-          <button class="btn btn-primary" onclick="submitMyProject()">提交审核</button>
+          <button class="btn btn-primary" onclick="submitMyProject('${isEdit ? projectData.id : ''}')">${isEdit ? '保存修改' : '提交审核'}</button>
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>`;
       overlay.classList.add('open');
     }
 
-    async function submitMyProject() {
+    async function submitMyProject(projectId = '') {
       const title = document.getElementById('myProjectTitle').value;
       if (!title) { alert('请填写企划名称'); return; }
       const coverImg = document.querySelector('#myProjectCoverPreview img');
@@ -1620,9 +1632,15 @@
         coverImage: coverImg ? coverImg.src : '',
         works: relatedWorks
       };
-      const result = await authorAPI('POST', '/api/author/my-projects', data);
+      let result;
+      if (projectId) {
+        result = await authorAPI('PUT', '/api/author/my-projects/' + projectId, data);
+        if (result) showToast('已保存，需重新审核', 'success');
+      } else {
+        result = await authorAPI('POST', '/api/author/my-projects', data);
+        if (result) showToast('企划已提交，等待审核', 'success');
+      }
       if (result) {
-        showToast('企划已提交，等待审核', 'success');
         closeWorkModal();
         loadMyProjects();
       }
@@ -1650,40 +1668,43 @@
           : u.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
           : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
         return `
-        <div class="card">
+        <div class="card" style="cursor:pointer;" onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">
           <div class="card-body" style="padding:0.8rem;">
             ${statusBadge}
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(u.title)}</h3>
             <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${u.publishDate || ''}</p>
-            ${u.approvalStatus === 'pending' ? `<div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
-              <button class="btn-sm" onclick="deleteMyUpdate('${u.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
-            </div>` : ''}
+            <div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
+              <button class="btn-sm" onclick="event.stopPropagation();openMyUpdateForm(${escapeHtml(JSON.stringify(u))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
+              <button class="btn-sm" onclick="event.stopPropagation();deleteMyUpdate('${u.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
+            </div>
           </div>
         </div>`;
       }).join('');
     }
 
-    function openMyUpdateForm() {
+    function openMyUpdateForm(updateData = null) {
+      const isEdit = !!updateData;
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
-      document.getElementById('workModalTitle').textContent = '发布动态';
+      document.getElementById('workModalTitle').textContent = isEdit ? '编辑动态' : '发布动态';
       body.innerHTML = `
-        <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" required></div>
-        <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${new Date().toISOString().split('T')[0]}"></div>
-        <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:120px;" required></textarea></div>
+        <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" value="${isEdit ? escapeHtml(updateData.title) : ''}" required></div>
+        <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${isEdit ? updateData.publishDate || '' : new Date().toISOString().split('T')[0]}"></div>
+        <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:120px;" required>${isEdit ? escapeHtml(updateData.content || '') : ''}</textarea></div>
         <div class="form-group">
           <label>封面图片</label>
-          <div id="myUpdateCoverPreview" style="margin-bottom:0.5rem;"></div>
+          <div id="myUpdateCoverPreview" style="margin-bottom:0.5rem;">${isEdit && updateData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + updateData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
           <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myUpdateCoverPreview', true)">从图片库选择</button>
         </div>
+        ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-          <button class="btn btn-primary" onclick="submitMyUpdate()">提交审核</button>
+          <button class="btn btn-primary" onclick="submitMyUpdate('${isEdit ? updateData.id : ''}')">${isEdit ? '保存修改' : '提交审核'}</button>
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>`;
       overlay.classList.add('open');
     }
 
-    async function submitMyUpdate() {
+    async function submitMyUpdate(updateId = '') {
       const title = document.getElementById('myUpdateTitle').value;
       const content = document.getElementById('myUpdateContent').value;
       if (!title || !content) { alert('请填写标题和内容'); return; }
@@ -1694,9 +1715,15 @@
         publishDate: document.getElementById('myUpdateDate').value,
         coverImage: coverImg ? coverImg.src : ''
       };
-      const result = await authorAPI('POST', '/api/author/my-updates', data);
+      let result;
+      if (updateId) {
+        result = await authorAPI('PUT', '/api/author/my-updates/' + updateId, data);
+        if (result) showToast('已保存，需重新审核', 'success');
+      } else {
+        result = await authorAPI('POST', '/api/author/my-updates', data);
+        if (result) showToast('动态已提交，等待审核', 'success');
+      }
       if (result) {
-        showToast('动态已提交，等待审核', 'success');
         closeWorkModal();
         loadMyUpdates();
       }

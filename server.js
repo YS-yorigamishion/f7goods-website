@@ -506,13 +506,12 @@ app.post('/api/author/my-events', authorAuthMiddleware, (req, res) => {
   res.json(event);
 });
 
-// Author: update own event (only if pending)
+// Author: update own event (re-approval required)
 app.put('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
   if (events[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权编辑此活动' });
-  if (events[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能编辑待审核的活动' });
 
   const allowed = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status'];
   const updates = {};
@@ -520,18 +519,17 @@ app.put('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
 
-  events[index] = { ...events[index], ...updates };
+  events[index] = { ...events[index], ...updates, approvalStatus: 'pending' };
   writeJSON('events.json', events);
   res.json(events[index]);
 });
 
-// Author: delete own event (only if pending)
+// Author: delete own event (any status)
 app.delete('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
   if (events[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权删除此活动' });
-  if (events[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能删除待审核的活动' });
 
   events.splice(index, 1);
   writeJSON('events.json', events);
@@ -568,13 +566,12 @@ app.post('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
   res.json(project);
 });
 
-// Author: update own project (only if pending)
+// Author: update own project (re-approval required)
 app.put('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
   if (projects[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权编辑此企划' });
-  if (projects[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能编辑待审核的企划' });
 
   const allowed = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage'];
   const updates = {};
@@ -582,18 +579,17 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
 
-  projects[index] = { ...projects[index], ...updates };
+  projects[index] = { ...projects[index], ...updates, approvalStatus: 'pending' };
   writeJSON('projects.json', projects);
   res.json(projects[index]);
 });
 
-// Author: delete own project (only if pending)
+// Author: delete own project (any status)
 app.delete('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
   if (projects[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权删除此企划' });
-  if (projects[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能删除待审核的企划' });
 
   projects.splice(index, 1);
   writeJSON('projects.json', projects);
@@ -635,13 +631,12 @@ app.post('/api/author/my-updates', authorAuthMiddleware, (req, res) => {
   res.json(update);
 });
 
-// Author: update own update (only if pending)
+// Author: update own update (re-approval required)
 app.put('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
   if (updates[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权编辑此动态' });
-  if (updates[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能编辑待审核的动态' });
 
   const allowed = ['title', 'content', 'publishDate', 'coverImage', 'images', 'relatedEvents', 'relatedProjects'];
   const updates2 = {};
@@ -649,18 +644,17 @@ app.put('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
     if (req.body[field] !== undefined) updates2[field] = req.body[field];
   });
 
-  updates[index] = { ...updates[index], ...updates2 };
+  updates[index] = { ...updates[index], ...updates2, approvalStatus: 'pending' };
   writeJSON('updates.json', updates);
   res.json(updates[index]);
 });
 
-// Author: delete own update (only if pending)
+// Author: delete own update (any status)
 app.delete('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
   if (updates[index].submittedBy !== req.author.circleId) return res.status(403).json({ error: '无权删除此动态' });
-  if (updates[index].approvalStatus !== 'pending') return res.status(400).json({ error: '只能删除待审核的动态' });
 
   updates.splice(index, 1);
   writeJSON('updates.json', updates);
