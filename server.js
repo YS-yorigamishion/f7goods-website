@@ -2153,7 +2153,7 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
         const xmlEscapedText = watermarkText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const svgWatermark = `<svg width="${width}" height="${height}">
           <style>
-            .wm-center { font-size: ${fontSize}px; fill: rgba(255,255,255,0.15); font-family: sans-serif; }
+            .wm-center { font-size: ${fontSize}px; fill: rgba(255,255,255,1); font-family: sans-serif; }
             .wm-corner { font-size: ${smallFontSize}px; fill: rgba(255,255,255,1); font-family: sans-serif; }
           </style>
           <text class="wm-center" x="${width/2}" y="${height/2}" text-anchor="middle" dominant-baseline="middle">${xmlEscapedText}</text>
