@@ -313,9 +313,10 @@
         <div id="page-events" class="admin-page">
           <div class="page-toolbar">
             <h3>活动列表</h3>
-            <div style="display:flex;gap:0.5rem;align-items:center;">
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
               <input type="text" class="form-input" id="eventsSearch" placeholder="搜索活动..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterEvents()">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminEvents()">📥 导出</button>
+              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminEvents(this)"></label>
               <button class="btn btn-primary" onclick="openEventModal()">+ 新增活动</button>
             </div>
           </div>
@@ -370,9 +371,10 @@
         <div id="page-projects" class="admin-page">
           <div class="page-toolbar">
             <h3>企划列表</h3>
-            <div style="display:flex;gap:0.5rem;align-items:center;">
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
               <input type="text" class="form-input" id="projectsSearch" placeholder="搜索企划..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterProjects()">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminProjects()">📥 导出</button>
+              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminProjects(this)"></label>
               <button class="btn btn-primary" onclick="openProjectModal()">+ 新增企划</button>
             </div>
           </div>
@@ -399,8 +401,9 @@
         <div id="page-updates" class="admin-page">
           <div class="page-toolbar">
             <h3>动态管理</h3>
-            <div style="display:flex;gap:0.5rem;align-items:center;">
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminUpdates()">📥 导出</button>
+              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminUpdates(this)"></label>
               <button class="btn btn-primary" onclick="openUpdateModal()">+ 新增动态</button>
             </div>
           </div>

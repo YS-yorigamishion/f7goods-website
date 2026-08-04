@@ -1634,6 +1634,45 @@ app.post('/api/admin/events', authMiddleware, (req, res) => {
   res.json(event);
 });
 
+// Admin: import events from Excel
+app.post('/api/admin/events/import', authMiddleware, upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '请上传文件' });
+  try {
+    const wb = XLSX.readFile(req.file.path);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws);
+    let events = readJSON('events.json');
+    let added = 0, updated = 0;
+    rows.forEach(row => {
+      const title = row['活动名称'] || row['标题'] || '';
+      if (!title) return;
+      const existing = events.find(e => e.title === title);
+      const eventData = {
+        title,
+        date: row['开始日期'] || row['日期'] || '',
+        endDate: row['结束日期'] || '',
+        location: row['地点'] || '',
+        description: row['描述'] || '',
+        status: row['状态'] || ''
+      };
+      if (existing) {
+        Object.assign(existing, eventData);
+        updated++;
+      } else {
+        events.push({ id: 'e' + Date.now() + Math.random().toString(36).substr(2, 5), ...eventData, order: events.length });
+        added++;
+      }
+    });
+    writeJSON('events.json', events);
+    fs.unlinkSync(req.file.path);
+    logEdit('管理员', '导入活动', '', `新增${added}个，更新${updated}个`);
+    res.json({ success: true, added, updated });
+  } catch (e) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    res.status(500).json({ error: '导入失败: ' + e.message });
+  }
+});
+
 app.put('/api/admin/events/:id', authMiddleware, (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
@@ -2014,6 +2053,43 @@ app.post('/api/admin/projects', authMiddleware, (req, res) => {
   res.json(project);
 });
 
+// Admin: import projects from Excel
+app.post('/api/admin/projects/import', authMiddleware, upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '请上传文件' });
+  try {
+    const wb = XLSX.readFile(req.file.path);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws);
+    let projects = readJSON('projects.json');
+    let added = 0, updated = 0;
+    rows.forEach(row => {
+      const title = row['企划名称'] || row['标题'] || '';
+      if (!title) return;
+      const existing = projects.find(p => p.title === title);
+      const projectData = {
+        title,
+        category: row['分类'] || '',
+        status: row['状态'] || '',
+        description: row['描述'] || ''
+      };
+      if (existing) {
+        Object.assign(existing, projectData);
+        updated++;
+      } else {
+        projects.push({ id: 'p' + Date.now() + Math.random().toString(36).substr(2, 5), ...projectData, order: projects.length, createdAt: new Date().toISOString() });
+        added++;
+      }
+    });
+    writeJSON('projects.json', projects);
+    fs.unlinkSync(req.file.path);
+    logEdit('管理员', '导入企划', '', `新增${added}个，更新${updated}个`);
+    res.json({ success: true, added, updated });
+  } catch (e) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    res.status(500).json({ error: '导入失败: ' + e.message });
+  }
+});
+
 app.put('/api/admin/projects/:id', authMiddleware, (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
@@ -2089,6 +2165,43 @@ app.post('/api/admin/updates', authMiddleware, (req, res) => {
   updates.push(update);
   writeJSON('updates.json', updates);
   res.json(update);
+});
+
+// Admin: import updates from Excel
+app.post('/api/admin/updates/import', authMiddleware, upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '请上传文件' });
+  try {
+    const wb = XLSX.readFile(req.file.path);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws);
+    let updates = [];
+    try { updates = readJSON('updates.json'); } catch {}
+    let added = 0, updated = 0;
+    rows.forEach(row => {
+      const title = row['标题'] || '';
+      if (!title) return;
+      const existing = updates.find(u => u.title === title);
+      const updateData = {
+        title,
+        content: row['内容'] || '',
+        publishDate: row['发布日期'] || new Date().toISOString().split('T')[0]
+      };
+      if (existing) {
+        Object.assign(existing, updateData);
+        updated++;
+      } else {
+        updates.push({ id: 'upd' + Date.now() + Math.random().toString(36).substr(2, 5), ...updateData, createdAt: new Date().toISOString() });
+        added++;
+      }
+    });
+    writeJSON('updates.json', updates);
+    fs.unlinkSync(req.file.path);
+    logEdit('管理员', '导入动态', '', `新增${added}个，更新${updated}个`);
+    res.json({ success: true, added, updated });
+  } catch (e) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    res.status(500).json({ error: '导入失败: ' + e.message });
+  }
 });
 
 app.put('/api/admin/updates/:id', authMiddleware, (req, res) => {

@@ -1093,6 +1093,84 @@ async function importAdminWorks(input) {
   input.value = '';
 }
 
+// Import events from Excel
+async function importAdminEvents(input) {
+  if (!input.files.length) return;
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    showToast('导入中...', 'info');
+    const res = await fetch('/api/admin/events/import', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + adminToken },
+      body: formData
+    });
+    const result = await res.json();
+    if (result.error) {
+      alert('导入失败: ' + result.error);
+    } else {
+      showToast(`导入完成：新增 ${result.added || 0}，更新 ${result.updated || 0}`, 'success');
+      loadEvents();
+    }
+  } catch (e) {
+    alert('导入失败: ' + e.message);
+  }
+  input.value = '';
+}
+
+// Import projects from Excel
+async function importAdminProjects(input) {
+  if (!input.files.length) return;
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    showToast('导入中...', 'info');
+    const res = await fetch('/api/admin/projects/import', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + adminToken },
+      body: formData
+    });
+    const result = await res.json();
+    if (result.error) {
+      alert('导入失败: ' + result.error);
+    } else {
+      showToast(`导入完成：新增 ${result.added || 0}，更新 ${result.updated || 0}`, 'success');
+      loadProjects();
+    }
+  } catch (e) {
+    alert('导入失败: ' + e.message);
+  }
+  input.value = '';
+}
+
+// Import updates from Excel
+async function importAdminUpdates(input) {
+  if (!input.files.length) return;
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    showToast('导入中...', 'info');
+    const res = await fetch('/api/admin/updates/import', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + adminToken },
+      body: formData
+    });
+    const result = await res.json();
+    if (result.error) {
+      alert('导入失败: ' + result.error);
+    } else {
+      showToast(`导入完成：新增 ${result.added || 0}，更新 ${result.updated || 0}`, 'success');
+      loadUpdates();
+    }
+  } catch (e) {
+    alert('导入失败: ' + e.message);
+  }
+  input.value = '';
+}
+
 function openWorkModal(work = null, returnToCircleId = null) {
   const isEdit = !!work;
   document.getElementById('modalTitle').textContent = isEdit ? '编辑作品' : '新增作品';
