@@ -211,7 +211,7 @@ function navigateTo(page) {
 
   // Load data for the page
   if (page === 'dashboard') loadDashboard();
-  else if (page === 'works') loadWorks();
+  else if (page === 'works') { loadWorks(); syncWorkApprovalToggle(); }
   else if (page === 'events') loadEvents();
   else if (page === 'circles') loadCircles();
   else if (page === 'projects') loadProjects();
@@ -712,6 +712,27 @@ function showPVDetail(type) {
   document.getElementById('modalSave').style.display = 'none';
   openModal();
   document.getElementById('modalSave').style.display = '';
+}
+
+// Toggle work approval requirement
+async function toggleWorkApproval() {
+  const checked = document.getElementById('requireWorkApproval').checked;
+  const settings = await adminAPI('GET', '/api/settings') || {};
+  if (!settings.site) settings.site = {};
+  settings.site.requireWorkApproval = checked;
+  await adminAPI('PUT', '/api/settings', settings);
+  showToast(checked ? '已开启作品审核' : '已关闭作品审核', 'success');
+}
+
+// Sync work approval toggle state
+async function syncWorkApprovalToggle() {
+  try {
+    const settings = await adminAPI('GET', '/api/settings');
+    const checkbox = document.getElementById('requireWorkApproval');
+    if (checkbox && settings?.site) {
+      checkbox.checked = settings.site.requireWorkApproval !== false;
+    }
+  } catch (e) {}
 }
 
 async function loadWorks(page = 1) {

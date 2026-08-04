@@ -630,6 +630,10 @@ app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
 app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
   let works = readJSON('works.json');
   const maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
+  // Check if work approval is required
+  let settings = {};
+  try { settings = readJSON('settings.json'); } catch {}
+  const requireApproval = settings.site?.requireWorkApproval !== false;
   // Whitelist allowed fields to prevent mass assignment
   const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
   const workData = {};
@@ -646,7 +650,7 @@ app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
     wants: 0,
     order: maxOrder + 1,
     createdAt: new Date().toISOString(),
-    approvalStatus: 'pending',
+    approvalStatus: requireApproval ? 'pending' : 'approved',
     submittedBy: req.author.circleId,
     ...workData
   };

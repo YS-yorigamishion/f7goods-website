@@ -279,7 +279,11 @@
         <div id="page-works" class="admin-page">
           <div class="page-toolbar">
             <h3>作品列表</h3>
-            <div style="display:flex;gap:0.5rem;align-items:center;">
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;padding:0.4rem 0.8rem;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);">
+                <input type="checkbox" id="requireWorkApproval" onchange="toggleWorkApproval()" style="width:16px;height:16px;accent-color:var(--accent);">
+                <span>作品需审核</span>
+              </label>
               <input type="text" class="form-input" id="worksSearch" placeholder="搜索作品..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterWorks()">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminWorks()">📥 导出</button>
               <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminWorks(this)"></label>
