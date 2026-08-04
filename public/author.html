@@ -1538,6 +1538,16 @@
           <div class="form-group"><label>价格</label><input class="form-input" id="wfPrice" value="${escapeHtml(w.price || '')}" placeholder="¥0"></div>
           <div class="form-group"><label>发售日</label><input type="date" class="form-input" id="wfReleaseDate" value="${w.releaseDate || ''}"></div>
         </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+            <input type="checkbox" id="wfIsCommissioned" ${w.isCommissioned ? 'checked' : ''} onchange="document.getElementById('commissionedByGroup').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--accent);">
+            约稿作品
+          </label>
+        </div>
+        <div class="form-group" id="commissionedByGroup" style="display:${w.isCommissioned ? 'block' : 'none'};">
+          <label>约稿作者</label>
+          <input class="form-input" id="wfCommissionedBy" value="${escapeHtml(w.commissionedBy || '')}" placeholder="请输入约稿作者名字">
+        </div>
         <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="wfTags" value="${(w.tags||[]).join(', ')}" placeholder="手办, 东方"></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="wfDesc" style="min-height:80px;">${w.description || ''}</textarea></div>
         <div class="form-row">
@@ -1652,6 +1662,7 @@
       const selectedEventIds = [...document.querySelectorAll('.wf-event-cb:checked')].map(cb => cb.value);
       const selectedProjectIds = [...document.querySelectorAll('.wf-project-cb:checked')].map(cb => cb.value);
 
+      const isCommissioned = document.getElementById('wfIsCommissioned').checked;
       const data = {
         title: document.getElementById('wfTitle').value,
         category: document.getElementById('wfCategory').value,
@@ -1663,7 +1674,9 @@
         images: [...document.querySelectorAll('#wfImagesPreview img')].map(img => img.src),
         moreImages: [...document.querySelectorAll('#wfMoreImagesPreview img')].map(img => img.src),
         socialLinks,
-        relatedProjects: selectedProjectIds
+        relatedProjects: selectedProjectIds,
+        isCommissioned,
+        commissionedBy: isCommissioned ? document.getElementById('wfCommissionedBy').value : ''
       };
 
       if (!data.title) { alert('请填写标题'); return; }

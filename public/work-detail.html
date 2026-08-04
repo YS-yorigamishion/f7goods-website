@@ -92,6 +92,12 @@
                   <span class="info-label">状态</span>
                   <span class="info-value">${STATUS_LABELS[work.status] || work.status}</span>
                 </div>
+                ${work.isCommissioned && work.commissionedBy ? `
+                <div class="info-row">
+                  <span class="info-label">约稿作品</span>
+                  <span class="info-value">${escapeHtml(work.commissionedBy)}</span>
+                </div>
+                ` : ''}
               </div>
               ${workCircles.length > 0 ? `
               <div class="sidebar-card">

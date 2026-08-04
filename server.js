@@ -408,7 +408,7 @@ app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
   const oldMoreImages = works[index].moreImages || [];
 
   // Only allow updating specific fields
-  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'tags', 'images', 'moreImages', 'socialLinks'];
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
