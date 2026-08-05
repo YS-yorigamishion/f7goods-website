@@ -122,6 +122,11 @@ async function loadSettingsFromAPI() {
     if (!siteSettings.pages) siteSettings.pages = {};
   } catch (e) {
     // Use defaults
+  } finally {
+    // Ensure settings-pending elements are always revealed
+    setTimeout(() => {
+      document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+    }, 5000);
   }
 }
 
@@ -453,6 +458,7 @@ async function toggleLike(workId, btn) {
   } catch (e) {
     console.error('Like failed:', e);
     btn.disabled = false;
+    showToast('操作失败，请重试', 'error');
   }
 }
 
@@ -552,6 +558,7 @@ async function submitWant() {
 
     updateWantButtons(workId, true, data.wants);
     closeWantModal();
+    showToast('已记录购买意向', 'success');
   } catch (e) {
     console.error('Want failed:', e);
     btn.disabled = false;
@@ -587,6 +594,7 @@ async function doUnwant(workId, currentCount) {
     updateWantButtons(workId, false, data.wants);
   } catch (e) {
     console.error('Unwant failed:', e);
+    showToast('取消失败，请重试', 'error');
   }
 }
 

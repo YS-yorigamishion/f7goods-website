@@ -832,7 +832,7 @@
     // Upload logo
     async function uploadAuthorLogo() {
       const input = document.getElementById('pLogoInput');
-      if (!input.files.length) { alert('请选择头像'); return; }
+      if (!input.files.length) { showToast('请选择头像', 'error'); return; }
       const formData = new FormData();
       formData.append('image', input.files[0]);
       const actAs = localStorage.getItem('f7author_actAs');
@@ -854,7 +854,7 @@
     // Upload images
     async function uploadAuthorImages() {
       const input = document.getElementById('pImagesInput');
-      if (!input.files.length) { alert('请选择图片'); return; }
+      if (!input.files.length) { showToast('请选择图片', 'error'); return; }
       const actAs = localStorage.getItem('f7author_actAs');
       const uploadHeaders = { 'Authorization': 'Bearer ' + authorToken };
       if (actAs) uploadHeaders['X-Act-As'] = actAs;
@@ -1733,7 +1733,7 @@
     async function wfUploadImages(inputId, previewId) {
       const input = document.getElementById(inputId);
       const preview = document.getElementById(previewId);
-      if (!input.files.length) { alert('请选择图片'); return; }
+      if (!input.files.length) { showToast('请选择图片', 'error'); return; }
       for (const file of input.files) {
         const formData = new FormData();
         formData.append('image', file);
@@ -1818,7 +1818,7 @@
         commissionedBy: isCommissioned ? document.getElementById('wfCommissionedBy').value : ''
       };
 
-      if (!data.title) { alert('请填写标题'); return; }
+      if (!data.title) { showToast('请填写标题', 'error'); return; }
 
       let result;
       if (workId) {
@@ -1950,7 +1950,7 @@
 
     async function batchUploadAuthorImages() {
       const input = document.getElementById('batchUploadInput');
-      if (!input.files.length) { alert('请选择图片'); return; }
+      if (!input.files.length) { showToast('请选择图片', 'error'); return; }
       const addWatermark = document.getElementById('addWatermarkCheck')?.checked || false;
       let uploaded = 0;
       for (const file of input.files) {
@@ -2097,7 +2097,7 @@
 
     async function submitMyEvent(eventId = '') {
       const title = document.getElementById('myEventTitle').value;
-      if (!title) { alert('请填写活动名称'); return; }
+      if (!title) { showToast('请填写活动名称', 'error'); return; }
       const coverImg = document.querySelector('#myEventCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-event-work-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myEventImagesPreview img')].map(img => img.src);
@@ -2225,7 +2225,7 @@
 
     async function submitMyProject(projectId = '') {
       const title = document.getElementById('myProjectTitle').value;
-      if (!title) { alert('请填写企划名称'); return; }
+      if (!title) { showToast('请填写企划名称', 'error'); return; }
       const coverImg = document.querySelector('#myProjectCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-project-work-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myProjectImagesPreview img')].map(img => img.src);
@@ -2332,7 +2332,7 @@
     async function submitMyUpdate(updateId = '') {
       const title = document.getElementById('myUpdateTitle').value;
       const content = document.getElementById('myUpdateContent').value;
-      if (!title || !content) { alert('请填写标题和内容'); return; }
+      if (!title || !content) { showToast('请填写标题和内容', 'error'); return; }
       const coverImg = document.querySelector('#myUpdateCoverPreview img');
       const images = [...document.querySelectorAll('#myUpdateImagesPreview img')].map(img => img.src);
       const data = {

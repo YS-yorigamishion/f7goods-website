@@ -37,6 +37,28 @@ body {
   flex-direction: column;
 }
 
+/* Detail page link hover effects */
+.detail-link {
+  transition: var(--transition);
+}
+.detail-link:hover {
+  color: var(--accent);
+}
+.detail-link:active {
+  opacity: 0.7;
+}
+
+.detail-social-link {
+  background: rgba(233, 69, 96, 0.06);
+  transition: var(--transition);
+}
+.detail-social-link:hover {
+  background: rgba(233, 69, 96, 0.12);
+}
+.detail-social-link:active {
+  background: rgba(233, 69, 96, 0.18);
+}
+
 /* ===== Navbar ===== */
 .navbar {
   position: fixed;
@@ -135,7 +157,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 11px;
 }
 
 .nav-toggle span {
@@ -244,6 +266,10 @@ body {
 .filter-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.filter-btn:active {
+  transform: scale(0.97);
 }
 
 .filter-btn.active {
@@ -435,6 +461,10 @@ body {
   background: rgba(233, 69, 96, 0.08);
 }
 
+.like-btn:active {
+  transform: scale(0.9);
+}
+
 .like-btn .like-icon {
   font-size: 1.1rem;
   transition: transform 0.2s ease;
@@ -484,6 +514,11 @@ body {
   transform: translateY(-1px);
 }
 
+.want-btn:active {
+  transform: translateY(0);
+  opacity: 0.9;
+}
+
 .want-btn--done {
   background: rgba(52, 152, 219, 0.1);
   color: #3498db;
@@ -496,18 +531,22 @@ body {
 
 /* Want modal */
 .want-modal-overlay {
-  display: none;
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(26, 26, 46, 0.5);
   z-index: 1000;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
 .want-modal-overlay.open {
-  display: flex;
+  opacity: 1;
+  visibility: visible;
 }
 
 .want-modal {
@@ -1374,7 +1413,6 @@ textarea.form-input {
 
 @media (max-width: 768px) {
   .nav-links {
-    display: none;
     position: absolute;
     top: 67px;
     left: 0;
@@ -1386,10 +1424,17 @@ textarea.form-input {
     gap: 0.25rem;
     border-bottom: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    display: flex;
   }
 
   .nav-links.open {
-    display: flex;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
   }
 
   .nav-links a {
@@ -1464,6 +1509,10 @@ textarea.form-input {
     text-align: center;
     padding: 0.3rem 0.6rem;
     font-size: 0.75rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .search-input {
