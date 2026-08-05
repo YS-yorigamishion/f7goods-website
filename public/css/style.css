@@ -2014,10 +2014,11 @@ textarea.form-input {
   border-radius: var(--radius);
   box-shadow: 0 8px 60px rgba(0, 0, 0, 0.5);
   transform: scale(0.9);
-  transition: transform 0.3s ease;
+  transition: transform 0.15s ease-out;
   cursor: default;
   user-select: none;
   -webkit-user-drag: none;
+  will-change: transform;
 }
 
 .lightbox-overlay.open img {
