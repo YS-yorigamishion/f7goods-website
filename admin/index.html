@@ -550,7 +550,10 @@
         <div id="page-approval" class="admin-page">
           <div class="page-toolbar">
             <h3>审核管理</h3>
-            <button class="btn btn-primary" onclick="loadApprovalPage()">刷新</button>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <button class="btn" style="background:var(--accent-alt);color:white;" onclick="toggleAaForm()">📢 发送作者公告</button>
+              <button class="btn btn-primary" onclick="loadApprovalPage()">刷新</button>
+            </div>
           </div>
           <div class="admin-card" style="margin-bottom:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -594,7 +597,7 @@
           </div>
 
           <!-- Author Announcements -->
-          <div class="admin-card" style="margin-top:1.5rem;">
+          <div id="aaFormSection" class="admin-card" style="margin-top:1.5rem;display:none;">
             <h4 style="margin:0 0 1rem 0;">📢 发送作者公告</h4>
             <div style="display:flex;flex-direction:column;gap:0.8rem;">
               <div>

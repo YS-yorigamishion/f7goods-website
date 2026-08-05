@@ -5415,6 +5415,11 @@ async function loadAuthorAnnouncementAuthors() {
   }
 }
 
+function toggleAaForm() {
+  const section = document.getElementById('aaFormSection');
+  section.style.display = section.style.display === 'none' ? 'block' : 'none';
+}
+
 function toggleAaAuthors() {
   const checked = document.getElementById('aaSelectAll').checked;
   document.querySelectorAll('.aa-author-cb').forEach(cb => cb.checked = checked);

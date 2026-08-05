@@ -1798,13 +1798,11 @@ app.get('/api/author/announcements', authorAuthMiddleware, (req, res) => {
   const circleId = req.author.circleId;
   const reads = getAuthorAnnouncementReads();
 
-  // Filter announcements sent to this author
-  const myAnnouncements = announcements
-    .filter(a => a.sentTo.includes(circleId))
-    .map(a => ({
-      ...a,
-      read: (reads[a.id] || []).includes(circleId)
-    }));
+  // All announcements visible to all approved authors
+  const myAnnouncements = announcements.map(a => ({
+    ...a,
+    read: (reads[a.id] || []).includes(circleId)
+  }));
 
   myAnnouncements.sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
@@ -1824,7 +1822,7 @@ app.get('/api/author/announcements/popup', authorAuthMiddleware, (req, res) => {
   const reads = getAuthorAnnouncementReads();
 
   const popupAnnouncements = announcements
-    .filter(a => a.popup && a.sentTo.includes(circleId) && !(reads[a.id] || []).includes(circleId));
+    .filter(a => a.popup && !(reads[a.id] || []).includes(circleId));
 
   popupAnnouncements.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
   res.json(popupAnnouncements);
