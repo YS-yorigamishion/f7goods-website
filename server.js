@@ -1308,7 +1308,7 @@ function saveWants() {
 // Rate limiting for like/want endpoints
 const likeWantAttempts = new Map();
 const LIKE_WANT_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const LIKE_WANT_RATE_LIMIT_MAX = 10; // max 10 operations per minute per IP
+const LIKE_WANT_RATE_LIMIT_MAX = 30; // max 30 operations per minute per IP
 
 function likeWantRateLimit(req, res, next) {
   const ip = req.ip || req.connection.remoteAddress;
