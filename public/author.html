@@ -544,6 +544,7 @@
       document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
       document.getElementById('authError').style.display = 'none';
       document.getElementById('authSuccess').style.display = 'none';
+      if (tab === 'register') loadCirclesForRegister();
     }
 
     // Registration notice
