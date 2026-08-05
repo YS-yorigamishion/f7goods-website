@@ -706,11 +706,11 @@ function openLightbox(images, startIndex = 0) {
       }
     });
 
-    // 滚轮缩放
+    // 滚轮缩放（百分比缩放，更平滑）
     img.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.2 : 0.2;
-      lbZoom.scale = Math.max(0.5, Math.min(5, lbZoom.scale + delta));
+      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      lbZoom.scale = Math.max(0.5, Math.min(5, lbZoom.scale * factor));
       applyZoom(img);
     }, { passive: false });
 
