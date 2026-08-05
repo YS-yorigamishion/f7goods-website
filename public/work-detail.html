@@ -23,12 +23,11 @@
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260803"></script>
   <script>
-    initPage('works');
-
     async function loadWork() {
       const params = new URLSearchParams(location.search);
       const id = params.get('id');
       if (!id) { location.href = '/'; return; }
+      initPage('works', id);
 
       try {
         await loadCategoriesFromAPI();

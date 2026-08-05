@@ -189,7 +189,7 @@ function navigateTo(page) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${page}`)?.classList.add('active');
 
-  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息' };
+  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
   // Load data for the page
@@ -206,6 +206,7 @@ function navigateTo(page) {
   else if (page === 'editlog') loadEditLog();
   else if (page === 'approval') loadApprovalPage();
   else if (page === 'author-stats') loadAuthorStats();
+  else if (page === 'page-stats') loadPageStats();
   else if (page === 'contacts') loadContacts();
 
   // Close mobile sidebar
@@ -492,6 +493,219 @@ async function loadDashboard() {
     type: 'line',
     data: { labels: vd30.labels, datasets: [{ data: vd30.data, borderColor: visLine, backgroundColor: visFill, fill: true }] },
     options: chartOpts()
+  });
+}
+
+// ===== Page Stats =====
+let _pageStatsData = null;
+let _pageStatsEntities = null;
+
+async function loadPageStats() {
+  const [pvData, works, events, circles, projects, updates] = await Promise.all([
+    adminAPI('GET', '/api/admin/pageviews'),
+    adminAPI('GET', '/api/admin/works'),
+    adminAPI('GET', '/api/admin/events'),
+    adminAPI('GET', '/api/admin/circles'),
+    adminAPI('GET', '/api/admin/projects'),
+    adminAPI('GET', '/api/admin/updates')
+  ]);
+  _pageStatsData = pvData;
+  _pageStatsEntities = { works, events, circles, projects, updates };
+
+  renderPageCategoryStats(pvData);
+  renderPageCharts(pvData);
+  renderItemRanking(pvData, _pageStatsEntities);
+}
+
+function renderPageCategoryStats(pvData) {
+  const today = getChinaDate();
+  const pages = (pvData.pages && pvData.pages[today]) || {};
+  const pageNames = {
+    works: '作品', events: '活动', circles: '圈子',
+    projects: '企划', updates: '动态', contact: '联系', announcements: '公告'
+  };
+  const icons = { works: '🎨', events: '📅', circles: '🏠', projects: '📋', updates: '📰', contact: '💬', announcements: '📢' };
+
+  const grid = document.getElementById('pageStatsGrid');
+  grid.innerHTML = Object.entries(pageNames).map(([key, label]) => {
+    const count = pages[key] || 0;
+    return `<div class="pv-overview-item">
+      <div class="pv-overview-icon">${icons[key] || '📄'}</div>
+      <div class="pv-overview-number">${count}</div>
+      <div class="pv-overview-label">${label}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPageCharts(pvData) {
+  const today = getChinaDate();
+  const pages = (pvData.pages && pvData.pages[today]) || {};
+  const pageNames = {
+    works: '作品', events: '活动', circles: '圈子',
+    projects: '企划', updates: '动态', contact: '联系', announcements: '公告'
+  };
+  const colors = ['#e94560', '#1abc9c', '#3498db', '#f39c12', '#9b59b6', '#e74c3c', '#2ecc71'];
+
+  // Doughnut chart - today's breakdown
+  const ctx1 = document.getElementById('chartPageBreakdown');
+  if (ctx1.__chart) ctx1.__chart.destroy();
+  ctx1.__chart = new Chart(ctx1, {
+    type: 'doughnut',
+    data: {
+      labels: Object.values(pageNames),
+      datasets: [{
+        data: Object.keys(pageNames).map(k => pages[k] || 0),
+        backgroundColor: colors
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 12 } } }
+      }
+    }
+  });
+
+  // 7-day trend line chart
+  const labels = [];
+  const datasets = Object.entries(pageNames).map(([key, label], i) => {
+    return { label, data: [], borderColor: colors[i], tension: 0.3, fill: false, pointRadius: 2 };
+  });
+
+  for (let i = 6; i >= 0; i--) {
+    const date = getChinaDateDaysAgo(i);
+    labels.push(date.slice(5));
+    const dayPages = (pvData.pages && pvData.pages[date]) || {};
+    Object.keys(pageNames).forEach((key, idx) => {
+      datasets[idx].data.push(dayPages[key] || 0);
+    });
+  }
+
+  const ctx2 = document.getElementById('chartPageTrend7d');
+  if (ctx2.__chart) ctx2.__chart.destroy();
+  ctx2.__chart = new Chart(ctx2, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+}
+
+function renderItemRanking(pvData, entities) {
+  const pageFilter = document.getElementById('itemPageFilter').value;
+  const dateRange = document.getElementById('itemDateRange').value;
+  const days = dateRange === 'all' ? 365 : parseInt(dateRange);
+
+  const items = (pvData.items && pvData.items[pageFilter]) || {};
+  const today = getChinaDate();
+
+  // Calculate total views per item within date range
+  const ranking = Object.entries(items).map(([id, dates]) => {
+    let total = 0;
+    const trendData = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = getChinaDateDaysAgo(i);
+      const count = dates[date] || 0;
+      total += count;
+      if (i < 7) trendData.push(count);
+    }
+    return { id, total, trendData };
+  }).filter(r => r.total > 0).sort((a, b) => b.total - a.total);
+
+  // Get entity name map
+  const entityList = entities[pageFilter] || [];
+  const nameMap = {};
+  entityList.forEach(e => { nameMap[e.id] = e.title || e.name || e.id; });
+
+  const tbody = document.getElementById('itemRankingBody');
+  if (ranking.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem;">暂无数据</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = ranking.slice(0, 20).map((item, i) => {
+    const sparkId = `spark-${item.id}`;
+    return `<tr>
+      <td style="text-align:center;font-weight:600;">${i + 1}</td>
+      <td>${nameMap[item.id] || item.id}</td>
+      <td style="font-weight:600;">${item.total}</td>
+      <td><canvas id="${sparkId}" width="120" height="24"></canvas></td>
+    </tr>`;
+  }).join('');
+
+  // Render sparklines
+  ranking.slice(0, 20).forEach(item => {
+    const canvas = document.getElementById(`spark-${item.id}`);
+    if (!canvas) return;
+    if (canvas.__chart) canvas.__chart.destroy();
+    canvas.__chart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: item.trendData.map((_, i) => ''),
+        datasets: [{ data: item.trendData, borderColor: '#e94560', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3 }]
+      },
+      options: {
+        responsive: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { display: false }, y: { display: false, beginAtZero: true } },
+        elements: { line: { borderWidth: 1.5 } }
+      }
+    });
+  });
+
+  // Render trend comparison chart for top 5
+  renderItemTrendChart(ranking.slice(0, 5), items, days);
+}
+
+function refreshItemRanking() {
+  if (_pageStatsData && _pageStatsEntities) {
+    renderItemRanking(_pageStatsData, _pageStatsEntities);
+  }
+}
+
+function renderItemTrendChart(topItems, items, days) {
+  if (topItems.length === 0) return;
+
+  const labels = [];
+  const datasets = topItems.map((item, i) => {
+    const colors = ['#e94560', '#1abc9c', '#3498db', '#f39c12', '#9b59b6'];
+    const nameMap = {};
+    if (_pageStatsEntities) {
+      const pageFilter = document.getElementById('itemPageFilter').value;
+      (_pageStatsEntities[pageFilter] || []).forEach(e => { nameMap[e.id] = e.title || e.name || e.id; });
+    }
+    return {
+      label: nameMap[item.id] || item.id,
+      data: [],
+      borderColor: colors[i % colors.length],
+      tension: 0.3,
+      fill: false,
+      pointRadius: 2
+    };
+  });
+
+  const displayDays = Math.min(days, 30);
+  for (let i = displayDays - 1; i >= 0; i--) {
+    const date = getChinaDateDaysAgo(i);
+    labels.push(date.slice(5));
+    topItems.forEach((item, idx) => {
+      datasets[idx].data.push((items[item.id] && items[item.id][date]) || 0);
+    });
+  }
+
+  const ctx = document.getElementById('chartItemTrend');
+  if (ctx.__chart) ctx.__chart.destroy();
+  ctx.__chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
   });
 }
 

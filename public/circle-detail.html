@@ -23,8 +23,6 @@
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260803"></script>
   <script>
-    initPage('circles');
-
     let circleWorksData = [];
     let cwCategory = 'all';
     let cwSearchText = '';
@@ -90,6 +88,7 @@
       const params = new URLSearchParams(location.search);
       const id = params.get('id');
       if (!id) { location.href = '/circles.html'; return; }
+      initPage('circles', id);
 
       try {
         await loadCategoriesFromAPI();

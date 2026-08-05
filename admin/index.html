@@ -58,6 +58,9 @@
         <a href="#" class="sidebar-link" data-page="author-stats">
           <span class="sidebar-icon">📈</span> 作者统计
         </a>
+        <a href="#" class="sidebar-link" data-page="page-stats">
+          <span class="sidebar-icon">👁️</span> 浏览统计
+        </a>
         <a href="#" class="sidebar-link" data-page="events">
           <span class="sidebar-icon">📅</span> 活动管理
         </a>
@@ -666,6 +669,73 @@
               </thead>
               <tbody id="authorStatsBody"></tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Page Stats -->
+        <div id="page-page-stats" class="admin-page">
+          <div class="page-toolbar">
+            <h3>👁️ 浏览统计</h3>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="cleanupPageviews()">🧹 清理旧数据</button>
+              <button class="btn btn-primary" onclick="loadPageStats()">刷新</button>
+            </div>
+          </div>
+
+          <!-- 页面分类浏览量概览 -->
+          <div class="pv-section">
+            <h3 class="pv-section-title">今日各页面浏览量</h3>
+            <div class="pv-overview-grid" id="pageStatsGrid"></div>
+          </div>
+
+          <!-- 页面分类图表 -->
+          <div class="dashboard-charts-grid">
+            <div class="chart-container">
+              <h3>今日各页面浏览量占比</h3>
+              <canvas id="chartPageBreakdown"></canvas>
+            </div>
+            <div class="chart-container">
+              <h3>近 7 日各页面趋势</h3>
+              <canvas id="chartPageTrend7d"></canvas>
+            </div>
+          </div>
+
+          <!-- 项目浏览量排行 -->
+          <div class="pv-section">
+            <h3 class="pv-section-title">项目浏览量排行</h3>
+            <div class="pv-table-controls">
+              <select id="itemPageFilter" onchange="refreshItemRanking()">
+                <option value="works">作品</option>
+                <option value="events">活动</option>
+                <option value="circles">圈子</option>
+                <option value="projects">企划</option>
+                <option value="updates">动态</option>
+              </select>
+              <select id="itemDateRange" onchange="refreshItemRanking()">
+                <option value="7">近 7 天</option>
+                <option value="30">近 30 天</option>
+                <option value="all">全部</option>
+              </select>
+            </div>
+            <div class="admin-card">
+              <table class="admin-table" id="itemRankingTable">
+                <thead>
+                  <tr>
+                    <th style="width:60px;">排名</th>
+                    <th>名称</th>
+                    <th style="width:100px;">浏览量</th>
+                    <th style="width:200px;">近7天趋势</th>
+                  </tr>
+                </thead>
+                <tbody id="itemRankingBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 项目趋势对比图 -->
+          <div class="chart-container" style="margin-top:1rem;">
+            <h3>Top 5 项目浏览量趋势对比</h3>
+            <canvas id="chartItemTrend"></canvas>
           </div>
         </div>
 

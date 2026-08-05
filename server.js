@@ -1521,6 +1521,8 @@ let pageviews = {};
 try { pageviews = readJSON('pageviews.json'); } catch {}
 if (!pageviews.daily) pageviews = { daily: {} };
 if (!pageviews.visitors) pageviews.visitors = {};
+if (!pageviews.pages) pageviews.pages = {};
+if (!pageviews.items) pageviews.items = {};
 
 function savePageviews() {
   writeJSON('pageviews.json', pageviews);
@@ -1560,6 +1562,29 @@ function cleanupOldPageviews() {
     if (date < cutoffStr) {
       delete pageviews.visitors[date];
       cleaned = true;
+    }
+  }
+
+  // Clean per-page data
+  for (const date of Object.keys(pageviews.pages || {})) {
+    if (date < cutoffStr) {
+      delete pageviews.pages[date];
+      cleaned = true;
+    }
+  }
+
+  // Clean per-item data
+  for (const page of Object.keys(pageviews.items || {})) {
+    for (const itemId of Object.keys(pageviews.items[page] || {})) {
+      for (const date of Object.keys(pageviews.items[page][itemId] || {})) {
+        if (date < cutoffStr) {
+          delete pageviews.items[page][itemId][date];
+          cleaned = true;
+        }
+      }
+      if (Object.keys(pageviews.items[page][itemId]).length === 0) {
+        delete pageviews.items[page][itemId];
+      }
     }
   }
 
@@ -1627,6 +1652,22 @@ function pageviewRateLimit(req, res, next) {
 app.post('/api/pageview', pageviewRateLimit, (req, res) => {
   const today = getChinaDate(); // Use Chinese time
   pageviews.daily[today] = (pageviews.daily[today] || 0) + 1;
+
+  // Per-page category tracking
+  const page = req.body && req.body.page;
+  if (page && typeof page === 'string') {
+    if (!pageviews.pages[today]) pageviews.pages[today] = {};
+    pageviews.pages[today][page] = (pageviews.pages[today][page] || 0) + 1;
+  }
+
+  // Per-item tracking
+  const itemId = req.body && req.body.itemId;
+  if (page && itemId && typeof page === 'string' && typeof itemId === 'string') {
+    if (!pageviews.items[page]) pageviews.items[page] = {};
+    if (!pageviews.items[page][itemId]) pageviews.items[page][itemId] = {};
+    pageviews.items[page][itemId][today] = (pageviews.items[page][itemId][today] || 0) + 1;
+  }
+
   // Track unique visitors by IP
   const ip = req.ip || req.connection.remoteAddress || 'unknown';
   if (!pageviews.visitors[today]) pageviews.visitors[today] = [];

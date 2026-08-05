@@ -294,7 +294,7 @@ function buildFooter() {
 
 // Theme toggle (dark mode)
 // Init page structure
-async function initPage(activePage) {
+async function initPage(activePage, itemId) {
 
   // Load settings first
   await loadSettingsFromAPI();
@@ -319,7 +319,13 @@ async function initPage(activePage) {
   loadCategoriesFromAPI();
 
   // Page view tracking (fire and forget)
-  fetch('/api/pageview', { method: 'POST' }).catch(() => {});
+  const pvBody = { page: activePage };
+  if (itemId) pvBody.itemId = itemId;
+  fetch('/api/pageview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(pvBody)
+  }).catch(() => {});
 
   // Check for popup announcements
   checkPopupAnnouncements();

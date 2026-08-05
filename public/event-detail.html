@@ -23,8 +23,6 @@
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260803"></script>
   <script>
-    initPage('events');
-
     let eventRelatedWorks = [];
     let eventCirclesMap = {};
     let rwCategory = 'all';
@@ -100,6 +98,7 @@
       const params = new URLSearchParams(location.search);
       const id = params.get('id');
       if (!id) { location.href = '/events.html'; return; }
+      initPage('events', id);
 
       try {
         await loadCategoriesFromAPI();
