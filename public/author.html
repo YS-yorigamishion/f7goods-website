@@ -460,7 +460,10 @@
         <div class="mgmt-card" style="margin-top:1.5rem;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
             <h3 style="margin:0;">未使用图片清理</h3>
-            <div style="display:flex;gap:0.5rem;">
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <label id="selectAllUnusedWrap" style="display:none;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;">
+                <input type="checkbox" id="selectAllUnused" onchange="toggleSelectAllUnused()" style="width:14px;height:14px;accent-color:var(--accent);"> 全选
+              </label>
               <button class="btn" onclick="loadUnusedAuthorImages()" style="font-size:0.85rem;">刷新检测</button>
               <button class="btn" id="cleanupUnusedBtn" onclick="cleanupUnusedAuthorImages()" style="display:none;background:var(--accent);color:white;font-size:0.85rem;">清理选中</button>
             </div>
@@ -1988,8 +1991,13 @@
       if (unusedImagesData.length === 0) {
         gridEl.innerHTML = '<p style="color:var(--haze);text-align:center;padding:1rem;">没有未使用的图片</p>';
         document.getElementById('cleanupUnusedBtn').style.display = 'none';
+        document.getElementById('selectAllUnusedWrap').style.display = 'none';
         return;
       }
+
+      // 显示全选复选框，重置状态
+      document.getElementById('selectAllUnusedWrap').style.display = 'flex';
+      document.getElementById('selectAllUnused').checked = false;
 
       gridEl.innerHTML = unusedImagesData.map(img => `
         <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">
@@ -2003,9 +2011,21 @@
       `).join('');
     }
 
+    function toggleSelectAllUnused() {
+      const selectAll = document.getElementById('selectAllUnused');
+      document.querySelectorAll('.unused-img-cb').forEach(cb => {
+        cb.checked = selectAll.checked;
+      });
+      updateUnusedImageBatchBtn();
+    }
+
     function updateUnusedImageBatchBtn() {
       const checked = document.querySelectorAll('.unused-img-cb:checked');
+      const total = document.querySelectorAll('.unused-img-cb').length;
       document.getElementById('cleanupUnusedBtn').style.display = checked.length > 0 ? 'inline-block' : 'none';
+      // 同步全选状态
+      const selectAll = document.getElementById('selectAllUnused');
+      if (selectAll) selectAll.checked = total > 0 && checked.length === total;
     }
 
     function copyUnusedImgUrl(url) {
