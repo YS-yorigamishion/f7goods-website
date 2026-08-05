@@ -1370,16 +1370,7 @@ app.get('/api/circles', cacheMiddleware(60), (req, res) => {
   res.json(safeCircles);
 });
 
-app.get('/api/circles/:id', (req, res) => {
-  const circles = readJSON('circles.json');
-  const circle = circles.find(c => c.id === req.params.id);
-  if (!circle) return res.status(404).json({ error: '作者未找到' });
-  // Remove sensitive fields
-  const { passwordHash, username, authorStatus, editableBy, ...safe } = circle;
-  res.json(safe);
-});
-
-// Circles available for registration (no username or rejected)
+// Circles available for registration (no username or rejected) - must be before :id route
 app.get('/api/circles/registrable', (req, res) => {
   const circles = readJSON('circles.json');
   const registrable = circles
@@ -1387,6 +1378,15 @@ app.get('/api/circles/registrable', (req, res) => {
     .sort((a, b) => a.order - b.order)
     .map(c => ({ id: c.id, name: c.name, logo: c.logo }));
   res.json(registrable);
+});
+
+app.get('/api/circles/:id', (req, res) => {
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.params.id);
+  if (!circle) return res.status(404).json({ error: '作者未找到' });
+  // Remove sensitive fields
+  const { passwordHash, username, authorStatus, editableBy, ...safe } = circle;
+  res.json(safe);
 });
 
 // Projects
