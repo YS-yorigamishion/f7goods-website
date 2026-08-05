@@ -426,10 +426,31 @@ app.post('/api/author/change-password', authorAuthMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
+// Author: refresh token
+app.post('/api/author/refresh-token', authorAuthMiddleware, (req, res) => {
+  const newToken = jwt.sign(
+    { circleId: req.author.circleId, role: 'author' },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+  res.json({ token: newToken });
+});
+
 // Author: get own works
 app.get('/api/author/works', authorAuthMiddleware, (req, res) => {
   const works = readJSON('works.json');
   const circleWorks = works.filter(w => (w.circles || []).includes(req.author.circleId));
+
+  // 支持分页
+  const page = parseInt(req.query.page) || 0;
+  const limit = parseInt(req.query.limit) || 0;
+  if (page > 0 && limit > 0) {
+    const total = circleWorks.length;
+    const items = circleWorks.slice((page - 1) * limit, page * limit);
+    return res.json({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
+  }
+
+  // 不分页时返回全部（兼容旧版本）
   res.json(circleWorks);
 });
 

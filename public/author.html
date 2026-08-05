@@ -613,12 +613,6 @@
       document.getElementById('circleDropdown').style.display = 'block';
     }
 
-    function hideCircleDropdown() {
-      setTimeout(() => {
-        document.getElementById('circleDropdown').style.display = 'none';
-      }, 200);
-    }
-
     function selectCircle(id, name) {
       document.getElementById('regCircleId').value = id;
       document.getElementById('regCircleSearch').value = name;
@@ -774,11 +768,26 @@
 
       const opts = { method, headers };
       if (body) opts.body = JSON.stringify(body);
-      const res = await fetch(path, opts);
+      let res = await fetch(path, opts);
+
+      // Token过期时尝试刷新
       if (res.status === 401) {
-        authorLogout();
-        return null;
+        const refreshRes = await fetch('/api/author/refresh-token', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + authorToken, 'Content-Type': 'application/json' }
+        });
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          authorToken = data.token;
+          localStorage.setItem('f7author_token', authorToken);
+          headers['Authorization'] = 'Bearer ' + authorToken;
+          res = await fetch(path, opts);
+        } else {
+          authorLogout();
+          return null;
+        }
       }
+
       if (res.status === 403) {
         const data = await res.json();
         if (data.needReapply) {
@@ -829,55 +838,6 @@
       ).join('');
     }
 
-    // Upload logo
-    async function uploadAuthorLogo() {
-      const input = document.getElementById('pLogoInput');
-      if (!input.files.length) { showToast('请选择头像', 'error'); return; }
-      const formData = new FormData();
-      formData.append('image', input.files[0]);
-      const actAs = localStorage.getItem('f7author_actAs');
-      const uploadHeaders = { 'Authorization': 'Bearer ' + authorToken };
-      if (actAs) uploadHeaders['X-Act-As'] = actAs;
-      const res = await fetch('/api/author/upload', {
-        method: 'POST',
-        headers: uploadHeaders,
-        body: formData
-      });
-      const data = await res.json();
-      if (data.url) {
-        document.getElementById('pLogoPreview').innerHTML =
-          '<div style="position:relative;display:inline-block;"><img src="' + data.url + '" style="width:80px;height:80px;object-fit:cover;border-radius:50%;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>';
-      }
-      input.value = '';
-    }
-
-    // Upload images
-    async function uploadAuthorImages() {
-      const input = document.getElementById('pImagesInput');
-      if (!input.files.length) { showToast('请选择图片', 'error'); return; }
-      const actAs = localStorage.getItem('f7author_actAs');
-      const uploadHeaders = { 'Authorization': 'Bearer ' + authorToken };
-      if (actAs) uploadHeaders['X-Act-As'] = actAs;
-      for (const file of input.files) {
-        const formData = new FormData();
-        formData.append('image', file);
-        const res = await fetch('/api/author/upload', {
-          method: 'POST',
-          headers: uploadHeaders,
-          body: formData
-        });
-        const data = await res.json();
-        if (data.url) {
-          const preview = document.getElementById('pImagesPreview');
-          const div = document.createElement('div');
-          div.style.position = 'relative';
-          div.innerHTML = '<img src="' + data.url + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>';
-          preview.appendChild(div);
-        }
-      }
-      input.value = '';
-    }
-
     // Save profile
     async function saveProfile() {
       const contactType = document.getElementById('pContactType').value;
@@ -905,6 +865,18 @@
         document.getElementById('mgmtAuthorName').textContent = result.name;
         showToast('资料已保存', 'success');
       }
+    }
+
+    // Loading state helpers
+    function showLoading(message = '加载中...') {
+      const overlay = document.createElement('div');
+      overlay.id = 'globalLoading';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      overlay.innerHTML = `<div style="background:var(--card-bg);padding:1.5rem 2rem;border-radius:var(--radius);box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:0.8rem;"><div class="spinner"></div><span>${message}</span></div>`;
+      document.body.appendChild(overlay);
+    }
+    function hideLoading() {
+      document.getElementById('globalLoading')?.remove();
     }
 
     // Load works
@@ -1466,14 +1438,15 @@
 
       if (!confirm(`确定删除以下 ${selectedWorks.length} 个作品？\n${titles}\n\n此操作不可撤销。`)) return;
 
-      let success = 0;
-      for (const id of workIds) {
-        const result = await authorAPI('DELETE', '/api/author/works/' + id);
-        if (result && result.success) success++;
+      showLoading('删除中...');
+      try {
+        const results = await Promise.all(workIds.map(id => authorAPI('DELETE', '/api/author/works/' + id)));
+        const success = results.filter(r => r && r.success).length;
+        showToast(`已删除 ${success} 个作品`, 'success');
+        loadAuthorWorks();
+      } finally {
+        hideLoading();
       }
-
-      showToast(`已删除 ${success} 个作品`, 'success');
-      loadAuthorWorks();
     }
 
     // Open batch edit
@@ -1571,35 +1544,38 @@
 
       if (!hasBasicChanges && !hasEventChanges && !hasProjectChanges) { alert('请至少修改一个字段'); return; }
 
-      let success = 0;
-      for (const id of workIds) {
-        // Update basic fields
-        if (hasBasicChanges) {
-          const result = await authorAPI('PUT', '/api/author/works/' + id, data);
-          if (result) success++;
-        }
-        // Update project associations
-        if (hasProjectChanges) {
-          await authorAPI('PUT', '/api/author/works/' + id, { relatedProjects: selectedProjectIds });
-        }
-      }
+      showLoading('保存中...');
+      try {
+        // 并行更新作品
+        const updatePromises = workIds.map(id => {
+          const tasks = [];
+          if (hasBasicChanges) tasks.push(authorAPI('PUT', '/api/author/works/' + id, data));
+          if (hasProjectChanges) tasks.push(authorAPI('PUT', '/api/author/works/' + id, { relatedProjects: selectedProjectIds }));
+          return Promise.all(tasks);
+        });
+        await Promise.all(updatePromises);
 
-      // Update event associations (events are associated to circles, not individual works)
-      if (hasEventChanges) {
-        const allEvents = await authorAPI('GET', '/api/author/events');
-        for (const evt of (allEvents || [])) {
-          const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
-          const shouldBeRelated = selectedEventIds.includes(evt.id);
-          if (isRelated !== shouldBeRelated) {
-            await authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
-          }
+        // 更新活动关联
+        if (hasEventChanges) {
+          const allEvents = await authorAPI('GET', '/api/author/events');
+          const togglePromises = (allEvents || []).map(evt => {
+            const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
+            const shouldBeRelated = selectedEventIds.includes(evt.id);
+            if (isRelated !== shouldBeRelated) {
+              return authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
+            }
+            return Promise.resolve();
+          });
+          await Promise.all(togglePromises);
         }
-      }
 
-      if (!hasBasicChanges) success = workIds.length;
-      showToast(`已更新 ${success} 个作品`, 'success');
-      closeBatchEdit();
-      loadAuthorWorks();
+        const success = hasBasicChanges ? workIds.length : workIds.length;
+        showToast(`已更新 ${success} 个作品`, 'success');
+        closeBatchEdit();
+        loadAuthorWorks();
+      } finally {
+        hideLoading();
+      }
     }
 
     // Close batch edit
@@ -1715,25 +1691,6 @@
         </div>`;
     }
 
-    async function wfUploadImages(inputId, previewId) {
-      const input = document.getElementById(inputId);
-      const preview = document.getElementById(previewId);
-      if (!input.files.length) { showToast('请选择图片', 'error'); return; }
-      for (const file of input.files) {
-        const formData = new FormData();
-        formData.append('image', file);
-        const res = await fetch('/api/author/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authorToken }, body: formData });
-        const data = await res.json();
-        if (data.url) {
-          const div = document.createElement('div');
-          div.style.position = 'relative';
-          div.innerHTML = '<img src="'+data.url+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>';
-          preview.appendChild(div);
-        }
-      }
-      input.value = '';
-    }
-
     // Image library picker for authors
     async function openAuthorImageLib(previewId, singleSelect) {
       const images = await authorAPI('GET', '/api/author/images');
@@ -1803,34 +1760,40 @@
         commissionedBy: isCommissioned ? document.getElementById('wfCommissionedBy').value : ''
       };
 
-      if (!data.title) { showToast('请填写标题', 'error'); return; }
+      if (!data.title) { showToast('请填写标题', 'error'); document.getElementById('wfTitle').focus(); return; }
+      if (!data.category) { showToast('请选择分类', 'error'); return; }
 
-      let result;
-      if (workId) {
-        result = await authorAPI('PUT', '/api/author/works/' + workId, data);
-        // Update event associations
-        const allEvents = await authorAPI('GET', '/api/author/events');
-        for (const evt of (allEvents || [])) {
-          const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
-          const shouldBeRelated = selectedEventIds.includes(evt.id);
-          if (isRelated !== shouldBeRelated) {
-            await authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
+      showLoading('保存中...');
+      try {
+        let result;
+        if (workId) {
+          result = await authorAPI('PUT', '/api/author/works/' + workId, data);
+          // Update event associations
+          const allEvents = await authorAPI('GET', '/api/author/events');
+          for (const evt of (allEvents || [])) {
+            const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
+            const shouldBeRelated = selectedEventIds.includes(evt.id);
+            if (isRelated !== shouldBeRelated) {
+              await authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
+            }
+          }
+        } else {
+          result = await authorAPI('POST', '/api/author/works', data);
+          // For new works, add event associations
+          for (const eventId of selectedEventIds) {
+            const evt = (await authorAPI('GET', '/api/author/events')).find(e => e.id === eventId);
+            if (evt && !(evt.relatedCircles || []).includes(authorCircleId)) {
+              await authorAPI('PUT', '/api/author/events/' + eventId + '/toggle');
+            }
           }
         }
-      } else {
-        result = await authorAPI('POST', '/api/author/works', data);
-        // For new works, add event associations
-        for (const eventId of selectedEventIds) {
-          const evt = (await authorAPI('GET', '/api/author/events')).find(e => e.id === eventId);
-          if (evt && !(evt.relatedCircles || []).includes(authorCircleId)) {
-            await authorAPI('PUT', '/api/author/events/' + eventId + '/toggle');
-          }
+        if (result) {
+          showToast('作品已保存', 'success');
+          closeWorkModal();
+          loadAuthorWorks();
         }
-      }
-      if (result) {
-        showToast('作品已保存', 'success');
-        closeWorkModal();
-        loadAuthorWorks();
+      } finally {
+        hideLoading();
       }
     }
 
