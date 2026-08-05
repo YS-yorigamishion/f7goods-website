@@ -709,7 +709,7 @@ function openLightbox(images, startIndex = 0) {
     // 滚轮缩放（百分比缩放，更平滑）
     img.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      const factor = e.deltaY > 0 ? 0.95 : 1.05;
       lbZoom.scale = Math.max(0.5, Math.min(5, lbZoom.scale * factor));
       applyZoom(img);
     }, { passive: false });
