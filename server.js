@@ -449,6 +449,50 @@ app.post('/api/author/works/reorder', authorAuthMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
+// Author: export own works to XLSX
+app.get('/api/author/works/export', authorAuthMiddleware, (req, res) => {
+  const works = readJSON('works.json');
+  const circleWorks = works.filter(w => (w.circles || []).includes(req.author.circleId));
+
+  let categories = { works: [], workStatus: [] };
+  try { categories = readJSON('categories.json'); } catch {}
+  const catMap = {};
+  categories.works.forEach(c => catMap[c.id] = c.name);
+  const statusMap = {};
+  categories.workStatus.forEach(c => statusMap[c.id] = c.name);
+
+  const data = circleWorks.map(w => ({
+    '作品名称': w.title,
+    '分类': catMap[w.category] || w.category || '',
+    '状态': statusMap[w.status] || w.status || '',
+    '价格': w.price || '',
+    '发售日期': w.releaseDate || '',
+    '标签': (w.tags || []).join(', '),
+    '作品描述': w.description || '',
+    '约稿作品': w.isCommissioned ? '是' : '否',
+    '约稿作者': w.commissionedBy || '',
+    '联系方式类型': w.socialLinks?.qq ? 'QQ' : w.socialLinks?.qqGroup ? 'QQ群' : '',
+    '联系方式': w.socialLinks?.qq || w.socialLinks?.qqGroup || '',
+    '网站链接': w.socialLinks?.website || '',
+    '网站显示名': w.socialLinks?.websiteLabel || ''
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [
+    { wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 12 },
+    { wch: 14 }, { wch: 20 }, { wch: 40 }, { wch: 8 },
+    { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 25 }, { wch: 15 }
+  ];
+  XLSX.utils.book_append_sheet(wb, ws, '作品列表');
+
+  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  const circle = readJSON('circles.json').find(c => c.id === req.author.circleId);
+  res.setHeader('Content-Disposition', `attachment; filename=works_${circle?.name || 'export'}.xlsx`);
+  res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(buf);
+});
+
 // Author: import works from Excel
 app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
@@ -477,9 +521,15 @@ app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file')
       const isCommissioned = (row['约稿作品'] || '').toString().trim() === '是';
       const contactType = (row['联系方式类型'] || '').toString().trim();
       const contactValue = (row['联系方式'] || '').toString().trim();
+      const websiteUrl = (row['网站链接'] || '').toString().trim();
+      const websiteLabel = (row['网站显示名'] || '').toString().trim();
+
+      // Build socialLinks from import data
       const socialLinks = {};
       if (contactType === 'QQ' && contactValue) socialLinks.qq = contactValue;
       else if (contactType === 'QQ群' && contactValue) socialLinks.qqGroup = contactValue;
+      if (websiteUrl) socialLinks.website = websiteUrl;
+      if (websiteLabel) socialLinks.websiteLabel = websiteLabel;
 
       const workData = {
         title,
@@ -490,13 +540,15 @@ app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file')
         tags: (row['标签'] || '').split(',').map(t => t.trim()).filter(Boolean),
         description: row['作品描述'] || row['描述'] || '',
         isCommissioned,
-        commissionedBy: isCommissioned ? (row['约稿作者'] || '') : '',
-        socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : undefined
+        commissionedBy: isCommissioned ? (row['约稿作者'] || '') : ''
       };
 
       if (existing) {
         Object.assign(existing, workData);
-        if (workData.socialLinks) existing.socialLinks = workData.socialLinks;
+        // Merge socialLinks instead of replacing
+        if (Object.keys(socialLinks).length > 0) {
+          existing.socialLinks = { ...(existing.socialLinks || {}), ...socialLinks };
+        }
         updated++;
       } else {
         works.push({
@@ -508,7 +560,8 @@ app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file')
           likes: 0,
           wants: 0,
           order: works.length,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : undefined
         });
         added++;
       }
