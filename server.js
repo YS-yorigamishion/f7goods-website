@@ -1679,6 +1679,43 @@ app.post('/api/pageview', pageviewRateLimit, (req, res) => {
 });
 
 app.get('/api/admin/pageviews', authMiddleware, (req, res) => {
+  // 返回精简摘要数据（默认），减少传输量
+  if (req.query.summary === 'true') {
+    const today = getChinaDate();
+    const summary = { daily: {}, visitors: {}, pages: {}, items: {} };
+
+    // 只返回最近30天的daily、visitors、pages
+    for (let i = 0; i < 30; i++) {
+      const date = getChinaDateDaysAgo(i);
+      if (pageviews.daily[date] !== undefined) summary.daily[date] = pageviews.daily[date];
+      if (pageviews.visitors[date]) summary.visitors[date] = pageviews.visitors[date];
+      if (pageviews.pages[date]) summary.pages[date] = pageviews.pages[date];
+    }
+
+    // items只返回每个项目的汇总+最近30天明细
+    for (const [page, items] of Object.entries(pageviews.items || {})) {
+      summary.items[page] = {};
+      for (const [itemId, dates] of Object.entries(items)) {
+        let total = 0;
+        const recentDates = {};
+        for (const [date, count] of Object.entries(dates)) {
+          total += count;
+          // 只保留最近30天
+          for (let i = 0; i < 30; i++) {
+            if (date === getChinaDateDaysAgo(i)) {
+              recentDates[date] = count;
+              break;
+            }
+          }
+        }
+        if (total > 0) summary.items[page][itemId] = { total, dates: recentDates };
+      }
+    }
+
+    return res.json(summary);
+  }
+
+  // 完整数据（导出用）
   res.json(pageviews);
 });
 

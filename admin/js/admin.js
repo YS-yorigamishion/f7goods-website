@@ -363,7 +363,7 @@ async function loadDashboard() {
     adminAPI('GET', '/api/admin/circles'),
     adminAPI('GET', '/api/admin/projects'),
     adminAPI('GET', '/api/admin/updates'),
-    adminAPI('GET', '/api/admin/pageviews')
+    adminAPI('GET', '/api/admin/pageviews?summary=true')
   ]);
   document.getElementById('statWorks').textContent = works?.length || 0;
   document.getElementById('statEvents').textContent = events?.length || 0;
@@ -502,7 +502,7 @@ let _pageStatsEntities = null;
 
 async function loadPageStats() {
   const [pvData, works, events, circles, projects, updates] = await Promise.all([
-    adminAPI('GET', '/api/admin/pageviews'),
+    adminAPI('GET', '/api/admin/pageviews?summary=true'),
     adminAPI('GET', '/api/admin/works'),
     adminAPI('GET', '/api/admin/events'),
     adminAPI('GET', '/api/admin/circles'),
@@ -538,6 +538,100 @@ function getItemUrl(pageType, itemId) {
     updates: '/update-detail.html'
   };
   return (detailPages[pageType] || '/') + '?id=' + encodeURIComponent(itemId);
+}
+
+// ===== Page Stats Search =====
+let _pvSearchTimer = null;
+function debounceSearchPageStats() {
+  clearTimeout(_pvSearchTimer);
+  _pvSearchTimer = setTimeout(searchPageStats, 300);
+}
+
+function searchPageStats() {
+  const query = document.getElementById('pvSearchInput')?.value.trim().toLowerCase() || '';
+  const typeFilter = document.getElementById('pvSearchType')?.value || 'all';
+  const resultsDiv = document.getElementById('pvSearchResults');
+
+  if (!query) {
+    resultsDiv.innerHTML = '';
+    return;
+  }
+
+  if (!_pageStatsData || !_pageStatsEntities) {
+    resultsDiv.innerHTML = '<p style="color:var(--haze);padding:1rem;">请先等待数据加载完成</p>';
+    return;
+  }
+
+  const today = getChinaDate();
+  const pageNames = {
+    works: '作品', events: '活动', circles: '圈子',
+    projects: '企划', updates: '动态'
+  };
+
+  const results = [];
+
+  // 搜索各类型的项目
+  for (const [pageType, label] of Object.entries(pageNames)) {
+    if (typeFilter !== 'all' && typeFilter !== pageType) continue;
+
+    const entities = _pageStatsEntities[pageType] || [];
+    const items = _pageStatsData.items?.[pageType] || {};
+
+    for (const entity of entities) {
+      const name = (entity.title || entity.name || '').toLowerCase();
+      if (!name.includes(query)) continue;
+
+      const itemData = items[entity.id] || {};
+      const dates = itemData.dates || itemData;
+      const todayViews = dates[today] || 0;
+      const totalViews = itemData.total || Object.values(dates).reduce((a, b) => a + b, 0);
+
+      results.push({
+        type: pageType,
+        typeLabel: label,
+        id: entity.id,
+        name: entity.title || entity.name,
+        todayViews,
+        totalViews
+      });
+    }
+  }
+
+  // 按今日浏览量排序
+  results.sort((a, b) => b.todayViews - a.todayViews || b.totalViews - a.totalViews);
+
+  if (results.length === 0) {
+    resultsDiv.innerHTML = '<p style="color:var(--haze);padding:1rem;">未找到匹配的结果</p>';
+    return;
+  }
+
+  resultsDiv.innerHTML = `
+    <div class="admin-card" style="overflow-x:auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>类型</th>
+            <th>名称</th>
+            <th>今日浏览</th>
+            <th>历史总浏览</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${results.slice(0, 50).map(r => `
+            <tr>
+              <td><span style="background:var(--border);padding:0.2rem 0.5rem;border-radius:4px;font-size:0.8rem;">${r.typeLabel}</span></td>
+              <td><a href="${getItemUrl(r.type, r.id)}" target="_blank" style="color:var(--ink);text-decoration:none;">${escapeHtml(r.name)}</a></td>
+              <td style="font-weight:600;color:var(--accent);">${r.todayViews}</td>
+              <td style="font-weight:600;">${r.totalViews}</td>
+              <td><a href="${getItemUrl(r.type, r.id)}" target="_blank" class="btn-sm" style="text-decoration:none;background:var(--accent);color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.8rem;">查看</a></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      ${results.length > 50 ? `<p style="color:var(--haze);padding:0.8rem;text-align:center;font-size:0.85rem;">显示前50条结果，共${results.length}条</p>` : ''}
+    </div>
+  `;
 }
 
 function renderPVOverview(pvData) {
@@ -710,7 +804,8 @@ function showPageCategoryDetail(pageKey) {
   setTimeout(() => {
     const ctx = document.getElementById('chartPageDetail30d');
     if (!ctx) return;
-    new Chart(ctx, {
+    if (ctx.__chart) ctx.__chart.destroy();
+    ctx.__chart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: chartLabels,
@@ -727,22 +822,32 @@ function showPageCategoryDetail(pageKey) {
 
 function renderPageCategoryStats(pvData) {
   const today = getChinaDate();
-  const pages = (pvData.pages && pvData.pages[today]) || {};
+  const todayPages = (pvData.pages && pvData.pages[today]) || {};
   const pageNames = {
     works: '作品', events: '活动', circles: '圈子',
     projects: '企划', updates: '动态', contact: '联系', announcements: '公告'
   };
   const icons = { works: '🎨', events: '📅', circles: '🏠', projects: '📋', updates: '📰', contact: '💬', announcements: '📢' };
 
+  // 计算历史总浏览量
+  const totalPages = {};
+  for (const [date, pageData] of Object.entries(pvData.pages || {})) {
+    for (const [page, count] of Object.entries(pageData)) {
+      totalPages[page] = (totalPages[page] || 0) + count;
+    }
+  }
+
   const grid = document.getElementById('pageStatsGrid');
   grid.innerHTML = Object.entries(pageNames).map(([key, label]) => {
-    const count = pages[key] || 0;
+    const todayCount = todayPages[key] || 0;
+    const totalCount = totalPages[key] || 0;
     const url = getPageUrl(key);
     return `<div class="pv-overview-item" onclick="showPageCategoryDetail('${key}')" style="cursor:pointer;">
       <div class="pv-overview-icon">${icons[key] || '📄'}</div>
       <div class="pv-overview-body">
-        <div class="pv-overview-number">${count}</div>
+        <div class="pv-overview-number">${todayCount}</div>
         <div class="pv-overview-label"><a href="${url}" target="_blank" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;">${label}</a></div>
+        <div style="font-size:0.7rem;color:var(--haze);margin-top:0.1rem;">总计 ${totalCount}</div>
       </div>
       <div class="pv-overview-arrow">›</div>
     </div>`;
@@ -760,6 +865,7 @@ function renderPageCharts(pvData) {
 
   // Doughnut chart - today's breakdown
   const ctx1 = document.getElementById('chartPageBreakdown');
+  if (!ctx1) return;
   if (ctx1.__chart) ctx1.__chart.destroy();
   ctx1.__chart = new Chart(ctx1, {
     type: 'doughnut',
@@ -794,6 +900,7 @@ function renderPageCharts(pvData) {
   }
 
   const ctx2 = document.getElementById('chartPageTrend7d');
+  if (!ctx2) return;
   if (ctx2.__chart) ctx2.__chart.destroy();
   ctx2.__chart = new Chart(ctx2, {
     type: 'line',
@@ -815,7 +922,10 @@ function renderItemRanking(pvData, entities) {
   const today = getChinaDate();
 
   // Calculate total views per item within date range
-  const ranking = Object.entries(items).map(([id, dates]) => {
+  const ranking = Object.entries(items).map(([id, itemData]) => {
+    // 兼容新格式 { total, dates } 和旧格式 { date: count }
+    const dates = itemData.dates || itemData;
+    const itemTotal = itemData.total || 0;
     let total = 0;
     const trendData = [];
     for (let i = days - 1; i >= 0; i--) {
@@ -824,6 +934,8 @@ function renderItemRanking(pvData, entities) {
       total += count;
       if (i < 7) trendData.push(count);
     }
+    // 如果日期范围是全部，使用服务端汇总的total
+    if (dateRange === 'all' && itemTotal > 0) total = itemTotal;
     return { id, total, trendData };
   }).filter(r => r.total > 0).sort((a, b) => b.total - a.total);
 
@@ -905,11 +1017,14 @@ function renderItemTrendChart(topItems, items, days) {
     const date = getChinaDateDaysAgo(i);
     labels.push(date.slice(5));
     topItems.forEach((item, idx) => {
-      datasets[idx].data.push((items[item.id] && items[item.id][date]) || 0);
+      const itemData = items[item.id];
+      const dates = itemData ? (itemData.dates || itemData) : {};
+      datasets[idx].data.push(dates[date] || 0);
     });
   }
 
   const ctx = document.getElementById('chartItemTrend');
+  if (!ctx) return;
   if (ctx.__chart) ctx.__chart.destroy();
   ctx.__chart = new Chart(ctx, {
     type: 'line',

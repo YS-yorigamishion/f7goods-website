@@ -776,6 +776,27 @@
             </div>
           </div>
 
+          <!-- 搜索浏览统计 -->
+          <div class="admin-card" style="margin-top:1.5rem;">
+            <h3 style="margin-bottom:1rem;">🔍 搜索浏览统计</h3>
+            <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;">
+              <input type="text" class="form-input" id="pvSearchInput"
+                placeholder="输入作品/活动/圈子/企划/动态名称..."
+                style="flex:1;min-width:200px;padding:0.5rem 0.8rem;"
+                oninput="debounceSearchPageStats()">
+              <select class="form-input" id="pvSearchType" onchange="searchPageStats()"
+                style="width:auto;padding:0.5rem 0.8rem;">
+                <option value="all">全部类型</option>
+                <option value="works">作品</option>
+                <option value="events">活动</option>
+                <option value="circles">圈子</option>
+                <option value="projects">企划</option>
+                <option value="updates">动态</option>
+              </select>
+            </div>
+            <div id="pvSearchResults" style="margin-top:1rem;"></div>
+          </div>
+
           <!-- 各页面浏览量 -->
           <div class="pv-section" style="margin-top:1.5rem;">
             <h3 class="pv-section-title">今日各页面浏览量</h3>
