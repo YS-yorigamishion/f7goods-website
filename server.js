@@ -1790,6 +1790,21 @@ app.get('/api/admin/author-announcements/:id/read-status', authMiddleware, (req,
   });
 });
 
+// Admin: delete author announcement
+app.delete('/api/admin/author-announcements/:id', authMiddleware, (req, res) => {
+  let announcements = [];
+  try { announcements = readJSON('author-announcements.json'); } catch {}
+  const idx = announcements.findIndex(a => a.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: '公告不存在' });
+  announcements.splice(idx, 1);
+  writeJSON('author-announcements.json', announcements);
+  // Also clean up read records
+  const reads = getAuthorAnnouncementReads();
+  delete reads[req.params.id];
+  saveAuthorAnnouncementReads(reads);
+  res.json({ success: true });
+});
+
 // Author: get own announcements
 app.get('/api/author/announcements', authorAuthMiddleware, (req, res) => {
   let announcements = [];

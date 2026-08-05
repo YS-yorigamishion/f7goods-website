@@ -589,8 +589,16 @@
         return;
       }
       dropdown.innerHTML = circles.map(c =>
-        `<div class="circle-option" data-id="${c.id}" data-name="${escapeHtml(c.name)}" onclick="selectCircle('${c.id}', '${escapeHtml(c.name)}')" style="padding:0.6rem 0.8rem;cursor:pointer;font-size:0.85rem;border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseover="this.style.background='var(--paper)'" onmouseout="this.style.background=''">${escapeHtml(c.name)}</div>`
+        `<div class="circle-option" data-id="${c.id}" data-name="${c.name.replace(/"/g, '&quot;')}" style="padding:0.6rem 0.8rem;cursor:pointer;font-size:0.85rem;border-bottom:1px solid var(--border);transition:background 0.15s;">${escapeHtml(c.name)}</div>`
       ).join('');
+      // Event delegation for click
+      dropdown.querySelectorAll('.circle-option').forEach(opt => {
+        opt.addEventListener('click', function() {
+          selectCircle(this.dataset.id, this.dataset.name);
+        });
+        opt.addEventListener('mouseover', function() { this.style.background = 'var(--paper)'; });
+        opt.addEventListener('mouseout', function() { this.style.background = ''; });
+      });
     }
 
     function filterCircleOptions() {

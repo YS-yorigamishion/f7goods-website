@@ -21,7 +21,9 @@ for (const file of files) {
       created++;
       console.log(`  Created: data/${file}`);
     } else {
-      fs.writeFileSync(target, file.endsWith('s.json') ? '[]' : '{}');
+      // author-announcement-reads.json is an object, not array
+      const defaultContent = file === 'author-announcement-reads.json' ? '{}' : (file.endsWith('s.json') ? '[]' : '{}');
+      fs.writeFileSync(target, defaultContent);
       created++;
       console.log(`  Created: data/${file} (empty)`);
     }

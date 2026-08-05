@@ -5475,6 +5475,7 @@ async function loadAuthorAnnouncements() {
             </div>
             <span style="font-size:0.8rem;color:var(--haze);">${date}</span>
             <button class="btn-sm" style="margin-left:0.5rem;" onclick="viewAaReadStatus('${a.id}')">查看已读</button>
+            <button class="btn-sm btn-delete" style="margin-left:0.3rem;" onclick="deleteAuthorAnnouncement('${a.id}')">删除</button>
           </div>
           <div style="font-size:0.85rem;color:var(--haze);margin-top:0.3rem;white-space:pre-wrap;">${escapeHtml(a.content).substring(0, 100)}${a.content.length > 100 ? '...' : ''}</div>
         </div>
@@ -5506,6 +5507,17 @@ async function viewAaReadStatus(id) {
     document.getElementById('modalSave').style.display = '';
   } catch (e) {
     showToast('加载失败', 'error');
+  }
+}
+
+async function deleteAuthorAnnouncement(id) {
+  if (!confirm('确定要删除这条公告吗？')) return;
+  try {
+    await adminAPI('DELETE', `/api/admin/author-announcements/${id}`);
+    showToast('公告已删除', 'success');
+    loadAuthorAnnouncements();
+  } catch (e) {
+    showToast('删除失败', 'error');
   }
 }
 
