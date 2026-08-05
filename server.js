@@ -488,7 +488,7 @@ app.get('/api/author/works/export', authorAuthMiddleware, (req, res) => {
 
   const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   const circle = readJSON('circles.json').find(c => c.id === req.author.circleId);
-  res.setHeader('Content-Disposition', `attachment; filename=works_${circle?.name || 'export'}.xlsx`);
+  res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''works_${encodeURIComponent(circle?.name || 'export')}.xlsx`);
   res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.send(buf);
 });
