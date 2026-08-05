@@ -48,7 +48,16 @@
     </div>
 
     <div class="cards-grid" id="worksGrid">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div class="skeleton-grid" id="worksSkeleton">
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+      </div>
     </div>
   </main>
 
@@ -203,6 +212,9 @@
       } else if (sortVal === 'wants-asc') {
         filtered.sort((a, b) => (a.wants || 0) - (b.wants || 0));
       }
+
+      // Remove skeleton
+      document.getElementById('worksSkeleton')?.remove();
 
       if (filtered.length === 0) {
         grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的作品</p><button class="btn" style="margin-top:1rem;" onclick="clearFilters()">清除筛选</button></div>';

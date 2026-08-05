@@ -41,7 +41,11 @@
     </div>
 
     <div class="cards-grid" id="updatesGrid">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div id="updatesSkeleton" class="skeleton-grid">
+        <div class="skeleton-card" style="grid-column:1/-1;"><div class="skeleton" style="height:180px;border-radius:8px 8px 0 0;"></div><div style="padding:1rem;"><div class="skeleton skeleton-text" style="width:60%;"></div><div class="skeleton skeleton-text" style="width:40%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:80%;margin-top:0.5rem;"></div></div></div>
+        <div class="skeleton-card" style="grid-column:1/-1;"><div class="skeleton" style="height:180px;border-radius:8px 8px 0 0;"></div><div style="padding:1rem;"><div class="skeleton skeleton-text" style="width:70%;"></div><div class="skeleton skeleton-text" style="width:30%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:75%;margin-top:0.5rem;"></div></div></div>
+        <div class="skeleton-card" style="grid-column:1/-1;"><div class="skeleton" style="height:180px;border-radius:8px 8px 0 0;"></div><div style="padding:1rem;"><div class="skeleton skeleton-text" style="width:50%;"></div><div class="skeleton skeleton-text" style="width:45%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:85%;margin-top:0.5rem;"></div></div></div>
+      </div>
     </div>
   </main>
 
@@ -97,6 +101,8 @@
 
     function renderUpdates() {
       const grid = document.getElementById('updatesGrid');
+      // Remove skeleton
+      document.getElementById('updatesSkeleton')?.remove();
       const search = document.getElementById('searchInput').value.toLowerCase();
       const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
       let filtered = [...allUpdates];

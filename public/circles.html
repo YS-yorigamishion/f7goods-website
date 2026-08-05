@@ -31,7 +31,14 @@
     </div>
 
     <div class="cards-grid" id="circlesGrid">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div id="circlesSkeleton" class="skeleton-grid">
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+      </div>
     </div>
   </main>
 
@@ -100,6 +107,8 @@
 
     function renderCircles() {
       const grid = document.getElementById('circlesGrid');
+      // Remove skeleton
+      document.getElementById('circlesSkeleton')?.remove();
       const search = document.getElementById('searchInput').value.toLowerCase();
       let filtered = allCircles;
       if (currentCategory !== 'all') {

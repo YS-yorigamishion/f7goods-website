@@ -1989,8 +1989,10 @@ async function deleteWork(id) {
 // ===== Batch Edit =====
 function updateBatchBtn() {
   const checked = document.querySelectorAll('.work-checkbox:checked');
-  const btn = document.getElementById('batchEditBtn');
-  if (btn) btn.style.display = checked.length > 1 ? 'inline-flex' : 'none';
+  const editBtn = document.getElementById('batchEditBtn');
+  const deleteBtn = document.getElementById('batchDeleteBtn');
+  if (editBtn) editBtn.style.display = checked.length > 1 ? 'inline-flex' : 'none';
+  if (deleteBtn) deleteBtn.style.display = checked.length > 0 ? 'inline-flex' : 'none';
 }
 
 function toggleSelectAllWorks() {
@@ -2282,6 +2284,20 @@ async function batchDeleteEvents() {
   }
   showToast(`已删除 ${success} 个活动`, 'success');
   loadEvents();
+}
+
+async function batchDeleteWorks() {
+  const checked = document.querySelectorAll('.work-checkbox:checked');
+  if (checked.length === 0) { alert('请先选择要删除的作品'); return; }
+  if (!confirm(`确定删除选中的 ${checked.length} 个作品？此操作不可撤销。`)) return;
+
+  let success = 0;
+  for (const cb of checked) {
+    const result = await adminAPI('DELETE', `/api/admin/works/${cb.value}`);
+    if (result && result.success) success++;
+  }
+  showToast(`已删除 ${success} 个作品`, 'success');
+  loadWorks();
 }
 
 // Manage editable authors for events/projects/updates
@@ -5527,13 +5543,41 @@ function openChangePasswordModal() {
   openModal();
 }
 
+// Updates search filter
+function filterUpdates() {
+  const query = document.getElementById('updatesSearch')?.value.toLowerCase().trim() || '';
+  const rows = document.querySelectorAll('#updatesTableBody tr');
+  rows.forEach(row => {
+    const title = row.querySelector('td:first-child')?.textContent.toLowerCase() || '';
+    const content = row.querySelector('td:nth-child(7)')?.textContent.toLowerCase() || '';
+    row.style.display = (!query || title.includes(query) || content.includes(query)) ? '' : 'none';
+  });
+}
+
 // ===== Edit History =====
-async function loadEditLog() {
+async function loadEditLog(page = 1) {
   try {
-    const log = await adminAPI('GET', '/api/admin/edit-log');
+    const result = await adminAPI('GET', `/api/admin/edit-log?page=${page}&limit=50`);
     const container = document.getElementById('editLogContainer');
+
+    // Handle paginated response
+    let log, total, totalPages;
+    if (result && result.items) {
+      log = result.items;
+      total = result.total;
+      totalPages = result.totalPages;
+      pagination.editlog = { page: result.page, total, totalPages };
+    } else {
+      // Fallback for old format
+      log = result || [];
+      total = log.length;
+      totalPages = 1;
+      pagination.editlog = { page: 1, total, totalPages };
+    }
+
     if (!log || log.length === 0) {
       container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无编辑记录</p>';
+      document.getElementById('editLogPagination').innerHTML = '';
       return;
     }
     container.innerHTML = log.map(entry => {
@@ -5552,6 +5596,11 @@ async function loadEditLog() {
         <span style="flex:1;color:var(--ink);min-width:0;">${escapeHtml(entry.target)}${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
       </div>`;
     }).join('');
+
+    // Render pagination
+    const paginationEl = document.getElementById('editLogPagination');
+    if (paginationEl) paginationEl.innerHTML = renderPagination('editlog', 'loadEditLog');
+
     // Apply existing search filter if any
     filterEditLog();
   } catch (e) {

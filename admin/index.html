@@ -290,6 +290,7 @@
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminWorks()">📥 导出</button>
               <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminWorks(this)"></label>
               <button class="btn btn-primary" id="batchEditBtn" style="display:none;background:var(--accent-alt);" onclick="openBatchEditModal()">批量编辑</button>
+              <button class="btn" id="batchDeleteBtn" style="display:none;background:var(--accent);color:white;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteWorks()">批量删除</button>
               <button class="btn btn-primary" onclick="openWorkModal()">+ 新增作品</button>
             </div>
           </div>
@@ -417,6 +418,7 @@
           <div class="page-toolbar">
             <h3>动态管理</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <input type="text" class="form-input" id="updatesSearch" placeholder="搜索动态..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterUpdates()">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminUpdates()">📥 导出</button>
               <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminUpdates(this)"></label>
               <button class="btn btn-primary" onclick="openUpdateModal()">+ 新增动态</button>
@@ -546,6 +548,7 @@
             <div id="editLogContainer" style="max-height:600px;overflow-y:auto;">
               <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
             </div>
+            <div id="editLogPagination"></div>
           </div>
         </div>
 

@@ -1706,7 +1706,14 @@ app.get('/api/admin/edit-log', authMiddleware, (req, res) => {
   let log = [];
   try { log = readJSON('edit-log.json'); } catch {}
   if (!Array.isArray(log)) log = [];
-  res.json(log.reverse().slice(0, 200));
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 50;
+  const total = log.length;
+  const reversed = log.reverse();
+  const items = reversed.slice((page - 1) * limit, page * limit);
+
+  res.json({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
 });
 
 // Settings

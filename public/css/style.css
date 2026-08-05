@@ -1384,6 +1384,13 @@ textarea.form-input {
   width: 60%;
 }
 
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.2rem;
+  width: 100%;
+}
+
 /* ===== Empty State ===== */
 .empty-state {
   text-align: center;

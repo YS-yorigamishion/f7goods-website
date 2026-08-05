@@ -34,7 +34,14 @@
     </div>
 
     <div class="cards-grid" id="projectsGrid">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div id="projectsSkeleton" class="skeleton-grid">
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+      </div>
     </div>
   </main>
 
@@ -74,6 +81,8 @@
 
     function renderProjects() {
       const grid = document.getElementById('projectsGrid');
+      // Remove skeleton
+      document.getElementById('projectsSkeleton')?.remove();
       let filtered = allProjects;
       if (currentStatus !== 'all') {
         filtered = filtered.filter(p => p.status === currentStatus);
