@@ -438,6 +438,19 @@ async function toggleLike(workId, btn) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: getUid() })
     });
+
+    // Check HTTP status code
+    if (!res.ok) {
+      var errData = await res.json().catch(function() { return {}; });
+      if (res.status === 429) {
+        showToast('操作过于频繁，请稍后再试', 'warning');
+      } else {
+        showToast(errData.error || '操作失败，请重试', 'error');
+      }
+      btn.disabled = false;
+      return;
+    }
+
     var data = await res.json();
 
     // Handle alreadyLiked response - sync localStorage
@@ -563,6 +576,21 @@ async function submitWant() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: getUid() })
     });
+
+    // Check HTTP status code
+    if (!res.ok) {
+      var errData = await res.json().catch(function() { return {}; });
+      if (res.status === 429) {
+        errorEl.textContent = '操作过于频繁，请稍后再试';
+      } else {
+        errorEl.textContent = errData.error || '提交失败，请重试';
+      }
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '确认';
+      return;
+    }
+
     var data = await res.json();
 
     var wantedList = getWantedWorks();
@@ -598,6 +626,18 @@ async function doUnwant(workId, currentCount) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: getUid() })
     });
+
+    // Check HTTP status code
+    if (!res.ok) {
+      var errData = await res.json().catch(function() { return {}; });
+      if (res.status === 429) {
+        showToast('操作过于频繁，请稍后再试', 'warning');
+      } else {
+        showToast(errData.error || '取消失败，请重试', 'error');
+      }
+      return;
+    }
+
     var data = await res.json();
 
     var wantedList = getWantedWorks();
