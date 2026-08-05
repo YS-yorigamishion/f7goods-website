@@ -706,6 +706,14 @@ function openLightbox(images, startIndex = 0) {
       }
     });
 
+    // 滚轮缩放
+    img.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.2 : 0.2;
+      lbZoom.scale = Math.max(0.5, Math.min(5, lbZoom.scale + delta));
+      applyZoom(img);
+    }, { passive: false });
+
     img.addEventListener('mousedown', (e) => {
       if (lbZoom.scale <= 1) return;
       e.preventDefault();
