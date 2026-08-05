@@ -1791,6 +1791,21 @@ app.get('/api/admin/author-announcements/:id/read-status', authMiddleware, (req,
 });
 
 // Admin: delete author announcement
+// Admin: update author announcement
+app.put('/api/admin/author-announcements/:id', authMiddleware, (req, res) => {
+  const { title, content, pinned, popup } = req.body;
+  let announcements = [];
+  try { announcements = readJSON('author-announcements.json'); } catch {}
+  const idx = announcements.findIndex(a => a.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: '公告不存在' });
+  if (title !== undefined) announcements[idx].title = title;
+  if (content !== undefined) announcements[idx].content = content;
+  if (pinned !== undefined) announcements[idx].pinned = pinned;
+  if (popup !== undefined) announcements[idx].popup = popup;
+  writeJSON('author-announcements.json', announcements);
+  res.json({ success: true, announcement: announcements[idx] });
+});
+
 app.delete('/api/admin/author-announcements/:id', authMiddleware, (req, res) => {
   let announcements = [];
   try { announcements = readJSON('author-announcements.json'); } catch {}

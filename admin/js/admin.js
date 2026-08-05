@@ -5468,7 +5468,7 @@ async function loadAuthorAnnouncements() {
         <div style="padding:0.8rem 0;border-bottom:1px solid var(--border);">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="flex:1;">
-              <span style="font-weight:600;">${escapeHtml(a.title)}</span>
+              <span style="font-weight:600;cursor:pointer;color:var(--accent-alt);" onclick="viewAuthorAnnouncement('${a.id}')">${escapeHtml(a.title)}</span>
               ${a.pinned ? '<span style="font-size:0.75rem;background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.5rem;">置顶</span>' : ''}
               ${a.popup ? '<span style="font-size:0.75rem;background:var(--accent-alt);color:white;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.3rem;">弹窗</span>' : ''}
               <span style="font-size:0.8rem;color:var(--haze);margin-left:0.5rem;">发送给 ${a.sentTo.length} 位作者</span>
@@ -5518,6 +5518,62 @@ async function deleteAuthorAnnouncement(id) {
     loadAuthorAnnouncements();
   } catch (e) {
     showToast('删除失败', 'error');
+  }
+}
+
+async function viewAuthorAnnouncement(id) {
+  try {
+    const announcements = await adminAPI('GET', '/api/admin/author-announcements');
+    const a = announcements.find(x => x.id === id);
+    if (!a) return showToast('公告不存在', 'error');
+
+    const readStatus = await adminAPI('GET', `/api/admin/author-announcements/${id}/read-status`);
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = `
+      <h3 style="margin-bottom:1rem;">编辑公告</h3>
+      <div style="display:flex;flex-direction:column;gap:0.8rem;">
+        <div>
+          <label style="font-size:0.85rem;color:var(--haze);">标题</label>
+          <input type="text" class="form-input" id="editAaTitle" value="${escapeHtml(a.title)}" style="width:100%;">
+        </div>
+        <div>
+          <label style="font-size:0.85rem;color:var(--haze);">内容</label>
+          <textarea class="form-input" id="editAaContent" rows="6" style="width:100%;resize:vertical;">${escapeHtml(a.content)}</textarea>
+        </div>
+        <div style="display:flex;gap:1rem;align-items:center;">
+          <label style="font-size:0.85rem;cursor:pointer;">
+            <input type="checkbox" id="editAaPinned" ${a.pinned ? 'checked' : ''}> 置顶
+          </label>
+          <label style="font-size:0.85rem;cursor:pointer;">
+            <input type="checkbox" id="editAaPopup" ${a.popup ? 'checked' : ''}> 首次弹窗
+          </label>
+        </div>
+        <div style="font-size:0.8rem;color:var(--haze);">
+          发送时间：${new Date(a.sentAt).toLocaleString('zh-CN')} ｜ 已读 ${readStatus.read.length}/${readStatus.total} 人
+        </div>
+      </div>
+    `;
+    const saveBtn = document.getElementById('modalSave');
+    saveBtn.style.display = '';
+    saveBtn.textContent = '保存';
+    saveBtn.onclick = async () => {
+      try {
+        await adminAPI('PUT', `/api/admin/author-announcements/${id}`, {
+          title: document.getElementById('editAaTitle').value.trim(),
+          content: document.getElementById('editAaContent').value.trim(),
+          pinned: document.getElementById('editAaPinned').checked,
+          popup: document.getElementById('editAaPopup').checked
+        });
+        showToast('保存成功', 'success');
+        closeModal();
+        loadAuthorAnnouncements();
+      } catch (e) {
+        showToast('保存失败', 'error');
+      }
+    };
+    openModal();
+  } catch (e) {
+    showToast('加载失败', 'error');
   }
 }
 
