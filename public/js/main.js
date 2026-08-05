@@ -440,6 +440,22 @@ async function toggleLike(workId, btn) {
     });
     var data = await res.json();
 
+    // Handle alreadyLiked response - sync localStorage
+    if (data.alreadyLiked) {
+      var likedList = getLikedWorks();
+      if (likedList.indexOf(workId) === -1) {
+        likedList.push(workId);
+        localStorage.setItem('f7liked', JSON.stringify(likedList));
+      }
+      updateLikeButtons(workId, true, data.likes);
+      // Update allWorks data
+      if (typeof allWorks !== 'undefined') {
+        var w = allWorks.find(function(w) { return w.id === workId; });
+        if (w) w.likes = data.likes;
+      }
+      return;
+    }
+
     var likedList = getLikedWorks();
     if (liked) {
       likedList = likedList.filter(function(id) { return id !== workId; });
@@ -448,13 +464,9 @@ async function toggleLike(workId, btn) {
     }
     localStorage.setItem('f7liked', JSON.stringify(likedList));
 
-    // Update only the clicked button
+    // Update ALL buttons for this work (not just clicked one)
     var newLiked = !liked;
-    btn.disabled = false;
-    if (newLiked) btn.classList.add('liked'); else btn.classList.remove('liked');
-    btn.querySelector('.like-icon').textContent = newLiked ? '❤️' : '🤍';
-    btn.querySelector('.like-count').textContent = data.likes > 0 ? data.likes : '';
-    btn.title = newLiked ? '取消点赞' : '点赞';
+    updateLikeButtons(workId, newLiked, data.likes);
 
     // Update allWorks data
     if (typeof allWorks !== 'undefined') {

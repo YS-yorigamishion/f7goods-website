@@ -1333,21 +1333,22 @@ app.post('/api/works/:id/like', likeWantRateLimit, (req, res) => {
   if (!likesCache[workId]) likesCache[workId] = [];
 
   if (likesCache[workId].includes(uid)) {
-    const works = readJSON('works.json');
-    const w = works.find(w => w.id === workId);
-    return res.json({ likes: w ? (w.likes || 0) : 0, alreadyLiked: true });
+    // Use cache length as source of truth
+    return res.json({ likes: likesCache[workId].length, alreadyLiked: true });
   }
 
   const works = readJSON('works.json');
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  if (!works[index].likes) works[index].likes = 0;
 
   likesCache[workId].push(uid);
   saveLikes();
-  works[index].likes++;
+
+  // Use cache length as source of truth for count
+  const newCount = likesCache[workId].length;
+  works[index].likes = newCount;
   writeJSON('works.json', works);
-  res.json({ likes: works[index].likes });
+  res.json({ likes: newCount });
 });
 
 app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
@@ -1359,9 +1360,8 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
 
   const idx = likesCache[workId].indexOf(uid);
   if (idx === -1) {
-    const works = readJSON('works.json');
-    const w = works.find(w => w.id === workId);
-    return res.json({ likes: w ? (w.likes || 0) : 0 });
+    // Use cache length as source of truth
+    return res.json({ likes: likesCache[workId].length });
   }
 
   const works = readJSON('works.json');
@@ -1370,9 +1370,12 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
 
   likesCache[workId].splice(idx, 1);
   saveLikes();
-  works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
+
+  // Use cache length as source of truth for count
+  const newCount = likesCache[workId].length;
+  works[index].likes = newCount;
   writeJSON('works.json', works);
-  res.json({ likes: works[index].likes });
+  res.json({ likes: newCount });
 });
 
 app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
@@ -1383,21 +1386,22 @@ app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
   if (!wantsCache[workId]) wantsCache[workId] = [];
 
   if (wantsCache[workId].includes(uid)) {
-    const works = readJSON('works.json');
-    const w = works.find(w => w.id === workId);
-    return res.json({ wants: w ? (w.wants || 0) : 0, alreadyWanted: true });
+    // Use cache length as source of truth
+    return res.json({ wants: wantsCache[workId].length, alreadyWanted: true });
   }
 
   const works = readJSON('works.json');
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  if (!works[index].wants) works[index].wants = 0;
 
   wantsCache[workId].push(uid);
   saveWants();
-  works[index].wants++;
+
+  // Use cache length as source of truth for count
+  const newCount = wantsCache[workId].length;
+  works[index].wants = newCount;
   writeJSON('works.json', works);
-  res.json({ wants: works[index].wants });
+  res.json({ wants: newCount });
 });
 
 app.get('/api/works/:id/want-status', (req, res) => {
@@ -1417,9 +1421,8 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
 
   const idx = wantsCache[workId].indexOf(uid);
   if (idx === -1) {
-    const works = readJSON('works.json');
-    const w = works.find(w => w.id === workId);
-    return res.json({ wants: w ? (w.wants || 0) : 0 });
+    // Use cache length as source of truth
+    return res.json({ wants: wantsCache[workId].length });
   }
 
   const works = readJSON('works.json');
@@ -1428,9 +1431,12 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
 
   wantsCache[workId].splice(idx, 1);
   saveWants();
-  works[index].wants = Math.max(0, (works[index].wants || 0) - 1);
+
+  // Use cache length as source of truth for count
+  const newCount = wantsCache[workId].length;
+  works[index].wants = newCount;
   writeJSON('works.json', works);
-  res.json({ wants: works[index].wants });
+  res.json({ wants: newCount });
 });
 
 // Events
