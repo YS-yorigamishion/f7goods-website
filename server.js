@@ -1332,23 +1332,22 @@ app.post('/api/works/:id/like', likeWantRateLimit, (req, res) => {
 
   if (!likesCache[workId]) likesCache[workId] = [];
 
-  if (likesCache[workId].includes(uid)) {
-    // Use cache length as source of truth
-    return res.json({ likes: likesCache[workId].length, alreadyLiked: true });
-  }
-
   const works = readJSON('works.json');
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
+  if (likesCache[workId].includes(uid)) {
+    // Already liked - return current count from works.json
+    return res.json({ likes: works[index].likes || 0, alreadyLiked: true });
+  }
+
   likesCache[workId].push(uid);
   saveLikes();
 
-  // Use cache length as source of truth for count
-  const newCount = likesCache[workId].length;
-  works[index].likes = newCount;
+  // Increment count based on current value in works.json
+  works[index].likes = (works[index].likes || 0) + 1;
   writeJSON('works.json', works);
-  res.json({ likes: newCount });
+  res.json({ likes: works[index].likes });
 });
 
 app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
@@ -1358,24 +1357,23 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
 
   if (!likesCache[workId]) likesCache[workId] = [];
 
-  const idx = likesCache[workId].indexOf(uid);
-  if (idx === -1) {
-    // Use cache length as source of truth
-    return res.json({ likes: likesCache[workId].length });
-  }
-
   const works = readJSON('works.json');
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
+  const idx = likesCache[workId].indexOf(uid);
+  if (idx === -1) {
+    // Not in cache - return current count from works.json
+    return res.json({ likes: works[index].likes || 0 });
+  }
+
   likesCache[workId].splice(idx, 1);
   saveLikes();
 
-  // Use cache length as source of truth for count
-  const newCount = likesCache[workId].length;
-  works[index].likes = newCount;
+  // Decrement count based on current value in works.json
+  works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
   writeJSON('works.json', works);
-  res.json({ likes: newCount });
+  res.json({ likes: works[index].likes });
 });
 
 app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
@@ -1385,23 +1383,22 @@ app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
 
   if (!wantsCache[workId]) wantsCache[workId] = [];
 
-  if (wantsCache[workId].includes(uid)) {
-    // Use cache length as source of truth
-    return res.json({ wants: wantsCache[workId].length, alreadyWanted: true });
-  }
-
   const works = readJSON('works.json');
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
+  if (wantsCache[workId].includes(uid)) {
+    // Already wanted - return current count from works.json
+    return res.json({ wants: works[index].wants || 0, alreadyWanted: true });
+  }
+
   wantsCache[workId].push(uid);
   saveWants();
 
-  // Use cache length as source of truth for count
-  const newCount = wantsCache[workId].length;
-  works[index].wants = newCount;
+  // Increment count based on current value in works.json
+  works[index].wants = (works[index].wants || 0) + 1;
   writeJSON('works.json', works);
-  res.json({ wants: newCount });
+  res.json({ wants: works[index].wants });
 });
 
 app.get('/api/works/:id/want-status', (req, res) => {
@@ -1419,24 +1416,23 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
 
   if (!wantsCache[workId]) wantsCache[workId] = [];
 
-  const idx = wantsCache[workId].indexOf(uid);
-  if (idx === -1) {
-    // Use cache length as source of truth
-    return res.json({ wants: wantsCache[workId].length });
-  }
-
   const works = readJSON('works.json');
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
+  const idx = wantsCache[workId].indexOf(uid);
+  if (idx === -1) {
+    // Not in cache - return current count from works.json
+    return res.json({ wants: works[index].wants || 0 });
+  }
+
   wantsCache[workId].splice(idx, 1);
   saveWants();
 
-  // Use cache length as source of truth for count
-  const newCount = wantsCache[workId].length;
-  works[index].wants = newCount;
+  // Decrement count based on current value in works.json
+  works[index].wants = Math.max(0, (works[index].wants || 0) - 1);
   writeJSON('works.json', works);
-  res.json({ wants: newCount });
+  res.json({ wants: works[index].wants });
 });
 
 // Events
