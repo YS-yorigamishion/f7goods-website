@@ -34,6 +34,7 @@
     <div class="filter-bar" id="categoryFilters">
       <button class="filter-btn active" data-cat="all">全部</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
+        <button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">🎲 随机周边</button>
         <select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
           <option value="default">默认排序</option>
           <option value="date-asc">发售时间 ↑ 早→晚</option>
@@ -57,6 +58,20 @@
         <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
         <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
         <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+      </div>
+    </div>
+
+    <!-- Random Works Modal -->
+    <div class="random-modal-overlay" id="randomModalOverlay" onclick="if(event.target===this)closeRandomModal()">
+      <div class="random-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="margin:0;">🎲 随机周边</h3>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <button class="btn btn-primary" onclick="renderRandomWorks()">🎲 换一批</button>
+            <button onclick="closeRandomModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
+          </div>
+        </div>
+        <div class="random-grid" id="randomGrid"></div>
       </div>
     </div>
   </main>
@@ -255,6 +270,42 @@
       window._worksPage = (window._worksPage || 1) + 1;
       renderWorks();
     }
+
+    // ===== Random Works =====
+    function showRandomWorks() {
+      if (!allWorks || allWorks.length === 0) return;
+      renderRandomWorks();
+      document.getElementById('randomModalOverlay').classList.add('open');
+    }
+
+    function closeRandomModal() {
+      document.getElementById('randomModalOverlay').classList.remove('open');
+    }
+
+    function renderRandomWorks() {
+      const shuffled = [...allWorks].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 9);
+      document.getElementById('randomGrid').innerHTML = selected.map(work => `
+        <a href="/work-detail.html?id=${work.id}" style="text-decoration:none;color:inherit;">
+          <div class="card" style="margin:0;">
+            <div class="card-image">
+              ${work.images && work.images.length > 0
+                ? `<img src="${work.images[0]}" alt="${work.title}" loading="lazy">`
+                : '<span class="placeholder-icon">🎨</span>'}
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">${work.title}</h3>
+              <p class="card-subtitle">${(work.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join(', ') || ''}</p>
+            </div>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    // ESC key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeRandomModal();
+    });
 
     loadWorks();
   </script>
