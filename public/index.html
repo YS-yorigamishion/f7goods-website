@@ -34,7 +34,6 @@
     <div class="filter-bar" id="categoryFilters">
       <button class="filter-btn active" data-cat="all">全部</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
-        <button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">🎲 随机周边</button>
         <select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
           <option value="default">默认排序</option>
           <option value="date-asc">发售时间 ↑ 早→晚</option>
@@ -150,7 +149,7 @@
       const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">默认排序</option><option value="date-asc">发售时间 ↑ 早→晚</option><option value="date-desc">发售时间 ↓ 晚→早</option><option value="likes-desc">喜爱数 ↓ 高→低</option><option value="likes-asc">喜爱数 ↑ 低→高</option><option value="wants-desc">想要数 ↓ 高→低</option><option value="wants-asc">想要数 ↑ 低→高</option></select>`;
       catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部</button>' +
         CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('') +
-        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">${sortHtml}${searchHtml}</div>`;
+        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;"><button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">🎲 随机周边</button>${sortHtml}${searchHtml}</div>`;
 
       // Re-bind events
       document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
