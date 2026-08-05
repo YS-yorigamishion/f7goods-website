@@ -332,7 +332,7 @@ async function initPage(activePage, itemId) {
 }
 
 // Toast notification
-function showToast(message, type = 'info') {
+function showToast(message, type = 'info', duration = 3000) {
   let toast = document.getElementById('toast');
   if (!toast) {
     toast = document.createElement('div');
@@ -344,7 +344,7 @@ function showToast(message, type = 'info') {
   toast.className = `toast ${type}`;
   requestAnimationFrame(() => {
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
+    setTimeout(() => toast.classList.remove('show'), duration);
   });
 }
 

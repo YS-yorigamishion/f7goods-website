@@ -443,7 +443,7 @@
       <div id="tab-images" class="mgmt-section">
         <div class="mgmt-card">
           <h3 style="margin-bottom:1rem;">图片管理</h3>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">管理您上传的所有图片。点击图片可复制链接。</p>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">管理您上传的所有图片。点击图片可复制链接。超过5MB的图片在批量上传时会被跳过。</p>
           <div style="display:flex;gap:0.5rem;margin-bottom:1rem;align-items:center;flex-wrap:wrap;">
             <input type="file" id="batchUploadInput" accept="image/*" multiple style="font-size:0.85rem;">
             <button class="btn btn-primary" onclick="batchUploadAuthorImages()">批量上传</button>
@@ -454,6 +454,20 @@
             <span id="imageCount" style="font-size:0.85rem;color:var(--haze);margin-left:auto;"></span>
           </div>
           <div id="authorImageGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.8rem;"></div>
+        </div>
+
+        <!-- Unused Images -->
+        <div class="mgmt-card" style="margin-top:1.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="margin:0;">未使用图片清理</h3>
+            <div style="display:flex;gap:0.5rem;">
+              <button class="btn" onclick="loadUnusedAuthorImages()" style="font-size:0.85rem;">刷新检测</button>
+              <button class="btn" id="cleanupUnusedBtn" onclick="cleanupUnusedAuthorImages()" style="display:none;background:var(--accent);color:white;font-size:0.85rem;">清理选中</button>
+            </div>
+          </div>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:0.8rem;">检测您上传的图片中未被任何作品、活动、企划、动态引用的图片。清理前请确认不再需要这些图片。</p>
+          <div id="unusedImageCount"></div>
+          <div id="unusedImageGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.8rem;margin-top:0.8rem;"></div>
         </div>
       </div>
 
@@ -1872,6 +1886,9 @@
             '<div style="font-size:0.6rem;color:var(--haze);margin-top:0.15rem;">' + sizeMB + ' MB' + (date ? ' · ' + date : '') + '</div>' +
           '</div></div>';
       }).join('');
+
+      // 同步加载未使用图片检测
+      loadUnusedAuthorImages();
     }
 
     function updateAuthorImageBatchBtn() {
@@ -1900,16 +1917,122 @@
       const input = document.getElementById('batchUploadInput');
       if (!input.files.length) { showToast('请选择图片', 'error'); return; }
       const addWatermark = document.getElementById('addWatermarkCheck')?.checked || false;
+
+      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+      const files = [...input.files];
+      const skipped = [];
+      const toUpload = [];
+
+      // 预检查文件大小
+      for (const file of files) {
+        if (file.size > MAX_SIZE) {
+          skipped.push(file.name);
+        } else {
+          toUpload.push(file);
+        }
+      }
+
+      // 提醒跳过的文件
+      if (skipped.length > 0) {
+        showToast(`以下图片超过5MB已跳过：${skipped.join('、')}，请自行压缩后上传`, 'warning', 5000);
+      }
+
+      if (toUpload.length === 0) {
+        showToast('没有可上传的图片', 'error');
+        input.value = '';
+        return;
+      }
+
+      // 上传剩余文件
       let uploaded = 0;
-      for (const file of input.files) {
+      const errors = [];
+      const actAs = localStorage.getItem('f7author_actAs');
+      for (const file of toUpload) {
         const formData = new FormData();
         formData.append('image', file);
         if (addWatermark) formData.append('addWatermark', 'true');
-        const res = await fetch('/api/author/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authorToken }, body: formData });
-        if (res.ok) uploaded++;
+        const headers = { 'Authorization': 'Bearer ' + authorToken };
+        if (actAs) headers['X-Act-As'] = actAs;
+        const res = await fetch('/api/author/upload', { method: 'POST', headers, body: formData });
+        if (res.ok) {
+          uploaded++;
+        } else {
+          const data = await res.json().catch(() => ({}));
+          errors.push(`${file.name}: ${data.error || '上传失败'}`);
+        }
       }
+
+      // 显示结果
+      let msg = `成功上传 ${uploaded} 张图片`;
+      if (skipped.length > 0) msg += `，跳过 ${skipped.length} 张（超过5MB）`;
+      if (errors.length > 0) msg += `，失败 ${errors.length} 张`;
+      showToast(msg, uploaded > 0 ? 'success' : 'error', 5000);
+
       input.value = '';
-      showToast(`成功上传 ${uploaded} 张图片`, uploaded > 0 ? 'success' : 'error');
+      loadAuthorImages();
+    }
+
+    // ===== Unused Images =====
+    let unusedImagesData = [];
+
+    async function loadUnusedAuthorImages() {
+      const result = await authorAPI('GET', '/api/author/images/unused');
+      if (!result) return;
+
+      unusedImagesData = result.images || [];
+      const countEl = document.getElementById('unusedImageCount');
+      const gridEl = document.getElementById('unusedImageGrid');
+
+      countEl.innerHTML = `<p style="color:var(--haze);font-size:0.85rem;">共 ${result.total} 张图片，其中 ${result.unused} 张未被使用</p>`;
+
+      if (unusedImagesData.length === 0) {
+        gridEl.innerHTML = '<p style="color:var(--haze);text-align:center;padding:1rem;">没有未使用的图片</p>';
+        document.getElementById('cleanupUnusedBtn').style.display = 'none';
+        return;
+      }
+
+      gridEl.innerHTML = unusedImagesData.map(img => `
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">
+          <label style="display:flex;align-items:center;gap:0.3rem;margin-bottom:0.3rem;cursor:pointer;">
+            <input type="checkbox" class="unused-img-cb" data-name="${escapeHtml(img.name)}" onchange="updateUnusedImageBatchBtn()" style="width:14px;height:14px;accent-color:var(--accent);">
+            <span style="font-size:0.7rem;color:var(--haze);">${(img.size / 1024).toFixed(0)}KB</span>
+          </label>
+          <img src="${img.url}" style="width:100%;height:120px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="copyUnusedImgUrl('${escapeHtml(img.url)}')" title="点击复制链接">
+          <div style="font-size:0.7rem;color:var(--haze);margin-top:0.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(img.name)}">${escapeHtml(img.name)}</div>
+        </div>
+      `).join('');
+    }
+
+    function updateUnusedImageBatchBtn() {
+      const checked = document.querySelectorAll('.unused-img-cb:checked');
+      document.getElementById('cleanupUnusedBtn').style.display = checked.length > 0 ? 'inline-block' : 'none';
+    }
+
+    function copyUnusedImgUrl(url) {
+      const fullUrl = location.origin + url;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(fullUrl);
+        showToast('链接已复制', 'success');
+      } else {
+        prompt('复制链接：', fullUrl);
+      }
+    }
+
+    async function cleanupUnusedAuthorImages() {
+      const checked = document.querySelectorAll('.unused-img-cb:checked');
+      if (checked.length === 0) return;
+
+      const names = [...checked].map(cb => cb.dataset.name);
+      if (!confirm(`确定删除 ${names.length} 张未使用的图片？此操作不可撤销。`)) return;
+
+      let deleted = 0;
+      for (const name of names) {
+        const result = await authorAPI('DELETE', '/api/author/images/' + encodeURIComponent(name));
+        if (result && result.success) deleted++;
+      }
+
+      showToast(`已删除 ${deleted} 张图片`, 'success');
+      loadUnusedAuthorImages();
       loadAuthorImages();
     }
 

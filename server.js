@@ -827,6 +827,65 @@ app.delete('/api/author/images/:filename', authorAuthMiddleware, (req, res) => {
   }
 });
 
+// Author: get unused images
+app.get('/api/author/images/unused', authorAuthMiddleware, (req, res) => {
+  const uploadsDir = path.join(__dirname, 'uploads');
+  let meta = {};
+  try { meta = readJSON('uploads-meta.json'); } catch {}
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  const authorName = circle?.name || '未知作者';
+
+  function extractFilename(imgPath) {
+    if (!imgPath) return null;
+    const match = imgPath.match(/\/uploads\/([^/?#]+)/);
+    return match ? match[1] : null;
+  }
+
+  // 收集该作者作品中引用的图片
+  const referenced = new Set();
+  const works = readJSON('works.json');
+  works.filter(w => (w.circles || []).includes(req.author.circleId)).forEach(w => {
+    (w.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
+    (w.moreImages || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
+  });
+
+  // 收集该作者提交的活动/企划/动态中引用的图片
+  const events = readJSON('events.json');
+  events.filter(e => e.submittedBy === req.author.circleId).forEach(e => {
+    (e.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
+    if (e.coverImage) { const f = extractFilename(e.coverImage); if (f) referenced.add(f); }
+  });
+  const projects = readJSON('projects.json');
+  projects.filter(p => p.submittedBy === req.author.circleId).forEach(p => {
+    (p.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
+    if (p.coverImage) { const f = extractFilename(p.coverImage); if (f) referenced.add(f); }
+  });
+  const updates = readJSON('updates.json');
+  updates.filter(u => u.submittedBy === req.author.circleId).forEach(u => {
+    (u.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
+    if (u.coverImage) { const f = extractFilename(u.coverImage); if (f) referenced.add(f); }
+  });
+
+  // 获取该作者的所有图片
+  try {
+    const allFiles = fs.readdirSync(uploadsDir)
+      .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f))
+      .filter(f => (meta[f]?.uploader || '') === authorName);
+
+    const unused = allFiles.filter(f => !referenced.has(f)).map(f => ({
+      name: f,
+      url: '/uploads/' + f,
+      size: fs.statSync(path.join(uploadsDir, f)).size,
+      uploadedAt: meta[f]?.uploadedAt || null
+    }));
+
+    res.json({ total: allFiles.length, unused: unused.length, images: unused });
+  } catch (e) {
+    res.json({ total: 0, unused: 0, images: [] });
+  }
+});
+
 // Author: get projects list
 app.get('/api/author/projects', authorAuthMiddleware, (req, res) => {
   const projects = readJSON('projects.json');
