@@ -5308,6 +5308,10 @@ async function loadApprovalPage() {
       adminAPI('GET', '/api/admin/updates')
     ]);
 
+    // Load author announcement sections
+    loadAuthorAnnouncementAuthors();
+    loadAuthorAnnouncements();
+
     // Pending authors
     const pendingAuthors = (circles || []).filter(c => c.authorStatus === 'pending');
     const authorsDiv = document.getElementById('approvalAuthors');
@@ -5386,6 +5390,117 @@ async function loadApprovalPage() {
 
   } catch (e) {
     console.error('Load approval page failed:', e);
+  }
+}
+
+// ===== Author Announcements =====
+let aaAllCircles = [];
+
+async function loadAuthorAnnouncementAuthors() {
+  try {
+    const circles = await adminAPI('GET', '/api/admin/circles');
+    aaAllCircles = (circles || []).filter(c => c.authorStatus === 'approved');
+    const listDiv = document.getElementById('aaAuthorList');
+    if (aaAllCircles.length === 0) {
+      listDiv.innerHTML = '<span style="color:var(--haze);">暂无已批准的作者</span>';
+      return;
+    }
+    listDiv.innerHTML = aaAllCircles.map(c => `
+      <label style="font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.6rem;border:1px solid var(--border);border-radius:6px;">
+        <input type="checkbox" class="aa-author-cb" value="${c.id}"> ${escapeHtml(c.name)}
+      </label>
+    `).join('');
+  } catch (e) {
+    document.getElementById('aaAuthorList').innerHTML = '<span style="color:var(--accent);">加载失败</span>';
+  }
+}
+
+function toggleAaAuthors() {
+  const checked = document.getElementById('aaSelectAll').checked;
+  document.querySelectorAll('.aa-author-cb').forEach(cb => cb.checked = checked);
+}
+
+async function sendAuthorAnnouncement() {
+  const title = document.getElementById('aaTitle').value.trim();
+  const content = document.getElementById('aaContent').value.trim();
+  if (!title || !content) return showToast('请填写标题和内容', 'error');
+
+  const selectedIds = [...document.querySelectorAll('.aa-author-cb:checked')].map(cb => cb.value);
+  const pinned = document.getElementById('aaPinned').checked;
+  const popup = document.getElementById('aaPopup').checked;
+
+  try {
+    const result = await adminAPI('POST', '/api/admin/author-announcements', {
+      title, content, circleIds: selectedIds, pinned, popup
+    });
+    if (result.success) {
+      showToast(`公告已发送给 ${result.sentTo} 位作者`, 'success');
+      document.getElementById('aaTitle').value = '';
+      document.getElementById('aaContent').value = '';
+      document.getElementById('aaPinned').checked = false;
+      document.getElementById('aaPopup').checked = false;
+      document.getElementById('aaSelectAll').checked = false;
+      document.querySelectorAll('.aa-author-cb').forEach(cb => cb.checked = false);
+      loadAuthorAnnouncements();
+    }
+  } catch (e) {
+    showToast('发送失败: ' + e.message, 'error');
+  }
+}
+
+async function loadAuthorAnnouncements() {
+  try {
+    const announcements = await adminAPI('GET', '/api/admin/author-announcements');
+    const listDiv = document.getElementById('aaHistoryList');
+    if (!announcements || announcements.length === 0) {
+      listDiv.innerHTML = '<p style="color:var(--haze);">暂无已发送的公告</p>';
+      return;
+    }
+
+    listDiv.innerHTML = announcements.map(a => {
+      const date = new Date(a.sentAt).toLocaleString('zh-CN');
+      return `
+        <div style="padding:0.8rem 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="flex:1;">
+              <span style="font-weight:600;">${escapeHtml(a.title)}</span>
+              ${a.pinned ? '<span style="font-size:0.75rem;background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.5rem;">置顶</span>' : ''}
+              ${a.popup ? '<span style="font-size:0.75rem;background:var(--accent-alt);color:white;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.3rem;">弹窗</span>' : ''}
+              <span style="font-size:0.8rem;color:var(--haze);margin-left:0.5rem;">发送给 ${a.sentTo.length} 位作者</span>
+            </div>
+            <span style="font-size:0.8rem;color:var(--haze);">${date}</span>
+            <button class="btn-sm" style="margin-left:0.5rem;" onclick="viewAaReadStatus('${a.id}')">查看已读</button>
+          </div>
+          <div style="font-size:0.85rem;color:var(--haze);margin-top:0.3rem;white-space:pre-wrap;">${escapeHtml(a.content).substring(0, 100)}${a.content.length > 100 ? '...' : ''}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    document.getElementById('aaHistoryList').innerHTML = '<p style="color:var(--accent);">加载失败</p>';
+  }
+}
+
+async function viewAaReadStatus(id) {
+  try {
+    const status = await adminAPI('GET', `/api/admin/author-announcements/${id}/read-status`);
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = `
+      <h3 style="margin-bottom:1rem;">已读状态</h3>
+      <p style="margin-bottom:1rem;">已读 ${status.read.length}/${status.total} 人</p>
+      <div style="margin-bottom:1rem;">
+        <h4 style="font-size:0.9rem;color:#2ecc71;margin-bottom:0.5rem;">已读</h4>
+        ${status.read.length > 0 ? status.read.map(a => `<div style="padding:0.3rem 0;font-size:0.85rem;">${escapeHtml(a.name)}</div>`).join('') : '<p style="color:var(--haze);font-size:0.85rem;">暂无</p>'}
+      </div>
+      <div>
+        <h4 style="font-size:0.9rem;color:var(--accent);margin-bottom:0.5rem;">未读</h4>
+        ${status.unread.length > 0 ? status.unread.map(a => `<div style="padding:0.3rem 0;font-size:0.85rem;">${escapeHtml(a.name)}</div>`).join('') : '<p style="color:var(--haze);font-size:0.85rem;">全部已读</p>'}
+      </div>
+    `;
+    document.getElementById('modalSave').style.display = 'none';
+    openModal();
+    document.getElementById('modalSave').style.display = '';
+  } catch (e) {
+    showToast('加载失败', 'error');
   }
 }
 

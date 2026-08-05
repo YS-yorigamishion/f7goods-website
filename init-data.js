@@ -4,7 +4,8 @@ const path = require('path');
 const files = [
   'events.json', 'works.json', 'circles.json', 'projects.json',
   'settings.json', 'categories.json', 'announcements.json',
-  'likes.json', 'wants.json', 'updates.json'
+  'likes.json', 'wants.json', 'updates.json',
+  'author-announcements.json', 'author-announcement-reads.json'
 ];
 
 const dataDir = path.join(__dirname, 'data');

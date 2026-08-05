@@ -592,6 +592,51 @@
             </div>
             <div id="approvalUpdates"><p style="color:var(--haze);">加载中...</p></div>
           </div>
+
+          <!-- Author Announcements -->
+          <div class="admin-card" style="margin-top:1.5rem;">
+            <h4 style="margin:0 0 1rem 0;">📢 发送作者公告</h4>
+            <div style="display:flex;flex-direction:column;gap:0.8rem;">
+              <div>
+                <label style="font-size:0.85rem;color:var(--haze);">标题</label>
+                <input type="text" class="form-input" id="aaTitle" placeholder="公告标题" style="width:100%;">
+              </div>
+              <div>
+                <label style="font-size:0.85rem;color:var(--haze);">内容</label>
+                <textarea class="form-input" id="aaContent" placeholder="公告内容" rows="4" style="width:100%;resize:vertical;"></textarea>
+              </div>
+              <div>
+                <label style="font-size:0.85rem;color:var(--haze);">发送对象</label>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+                  <label style="font-size:0.85rem;cursor:pointer;">
+                    <input type="checkbox" id="aaSelectAll" onchange="toggleAaAuthors()"> 全选
+                  </label>
+                </div>
+                <div id="aaAuthorList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.8rem;display:flex;flex-wrap:wrap;gap:0.5rem;">
+                  <span style="color:var(--haze);">加载中...</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:1rem;align-items:center;">
+                <label style="font-size:0.85rem;cursor:pointer;">
+                  <input type="checkbox" id="aaPinned"> 置顶
+                </label>
+                <label style="font-size:0.85rem;cursor:pointer;">
+                  <input type="checkbox" id="aaPopup"> 首次弹窗
+                </label>
+              </div>
+              <div>
+                <button class="btn btn-primary" onclick="sendAuthorAnnouncement()">发送公告</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card" style="margin-top:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h4 style="margin:0;">📋 已发送公告</h4>
+              <button class="btn-sm" onclick="loadAuthorAnnouncements()">刷新</button>
+            </div>
+            <div id="aaHistoryList"><p style="color:var(--haze);">加载中...</p></div>
+          </div>
         </div>
 
         <!-- Author Statistics -->

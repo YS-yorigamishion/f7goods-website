@@ -167,6 +167,7 @@
         <div class="mgmt-tab" onclick="switchMgmtTab('projects')">企划关联</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('images')">图片管理</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('notifications')">审核通知</div>
+        <div class="mgmt-tab" onclick="switchMgmtTab('author-announcements')">管理员公告</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('password')">修改密码</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('history')">操作日志</div>
       </div>
@@ -489,6 +490,29 @@
         </div>
       </div>
 
+      <!-- Author Announcements Tab -->
+      <div id="tab-author-announcements" class="mgmt-section">
+        <div class="mgmt-card">
+          <h3 style="margin-bottom:1rem;">管理员公告</h3>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看管理员发送的公告通知。</p>
+          <div id="authorAnnouncementsContainer" style="max-height:500px;overflow-y:auto;">
+            <p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Author Announcement Popup -->
+      <div id="aaPopupOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:var(--card-bg);border-radius:var(--radius);padding:2rem;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;position:relative;">
+          <button onclick="closeAaPopup()" style="position:absolute;top:0.8rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
+          <h3 id="aaPopupTitle" style="margin-bottom:1rem;"></h3>
+          <div id="aaPopupContent" style="white-space:pre-wrap;line-height:1.8;"></div>
+          <div style="text-align:right;margin-top:1.5rem;">
+            <button class="btn btn-primary" onclick="closeAaPopup()">知道了</button>
+          </div>
+        </div>
+      </div>
+
       <!-- History Tab -->
       <div id="tab-history" class="mgmt-section">
         <div class="mgmt-card">
@@ -727,6 +751,7 @@
       loadAuthorProjects();
       loadAuthorImages();
       loadNotifications();
+      checkAaPopup();
     }
 
     // Author API helper
@@ -1251,6 +1276,61 @@
     async function markNotifRead(notifId, el) {
       await authorAPI('PUT', `/api/author/notifications/${notifId}/read`);
       if (el) el.style.background = '';
+    }
+
+    // ===== Author Announcements =====
+    async function loadAuthorAnnouncementsList() {
+      const container = document.getElementById('authorAnnouncementsContainer');
+      try {
+        const announcements = await authorAPI('GET', '/api/author/announcements');
+        if (!announcements || announcements.length === 0) {
+          container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无公告</p>';
+          return;
+        }
+        container.innerHTML = announcements.map(a => {
+          const time = new Date(a.sentAt).toLocaleString('zh-CN');
+          return `<div style="display:flex;gap:0.8rem;padding:0.8rem 0;border-bottom:1px solid var(--border);${!a.read ? 'background:rgba(52,152,219,0.05);' : ''}" onclick="markAaRead('${a.id}', this)">
+            <div style="width:24px;height:24px;border-radius:50%;background:${a.read ? 'var(--border)' : '#3498db'};color:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;">📢</div>
+            <div style="flex:1;">
+              <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.2rem;">
+                ${a.pinned ? '<span style="font-size:0.7rem;background:var(--accent);color:white;padding:0.1rem 0.3rem;border-radius:3px;margin-right:0.3rem;">置顶</span>' : ''}
+                ${escapeHtml(a.title)}
+              </div>
+              <div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.3rem;white-space:pre-wrap;${a.read ? '' : 'cursor:pointer;'}" onclick="event.stopPropagation();openAaPopup('${escapeHtml(a.title).replace(/'/g, "\\'")}', \`${escapeHtml(a.content).replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">${escapeHtml(a.content).substring(0, 80)}${a.content.length > 80 ? '... <span style="color:#3498db;">点击展开</span>' : ''}</div>
+              <div style="font-size:0.75rem;color:var(--haze);">${time}</div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无公告</p>';
+      }
+    }
+
+    async function markAaRead(id, el) {
+      await authorAPI('PUT', `/api/author/announcements/${id}/read`);
+      if (el) el.style.background = '';
+    }
+
+    function openAaPopup(title, content) {
+      document.getElementById('aaPopupTitle').textContent = title;
+      document.getElementById('aaPopupContent').textContent = content;
+      document.getElementById('aaPopupOverlay').style.display = 'flex';
+    }
+
+    function closeAaPopup() {
+      document.getElementById('aaPopupOverlay').style.display = 'none';
+    }
+
+    // Check for popup announcements on page load
+    async function checkAaPopup() {
+      try {
+        const announcements = await authorAPI('GET', '/api/author/announcements/popup');
+        if (announcements && announcements.length > 0) {
+          const a = announcements[0];
+          openAaPopup(a.title, a.content);
+          await authorAPI('PUT', `/api/author/announcements/${a.id}/read`);
+        }
+      } catch (e) {}
     }
 
     // Load author history
@@ -2284,6 +2364,7 @@
       document.getElementById('tab-' + tab).classList.add('active');
       if (tab === 'history') loadAuthorHistory();
       if (tab === 'notifications') loadAuthorNotifications();
+      if (tab === 'author-announcements') loadAuthorAnnouncementsList();
       if (tab === 'my-events') loadMyEvents();
       if (tab === 'my-projects') loadMyProjects();
       if (tab === 'my-updates') loadMyUpdates();

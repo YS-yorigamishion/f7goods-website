@@ -1713,6 +1713,137 @@ app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
+// ===== Author Announcements (Admin to Author) =====
+
+// Helper: get author announcement reads
+function getAuthorAnnouncementReads() {
+  try { return readJSON('author-announcement-reads.json'); } catch { return {}; }
+}
+function saveAuthorAnnouncementReads(reads) {
+  writeJSON('author-announcement-reads.json', reads);
+}
+
+// Admin: send announcement to authors
+app.post('/api/admin/author-announcements', authMiddleware, (req, res) => {
+  const { title, content, circleIds, pinned, popup } = req.body;
+  if (!title || !content) return res.status(400).json({ error: '请填写标题和内容' });
+
+  const circles = readJSON('circles.json');
+  let targetCircles;
+
+  if (circleIds && circleIds.length > 0) {
+    // Send to specific authors
+    targetCircles = circles.filter(c => circleIds.includes(c.id) && c.authorStatus === 'approved');
+  } else {
+    // Send to all approved authors
+    targetCircles = circles.filter(c => c.authorStatus === 'approved');
+  }
+
+  if (targetCircles.length === 0) return res.status(400).json({ error: '没有目标作者' });
+
+  let announcements = [];
+  try { announcements = readJSON('author-announcements.json'); } catch {}
+
+  const announcement = {
+    id: 'aa' + Date.now(),
+    title,
+    content,
+    sentTo: targetCircles.map(c => c.id),
+    pinned: pinned || false,
+    popup: popup || false,
+    sentAt: new Date().toISOString()
+  };
+
+  announcements.push(announcement);
+  writeJSON('author-announcements.json', announcements);
+
+  res.json({ success: true, sentTo: targetCircles.length, announcement });
+});
+
+// Admin: get all author announcements
+app.get('/api/admin/author-announcements', authMiddleware, (req, res) => {
+  let announcements = [];
+  try { announcements = readJSON('author-announcements.json'); } catch {}
+  announcements.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+  res.json(announcements);
+});
+
+// Admin: get read status for an announcement
+app.get('/api/admin/author-announcements/:id/read-status', authMiddleware, (req, res) => {
+  let announcements = [];
+  try { announcements = readJSON('author-announcements.json'); } catch {}
+  const announcement = announcements.find(a => a.id === req.params.id);
+  if (!announcement) return res.status(404).json({ error: '公告不存在' });
+
+  const reads = getAuthorAnnouncementReads();
+  const readCircleIds = reads[announcement.id] || [];
+
+  const circles = readJSON('circles.json');
+  const sentCircles = circles.filter(c => announcement.sentTo.includes(c.id));
+  const readAuthors = sentCircles.filter(c => readCircleIds.includes(c.id));
+  const unreadAuthors = sentCircles.filter(c => !readCircleIds.includes(c.id));
+
+  res.json({
+    total: sentCircles.length,
+    read: readAuthors.map(c => ({ id: c.id, name: c.name })),
+    unread: unreadAuthors.map(c => ({ id: c.id, name: c.name }))
+  });
+});
+
+// Author: get own announcements
+app.get('/api/author/announcements', authorAuthMiddleware, (req, res) => {
+  let announcements = [];
+  try { announcements = readJSON('author-announcements.json'); } catch {}
+
+  const circleId = req.author.circleId;
+  const reads = getAuthorAnnouncementReads();
+
+  // Filter announcements sent to this author
+  const myAnnouncements = announcements
+    .filter(a => a.sentTo.includes(circleId))
+    .map(a => ({
+      ...a,
+      read: (reads[a.id] || []).includes(circleId)
+    }));
+
+  myAnnouncements.sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return new Date(b.sentAt) - new Date(a.sentAt);
+  });
+
+  res.json(myAnnouncements);
+});
+
+// Author: get popup announcements
+app.get('/api/author/announcements/popup', authorAuthMiddleware, (req, res) => {
+  let announcements = [];
+  try { announcements = readJSON('author-announcements.json'); } catch {}
+
+  const circleId = req.author.circleId;
+  const reads = getAuthorAnnouncementReads();
+
+  const popupAnnouncements = announcements
+    .filter(a => a.popup && a.sentTo.includes(circleId) && !(reads[a.id] || []).includes(circleId));
+
+  popupAnnouncements.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+  res.json(popupAnnouncements);
+});
+
+// Author: mark announcement as read
+app.put('/api/author/announcements/:id/read', authorAuthMiddleware, (req, res) => {
+  const circleId = req.author.circleId;
+  const reads = getAuthorAnnouncementReads();
+
+  if (!reads[req.params.id]) reads[req.params.id] = [];
+  if (!reads[req.params.id].includes(circleId)) {
+    reads[req.params.id].push(circleId);
+    saveAuthorAnnouncementReads(reads);
+  }
+
+  res.json({ success: true });
+});
+
 // --- Admin Contacts ---
 app.get('/api/admin/contacts', authMiddleware, (req, res) => {
   let contacts = [];
