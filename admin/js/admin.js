@@ -5733,16 +5733,17 @@ function filterEditLog() {
     const user = row.querySelector('span:nth-child(2)')?.textContent.toLowerCase() || '';
     const action = row.querySelector('span:nth-child(3)')?.textContent || '';
     const timeStr = row.querySelector('span:nth-child(1)')?.textContent || '';
-    const matchUser = !query || user.includes(query);
+    const target = row.querySelector('span:nth-child(5)')?.textContent.toLowerCase() || '';
+    // 搜索所有字段：编辑人、操作、目标、详情
+    const matchQuery = !query || user.includes(query) || action.includes(query) || target.includes(query);
     const matchAction = !actionFilter || action.includes(actionFilter);
     let matchDate = true;
     if (dateFrom || dateTo) {
-      // Parse the time string (format: YYYY/MM/DD HH:MM:SS)
       const dateParts = timeStr.split(' ')[0]?.replace(/\//g, '-') || '';
       if (dateFrom && dateParts < dateFrom) matchDate = false;
       if (dateTo && dateParts > dateTo) matchDate = false;
     }
-    row.style.display = (matchUser && matchAction && matchDate) ? '' : 'none';
+    row.style.display = (matchQuery && matchAction && matchDate) ? '' : 'none';
   });
 }
 
