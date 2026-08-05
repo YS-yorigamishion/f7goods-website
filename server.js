@@ -1383,7 +1383,7 @@ app.get('/api/circles/:id', (req, res) => {
 app.get('/api/circles/registrable', (req, res) => {
   const circles = readJSON('circles.json');
   const registrable = circles
-    .filter(c => !c.username || c.authorStatus === 'rejected')
+    .filter(c => !c.username || c.authorStatus !== 'approved')
     .sort((a, b) => a.order - b.order)
     .map(c => ({ id: c.id, name: c.name, logo: c.logo }));
   res.json(registrable);
