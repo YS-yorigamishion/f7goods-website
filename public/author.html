@@ -172,41 +172,6 @@
         <div class="mgmt-tab" onclick="switchMgmtTab('history')">操作日志</div>
       </div>
 
-      <!-- Stats Overview -->
-      <div id="statsOverview" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.8rem;margin-bottom:1.5rem;">
-        <div class="mgmt-card" style="padding:1rem;text-align:center;">
-          <div style="font-size:1.5rem;font-weight:700;color:var(--accent);" id="statTotalWorks">0</div>
-          <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">作品总数</div>
-        </div>
-        <div class="mgmt-card" style="padding:1rem;text-align:center;">
-          <div style="font-size:1.5rem;font-weight:700;color:#e74c3c;" id="statTotalLikes">0</div>
-          <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">总喜爱数</div>
-        </div>
-        <div class="mgmt-card" style="padding:1rem;text-align:center;">
-          <div style="font-size:1.5rem;font-weight:700;color:#3498db;" id="statTotalWants">0</div>
-          <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">总想要数</div>
-        </div>
-        <div class="mgmt-card" style="padding:1rem;text-align:center;cursor:pointer;" onclick="window.open('/circle-detail.html?id='+authorCircleId,'_blank')">
-          <div style="font-size:1.5rem;">👁</div>
-          <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">预览主页</div>
-        </div>
-      </div>
-
-      <!-- Statistics Section -->
-      <div class="mgmt-card" style="margin-bottom:1.5rem;">
-        <h3 style="margin-bottom:1rem;">📊 数据统计</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-          <div>
-            <h4 style="font-size:0.85rem;color:var(--haze);margin-bottom:0.5rem;">分类分布</h4>
-            <div id="categoryStats" style="font-size:0.8rem;"></div>
-          </div>
-          <div>
-            <h4 style="font-size:0.85rem;color:var(--haze);margin-bottom:0.5rem;">状态分布</h4>
-            <div id="statusStats" style="font-size:0.8rem;"></div>
-          </div>
-        </div>
-      </div>
-
       <!-- Profile Tab -->
       <div id="tab-profile" class="mgmt-section active">
         <div class="mgmt-card">
@@ -268,6 +233,41 @@
 
       <!-- Works Tab -->
       <div id="tab-works" class="mgmt-section">
+        <!-- Stats Overview -->
+        <div id="statsOverview" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.8rem;margin-bottom:1.5rem;">
+          <div class="mgmt-card" style="padding:1rem;text-align:center;">
+            <div style="font-size:1.5rem;font-weight:700;color:var(--accent);" id="statTotalWorks">0</div>
+            <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">作品总数</div>
+          </div>
+          <div class="mgmt-card" style="padding:1rem;text-align:center;">
+            <div style="font-size:1.5rem;font-weight:700;color:#e74c3c;" id="statTotalLikes">0</div>
+            <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">总喜爱数</div>
+          </div>
+          <div class="mgmt-card" style="padding:1rem;text-align:center;">
+            <div style="font-size:1.5rem;font-weight:700;color:#3498db;" id="statTotalWants">0</div>
+            <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">总想要数</div>
+          </div>
+          <div class="mgmt-card" style="padding:1rem;text-align:center;cursor:pointer;" onclick="window.open('/circle-detail.html?id='+authorCircleId,'_blank')">
+            <div style="font-size:1.5rem;">👁</div>
+            <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">预览主页</div>
+          </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div class="mgmt-card" style="margin-bottom:1.5rem;">
+          <h3 style="margin-bottom:1rem;">📊 数据统计</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div>
+              <h4 style="font-size:0.85rem;color:var(--haze);margin-bottom:0.5rem;">分类分布</h4>
+              <div id="categoryStats" style="font-size:0.8rem;"></div>
+            </div>
+            <div>
+              <h4 style="font-size:0.85rem;color:var(--haze);margin-bottom:0.5rem;">状态分布</h4>
+              <div id="statusStats" style="font-size:0.8rem;"></div>
+            </div>
+          </div>
+        </div>
+
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <h3 style="margin:0;">我的作品</h3>
           <div style="display:flex;gap:0.5rem;">
