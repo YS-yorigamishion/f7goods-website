@@ -26,8 +26,9 @@
     </div>
 
     <div class="filter-bar" id="categoryFilters"></div>
-    <div class="filter-bar">
-      <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" style="min-width:100%;margin-left:0;">
+    <div class="filter-bar" style="display:flex;gap:0.5rem;align-items:center;">
+      <button class="filter-btn" onclick="randomAuthor()" style="white-space:nowrap;">🎲 随机作者</button>
+      <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" style="flex:1;margin-left:0;">
     </div>
 
     <div class="cards-grid" id="circlesGrid">
@@ -137,6 +138,12 @@
           <p class="circle-desc">${circle.description}</p>
         </div>
       `).join('');
+    }
+
+    function randomAuthor() {
+      if (!allCircles || allCircles.length === 0) return;
+      const random = allCircles[Math.floor(Math.random() * allCircles.length)];
+      location.href = '/circle-detail.html?id=' + random.id;
     }
 
     document.getElementById('searchInput').addEventListener('input', debounce(renderCircles));
