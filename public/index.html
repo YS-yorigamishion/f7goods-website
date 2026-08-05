@@ -293,8 +293,17 @@
                 : '<span class="placeholder-icon">🎨</span>'}
             </div>
             <div class="card-body">
+              <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
               <h3 class="card-title">${work.title}</h3>
-              <p class="card-subtitle">${(work.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join(', ') || ''}</p>
+              <p class="card-subtitle">${(work.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join(', ') || ''}${(work.circles || []).length > 0 ? ' · ' : ''}${CATEGORIES[work.category] || work.category}</p>
+            </div>
+            <div class="card-footer">
+              <span class="card-price">${work.price}</span>
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">想要 ${work.wants}</span>` : ''}
+                <span class="card-date">${formatDate(work.releaseDate)}</span>
+                ${renderLikeButton(work.id, work.likes)}
+              </div>
             </div>
           </div>
         </a>
