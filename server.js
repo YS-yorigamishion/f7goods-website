@@ -1363,7 +1363,12 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
 
   const idx = likesCache[workId].indexOf(uid);
   if (idx === -1) {
-    // Not in cache - return current count from works.json
+    // Not in cache - but still decrement if count > 0
+    // (handles case where cache was lost but works.json count exists)
+    if (works[index].likes > 0) {
+      works[index].likes--;
+      writeJSON('works.json', works);
+    }
     return res.json({ likes: works[index].likes || 0 });
   }
 
@@ -1422,7 +1427,12 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
 
   const idx = wantsCache[workId].indexOf(uid);
   if (idx === -1) {
-    // Not in cache - return current count from works.json
+    // Not in cache - but still decrement if count > 0
+    // (handles case where cache was lost but works.json count exists)
+    if (works[index].wants > 0) {
+      works[index].wants--;
+      writeJSON('works.json', works);
+    }
     return res.json({ wants: works[index].wants || 0 });
   }
 
