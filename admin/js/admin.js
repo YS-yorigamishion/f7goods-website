@@ -512,9 +512,217 @@ async function loadPageStats() {
   _pageStatsData = pvData;
   _pageStatsEntities = { works, events, circles, projects, updates };
 
+  // 渲染浏览量概览
+  renderPVOverview(pvData);
+  renderPVOverviewCharts(pvData);
+
+  // 渲染各页面统计
   renderPageCategoryStats(pvData);
   renderPageCharts(pvData);
   renderItemRanking(pvData, _pageStatsEntities);
+}
+
+function getPageUrl(key) {
+  const urls = {
+    works: '/', events: '/events.html', circles: '/circles.html',
+    projects: '/projects.html', updates: '/updates.html',
+    contact: '/contact.html', announcements: '/announcements.html'
+  };
+  return urls[key] || '/';
+}
+
+function getItemUrl(pageType, itemId) {
+  const detailPages = {
+    works: '/work-detail.html', events: '/event-detail.html',
+    circles: '/circle-detail.html', projects: '/project-detail.html',
+    updates: '/update-detail.html'
+  };
+  return (detailPages[pageType] || '/') + '?id=' + encodeURIComponent(itemId);
+}
+
+function renderPVOverview(pvData) {
+  const daily = pvData.daily || {};
+  const visitors = pvData.visitors || {};
+  const todayStr = getChinaDate();
+  const thisMonth = todayStr.slice(0, 7);
+  const thisYear = todayStr.slice(0, 4);
+
+  let totalPV = 0, yearPV = 0, monthPV = 0, todayPV = 0;
+  for (const [date, count] of Object.entries(daily)) {
+    totalPV += count;
+    if (date.startsWith(thisYear)) yearPV += count;
+    if (date.startsWith(thisMonth)) monthPV += count;
+    if (date === todayStr) todayPV = count;
+  }
+
+  const todayVisitors = (visitors[todayStr] || []).length;
+  const monthVisitorSet = new Set();
+  const yearVisitorSet = new Set();
+  const totalVisitorSet = new Set();
+  for (const [date, ips] of Object.entries(visitors)) {
+    ips.forEach(ip => {
+      totalVisitorSet.add(ip);
+      if (date.startsWith(thisYear)) yearVisitorSet.add(ip);
+      if (date.startsWith(thisMonth)) monthVisitorSet.add(ip);
+    });
+  }
+
+  const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+  el('pvToday2', todayPV);
+  el('pvMonth2', monthPV);
+  el('pvYear2', yearPV);
+  el('pvTotal2', totalPV);
+  el('visToday2', todayVisitors);
+  el('visMonth2', monthVisitorSet.size);
+  el('visYear2', yearVisitorSet.size);
+  el('visTotal2', totalVisitorSet.size);
+}
+
+function renderPVOverviewCharts(pvData) {
+  const daily = pvData.daily || {};
+  const visitors = pvData.visitors || {};
+  const pvLine = 'rgb(233, 69, 96)';
+  const pvFill = 'rgba(233, 69, 96, 0.1)';
+  const visLine = 'rgb(26, 188, 156)';
+  const visFill = 'rgba(26, 188, 156, 0.1)';
+
+  function getLastNDays(n) {
+    const labels = [], data = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const key = getChinaDateDaysAgo(i);
+      labels.push(key.slice(5));
+      data.push(daily[key] || 0);
+    }
+    return { labels, data };
+  }
+
+  function getVisitorLastNDays(n) {
+    const labels = [], data = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const key = getChinaDateDaysAgo(i);
+      labels.push(key.slice(5));
+      data.push((visitors[key] || []).length);
+    }
+    return { labels, data };
+  }
+
+  const chartOpts = () => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } },
+    elements: { point: { radius: 3 }, line: { tension: 0.3 } }
+  });
+
+  const pv7 = getLastNDays(7);
+  const makeChart = (id, labels, data, color, fill) => {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (ctx.__chart) ctx.__chart.destroy();
+    ctx.__chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ data, borderColor: color, backgroundColor: fill, fill: true }] },
+      options: chartOpts()
+    });
+  };
+
+  makeChart('chart7d_pv', pv7.labels, pv7.data, pvLine, pvFill);
+  const pv30 = getLastNDays(30);
+  makeChart('chart30d_pv', pv30.labels, pv30.data, pvLine, pvFill);
+  const v7 = getVisitorLastNDays(7);
+  makeChart('chartVis7d_pv', v7.labels, v7.data, visLine, visFill);
+  const v30 = getVisitorLastNDays(30);
+  makeChart('chartVis30d_pv', v30.labels, v30.data, visLine, visFill);
+}
+
+function showPageCategoryDetail(pageKey) {
+  const pvData = _pageStatsData;
+  if (!pvData) return;
+  const daily = pvData.daily || {};
+  const pageNames = { works: '作品', events: '活动', circles: '圈子', projects: '企划', updates: '动态', contact: '联系', announcements: '公告' };
+  const label = pageNames[pageKey] || pageKey;
+
+  // 计算今日/本周/本月
+  const todayStr = getChinaDate();
+  const todayCount = (pvData.pages && pvData.pages[todayStr] && pvData.pages[todayStr][pageKey]) || 0;
+
+  // 本周（周一到今天）
+  const now = new Date();
+  const chinaNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  const dayOfWeek = chinaNow.getUTCDay() || 7;
+  let weekCount = 0;
+  for (let i = 0; i < dayOfWeek; i++) {
+    const d = getChinaDateDaysAgo(i);
+    weekCount += (pvData.pages && pvData.pages[d] && pvData.pages[d][pageKey]) || 0;
+  }
+
+  const thisMonth = todayStr.slice(0, 7);
+  let monthCount = 0;
+  for (const [date, pageData] of Object.entries(pvData.pages || {})) {
+    if (date.startsWith(thisMonth)) {
+      monthCount += (pageData[pageKey] || 0);
+    }
+  }
+
+  // 近30天数据
+  const chartLabels = [], chartData = [];
+  let total30 = 0, maxDay = 0;
+  for (let i = 29; i >= 0; i--) {
+    const d = getChinaDateDaysAgo(i);
+    const count = (pvData.pages && pvData.pages[d] && pvData.pages[d][pageKey]) || 0;
+    chartLabels.push(d.slice(5));
+    chartData.push(count);
+    total30 += count;
+    if (count > maxDay) maxDay = count;
+  }
+
+  const pageUrl = getPageUrl(pageKey);
+
+  document.getElementById('modalTitle').textContent = `📊 ${label} — 浏览详情`;
+  document.getElementById('modalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+      <div style="text-align:center;padding:0.8rem;background:var(--bg);border-radius:var(--radius);">
+        <div style="font-size:1.5rem;font-weight:700;color:var(--accent);">${todayCount}</div>
+        <div style="font-size:0.8rem;color:var(--muted);">今日</div>
+      </div>
+      <div style="text-align:center;padding:0.8rem;background:var(--bg);border-radius:var(--radius);">
+        <div style="font-size:1.5rem;font-weight:700;color:#3498db;">${weekCount}</div>
+        <div style="font-size:0.8rem;color:var(--muted);">本周</div>
+      </div>
+      <div style="text-align:center;padding:0.8rem;background:var(--bg);border-radius:var(--radius);">
+        <div style="font-size:1.5rem;font-weight:700;color:#f39c12;">${monthCount}</div>
+        <div style="font-size:0.8rem;color:var(--muted);">本月</div>
+      </div>
+      <div style="text-align:center;padding:0.8rem;background:var(--bg);border-radius:var(--radius);">
+        <div style="font-size:1.5rem;font-weight:700;color:#2ecc71;">${total30}</div>
+        <div style="font-size:0.8rem;color:var(--muted);">近30天</div>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem;text-align:center;">
+      <a href="${pageUrl}" target="_blank" class="btn btn-primary" style="text-decoration:none;">🔗 访问${label}页面</a>
+    </div>
+    <div style="height:220px;margin-bottom:1rem;"><canvas id="chartPageDetail30d"></canvas></div>
+    <div style="font-size:0.85rem;color:var(--muted);text-align:center;">日均 ${(total30 / 30).toFixed(1)} 次 · 最高 ${maxDay} 次</div>
+  `;
+  document.getElementById('modalSave').style.display = 'none';
+  openModal();
+
+  // 渲染弹窗内的图表
+  setTimeout(() => {
+    const ctx = document.getElementById('chartPageDetail30d');
+    if (!ctx) return;
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartLabels,
+        datasets: [{ data: chartData, backgroundColor: 'rgba(233, 69, 96, 0.6)', borderColor: 'rgb(233, 69, 96)', borderWidth: 1 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } }
+      }
+    });
+  }, 100);
 }
 
 function renderPageCategoryStats(pvData) {
@@ -529,10 +737,14 @@ function renderPageCategoryStats(pvData) {
   const grid = document.getElementById('pageStatsGrid');
   grid.innerHTML = Object.entries(pageNames).map(([key, label]) => {
     const count = pages[key] || 0;
-    return `<div class="pv-overview-item">
+    const url = getPageUrl(key);
+    return `<div class="pv-overview-item" onclick="showPageCategoryDetail('${key}')" style="cursor:pointer;">
       <div class="pv-overview-icon">${icons[key] || '📄'}</div>
-      <div class="pv-overview-number">${count}</div>
-      <div class="pv-overview-label">${label}</div>
+      <div class="pv-overview-body">
+        <div class="pv-overview-number">${count}</div>
+        <div class="pv-overview-label"><a href="${url}" target="_blank" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;">${label}</a></div>
+      </div>
+      <div class="pv-overview-arrow">›</div>
     </div>`;
   }).join('');
 }
@@ -628,9 +840,10 @@ function renderItemRanking(pvData, entities) {
 
   tbody.innerHTML = ranking.slice(0, 20).map((item, i) => {
     const sparkId = `spark-${item.id}`;
+    const itemUrl = getItemUrl(pageFilter, item.id);
     return `<tr>
       <td style="text-align:center;font-weight:600;">${i + 1}</td>
-      <td>${nameMap[item.id] || item.id}</td>
+      <td><a href="${itemUrl}" target="_blank" style="color:var(--ink);text-decoration:none;">${nameMap[item.id] || item.id}</a></td>
       <td style="font-weight:600;">${item.total}</td>
       <td><canvas id="${sparkId}" width="120" height="24"></canvas></td>
     </tr>`;
@@ -5882,6 +6095,7 @@ function openModal() {
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
   document.getElementById('modalSave').textContent = '保存';
+  document.getElementById('modalSave').style.display = '';
 }
 
 // Close modal on overlay click

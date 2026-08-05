@@ -49,6 +49,9 @@
         <a href="#" class="sidebar-link" data-page="approval">
           <span class="sidebar-icon">✅</span> 审核管理
         </a>
+        <a href="#" class="sidebar-link" data-page="page-stats">
+          <span class="sidebar-icon">👁️</span> 浏览统计
+        </a>
         <a href="#" class="sidebar-link" data-page="works">
           <span class="sidebar-icon">🎨</span> 作品管理
         </a>
@@ -57,9 +60,6 @@
         </a>
         <a href="#" class="sidebar-link" data-page="author-stats">
           <span class="sidebar-icon">📈</span> 作者统计
-        </a>
-        <a href="#" class="sidebar-link" data-page="page-stats">
-          <span class="sidebar-icon">👁️</span> 浏览统计
         </a>
         <a href="#" class="sidebar-link" data-page="events">
           <span class="sidebar-icon">📅</span> 活动管理
@@ -682,26 +682,117 @@
             </div>
           </div>
 
-          <!-- 页面分类浏览量概览 -->
-          <div class="pv-section">
+          <!-- 浏览量概览 -->
+          <div class="admin-card" id="pvOverviewCard">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h3 style="margin:0;">浏览量概览</h3>
+            </div>
+            <div class="pv-overview-grid">
+              <div class="pv-overview-item" onclick="showPVDetail('today')" title="点击查看近 30 日每日浏览量">
+                <div class="pv-overview-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;">👁</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="pvToday2">0</div>
+                  <div class="pv-overview-label">今日浏览</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
+              </div>
+              <div class="pv-overview-item" onclick="showPVDetail('month')" title="点击查看本月每日明细及往月对比">
+                <div class="pv-overview-icon" style="background:rgba(52,152,219,0.1);color:#3498db;">📈</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="pvMonth2">0</div>
+                  <div class="pv-overview-label">本月浏览</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
+              </div>
+              <div class="pv-overview-item" onclick="showPVDetail('year')" title="点击查看历年浏览量">
+                <div class="pv-overview-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📅</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="pvYear2">0</div>
+                  <div class="pv-overview-label">今年浏览</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
+              </div>
+              <div class="pv-overview-item pv-overview-item--total">
+                <div class="pv-overview-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🔥</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="pvTotal2">0</div>
+                  <div class="pv-overview-label">总浏览量</div>
+                </div>
+              </div>
+              <div class="pv-overview-item" onclick="showPVDetail('today-visitors')" title="点击查看近 30 日每日访客数">
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">👥</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="visToday2">0</div>
+                  <div class="pv-overview-label">今日人数</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
+              </div>
+              <div class="pv-overview-item" onclick="showPVDetail('month-visitors')" title="点击查看近 12 月每月访客数">
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">📊</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="visMonth2">0</div>
+                  <div class="pv-overview-label">本月人数</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
+              </div>
+              <div class="pv-overview-item" onclick="showPVDetail('year-visitors')" title="点击查看历年访客数">
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">👤</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="visYear2">0</div>
+                  <div class="pv-overview-label">今年人数</div>
+                </div>
+                <div class="pv-overview-arrow">›</div>
+              </div>
+              <div class="pv-overview-item pv-overview-item--total">
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">🌐</div>
+                <div class="pv-overview-body">
+                  <div class="pv-overview-number" id="visTotal2">0</div>
+                  <div class="pv-overview-label">总人数</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 趋势图表 -->
+          <div class="dashboard-charts-grid" style="margin-top:1.5rem;">
+            <div class="admin-card">
+              <h3 style="margin-bottom:0.8rem;">近 7 日浏览趋势</h3>
+              <div style="height:200px;"><canvas id="chart7d_pv"></canvas></div>
+            </div>
+            <div class="admin-card">
+              <h3 style="margin-bottom:0.8rem;">近 30 日浏览趋势</h3>
+              <div style="height:200px;"><canvas id="chart30d_pv"></canvas></div>
+            </div>
+            <div class="admin-card">
+              <h3 style="margin-bottom:0.8rem;">近 7 日访客趋势</h3>
+              <div style="height:200px;"><canvas id="chartVis7d_pv"></canvas></div>
+            </div>
+            <div class="admin-card">
+              <h3 style="margin-bottom:0.8rem;">近 30 日访客趋势</h3>
+              <div style="height:200px;"><canvas id="chartVis30d_pv"></canvas></div>
+            </div>
+          </div>
+
+          <!-- 各页面浏览量 -->
+          <div class="pv-section" style="margin-top:1.5rem;">
             <h3 class="pv-section-title">今日各页面浏览量</h3>
             <div class="pv-overview-grid" id="pageStatsGrid"></div>
           </div>
 
           <!-- 页面分类图表 -->
-          <div class="dashboard-charts-grid">
-            <div class="chart-container">
-              <h3>今日各页面浏览量占比</h3>
-              <canvas id="chartPageBreakdown"></canvas>
+          <div class="dashboard-charts-grid" style="margin-top:1rem;">
+            <div class="admin-card">
+              <h3 style="margin-bottom:0.8rem;">今日各页面浏览量占比</h3>
+              <div style="height:200px;"><canvas id="chartPageBreakdown"></canvas></div>
             </div>
-            <div class="chart-container">
-              <h3>近 7 日各页面趋势</h3>
-              <canvas id="chartPageTrend7d"></canvas>
+            <div class="admin-card">
+              <h3 style="margin-bottom:0.8rem;">近 7 日各页面趋势</h3>
+              <div style="height:200px;"><canvas id="chartPageTrend7d"></canvas></div>
             </div>
           </div>
 
           <!-- 项目浏览量排行 -->
-          <div class="pv-section">
+          <div class="pv-section" style="margin-top:1.5rem;">
             <h3 class="pv-section-title">项目浏览量排行</h3>
             <div class="pv-table-controls">
               <select id="itemPageFilter" onchange="refreshItemRanking()">
@@ -733,9 +824,9 @@
           </div>
 
           <!-- 项目趋势对比图 -->
-          <div class="chart-container" style="margin-top:1rem;">
-            <h3>Top 5 项目浏览量趋势对比</h3>
-            <canvas id="chartItemTrend"></canvas>
+          <div class="admin-card" style="margin-top:1rem;">
+            <h3 style="margin-bottom:0.8rem;">Top 5 项目浏览量趋势对比</h3>
+            <div style="height:200px;"><canvas id="chartItemTrend"></canvas></div>
           </div>
         </div>
 
