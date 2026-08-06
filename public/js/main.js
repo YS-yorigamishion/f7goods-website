@@ -359,7 +359,7 @@ function buildNavbar(activePage) {
           ${langOptions}
         </div>
       </div>
-      <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="菜单" aria-expanded="false">
+      <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="${t('common.menu')}" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
       <ul class="nav-links" role="menubar">
@@ -573,7 +573,7 @@ async function sharePage(title, url) {
     await navigator.clipboard.writeText(url);
     showToast(t('common.copied'), 'success');
   } catch (e) {
-    prompt('复制此链接:', url);
+    prompt(t('common.copyLink') + ':', url);
   }
 }
 
@@ -753,7 +753,8 @@ async function submitWant() {
   var errorEl = document.getElementById('wantModalError');
   var btn = document.getElementById('wantModalSubmit');
 
-  if (input.value.trim() !== '我想要') {
+  var wantText = {zh:'我想要', en:'I Want', ja:'欲しい', ko:'갖고싶다'}[_lang] || '我想要';
+  if (input.value.trim() !== wantText) {
     errorEl.textContent = t('common.wantConfirm');
     errorEl.style.display = 'block';
     input.focus();

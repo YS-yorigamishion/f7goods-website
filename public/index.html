@@ -316,7 +316,7 @@
             </div>
           </div>
         </div>
-      `).join('') + (currentPage < totalPages ? '<div id="loadMoreTrigger" style="grid-column:1/-1;text-align:center;padding:1rem;"><button class="btn" onclick="loadMoreWorks()">加载更多</button></div>' : '');
+      `).join('') + (currentPage < totalPages ? `<div id="loadMoreTrigger" style="grid-column:1/-1;text-align:center;padding:1rem;"><button class="btn" onclick="loadMoreWorks()">${t('common.loadMore')}</button></div>` : '');
     }
 
     function loadMoreWorks() {
