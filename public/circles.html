@@ -31,6 +31,9 @@
       <button class="filter-btn" onclick="randomAuthor()" style="white-space:nowrap;">🎲 随机作者</button>
       <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" style="flex:1;margin-left:0;">
     </div>
+    <div class="filter-bar" id="circleUserFilters" style="display:none;">
+      <button class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')">⭐ 我关注的</button>
+    </div>
 
     <div class="cards-grid" id="circlesGrid">
       <div id="circlesSkeleton" class="skeleton-grid">
@@ -54,6 +57,23 @@
     let allCircles = [];
     let circleTagsMap = {};
     let currentCategory = 'all';
+    let currentCircleFilter = 'none'; // 'none', 'followed'
+
+    function toggleCircleFilter(type) {
+      currentCircleFilter = currentCircleFilter === type ? 'none' : type;
+      document.querySelectorAll('[data-circle-filter]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.circleFilter === currentCircleFilter);
+      });
+      renderCircles();
+    }
+
+    function checkCircleUserFilters() {
+      const followed = JSON.parse(localStorage.getItem('f7followed') || '[]');
+      const container = document.getElementById('circleUserFilters');
+      if (container && followed.length > 0) {
+        container.style.display = 'flex';
+      }
+    }
 
     async function loadCircles() {
       try {
@@ -116,6 +136,13 @@
       if (currentCategory !== 'all') {
         filtered = filtered.filter(c => c.category === currentCategory);
       }
+
+      // User filter (followed)
+      if (currentCircleFilter === 'followed') {
+        const followedIds = JSON.parse(localStorage.getItem('f7followed') || '[]');
+        filtered = filtered.filter(c => followedIds.includes(c.id));
+      }
+
       if (search) {
         filtered = filtered.filter(c =>
           c.name.toLowerCase().includes(search) ||
@@ -150,6 +177,7 @@
     document.getElementById('searchInput').addEventListener('input', debounce(renderCircles));
 
     loadCircles();
+    checkCircleUserFilters();
   </script>
 </body>
 </html>

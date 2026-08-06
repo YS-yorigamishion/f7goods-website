@@ -659,6 +659,35 @@ body {
   color: var(--haze);
 }
 
+/* ===== Follow Button ===== */
+.follow-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid var(--accent);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.follow-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+.follow-btn--done {
+  background: var(--accent);
+  color: white;
+}
+.follow-btn--done:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
 /* ===== Events Timeline ===== */
 .events-timeline {
   position: relative;

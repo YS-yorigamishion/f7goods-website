@@ -684,6 +684,89 @@ async function doUnwant(workId, currentCount) {
   }
 }
 
+// ===== Follow System (关注) =====
+function getFollowedCircles() {
+  try { return JSON.parse(localStorage.getItem('f7followed') || '[]'); } catch { return []; }
+}
+
+function isFollowing(circleId) {
+  return getFollowedCircles().includes(circleId);
+}
+
+function renderFollowButton(circleId, follows) {
+  var following = isFollowing(circleId);
+  var count = follows || 0;
+  if (following) {
+    return '<button class="follow-btn follow-btn--done" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">已关注' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
+  }
+  return '<button class="follow-btn" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">关注' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
+}
+
+async function toggleFollow(circleId, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  var following = isFollowing(circleId);
+  var endpoint = following ? '/api/circles/' + circleId + '/unfollow' : '/api/circles/' + circleId + '/follow';
+  try {
+    var res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: getUid() })
+    });
+
+    if (!res.ok) {
+      var errData = await res.json().catch(function() { return {}; });
+      if (res.status === 429) {
+        showToast('操作过于频繁，请稍后再试', 'warning');
+      } else {
+        showToast(errData.error || '操作失败，请重试', 'error');
+      }
+      btn.disabled = false;
+      return;
+    }
+
+    var data = await res.json();
+
+    if (data.alreadyFollowing) {
+      var followedList = getFollowedCircles();
+      if (followedList.indexOf(circleId) === -1) {
+        followedList.push(circleId);
+        localStorage.setItem('f7followed', JSON.stringify(followedList));
+      }
+      updateFollowButtons(circleId, true, data.follows);
+      return;
+    }
+
+    var followedList = getFollowedCircles();
+    if (following) {
+      followedList = followedList.filter(function(id) { return id !== circleId; });
+    } else {
+      if (followedList.indexOf(circleId) === -1) followedList.push(circleId);
+    }
+    localStorage.setItem('f7followed', JSON.stringify(followedList));
+
+    var newFollowing = !following;
+    updateFollowButtons(circleId, newFollowing, data.follows);
+  } catch (e) {
+    console.error('Follow failed:', e);
+    btn.disabled = false;
+    showToast('操作失败，请重试', 'error');
+  }
+}
+
+function updateFollowButtons(circleId, following, count) {
+  document.querySelectorAll('.follow-btn[data-circle-id="' + circleId + '"]').forEach(function(b) {
+    b.disabled = false;
+    if (following) {
+      b.classList.add('follow-btn--done');
+      b.textContent = '已关注' + (count > 0 ? ' (' + count + ')' : '');
+    } else {
+      b.classList.remove('follow-btn--done');
+      b.textContent = '关注' + (count > 0 ? ' (' + count + ')' : '');
+    }
+  });
+}
+
 // Debounce utility
 function debounce(fn, delay = 300) {
   let timer;

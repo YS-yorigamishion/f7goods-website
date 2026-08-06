@@ -3143,7 +3143,7 @@ async function loadCircles(page = 1) {
 function renderCirclesTable(circles) {
   const tbody = document.getElementById('circlesTableBody');
   if (!circles || circles.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
     return;
   }
   tbody.innerHTML = circles.map((c, i) => {
@@ -3177,6 +3177,7 @@ function renderCirclesTable(circles) {
       <td class="editable-cell" onclick="makeCircleEditable(this, '${c.id}', 'name', '${escapeHtml(c.name)}')">${c.name}</td>
       <td>${CIRCLE_CATEGORIES[c.category] || c.category || '-'}</td>
       <td>${c._worksCount || 0}</td>
+      <td>${c.follows || 0}</td>
       <td>${accountHtml}</td>
       <td>
         <div class="table-actions">

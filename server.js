@@ -1305,6 +1305,14 @@ function saveWants() {
   writeJSON('wants.json', wantsCache);
 }
 
+// ===== Follow System (关注) =====
+let followsCache = {};
+try { followsCache = readJSON('follows.json'); } catch {}
+
+function saveFollows() {
+  writeJSON('follows.json', followsCache);
+}
+
 // Rate limiting for like/want endpoints
 const likeWantAttempts = new Map();
 const LIKE_WANT_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
@@ -1443,6 +1451,66 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
   works[index].wants = Math.max(0, (works[index].wants || 0) - 1);
   writeJSON('works.json', works);
   res.json({ wants: works[index].wants });
+});
+
+// ===== Follow/Unfollow Circle =====
+app.post('/api/circles/:id/follow', likeWantRateLimit, (req, res) => {
+  const circleId = req.params.id;
+  const uid = req.body.uid;
+  if (!uid) return res.status(400).json({ error: 'missing uid' });
+
+  if (!followsCache[circleId]) followsCache[circleId] = [];
+
+  const circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === circleId);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  if (followsCache[circleId].includes(uid)) {
+    return res.json({ follows: circles[index].follows || 0, alreadyFollowing: true });
+  }
+
+  followsCache[circleId].push(uid);
+  saveFollows();
+
+  circles[index].follows = (circles[index].follows || 0) + 1;
+  writeJSON('circles.json', circles);
+  res.json({ follows: circles[index].follows });
+});
+
+app.post('/api/circles/:id/unfollow', likeWantRateLimit, (req, res) => {
+  const circleId = req.params.id;
+  const uid = req.body.uid;
+  if (!uid) return res.status(400).json({ error: 'missing uid' });
+
+  if (!followsCache[circleId]) followsCache[circleId] = [];
+
+  const circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === circleId);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  const idx = followsCache[circleId].indexOf(uid);
+  if (idx === -1) {
+    if (circles[index].follows > 0) {
+      circles[index].follows--;
+      writeJSON('circles.json', circles);
+    }
+    return res.json({ follows: circles[index].follows || 0 });
+  }
+
+  followsCache[circleId].splice(idx, 1);
+  saveFollows();
+
+  circles[index].follows = Math.max(0, (circles[index].follows || 0) - 1);
+  writeJSON('circles.json', circles);
+  res.json({ follows: circles[index].follows });
+});
+
+app.get('/api/circles/:id/follow-status', (req, res) => {
+  const circleId = req.params.id;
+  const uid = req.query.uid;
+  if (!uid) return res.json({ following: false });
+  const following = followsCache[circleId] ? followsCache[circleId].includes(uid) : false;
+  res.json({ following });
 });
 
 // Events
