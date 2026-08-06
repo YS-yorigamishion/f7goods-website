@@ -74,7 +74,7 @@
         const container = document.getElementById('updateDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
-            <a href="/updates.html">同人动态</a>
+            <a href="/updates.html">${t('nav.updates')}</a>
             <span>›</span>
             <span>${escapeHtml(update.title)}</span>
           </div>
@@ -90,11 +90,11 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">动态内容</h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('updates.content')}</h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(update.content)}</p>
 
               ${update.images && update.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">图片</h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('updates.images')}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
                   ${update.images.map((img, i) => `<img src="${img}" alt="${escapeHtml(update.title)}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(update.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
                 </div>
@@ -102,23 +102,23 @@
             </div>
             <div class="detail-sidebar">
               <div class="sidebar-card">
-                <h3>动态信息</h3>
+                <h3>${t('updates.updateInfo')}</h3>
                 <div class="info-row">
-                  <span class="info-label">发布日期</span>
+                  <span class="info-label">${t('updates.publishDate')}</span>
                   <span class="info-value">${formatDate(update.publishDate)}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">作者</span>
+                  <span class="info-label">${t('works.author')}</span>
                   <span class="info-value">${relatedCircles.length > 0 ? escapeHtml(relatedCircles.map(c => c.name).join('、')) : '-'}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">图片数</span>
-                  <span class="info-value">${(update.images || []).length} 张</span>
+                  <span class="info-label">${t('common.imageCount')}</span>
+                  <span class="info-value">${(update.images || []).length} ${t('common.images')}</span>
                 </div>
               </div>
               ${relatedCircles.length > 0 ? `
               <div class="sidebar-card">
-                <h3>相关作者</h3>
+                <h3>${t('updates.relatedAuthors')}</h3>
                 ${relatedCircles.map(c => `
                   <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -134,7 +134,7 @@
               ` : ''}
               ${relatedEvents.length > 0 ? `
               <div class="sidebar-card">
-                <h3>相关活动</h3>
+                <h3>${t('updates.relatedEvents')}</h3>
                 ${relatedEvents.map(e => `
                   <a href="/event-detail.html?id=${e.id}" style="display:block;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -146,7 +146,7 @@
               ` : ''}
               ${relatedProjects.length > 0 ? `
               <div class="sidebar-card">
-                <h3>相关企划</h3>
+                <h3>${t('updates.relatedProjects')}</h3>
                 ${relatedProjects.map(p => `
                   <a href="/project-detail.html?id=${p.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -166,7 +166,7 @@
         `;
       } catch (e) {
         document.getElementById('updateDetail').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>动态未找到或加载失败</p></div>';
+          `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;
       }
     }
 

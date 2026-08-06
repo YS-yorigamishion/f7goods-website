@@ -79,10 +79,20 @@
     "wantSuccess": "購入意向を記録しました",
     "wanting": "送信中...",
     "unwantConfirm": "「欲しい」をキャンセルしますか？",
+    "failSubmit": "送信失敗、もう一度お試しください",
+    "cancelFail": "キャンセル失敗、もう一度お試しください",
+    "unlike": "いいね取消",
     "searchWorks": "作品、タグ、作者を検索...",
+    "clearFilter": "フィルタークリア",
+    "randomWorks": "ランダムグッズ",
+    "refreshRandom": "更新",
     "viewAnnouncement": "お知らせを見る",
     "announcement": "お知らせ",
-    "gotIt": "了解"
+    "gotIt": "了解",
+    "retry": "再試行",
+    "loadFailed": "読み込み失敗、後でもう一度お試しください",
+    "wants": "欲しい",
+    "menu": "メニュー"
   },
   "works": {
     "title": "グッズ一覧",

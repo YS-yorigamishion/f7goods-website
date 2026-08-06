@@ -265,7 +265,7 @@ function applyFavicon() {
 
 // Render announcement button for page headers
 function renderAnnouncementButton() {
-  return '<a href="/announcements.html" class="announcement-btn" title="查看公告">📢 公告</a>';
+  return '<a href="/announcements.html" class="announcement-btn" title="' + t('common.viewAnnouncement') + '">📢 ' + t('common.announcement') + '</a>';
 }
 
 // Popup announcement system
@@ -294,7 +294,7 @@ function showAnnouncementPopup(ann) {
     '<h3 class="ann-popup-title">' + escapeHtml(ann.title) + '</h3>' +
     '<div class="ann-popup-date">' + formatDate(ann.publishDate) + '</div>' +
     '<div class="ann-popup-content">' + nl2br(ann.content) + '</div>' +
-    '<button class="btn btn-primary ann-popup-btn" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">知道了</button>' +
+    '<button class="btn btn-primary ann-popup-btn" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">' + t('common.gotIt') + '</button>' +
   '</div>';
   document.body.appendChild(overlay);
   overlay.addEventListener('click', function(e) { if (e.target === overlay) closeAnnouncementPopup(ann.id); });
@@ -474,7 +474,7 @@ function scrollToTop() {
 // Custom confirm dialog
 function showConfirm(message, options = {}) {
   return new Promise((resolve) => {
-    const { title = '确认', confirmText = '确定', cancelText = '取消', danger = false } = options;
+    const { title = t('common.confirm'), confirmText = t('common.ok'), cancelText = t('common.cancel'), danger = false } = options;
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;';
     overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:100%;box-shadow:var(--shadow-lg);">
@@ -515,7 +515,7 @@ function showToast(message, type = 'info', duration = 3000) {
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+  return d.toLocaleDateString(({zh:'zh-CN',en:'en-US',ja:'ja-JP',ko:'ko-KR'}[_lang]||'zh-CN'), { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 // Escape HTML entities
@@ -556,7 +556,7 @@ async function sharePage(title, url) {
   }
   try {
     await navigator.clipboard.writeText(url);
-    showToast('链接已复制到剪贴板', 'success');
+    showToast(t('common.copied'), 'success');
   } catch (e) {
     prompt('复制此链接:', url);
   }
@@ -565,7 +565,7 @@ async function sharePage(title, url) {
 function renderShareButton(title, url) {
   const safeTitle = encodeURIComponent(title);
   const safeUrl = encodeURIComponent(url);
-  return `<button class="want-btn" style="font-size:0.85rem;padding:0.45rem 1.2rem;" data-share-title="${safeTitle}" data-share-url="${safeUrl}" onclick="sharePage(decodeURIComponent(this.dataset.shareTitle), decodeURIComponent(this.dataset.shareUrl))">分享</button>`;
+  return `<button class="want-btn" style="font-size:0.85rem;padding:0.45rem 1.2rem;" data-share-title="${safeTitle}" data-share-url="${safeUrl}" onclick="sharePage(decodeURIComponent(this.dataset.shareTitle), decodeURIComponent(this.dataset.shareUrl))">${t('common.share')}</button>`;
 }
 
 // Like functionality
@@ -589,7 +589,7 @@ function isLiked(workId) {
 function renderLikeButton(workId, likes) {
   const liked = isLiked(workId);
   const count = likes || 0;
-  return '<button class="like-btn ' + (liked ? 'liked' : '') + '" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();toggleLike(\'' + workId + '\',this)" title="' + (liked ? '取消点赞' : '点赞') + '"><span class="like-icon">' + (liked ? '❤️' : '🤍') + '</span><span class="like-count">' + (count > 0 ? count : '') + '</span></button>';
+  return '<button class="like-btn ' + (liked ? 'liked' : '') + '" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();toggleLike(\'' + workId + '\',this)" title="' + (liked ? t('common.unlike') : t('common.like')) + '"><span class="like-icon">' + (liked ? '❤️' : '🤍') + '</span><span class="like-count">' + (count > 0 ? count : '') + '</span></button>';
 }
 
 function updateLikeButtons(workId, liked, count) {
@@ -598,7 +598,7 @@ function updateLikeButtons(workId, liked, count) {
     if (liked) b.classList.add('liked'); else b.classList.remove('liked');
     b.querySelector('.like-icon').textContent = liked ? '❤️' : '🤍';
     b.querySelector('.like-count').textContent = count > 0 ? count : '';
-    b.title = liked ? '取消点赞' : '点赞';
+    b.title = liked ? t('common.unlike') : t('common.like');
   });
   // Also update want buttons if like count changed
   document.querySelectorAll('.want-btn[data-work-id="' + workId + '"]').forEach(function(b) {
@@ -622,9 +622,9 @@ async function toggleLike(workId, btn) {
     if (!res.ok) {
       var errData = await res.json().catch(function() { return {}; });
       if (res.status === 429) {
-        showToast('操作过于频繁，请稍后再试', 'warning');
+        showToast(t('common.rateLimit'), 'warning');
       } else {
-        showToast(errData.error || '操作失败，请重试', 'error');
+        showToast(errData.error || t('common.error'), 'error');
       }
       btn.disabled = false;
       return;
@@ -668,7 +668,7 @@ async function toggleLike(workId, btn) {
   } catch (e) {
     console.error('Like failed:', e);
     btn.disabled = false;
-    showToast('操作失败，请重试', 'error');
+    showToast(t('common.error'), 'error');
   }
 }
 
@@ -685,9 +685,9 @@ function renderWantButton(workId, wants) {
   const wanted = isWanted(workId);
   const count = wants || 0;
   if (wanted) {
-    return '<button class="want-btn want-btn--done" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();confirmUnwant(\'' + workId + '\',' + count + ')">取消' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
+    return '<button class="want-btn want-btn--done" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();confirmUnwant(\'' + workId + '\',' + count + ')">' + t('common.cancel') + (count > 0 ? ' (' + count + ')' : '') + '</button>';
   }
-  return '<button class="want-btn" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();openWantModal(\'' + workId + '\',' + count + ')">我想要' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
+  return '<button class="want-btn" data-work-id="' + workId + '" onclick="event.preventDefault();event.stopPropagation();openWantModal(\'' + workId + '\',' + count + ')">' + t('common.want') + (count > 0 ? ' (' + count + ')' : '') + '</button>';
 }
 
 function updateWantButtons(workId, wanted, count) {
@@ -705,11 +705,11 @@ function openWantModal(workId, currentCount) {
     overlay.innerHTML = '<div class="want-modal">' +
       '<button class="want-modal-close" onclick="closeWantModal()">&times;</button>' +
       '<div class="want-modal-body">' +
-        '<h3 style="margin-bottom:1rem;font-size:1.1rem;">我想要</h3>' +
-        '<p style="color:var(--haze);font-size:0.85rem;line-height:1.8;margin-bottom:1rem;">本功能目前仅供作者确认周边购买意向人数，请勿将其视为购买订单。<br>如您确认购买意向，请在下方输入框输入"我想要"加入周边购买人数意向统计。</p>' +
-        '<input type="text" class="form-input want-modal-input" id="wantModalInput" placeholder="请输入" autocomplete="off">' +
+        '<h3 style="margin-bottom:1rem;font-size:1.1rem;">' + t('common.wantTitle') + '</h3>' +
+        '<p style="color:var(--haze);font-size:0.85rem;line-height:1.8;margin-bottom:1rem;">' + t('common.wantDesc') + '</p>' +
+        '<input type="text" class="form-input want-modal-input" id="wantModalInput" placeholder="' + t('common.wantConfirm') + '" autocomplete="off">' +
         '<div id="wantModalError" style="color:var(--accent);font-size:0.8rem;margin-top:0.4rem;display:none;"></div>' +
-        '<button class="btn btn-primary want-modal-submit" id="wantModalSubmit" onclick="submitWant()">确认</button>' +
+        '<button class="btn btn-primary want-modal-submit" id="wantModalSubmit" onclick="submitWant()">' + t('common.ok') + '</button>' +
       '</div>' +
     '</div>';
     document.body.appendChild(overlay);
@@ -718,7 +718,7 @@ function openWantModal(workId, currentCount) {
   document.getElementById('wantModalInput').value = '';
   document.getElementById('wantModalError').style.display = 'none';
   document.getElementById('wantModalSubmit').disabled = false;
-  document.getElementById('wantModalSubmit').textContent = '确认';
+  document.getElementById('wantModalSubmit').textContent = t('common.ok');
   overlay.classList.add('open');
   overlay.dataset.workId = workId;
   overlay.dataset.currentCount = currentCount;
@@ -739,14 +739,14 @@ async function submitWant() {
   var btn = document.getElementById('wantModalSubmit');
 
   if (input.value.trim() !== '我想要') {
-    errorEl.textContent = '请输入"我想要"以确认意向';
+    errorEl.textContent = t('common.wantConfirm');
     errorEl.style.display = 'block';
     input.focus();
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = '提交中...';
+  btn.textContent = t('common.wanting');
   errorEl.style.display = 'none';
 
   try {
@@ -760,13 +760,13 @@ async function submitWant() {
     if (!res.ok) {
       var errData = await res.json().catch(function() { return {}; });
       if (res.status === 429) {
-        errorEl.textContent = '操作过于频繁，请稍后再试';
+        errorEl.textContent = t('common.rateLimit');
       } else {
-        errorEl.textContent = errData.error || '提交失败，请重试';
+        errorEl.textContent = errData.error || t('common.failSubmit');
       }
       errorEl.style.display = 'block';
       btn.disabled = false;
-      btn.textContent = '确认';
+      btn.textContent = t('common.ok');
       return;
     }
 
@@ -783,18 +783,18 @@ async function submitWant() {
 
     updateWantButtons(workId, true, data.wants);
     closeWantModal();
-    showToast('已记录购买意向', 'success');
+    showToast(t('common.wantSuccess'), 'success');
   } catch (e) {
     console.error('Want failed:', e);
     btn.disabled = false;
-    btn.textContent = '确认';
-    errorEl.textContent = '提交失败，请重试';
+    btn.textContent = t('common.ok');
+    errorEl.textContent = t('common.failSubmit');
     errorEl.style.display = 'block';
   }
 }
 
 function confirmUnwant(workId, currentCount) {
-  if (!confirm('确定要取消"我想要"吗？')) return;
+  if (!confirm(t('common.unwantConfirm'))) return;
   doUnwant(workId, currentCount);
 }
 
@@ -810,9 +810,9 @@ async function doUnwant(workId, currentCount) {
     if (!res.ok) {
       var errData = await res.json().catch(function() { return {}; });
       if (res.status === 429) {
-        showToast('操作过于频繁，请稍后再试', 'warning');
+        showToast(t('common.rateLimit'), 'warning');
       } else {
-        showToast(errData.error || '取消失败，请重试', 'error');
+        showToast(errData.error || t('common.cancelFail'), 'error');
       }
       return;
     }
@@ -831,7 +831,7 @@ async function doUnwant(workId, currentCount) {
     updateWantButtons(workId, false, data.wants);
   } catch (e) {
     console.error('Unwant failed:', e);
-    showToast('取消失败，请重试', 'error');
+    showToast(t('common.cancelFail'), 'error');
   }
 }
 
@@ -847,9 +847,9 @@ function isFollowing(circleId) {
 function renderFollowButton(circleId, follows) {
   var following = isFollowing(circleId);
   if (following) {
-    return '<button class="follow-btn follow-btn--done" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">已关注</button>';
+    return '<button class="follow-btn follow-btn--done" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">' + t('common.followed') + '</button>';
   }
-  return '<button class="follow-btn" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">关注</button>';
+  return '<button class="follow-btn" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">' + t('common.follow') + '</button>';
 }
 
 async function toggleFollow(circleId, btn) {
@@ -867,9 +867,9 @@ async function toggleFollow(circleId, btn) {
     if (!res.ok) {
       var errData = await res.json().catch(function() { return {}; });
       if (res.status === 429) {
-        showToast('操作过于频繁，请稍后再试', 'warning');
+        showToast(t('common.rateLimit'), 'warning');
       } else {
-        showToast(errData.error || '操作失败，请重试', 'error');
+        showToast(errData.error || t('common.error'), 'error');
       }
       btn.disabled = false;
       return;
@@ -900,7 +900,7 @@ async function toggleFollow(circleId, btn) {
   } catch (e) {
     console.error('Follow failed:', e);
     btn.disabled = false;
-    showToast('操作失败，请重试', 'error');
+    showToast(t('common.error'), 'error');
   }
 }
 
@@ -909,10 +909,10 @@ function updateFollowButtons(circleId, following, count) {
     b.disabled = false;
     if (following) {
       b.classList.add('follow-btn--done');
-      b.textContent = '已关注';
+      b.textContent = t('common.followed');
     } else {
       b.classList.remove('follow-btn--done');
-      b.textContent = '关注';
+      b.textContent = t('common.follow');
     }
   });
 }

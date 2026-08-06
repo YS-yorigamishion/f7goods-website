@@ -79,10 +79,20 @@
     "wantSuccess": "구매 의사가 기록되었습니다",
     "wanting": "제출 중...",
     "unwantConfirm": "\"갖고싶다\"를 취소하시겠습니까?",
+    "failSubmit": "제출 실패, 다시 시도해 주세요",
+    "cancelFail": "취소 실패, 다시 시도해 주세요",
+    "unlike": "좋아요 취소",
     "searchWorks": "작품, 태그, 작가 검색...",
+    "clearFilter": "필터 초기화",
+    "randomWorks": "랜덤 굿즈",
+    "refreshRandom": "새로고침",
     "viewAnnouncement": "공지 보기",
     "announcement": "공지",
-    "gotIt": "알겠습니다"
+    "gotIt": "알겠습니다",
+    "retry": "재시도",
+    "loadFailed": "로드 실패, 나중에 다시 시도해 주세요",
+    "wants": "갖고싶다",
+    "menu": "메뉴"
   },
   "works": {
     "title": "굿즈 목록",

@@ -71,9 +71,9 @@
     <div class="random-modal-overlay" id="randomModalOverlay" onclick="if(event.target===this)closeRandomModal()">
       <div class="random-modal">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;">🎲 随机周边</h3>
+          <h3 style="margin:0;">🎲 <span data-i18n="common.randomWorks">随机周边</span></h3>
           <div style="display:flex;gap:0.5rem;align-items:center;">
-            <button class="btn btn-primary" onclick="renderRandomWorks()">🎲 换一批</button>
+            <button class="btn btn-primary" onclick="renderRandomWorks()">🎲 <span data-i18n="common.refreshRandom">换一批</span></button>
             <button onclick="closeRandomModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
           </div>
         </div>
@@ -154,7 +154,7 @@
         if (annBtn) annBtn.innerHTML = renderAnnouncementButton();
       } catch (e) {
         document.getElementById('worksGrid').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>加载失败，请稍后重试</p><button class="btn" style="margin-top:1rem;" onclick="loadWorks()">重试</button></div>';
+          `<div class="empty-state"><div class="icon">!</div><p>${t('common.loadFailed')}</p><button class="btn" style="margin-top:1rem;" onclick="loadWorks()">${t('common.retry')}</button></div>`;
       }
     }
 
@@ -285,7 +285,7 @@
       document.getElementById('worksSkeleton')?.remove();
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的作品</p><button class="btn" style="margin-top:1rem;" onclick="clearFilters()">清除筛选</button></div>';
+        grid.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${t('common.noResults')}</p><button class="btn" style="margin-top:1rem;" onclick="clearFilters()">${t('common.clearFilter')}</button></div>`;
         return;
       }
 
@@ -310,7 +310,7 @@
           <div class="card-footer">
             <span class="card-price">${escapeHtml(work.price)}</span>
             <div style="display:flex;align-items:center;gap:0.5rem;">
-              ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">想要 ${work.wants}</span>` : ''}
+              ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">${t('common.wants')} ${work.wants}</span>` : ''}
               <span class="card-date">${formatDate(work.releaseDate)}</span>
               ${renderLikeButton(work.id, work.likes)}
             </div>
@@ -355,7 +355,7 @@
             <div class="card-footer">
               <span class="card-price">${escapeHtml(work.price)}</span>
               <div style="display:flex;align-items:center;gap:0.5rem;">
-                ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">想要 ${work.wants}</span>` : ''}
+                ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">${t('common.wants')} ${work.wants}</span>` : ''}
                 <span class="card-date">${formatDate(work.releaseDate)}</span>
                 ${renderLikeButton(work.id, work.likes)}
               </div>

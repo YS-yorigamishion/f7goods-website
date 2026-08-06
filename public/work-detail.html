@@ -72,7 +72,7 @@
         const container = document.getElementById('workDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
-            <a href="/">周边概览</a>
+            <a href="/">${t('nav.works')}</a>
             <span>›</span>
             <span>${escapeHtml(work.title)}</span>
           </div>
@@ -92,16 +92,16 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">简介</h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('works.description')}</h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(work.description)}</p>
               ${work.images && work.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">展示图片</h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('works.gallery')}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
                   ${work.images.map((img, i) => `<img src="${img}" alt="${escapeHtml(work.title)}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(work.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
                 </div>
               ` : ''}
               ${work.moreImages && work.moreImages.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">更多图片</h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('works.moreImages')}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
                   ${work.moreImages.map((img, i) => `<img src="${img}" alt="${escapeHtml(work.title)}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(work.moreImages).replace(/"/g, '&quot;')}, ${i})">`).join('')}
                 </div>
@@ -109,29 +109,29 @@
             </div>
             <div class="detail-sidebar">
               <div class="sidebar-card">
-                <h3>商品信息</h3>
+                <h3>${t('works.productInfo')}</h3>
                 <div class="info-row">
-                  <span class="info-label">价格</span>
+                  <span class="info-label">${t('works.price')}</span>
                   <span class="info-value" style="color:var(--accent);font-weight:700;">${escapeHtml(work.price)}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">发售日</span>
+                  <span class="info-label">${t('works.releaseDate')}</span>
                   <span class="info-value">${formatDate(work.releaseDate)}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">状态</span>
+                  <span class="info-label">${t('works.status')}</span>
                   <span class="info-value">${STATUS_LABELS[work.status] || work.status}</span>
                 </div>
                 ${work.isCommissioned && work.commissionedBy ? `
                 <div class="info-row">
-                  <span class="info-label">约稿作品</span>
+                  <span class="info-label">${t('works.commissionedBy')}</span>
                   <span class="info-value">${escapeHtml(work.commissionedBy)}</span>
                 </div>
                 ` : ''}
               </div>
               ${workCircles.length > 0 ? `
               <div class="sidebar-card">
-                <h3>作者</h3>
+                <h3>${t('works.author')}</h3>
                 ${workCircles.map(c => `
                   <a href="/circle-detail.html?id=${c.id}" class="detail-link" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);">
                     ${c.logo
@@ -146,10 +146,10 @@
               ` : ''}
               ${work.socialLinks && Object.keys(work.socialLinks).filter(k => work.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
                 <div class="sidebar-card">
-                  <h3>联系方式</h3>
+                  <h3>${t('works.contactInfo')}</h3>
                   ${Object.entries(work.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
                     const isUrl = url.startsWith('http');
-                    const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key === 'website' ? '访问网站' : key;
+                    const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
                     const label = key === 'website' ? (work.socialLinks.websiteLabel || defaultLabel) : (work.socialLinks.contactLabel || defaultLabel);
                     return isUrl
                       ? `<a href="${url}" target="_blank" class="detail-social-link" style="display:inline-block;padding:0.3rem 0.8rem;color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;">${escapeHtml(label)}</a>`
@@ -162,7 +162,7 @@
               ` : ''}
               ${relatedEvents.length > 0 ? `
               <div class="sidebar-card">
-                <h3>参与活动</h3>
+                <h3>${t('works.relatedEvents')}</h3>
                 ${relatedEvents.map(e => `
                   <a href="/event-detail.html?id=${e.id}" class="detail-link" style="display:block;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);">
                     <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(e.title)}</div>
@@ -173,7 +173,7 @@
               ` : ''}
               ${relatedProjects.length > 0 ? `
               <div class="sidebar-card">
-                <h3>关联企划</h3>
+                <h3>${t('works.relatedProjects')}</h3>
                 ${relatedProjects.map(p => `
                   <a href="/project-detail.html?id=${p.id}" class="detail-link" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);">
                     ${p.coverImage
@@ -188,9 +188,9 @@
               </div>
               ` : ''}
               <div class="sidebar-card">
-                <h3>标签</h3>
+                <h3>${t('works.tags')}</h3>
                 <div class="tag-list">
-                  ${work.tags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${escapeHtml(t)}</a>`).join('')}
+                  ${work.tags.map(tag => `<a href="/?tag=${encodeURIComponent(tag)}" class="tag" style="text-decoration:none;">${escapeHtml(tag)}</a>`).join('')}
                 </div>
               </div>
             </div>
@@ -198,7 +198,7 @@
         `;
       } catch (e) {
         document.getElementById('workDetail').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>作品未找到或加载失败</p></div>';
+          `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;
       }
     }
 

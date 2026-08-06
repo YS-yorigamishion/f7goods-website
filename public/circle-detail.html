@@ -81,7 +81,7 @@
       if (count) count.textContent = `(${filtered.length})`;
       if (!grid) return;
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state" style="padding:2rem 0;"><p>暂无匹配的作品</p></div>';
+        grid.innerHTML = `<div class="empty-state" style="padding:2rem 0;"><p>${t('common.noResults')}</p></div>`;
         return;
       }
       grid.innerHTML = filtered.map(work => `
@@ -98,7 +98,7 @@
           <div class="card-footer" style="padding:0.5rem 0.8rem;">
             <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${escapeHtml(work.price)}</span>
             <div style="display:flex;align-items:center;gap:0.5rem;">
-              ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">想要 ${work.wants}</span>` : ''}
+              ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">${t('common.wants')} ${work.wants}</span>` : ''}
               ${renderLikeButton(work.id, work.likes)}
             </div>
           </div>
@@ -135,7 +135,7 @@
         const container = document.getElementById('circleDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
-            <a href="/circles.html">同人作者</a>
+            <a href="/circles.html">${t('nav.circles')}</a>
             <span>›</span>
             <span>${escapeHtml(circle.name)}</span>
           </div>
@@ -156,11 +156,11 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">作者简介</h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('circles.description')}</h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(circle.description)}</p>
 
               ${circle.images && circle.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">作者图片</h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('circles.gallery')}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
                   ${circle.images.map((img, i) => `<img src="${img}" alt="${escapeHtml(circle.name)}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(circle.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
                 </div>
@@ -170,36 +170,36 @@
                 const usedCats = [...new Set(circleWorks.map(w => w.category).filter(Boolean))];
                 const catBtns = CATEGORIES_ORDERED.filter(c => usedCats.includes(c.id));
                 return `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">作品列表 <span id="circleWorksCount">(${circleWorks.length})</span></h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('circles.worksList')} <span id="circleWorksCount">(${circleWorks.length})</span></h3>
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
-                  <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">全部</button>
+                  <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${t('common.all')}</button>
                   ${catBtns.map(c => `<button class="filter-btn" data-cat="${c.id}" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${c.name}</button>`).join('')}
                   <select class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="cwSortBy=this.value;renderCircleWorks();">
-                    <option value="default">默认排序</option>
-                    <option value="date-asc">发售时间 ↑ 早→晚</option>
-                    <option value="date-desc">发售时间 ↓ 晚→早</option>
-                    <option value="likes-desc">喜爱数 ↓ 高→低</option>
-                    <option value="likes-asc">喜爱数 ↑ 低→高</option>
-                    <option value="wants-desc">想要数 ↓ 高→低</option>
-                    <option value="wants-asc">想要数 ↑ 低→高</option>
+                    <option value="default">${t('common.sortDefault')}</option>
+                    <option value="date-asc">${t('common.sortDateAsc')}</option>
+                    <option value="date-desc">${t('common.sortDateDesc')}</option>
+                    <option value="likes-desc">${t('common.sortLikesDesc')}</option>
+                    <option value="likes-asc">${t('common.sortLikesAsc')}</option>
+                    <option value="wants-desc">${t('common.sortWantsDesc')}</option>
+                    <option value="wants-asc">${t('common.sortWantsAsc')}</option>
                   </select>
-                  <input type="text" class="search-input" placeholder="搜索作品、标签..." style="max-width:200px;" oninput="cwSearchText=this.value;renderCircleWorks();">
+                  <input type="text" class="search-input" placeholder="${t('common.searchWorks')}" style="max-width:200px;" oninput="cwSearchText=this.value;renderCircleWorks();">
                 </div>
                 <div class="cards-grid related-works-grid" id="circleWorksGrid"></div>
                 `;
-              })() : '<p style="color:var(--haze);">暂无作品</p>'}
+              })() : `<p style="color:var(--haze);">${t('common.noWorks')}</p>`}
             </div>
             <div class="detail-sidebar">
               <div class="sidebar-card">
-                <h3>作者信息</h3>
+                <h3>${t('circles.authorInfo')}</h3>
                 <div class="info-row">
-                  <span class="info-label">作品数</span>
+                  <span class="info-label">${t('circles.worksCount')}</span>
                   <span class="info-value">${circleWorks.length}</span>
                 </div>
               </div>
               ${relatedEvents.length > 0 ? `
               <div class="sidebar-card">
-                <h3>参与活动</h3>
+                <h3>${t('circles.relatedEvents')}</h3>
                 ${relatedEvents.map(e => `
                   <a href="/event-detail.html?id=${e.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -217,7 +217,7 @@
               ` : ''}
               ${relatedProjects.length > 0 ? `
               <div class="sidebar-card">
-                <h3>参与企划</h3>
+                <h3>${t('circles.relatedProjects')}</h3>
                 ${relatedProjects.map(p => `
                   <a href="/project-detail.html?id=${p.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -234,7 +234,7 @@
               ` : ''}
               ${relatedUpdates.length > 0 ? `
               <div class="sidebar-card">
-                <h3>相关动态</h3>
+                <h3>${t('circles.relatedUpdates')}</h3>
                 ${relatedUpdates.map(u => `
                   <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -246,10 +246,10 @@
               ` : ''}
               ${circle.socialLinks && Object.keys(circle.socialLinks).filter(k => circle.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
                 <div class="sidebar-card">
-                  <h3>联系方式</h3>
+                  <h3>${t('circles.contactInfo')}</h3>
                   ${Object.entries(circle.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
                     const isUrl = url.startsWith('http');
-                    const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key === 'website' ? '访问网站' : key;
+                    const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
                     const label = key === 'website' ? (circle.socialLinks.websiteLabel || defaultLabel) : (circle.socialLinks.contactLabel || defaultLabel);
                     return isUrl
                       ? `<a href="${url}" target="_blank" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
@@ -267,7 +267,7 @@
         renderCircleWorks();
       } catch (e) {
         document.getElementById('circleDetail').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>作者未找到或加载失败</p></div>';
+          `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;
       }
     }
 

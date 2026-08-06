@@ -71,7 +71,7 @@
       if (count) count.textContent = `(${filtered.length})`;
       if (!grid) return;
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state" style="padding:2rem 0;"><p>暂无匹配的作品</p></div>';
+        grid.innerHTML = `<div class="empty-state" style="padding:2rem 0;"><p>${t('common.noResults')}</p></div>`;
         return;
       }
       grid.innerHTML = filtered.map(work => {
@@ -150,7 +150,7 @@
         const container = document.getElementById('eventDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
-            <a href="/events.html">近期活动</a>
+            <a href="/events.html">${t('nav.events')}</a>
             <span>›</span>
             <span>${escapeHtml(event.title)}</span>
           </div>
@@ -168,13 +168,13 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">活动简介</h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('events.description')}</h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(event.description)}</p>
 
-              ${event.booth ? `<div style="margin-top:1.5rem;"><span class="event-booth" style="font-size:0.9rem;">展位: ${escapeHtml(event.booth)}</span></div>` : ''}
+              ${event.booth ? `<div style="margin-top:1.5rem;"><span class="event-booth" style="font-size:0.9rem;">${t('events.booth')}: ${escapeHtml(event.booth)}</span></div>` : ''}
 
               ${event.images && event.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">活动图片</h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('events.eventImages')}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
                   ${event.images.map((img, i) => `
                     <div class="event-img-wrap collapsed" data-images='${JSON.stringify(event.images).replace(/&/g, '&amp;').replace(/'/g, '&#39;')}' data-index="${i}" onclick="toggleEventImg(this)">
@@ -189,11 +189,11 @@
                 const usedCats = [...new Set(relatedWorks.map(w => w.category).filter(Boolean))];
                 const catBtns = CATEGORIES_ORDERED.filter(c => usedCats.includes(c.id));
                 return `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">关联作品 <span id="relatedWorksCount">(${relatedWorks.length})</span></h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('events.relatedWorks')} <span id="relatedWorksCount">(${relatedWorks.length})</span></h3>
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
-                  <button class="filter-btn active" data-rw-cat="all" onclick="rwCategory='all';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">全部</button>
+                  <button class="filter-btn active" data-rw-cat="all" onclick="rwCategory='all';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${t('common.all')}</button>
                   ${catBtns.map(c => `<button class="filter-btn" data-rw-cat="${c.id}" onclick="rwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${c.name}</button>`).join('')}
-                  <input type="text" class="search-input" placeholder="搜索作品、标签、作者..." style="margin-left:auto;max-width:200px;" oninput="rwSearchText=this.value;renderRelatedWorks();">
+                  <input type="text" class="search-input" placeholder="${t('common.searchWorks')}" style="margin-left:auto;max-width:200px;" oninput="rwSearchText=this.value;renderRelatedWorks();">
                 </div>
                 <div class="cards-grid related-works-grid" id="relatedWorksGrid"></div>
                 `;
@@ -202,34 +202,34 @@
             </div>
             <div class="detail-sidebar">
               <div class="sidebar-card">
-                <h3>活动信息</h3>
+                <h3>${t('events.eventInfo')}</h3>
                 <div class="info-row">
-                  <span class="info-label">开始日期</span>
+                  <span class="info-label">${t('events.startDate')}</span>
                   <span class="info-value">${formatDate(event.date)}</span>
                 </div>
                 ${event.endDate ? `
                   <div class="info-row">
-                    <span class="info-label">结束日期</span>
+                    <span class="info-label">${t('events.endDate')}</span>
                     <span class="info-value">${formatDate(event.endDate)}</span>
                   </div>
                 ` : ''}
                 <div class="info-row">
-                  <span class="info-label">地点</span>
+                  <span class="info-label">${t('events.location')}</span>
                   <span class="info-value">${escapeHtml(event.location)}</span>
                 </div>
                 ${event.booth ? `
                   <div class="info-row">
-                    <span class="info-label">展位</span>
+                    <span class="info-label">${t('events.booth')}</span>
                     <span class="info-value" style="color:var(--accent);font-weight:600;">${escapeHtml(event.booth)}</span>
                   </div>
                 ` : ''}
               </div>
               ${event.socialLinks && Object.keys(event.socialLinks).filter(k => event.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
               <div class="sidebar-card">
-                <h3>联系方式</h3>
+                <h3>${t('events.contactInfo')}</h3>
                 ${Object.entries(event.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
                   const isUrl = url.startsWith('http');
-                  const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key === 'website' ? '访问网站' : key;
+                  const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
                   const label = key === 'website' ? (event.socialLinks.websiteLabel || defaultLabel) : (event.socialLinks.contactLabel || defaultLabel);
                   return isUrl
                     ? `<a href="${url}" target="_blank" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
@@ -243,7 +243,7 @@
               ` : ''}
               ${relatedProjects.length > 0 ? `
               <div class="sidebar-card">
-                <h3>关联企划</h3>
+                <h3>${t('events.relatedProjects')}</h3>
                 ${relatedProjects.map(p => `
                   <a href="/project-detail.html?id=${p.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -260,7 +260,7 @@
               ` : ''}
               ${relatedCircles.length > 0 ? `
               <div class="sidebar-card">
-                <h3>关联作者</h3>
+                <h3>${t('events.relatedAuthors')}</h3>
                 ${relatedCircles.map(c => `
                   <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -276,7 +276,7 @@
               ` : ''}
               ${relatedUpdates.length > 0 ? `
               <div class="sidebar-card">
-                <h3>相关动态</h3>
+                <h3>${t('events.relatedUpdates')}</h3>
                 ${relatedUpdates.map(u => `
                   <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -290,7 +290,7 @@
                 const allTags = [...new Set(relatedWorks.flatMap(w => w.tags || []))];
                 return allTags.length > 0 ? `
               <div class="sidebar-card">
-                <h3>标签</h3>
+                <h3>${t('works.tags')}</h3>
                 <div class="tag-list">
                   ${allTags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${escapeHtml(t)}</a>`).join('')}
                 </div>
@@ -302,7 +302,7 @@
         renderRelatedWorks();
       } catch (e) {
         document.getElementById('eventDetail').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>活动未找到或加载失败</p></div>';
+          `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;
       }
     }
 

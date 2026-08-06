@@ -75,7 +75,7 @@
         const container = document.getElementById('projectDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
-            <a href="/projects.html">同人企划</a>
+            <a href="/projects.html">${t('nav.projects')}</a>
             <span>›</span>
             <span>${escapeHtml(project.title)}</span>
           </div>
@@ -92,23 +92,23 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">企划简介</h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('projects.description')}</h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(project.description)}</p>
 
               ${project.images && project.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">企划图片</h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('projects.projectImages')}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
                   ${project.images.map((img, i) => `<img src="${img}" alt="${escapeHtml(project.title)}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(project.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
                 </div>
               ` : ''}
 
               ${project.contactInfo ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">参与方式</h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('projects.contactMethod')}</h3>
                 <p style="line-height:1.8;color:var(--ink);">${nl2br(project.contactInfo)}</p>
               ` : ''}
 
               ${relatedWorks.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">关联作品 (${relatedWorks.length})</h3>
+                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('projects.relatedWorks')} (${relatedWorks.length})</h3>
                 <div class="cards-grid">
                   ${relatedWorks.map(work => `
                     <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
@@ -129,32 +129,32 @@
             </div>
             <div class="detail-sidebar">
               <div class="sidebar-card">
-                <h3>企划信息</h3>
+                <h3>${t('projects.projectInfo')}</h3>
                 <div class="info-row">
-                  <span class="info-label">状态</span>
+                  <span class="info-label">${t('works.status')}</span>
                   <span class="info-value">${PROJECT_STATUS_LABELS[project.status] || project.status}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">分类</span>
+                  <span class="info-label">${t('common.category')}</span>
                   <span class="info-value">${PROJECT_CATEGORIES[project.category] || project.category}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">开始日期</span>
+                  <span class="info-label">${t('projects.startDate')}</span>
                   <span class="info-value">${formatDate(project.startDate)}</span>
                 </div>
                 ${project.endDate ? `
                   <div class="info-row">
-                    <span class="info-label">结束日期</span>
+                    <span class="info-label">${t('projects.endDate')}</span>
                     <span class="info-value">${formatDate(project.endDate)}</span>
                   </div>
                 ` : ''}
               </div>
               ${project.socialLinks && Object.keys(project.socialLinks).filter(k => project.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
               <div class="sidebar-card">
-                <h3>联系方式</h3>
+                <h3>${t('works.contactInfo')}</h3>
                 ${Object.entries(project.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
                   const isUrl = url.startsWith('http');
-                  const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key === 'website' ? '访问网站' : key;
+                  const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
                   const label = key === 'website' ? (project.socialLinks.websiteLabel || defaultLabel) : (project.socialLinks.contactLabel || defaultLabel);
                   return isUrl
                     ? `<a href="${url}" target="_blank" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
@@ -168,7 +168,7 @@
               ` : ''}
               ${relatedEvents.length > 0 ? `
               <div class="sidebar-card">
-                <h3>关联活动</h3>
+                <h3>${t('projects.relatedEvents')}</h3>
                 ${relatedEvents.map(e => `
                   <a href="/event-detail.html?id=${e.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -185,7 +185,7 @@
               ` : ''}
               ${relatedUpdates.length > 0 ? `
               <div class="sidebar-card">
-                <h3>相关动态</h3>
+                <h3>${t('projects.relatedUpdates')}</h3>
                 ${relatedUpdates.map(u => `
                   <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -197,7 +197,7 @@
               ` : ''}
               ${relatedCircles.length > 0 ? `
               <div class="sidebar-card">
-                <h3>关联作者</h3>
+                <h3>${t('projects.relatedAuthors')}</h3>
                 ${relatedCircles.map(c => `
                   <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -218,7 +218,7 @@
                 ])];
                 return allTags.length > 0 ? `
               <div class="sidebar-card">
-                <h3>标签</h3>
+                <h3>${t('works.tags')}</h3>
                 <div class="tag-list">
                   ${allTags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${escapeHtml(t)}</a>`).join('')}
                 </div>
@@ -229,7 +229,7 @@
         `;
       } catch (e) {
         document.getElementById('projectDetail').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>企划未找到或加载失败</p></div>';
+          `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;
       }
     }
 

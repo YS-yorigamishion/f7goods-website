@@ -79,10 +79,20 @@
     "wantSuccess": "已记录购买意向",
     "wanting": "提交中...",
     "unwantConfirm": "确定要取消\"我想要\"吗？",
+    "failSubmit": "提交失败，请重试",
+    "cancelFail": "取消失败，请重试",
+    "unlike": "取消点赞",
     "searchWorks": "搜索作品、标签、作者...",
+    "clearFilter": "清除筛选",
+    "randomWorks": "随机周边",
+    "refreshRandom": "换一批",
     "viewAnnouncement": "查看公告",
     "announcement": "公告",
-    "gotIt": "知道了"
+    "gotIt": "知道了",
+    "retry": "重试",
+    "loadFailed": "加载失败，请稍后重试",
+    "wants": "想要",
+    "menu": "菜单"
   },
   "works": {
     "title": "周边概览",

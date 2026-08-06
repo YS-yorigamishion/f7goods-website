@@ -79,10 +79,20 @@
     "wantSuccess": "Interest recorded",
     "wanting": "Submitting...",
     "unwantConfirm": "Are you sure you want to cancel \"I Want\"?",
+    "failSubmit": "Submit failed, please try again",
+    "cancelFail": "Cancel failed, please try again",
+    "unlike": "Unlike",
     "searchWorks": "Search works, tags, authors...",
+    "clearFilter": "Clear Filter",
+    "randomWorks": "Random Works",
+    "refreshRandom": "Refresh",
     "viewAnnouncement": "View Announcement",
     "announcement": "Announcement",
-    "gotIt": "Got it"
+    "gotIt": "Got it",
+    "retry": "Retry",
+    "loadFailed": "Loading failed, please try again later",
+    "wants": "Wants",
+    "menu": "Menu"
   },
   "works": {
     "title": "Works",
