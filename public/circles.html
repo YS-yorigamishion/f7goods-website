@@ -16,29 +16,29 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending">同人作者</h1>
-    <p id="heroSubtitle" class="settings-pending">发现优秀的同人创作者与作者，支持独立创作</p>
+    <h1 id="heroTitle" class="settings-pending" data-i18n="circles.heroTitle">同人作者</h1>
+    <p id="heroSubtitle" class="settings-pending" data-i18n="circles.heroSubtitle">发现优秀的同人创作者与作者，支持独立创作</p>
   </section>
 
   <main class="main-content">
     <div class="page-header">
-      <h2 id="pageTitle" class="settings-pending">入驻作者</h2>
-      <p id="pageSubtitle" class="settings-pending">在 f7goods 展示作品的同人作者</p>
+      <h2 id="pageTitle" class="settings-pending" data-i18n="circles.listTitle">入驻作者</h2>
+      <p id="pageSubtitle" class="settings-pending" data-i18n="circles.subtitle">在 f7goods 展示作品的同人作者</p>
     </div>
 
     <div class="filter-bar" id="categoryFilters"></div>
     <div class="filter-bar" style="display:flex;gap:0.5rem;align-items:center;">
-      <button class="filter-btn" onclick="randomAuthor()" style="white-space:nowrap;">🎲 随机作者</button>
+      <button class="filter-btn" onclick="randomAuthor()" style="white-space:nowrap;" data-i18n="common.randomAuthor">🎲 随机作者</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:120px;">
           <option value="order">默认排序</option>
           <option value="name-asc">名称 A→Z</option>
         </select>
-        <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput">
+        <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
       </div>
     </div>
     <div class="filter-bar" id="circleUserFilters" style="display:none;">
-      <button class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')">⭐ 关注</button>
+      <button class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">⭐ 关注</button>
     </div>
 
     <div class="cards-grid" id="circlesGrid">

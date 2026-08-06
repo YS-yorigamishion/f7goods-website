@@ -17,24 +17,24 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending">探索同人世界的精彩</h1>
-    <p id="heroSubtitle" class="settings-pending">汇集优质同人作者的周边商品，从手办到音乐，从同人志到服饰</p>
+    <h1 id="heroTitle" class="settings-pending" data-i18n="works.heroTitle">🎨 同人周边概览</h1>
+    <p id="heroSubtitle" class="settings-pending" data-i18n="works.heroSubtitle">浏览并发现优质同人创作者的手办、周边、同人志、音乐CD等商品</p>
   </section>
 
   <main class="main-content">
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
       <div>
-        <h2 id="pageTitle" class="settings-pending">周边概览</h2>
-        <p id="pageSubtitle" class="settings-pending">浏览所有在售及预约中的同人周边商品</p>
+        <h2 id="pageTitle" class="settings-pending" data-i18n="works.listTitle">周边列表</h2>
+        <p id="pageSubtitle" class="settings-pending" data-i18n="works.listSubtitle">按默认排序显示</p>
       </div>
       <div id="announcementBtn"></div>
     </div>
 
     <div class="filter-bar" id="statusFilters">
-      <button class="filter-btn active" data-status="all">全部状态</button>
+      <button class="filter-btn active" data-status="all" data-i18n="common.allStatus">全部状态</button>
     </div>
     <div class="filter-bar" id="categoryFilters">
-      <button class="filter-btn active" data-cat="all">全部</button>
+      <button class="filter-btn active" data-cat="all" data-i18n="common.all">全部</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
           <option value="default">默认排序</option>
@@ -45,13 +45,13 @@
           <option value="wants-desc">想要数 ↓ 高→低</option>
           <option value="wants-asc">想要数 ↑ 低→高</option>
         </select>
-        <input type="text" class="search-input" placeholder="搜索作品..." id="searchInput">
+        <input type="text" class="search-input" data-i18n-placeholder="common.searchPlaceholder" placeholder="搜索作品..." id="searchInput">
       </div>
     </div>
     <div class="filter-bar" id="userFilters" style="display:none;">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 关注</button>
-      <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')">❤️ 喜爱</button>
-      <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')">🔖 想要</button>
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ <span data-i18n="common.follow">关注</span></button>
+      <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')">❤️ <span data-i18n="common.like">喜爱</span></button>
+      <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')">🔖 <span data-i18n="common.want">想要</span></button>
     </div>
 
     <div class="cards-grid" id="worksGrid">

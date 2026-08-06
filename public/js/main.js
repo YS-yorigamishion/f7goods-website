@@ -285,7 +285,7 @@ function buildNavbar(activePage) {
     : logoText
       ? `<div class="logo-icon">${logoText}</div>`
       : `<div class="logo-icon">F7</div>`;
-  const langOptions = ['zh', 'en', 'ja', 'ko'].map(code =>
+  const langOptions = ['zh', 'ko', 'en', 'ja'].map(code =>
     `<button class="lang-btn ${_lang === code ? 'active' : ''}" data-lang="${code}" onclick="loadLang('${code}')">${getLangName(code)}</button>`
   ).join('');
   return `

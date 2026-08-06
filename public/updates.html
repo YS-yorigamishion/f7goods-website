@@ -16,31 +16,31 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending">📰 同人动态</h1>
-    <p id="heroSubtitle" class="settings-pending">了解同人圈的最新动态和重要更新</p>
+    <h1 id="heroTitle" class="settings-pending" data-i18n="updates.heroTitle">📰 同人动态</h1>
+    <p id="heroSubtitle" class="settings-pending" data-i18n="updates.heroSubtitle">了解同人圈的最新动态和重要更新</p>
   </section>
 
   <main class="main-content">
     <div class="page-header">
-      <h2 id="pageTitle" class="settings-pending">动态列表</h2>
-      <p id="pageSubtitle" class="settings-pending">按发布时间倒序排列</p>
+      <h2 id="pageTitle" class="settings-pending" data-i18n="updates.listTitle">动态列表</h2>
+      <p id="pageSubtitle" class="settings-pending" data-i18n="updates.listSubtitle">按发布时间倒序排列</p>
     </div>
 
     <div class="filter-bar" id="statusFilters">
-      <button class="filter-btn active" data-status="all">全部状态</button>
+      <button class="filter-btn active" data-status="all" data-i18n="common.all">全部状态</button>
     </div>
     <div class="filter-bar" id="categoryFilters">
-      <button class="filter-btn active" data-cat="all">全部分类</button>
+      <button class="filter-btn active" data-cat="all" data-i18n="common.all">全部分类</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
           <option value="date-desc">发布日期 ↓ 新→旧</option>
           <option value="date-asc">发布日期 ↑ 旧→新</option>
         </select>
-        <input type="text" class="search-input" placeholder="搜索动态..." id="searchInput">
+        <input type="text" class="search-input" placeholder="搜索动态..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
       </div>
     </div>
     <div class="filter-bar">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 关注</button>
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn" data-i18n="common.follow">⭐ 关注</button>
     </div>
 
     <div class="cards-grid" id="updatesGrid">

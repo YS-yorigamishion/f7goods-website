@@ -72,8 +72,8 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending">关于 f7goods</h1>
-    <p id="heroSubtitle" class="settings-pending">连接创作者与爱好者的同人周边展示平台</p>
+    <h1 id="heroTitle" class="settings-pending" data-i18n="contact.heroTitle">关于 f7goods</h1>
+    <p id="heroSubtitle" class="settings-pending" data-i18n="contact.heroSubtitle">连接创作者与爱好者的同人周边展示平台</p>
   </section>
 
   <main class="main-content">
@@ -88,8 +88,8 @@
       </div>
 
       <div class="about-card">
-        <h3 id="contactTitle" class="settings-pending">联系我们</h3>
-        <p id="contactContent" class="settings-pending">有任何问题、合作意向或建议，欢迎通过以下方式联系我们：</p>
+        <h3 id="contactTitle" class="settings-pending" data-i18n="contact.title">联系我们</h3>
+        <p id="contactContent" class="settings-pending" data-i18n="contact.subtitle">有任何问题、合作意向或建议，欢迎通过以下方式联系我们：</p>
         <div class="social-links settings-pending" id="contactLinksContainer" style="justify-content:flex-start;margin-top:1rem;">
           <a href="#" class="social-link">🐦 Twitter / X</a>
           <a href="#" class="social-link">📧 support@f7goods.com</a>
@@ -99,24 +99,24 @@
         <form id="contactForm" style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);">
           <div class="form-row">
             <div class="form-group">
-              <label>昵称</label>
-              <input class="form-input" id="contactName" placeholder="请输入昵称（选填）">
+              <label data-i18n="contact.name">昵称</label>
+              <input class="form-input" id="contactName" placeholder="请输入昵称（选填）" data-i18n-placeholder="contact.namePlaceholder">
             </div>
             <div class="form-group">
-              <label>联系方式</label>
-              <input class="form-input" id="contactEmail" placeholder="邮箱、QQ、微信等（选填）">
+              <label data-i18n="contact.email">联系方式</label>
+              <input class="form-input" id="contactEmail" placeholder="邮箱、QQ、微信等（选填）" data-i18n-placeholder="contact.emailPlaceholder">
             </div>
           </div>
           <div class="form-group">
-            <label>主题</label>
-            <input class="form-input" id="contactSubject" placeholder="咨询/合作/建议...">
+            <label data-i18n="contact.subject">主题</label>
+            <input class="form-input" id="contactSubject" placeholder="咨询/合作/建议..." data-i18n-placeholder="contact.subjectPlaceholder">
           </div>
           <div class="form-group">
-            <label>消息内容 <span style="color:var(--accent)">*</span></label>
-            <textarea class="form-input" id="contactMessage" required placeholder="请输入您想说的话..." style="min-height:120px;" maxlength="1000" oninput="updateCharCount()"></textarea>
+            <label data-i18n="contact.message">消息内容 <span style="color:var(--accent)">*</span></label>
+            <textarea class="form-input" id="contactMessage" required placeholder="请输入您想说的话..." style="min-height:120px;" maxlength="1000" oninput="updateCharCount()" data-i18n-placeholder="contact.messagePlaceholder"></textarea>
             <div id="charCount" style="text-align:right;font-size:0.8rem;color:var(--haze);margin-top:0.3rem;">0 / 1000</div>
           </div>
-          <button type="submit" class="btn btn-primary">发送消息</button>
+          <button type="submit" class="btn btn-primary" data-i18n="contact.submitBtn">发送消息</button>
         </form>
       </div>
 

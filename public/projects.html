@@ -16,32 +16,32 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending">同人企划</h1>
-    <p id="heroSubtitle" class="settings-pending">发现正在进行的同人企划，加入创作团队</p>
+    <h1 id="heroTitle" class="settings-pending" data-i18n="projects.heroTitle">同人企划</h1>
+    <p id="heroSubtitle" class="settings-pending" data-i18n="projects.heroSubtitle">发现正在进行的同人企划，加入创作团队</p>
   </section>
 
   <main class="main-content">
     <div class="page-header">
-      <h2 id="pageTitle" class="settings-pending">企划列表</h2>
-      <p id="pageSubtitle" class="settings-pending">正在进行或招募中的同人企划项目</p>
+      <h2 id="pageTitle" class="settings-pending" data-i18n="projects.listTitle">企划列表</h2>
+      <p id="pageSubtitle" class="settings-pending" data-i18n="projects.listSubtitle">正在进行或招募中的同人企划项目</p>
     </div>
 
     <div class="filter-bar" id="statusFilters">
-      <button class="filter-btn active" data-status="all">全部状态</button>
+      <button class="filter-btn active" data-status="all" data-i18n="common.allStatus">全部状态</button>
     </div>
     <div class="filter-bar" id="categoryFilters">
-      <button class="filter-btn active" data-cat="all">全部分类</button>
+      <button class="filter-btn active" data-cat="all" data-i18n="common.allCategories">全部分类</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
           <option value="date-desc">创建日期 ↓ 新→旧</option>
           <option value="date-asc">创建日期 ↑ 旧→新</option>
           <option value="name-asc">名称 A→Z</option>
         </select>
-        <input type="text" class="search-input" placeholder="搜索企划..." id="searchInput">
+        <input type="text" class="search-input" placeholder="搜索企划..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
       </div>
     </div>
     <div class="filter-bar">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 关注</button>
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn" data-i18n="common.follow">⭐ 关注</button>
     </div>
 
     <div class="cards-grid" id="projectsGrid">

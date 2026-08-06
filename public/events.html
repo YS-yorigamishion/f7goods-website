@@ -16,15 +16,15 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending">近期活动</h1>
-    <p id="heroSubtitle" class="settings-pending">关注最新的同人展会与活动信息，不错过每一场精彩</p>
+    <h1 id="heroTitle" class="settings-pending" data-i18n="events.heroTitle">近期活动</h1>
+    <p id="heroSubtitle" class="settings-pending" data-i18n="events.heroSubtitle">关注最新的同人展会与活动信息，不错过每一场精彩</p>
   </section>
 
   <main class="main-content">
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
       <div>
-        <h2 id="pageTitle" class="settings-pending">活动日历</h2>
-        <p id="pageSubtitle" class="settings-pending">f7goods 参展及推荐的同人活动</p>
+        <h2 id="pageTitle" class="settings-pending" data-i18n="events.listTitle">活动日历</h2>
+        <p id="pageSubtitle" class="settings-pending" data-i18n="events.listSubtitle">f7goods 参展及推荐的同人活动</p>
       </div>
       <div style="display:flex;gap:0.5rem;align-items:center;">
         <div class="view-toggle">
@@ -36,8 +36,8 @@
     </div>
 
     <div class="filter-bar" style="margin-bottom:1.5rem;">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 关注</button>
-      <input type="text" class="search-input" placeholder="搜索活动名称、地点、分类..." id="searchInput" style="min-width:100%;margin-left:0;">
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn" data-i18n="common.follow">⭐ 关注</button>
+      <input type="text" class="search-input" placeholder="搜索活动名称、地点、分类..." id="searchInput" style="min-width:100%;margin-left:0;" data-i18n-placeholder="common.searchPlaceholder">
     </div>
 
     <div id="eventsContainer">

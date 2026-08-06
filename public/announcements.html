@@ -83,14 +83,14 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle">📢 公告</h1>
-    <p id="heroSubtitle">了解 f7goods 的最新动态和重要通知</p>
+    <h1 id="heroTitle" data-i18n="announcements.heroTitle">📢 公告</h1>
+    <p id="heroSubtitle" data-i18n="announcements.heroSubtitle">了解 f7goods 的最新动态和重要通知</p>
   </section>
 
   <main class="main-content">
     <div class="page-header">
-      <h2 id="pageTitle">公告列表</h2>
-      <p id="pageSubtitle">按发布时间倒序排列</p>
+      <h2 id="pageTitle" data-i18n="announcements.listTitle">公告列表</h2>
+      <p id="pageSubtitle" data-i18n="announcements.listSubtitle">按发布时间倒序排列</p>
     </div>
 
     <div id="announcementsContainer">
@@ -139,7 +139,7 @@
         const container = document.getElementById('announcementsContainer');
 
         if (!announcements || announcements.length === 0) {
-          container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><p>暂无公告</p></div>';
+          container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><p data-i18n="announcements.noAnnouncements">暂无公告</p></div>';
           return;
         }
 
