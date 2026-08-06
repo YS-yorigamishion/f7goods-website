@@ -47,6 +47,10 @@
         <input type="text" class="search-input" placeholder="搜索作品..." id="searchInput">
       </div>
     </div>
+    <div class="filter-bar" id="userFilters" style="display:none;">
+      <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')">❤️ 我喜爱的</button>
+      <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')">⭐ 我想要的</button>
+    </div>
 
     <div class="cards-grid" id="worksGrid">
       <div class="skeleton-grid" id="worksSkeleton">
@@ -89,6 +93,24 @@
     let circlesMap = {};
     let currentCategory = 'all';
     let currentStatus = 'all';
+    let currentUserFilter = 'none'; // 'none', 'liked', 'wanted'
+
+    function toggleUserFilter(type) {
+      currentUserFilter = currentUserFilter === type ? 'none' : type;
+      document.querySelectorAll('[data-user-filter]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.userFilter === currentUserFilter);
+      });
+      renderWorks();
+    }
+
+    function checkUserFilters() {
+      const liked = JSON.parse(localStorage.getItem('f7liked') || '[]');
+      const wanted = JSON.parse(localStorage.getItem('f7wanted') || '[]');
+      const container = document.getElementById('userFilters');
+      if (container && (liked.length > 0 || wanted.length > 0)) {
+        container.style.display = 'flex';
+      }
+    }
 
     async function loadWorks() {
       try {
@@ -115,6 +137,7 @@
         // Generate filter buttons dynamically
         buildFilterButtons();
         renderWorks();
+        checkUserFilters();
 
         // Render announcement button
         const annBtn = document.getElementById('announcementBtn');
@@ -187,6 +210,16 @@
       if (currentStatus !== 'all') {
         filtered = filtered.filter(w => w.status === currentStatus);
       }
+
+      // User filter (liked/wanted)
+      if (currentUserFilter === 'liked') {
+        const likedIds = JSON.parse(localStorage.getItem('f7liked') || '[]');
+        filtered = filtered.filter(w => likedIds.includes(w.id));
+      } else if (currentUserFilter === 'wanted') {
+        const wantedIds = JSON.parse(localStorage.getItem('f7wanted') || '[]');
+        filtered = filtered.filter(w => wantedIds.includes(w.id));
+      }
+
       const search = document.getElementById('searchInput').value.toLowerCase();
 
       // Check for exact tag match from URL
