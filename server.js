@@ -50,10 +50,9 @@ function clearApiCache(type) {
 const app = express();
 app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is not set');
-  process.exit(1);
+const JWT_SECRET = process.env.JWT_SECRET || 'f7goods_secret_2026';
+if (!process.env.JWT_SECRET) {
+  console.warn('WARNING: JWT_SECRET not set, using default. Set JWT_SECRET env var in production!');
 }
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'f7goods2026';
 
