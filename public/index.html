@@ -50,6 +50,7 @@
     <div class="filter-bar" id="userFilters" style="display:none;">
       <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')">❤️ 我喜爱的</button>
       <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')">⭐ 我想要的</button>
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 我关注的</button>
     </div>
 
     <div class="cards-grid" id="worksGrid">
@@ -94,6 +95,7 @@
     let currentCategory = 'all';
     let currentStatus = 'all';
     let currentUserFilter = 'none'; // 'none', 'liked', 'wanted'
+    let currentFollowFilter = false;
 
     function toggleUserFilter(type) {
       currentUserFilter = currentUserFilter === type ? 'none' : type;
@@ -103,11 +105,18 @@
       renderWorks();
     }
 
+    function toggleFollowFilter() {
+      currentFollowFilter = !currentFollowFilter;
+      document.getElementById('followFilterBtn').classList.toggle('active', currentFollowFilter);
+      renderWorks();
+    }
+
     function checkUserFilters() {
       const liked = JSON.parse(localStorage.getItem('f7liked') || '[]');
       const wanted = JSON.parse(localStorage.getItem('f7wanted') || '[]');
+      const followed = getFollowedCircles();
       const container = document.getElementById('userFilters');
-      if (container && (liked.length > 0 || wanted.length > 0)) {
+      if (container && (liked.length > 0 || wanted.length > 0 || followed.length > 0)) {
         container.style.display = 'flex';
       }
     }
@@ -218,6 +227,12 @@
       } else if (currentUserFilter === 'wanted') {
         const wantedIds = JSON.parse(localStorage.getItem('f7wanted') || '[]');
         filtered = filtered.filter(w => wantedIds.includes(w.id));
+      }
+
+      // Follow filter
+      if (currentFollowFilter) {
+        const followedList = getFollowedCircles();
+        filtered = filtered.filter(w => (w.circles || []).some(cid => followedList.includes(cid)));
       }
 
       const search = document.getElementById('searchInput').value.toLowerCase();

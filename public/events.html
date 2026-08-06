@@ -36,6 +36,7 @@
     </div>
 
     <div class="filter-bar" style="margin-bottom:1.5rem;">
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 我关注的</button>
       <input type="text" class="search-input" placeholder="搜索活动名称、地点、分类..." id="searchInput" style="min-width:100%;margin-left:0;">
     </div>
 
@@ -62,6 +63,13 @@
     let allWorks = [];
     let currentView = 'timeline';
     let calYear, calMonth;
+    let currentFollowFilter = false;
+
+    function toggleFollowFilter() {
+      currentFollowFilter = !currentFollowFilter;
+      document.getElementById('followFilterBtn').classList.toggle('active', currentFollowFilter);
+      renderEvents();
+    }
 
     async function loadEvents() {
       try {
@@ -96,9 +104,15 @@
     }
 
     function getFilteredEvents() {
+      let events = allEvents;
+      // Follow filter
+      if (currentFollowFilter) {
+        const followedList = getFollowedCircles();
+        events = events.filter(e => (e.relatedCircles || []).some(cid => followedList.includes(cid)));
+      }
       const search = document.getElementById('searchInput').value.toLowerCase();
-      if (!search) return allEvents;
-      return allEvents.filter(e => {
+      if (!search) return events;
+      return events.filter(e => {
         // Match event name, location, description
         if (e.title.toLowerCase().includes(search)) return true;
         if ((e.location || '').toLowerCase().includes(search)) return true;

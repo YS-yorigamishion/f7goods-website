@@ -31,6 +31,7 @@
     </div>
     <div class="filter-bar" id="categoryFilters">
       <button class="filter-btn active" data-cat="all">全部分类</button>
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 我关注的</button>
       <input type="text" class="search-input" placeholder="搜索企划..." id="searchInput">
     </div>
 
@@ -56,6 +57,13 @@
     let allProjects = [];
     let currentStatus = 'all';
     let currentCategory = 'all';
+    let currentFollowFilter = false;
+
+    function toggleFollowFilter() {
+      currentFollowFilter = !currentFollowFilter;
+      document.getElementById('followFilterBtn').classList.toggle('active', currentFollowFilter);
+      renderProjects();
+    }
 
     async function loadProjects() {
       try {
@@ -91,6 +99,12 @@
       if (currentCategory !== 'all') {
         filtered = filtered.filter(p => p.category === currentCategory);
       }
+      // Follow filter
+      if (currentFollowFilter) {
+        const followedList = getFollowedCircles();
+        filtered = filtered.filter(p => (p.circles || []).some(cid => followedList.includes(cid)));
+      }
+
       const search = document.getElementById('searchInput').value.toLowerCase();
       if (search) {
         filtered = filtered.filter(p =>
@@ -140,6 +154,7 @@
       const searchInput = document.getElementById('searchInput').outerHTML;
       catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部分类</button>' +
         PROJECT_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('') +
+        '<button class="filter-btn' + (currentFollowFilter ? ' active' : '') + '" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 我关注的</button>' +
         searchInput;
 
       // Re-bind events

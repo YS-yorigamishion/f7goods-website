@@ -33,6 +33,7 @@
         <button class="filter-btn" data-cat="shetuan">社团</button>
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
+        <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 我关注的</button>
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
           <option value="date-desc">发布日期 ↓ 新→旧</option>
           <option value="date-asc">发布日期 ↑ 旧→新</option>
@@ -61,6 +62,13 @@
     let circlesMap = {};
     let circlesData = [];
     let currentUpdateCategory = 'all';
+    let currentFollowFilter = false;
+
+    function toggleFollowFilter() {
+      currentFollowFilter = !currentFollowFilter;
+      document.getElementById('followFilterBtn').classList.toggle('active', currentFollowFilter);
+      renderUpdates();
+    }
 
     async function loadUpdates() {
       try {
@@ -116,6 +124,12 @@
             return circle && circle.category === currentUpdateCategory;
           });
         });
+      }
+
+      // Follow filter
+      if (currentFollowFilter) {
+        const followedList = getFollowedCircles();
+        filtered = filtered.filter(u => (u.relatedCircles || []).some(cid => followedList.includes(cid)));
       }
 
       if (search) {
