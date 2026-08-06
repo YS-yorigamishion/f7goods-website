@@ -5843,6 +5843,15 @@ function exportEditLog() {
 let authorStatsData = [];
 let authorStatsSortBy = 'totalLikes';
 let authorStatsSortDir = 'desc';
+let _authorStatsRange = 0; // 0 = all, 1 = today, 7/30/365 = days
+
+function switchAuthorStatsRange(days) {
+  _authorStatsRange = days;
+  document.querySelectorAll('[data-author-range]').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.authorRange) === days);
+  });
+  loadAuthorStats();
+}
 
 async function loadAuthorStats() {
   try {
@@ -5852,12 +5861,31 @@ async function loadAuthorStats() {
     ]);
 
     if (!circles || circles.length === 0) {
-      document.getElementById('authorStatsBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
+      document.getElementById('authorStatsBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
       return;
     }
 
+    // Filter works by time range
+    let filteredWorks = works || [];
+    let startDate = null;
+    if (_authorStatsRange > 0) {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - _authorStatsRange + 1);
+      startDate.setHours(0, 0, 0, 0);
+      const startStr = startDate.toISOString().slice(0, 10);
+      filteredWorks = filteredWorks.filter(w => (w.createdAt || '').slice(0, 10) >= startStr);
+    }
+
+    // Update table headers
+    const rangeLabel = _authorStatsRange === 0 ? '' : _authorStatsRange === 1 ? '今日' : `近${_authorStatsRange}天`;
+    document.getElementById('thWorkCount').textContent = rangeLabel + '作品数';
+    document.getElementById('thTotalLikes').textContent = rangeLabel + '喜爱数';
+    document.getElementById('thTotalWants').textContent = rangeLabel + '想要数';
+    document.getElementById('thAvgLikes').textContent = '平均喜爱';
+    document.getElementById('thAvgWants').textContent = '平均想要';
+
     authorStatsData = circles.map(c => {
-      const circleWorks = (works || []).filter(w => (w.circles || []).includes(c.id));
+      const circleWorks = filteredWorks.filter(w => (w.circles || []).includes(c.id));
       const totalLikes = circleWorks.reduce((sum, w) => sum + (w.likes || 0), 0);
       const totalWants = circleWorks.reduce((sum, w) => sum + (w.wants || 0), 0);
       const workCount = circleWorks.length;
@@ -5902,17 +5930,18 @@ function renderAuthorStatsTable() {
     return authorStatsSortDir === 'desc' ? '↓' : '↑';
   };
 
+  const rangeLabel = _authorStatsRange === 0 ? '' : _authorStatsRange === 1 ? '今日' : `近${_authorStatsRange}天`;
   const thead = document.querySelector('#authorStatsTable thead tr');
   if (thead) {
     thead.innerHTML = `
       <th>作者名称</th>
       <th>分类</th>
-      <th style="cursor:pointer;" onclick="sortAuthorStats('workCount')">作品数 ${getArrow('workCount')}</th>
+      <th id="thWorkCount" style="cursor:pointer;" onclick="sortAuthorStats('workCount')">${rangeLabel}作品数 ${getArrow('workCount')}</th>
       <th style="cursor:pointer;" onclick="sortAuthorStats('follows')">关注量 ${getArrow('follows')}</th>
-      <th style="cursor:pointer;" onclick="sortAuthorStats('totalLikes')">总喜爱数 ${getArrow('totalLikes')}</th>
-      <th style="cursor:pointer;" onclick="sortAuthorStats('totalWants')">总想要数 ${getArrow('totalWants')}</th>
-      <th style="cursor:pointer;" onclick="sortAuthorStats('avgLikes')">平均喜爱 ${getArrow('avgLikes')}</th>
-      <th style="cursor:pointer;" onclick="sortAuthorStats('avgWants')">平均想要 ${getArrow('avgWants')}</th>
+      <th id="thTotalLikes" style="cursor:pointer;" onclick="sortAuthorStats('totalLikes')">${rangeLabel}喜爱数 ${getArrow('totalLikes')}</th>
+      <th id="thTotalWants" style="cursor:pointer;" onclick="sortAuthorStats('totalWants')">${rangeLabel}想要数 ${getArrow('totalWants')}</th>
+      <th id="thAvgLikes" style="cursor:pointer;" onclick="sortAuthorStats('avgLikes')">平均喜爱 ${getArrow('avgLikes')}</th>
+      <th id="thAvgWants" style="cursor:pointer;" onclick="sortAuthorStats('avgWants')">平均想要 ${getArrow('avgWants')}</th>
     `;
   }
 

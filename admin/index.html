@@ -676,6 +676,13 @@
           <div class="page-toolbar">
             <h3>📊 作者数据统计</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
+              <div style="display:flex;gap:0.3rem;">
+                <button class="view-btn active" data-author-range="0" onclick="switchAuthorStatsRange(0)" style="font-size:0.8rem;padding:0.3rem 0.6rem;">全部</button>
+                <button class="view-btn" data-author-range="1" onclick="switchAuthorStatsRange(1)" style="font-size:0.8rem;padding:0.3rem 0.6rem;">今天</button>
+                <button class="view-btn" data-author-range="7" onclick="switchAuthorStatsRange(7)" style="font-size:0.8rem;padding:0.3rem 0.6rem;">7天</button>
+                <button class="view-btn" data-author-range="30" onclick="switchAuthorStatsRange(30)" style="font-size:0.8rem;padding:0.3rem 0.6rem;">30天</button>
+                <button class="view-btn" data-author-range="365" onclick="switchAuthorStatsRange(365)" style="font-size:0.8rem;padding:0.3rem 0.6rem;">1年</button>
+              </div>
               <input type="text" class="form-input" id="authorStatsSearch" placeholder="搜索作者..." oninput="filterAuthorStats()" style="width:150px;font-size:0.85rem;">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAuthorStats()">📥 导出</button>
               <button class="btn btn-primary" onclick="loadAuthorStats()">刷新</button>
@@ -687,12 +694,12 @@
                 <tr>
                   <th>作者名称</th>
                   <th>分类</th>
-                  <th>作品数</th>
+                  <th id="thWorkCount">作品数</th>
                   <th onclick="sortAuthorStats('follows')" style="cursor:pointer;">关注量 ↕</th>
-                  <th>总喜爱数</th>
-                  <th>总想要数</th>
-                  <th>平均喜爱</th>
-                  <th>平均想要</th>
+                  <th id="thTotalLikes">总喜爱数</th>
+                  <th id="thTotalWants">总想要数</th>
+                  <th id="thAvgLikes">平均喜爱</th>
+                  <th id="thAvgWants">平均想要</th>
                 </tr>
               </thead>
               <tbody id="authorStatsBody"></tbody>
