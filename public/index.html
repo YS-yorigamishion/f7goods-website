@@ -45,12 +45,12 @@
           <option value="wants-asc">想要数 ↑ 低→高</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索作品..." id="searchInput">
-        <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 我关注的</button>
       </div>
     </div>
     <div class="filter-bar" id="userFilters" style="display:none;">
-      <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')">❤️ 我喜爱的</button>
-      <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')">🔖 我想要的</button>
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 关注</button>
+      <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')">❤️ 喜爱</button>
+      <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')">🔖 想要</button>
     </div>
 
     <div class="cards-grid" id="worksGrid">
