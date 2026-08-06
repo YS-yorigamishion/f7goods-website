@@ -1163,12 +1163,10 @@ function renderCreationStats(entities) {
   // Build date labels
   const labels = [];
   const dateKeys = [];
-  for (let d = startStr; d <= todayStr; ) {
-    labels.push(d.slice(5)); // MM-DD
-    dateKeys.push(d);
-    const next = new Date(d + 'T00:00:00+08:00');
-    next.setDate(next.getDate() + 1);
-    d = next.toISOString().slice(0, 10);
+  for (let d = new Date(startStr + 'T12:00:00Z'); d <= new Date(todayStr + 'T12:00:00Z'); d.setDate(d.getDate() + 1)) {
+    const ds = d.toISOString().slice(0, 10);
+    labels.push(ds.slice(5));
+    dateKeys.push(ds);
   }
 
   // Count creations per day per type
