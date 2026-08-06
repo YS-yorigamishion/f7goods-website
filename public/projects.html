@@ -170,10 +170,10 @@
 
       // Category filters
       const catContainer = document.getElementById('categoryFilters');
-      const searchInput = document.getElementById('searchInput').outerHTML;
+      const rightSide = catContainer.querySelector('div[style*="margin-left:auto"]');
       catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部分类</button>' +
-        PROJECT_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('') +
-        searchInput;
+        PROJECT_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('');
+      if (rightSide) catContainer.appendChild(rightSide);
 
       // Re-bind events
       document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
