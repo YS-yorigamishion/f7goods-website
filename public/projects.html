@@ -166,13 +166,13 @@
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
       statusContainer.innerHTML = `<button class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
-        PROJECT_STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${s.name}</button>`).join('');
+        PROJECT_STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${tCat(s)}</button>`).join('');
 
       // Category filters
       const catContainer = document.getElementById('categoryFilters');
       const rightSide = catContainer.querySelector('div[style*="margin-left:auto"]');
       catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.allCategories')}</button>` +
-        PROJECT_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('');
+        PROJECT_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${tCat(c)}</button>`).join('');
       if (rightSide) catContainer.appendChild(rightSide);
 
       // Re-bind events

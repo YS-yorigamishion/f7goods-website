@@ -115,7 +115,7 @@
         const catContainer = document.getElementById('categoryFilters');
         if (catContainer && CIRCLE_CATEGORIES_ORDERED.length > 0) {
           catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.all')}</button>` +
-            CIRCLE_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('');
+            CIRCLE_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${tCat(c)}</button>`).join('');
           catContainer.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
               catContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));

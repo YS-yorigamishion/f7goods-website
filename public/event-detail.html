@@ -192,7 +192,7 @@
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('events.relatedWorks')} <span id="relatedWorksCount">(${relatedWorks.length})</span></h3>
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
                   <button class="filter-btn active" data-rw-cat="all" onclick="rwCategory='all';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${t('common.all')}</button>
-                  ${catBtns.map(c => `<button class="filter-btn" data-rw-cat="${c.id}" onclick="rwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${c.name}</button>`).join('')}
+                  ${catBtns.map(c => `<button class="filter-btn" data-rw-cat="${c.id}" onclick="rwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${tCat(c)}</button>`).join('')}
                   <input type="text" class="search-input" placeholder="${t('common.searchWorks')}" style="margin-left:auto;max-width:200px;" oninput="rwSearchText=this.value;renderRelatedWorks();">
                 </div>
                 <div class="cards-grid related-works-grid" id="relatedWorksGrid"></div>

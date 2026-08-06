@@ -10,11 +10,17 @@ async function loadLang(lang) {
     _i18n = await res.json();
     _lang = lang;
     localStorage.setItem('f7lang', lang);
+    // Reload categories with new language
+    await loadCategoriesFromAPI();
     // Re-render navbar and footer
     const navbar = document.getElementById('navbar');
     if (navbar) navbar.innerHTML = buildNavbar(navbar.dataset.activePage);
     const footer = document.getElementById('footer');
     if (footer) footer.innerHTML = buildFooter();
+    // Rebuild page-specific filter buttons if they exist
+    if (typeof buildFilterButtons === 'function') buildFilterButtons();
+    if (typeof buildProjectFilterButtons === 'function') buildProjectFilterButtons();
+    if (typeof buildUpdateFilterButtons === 'function') buildUpdateFilterButtons();
     applyTranslations();
     updateLangButtons();
   } catch (e) {
