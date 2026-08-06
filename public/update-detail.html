@@ -17,7 +17,27 @@
 
   <main class="main-content detail-page">
     <div id="updateDetail">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div id="detailSkeleton">
+        <div class="detail-breadcrumb"><div class="skeleton skeleton-text" style="width:120px;height:12px;display:inline-block;vertical-align:middle;"></div></div>
+        <div class="detail-header" style="margin-bottom:1.5rem;">
+          <div class="skeleton skeleton-cover" style="margin-bottom:1rem;"></div>
+          <div class="skeleton skeleton-text" style="width:60%;height:28px;margin-bottom:0.5rem;"></div>
+          <div class="skeleton skeleton-text" style="width:30%;height:14px;"></div>
+        </div>
+        <div class="detail-content">
+          <div class="detail-main">
+            <div class="skeleton skeleton-text" style="width:30%;height:18px;margin-bottom:1rem;"></div>
+            <div class="skeleton skeleton-text" style="width:100%;margin-bottom:0.6rem;"></div>
+            <div class="skeleton skeleton-text" style="width:95%;margin-bottom:0.6rem;"></div>
+            <div class="skeleton skeleton-text" style="width:80%;margin-bottom:0.6rem;"></div>
+            <div class="skeleton skeleton-text" style="width:50%;margin-bottom:1.5rem;"></div>
+          </div>
+          <div class="detail-sidebar">
+            <div class="skeleton-sidebar-card"><div class="skeleton skeleton-text" style="width:40%;height:14px;margin-bottom:0.8rem;"></div><div class="skeleton skeleton-text" style="width:80%;"></div><div class="skeleton skeleton-text short"></div></div>
+            <div class="skeleton-sidebar-card"><div class="skeleton skeleton-text" style="width:30%;height:14px;margin-bottom:0.8rem;"></div><div style="display:flex;align-items:center;gap:0.5rem;"><div class="skeleton skeleton-avatar" style="width:36px;height:36px;"></div><div class="skeleton skeleton-text" style="width:60%;margin:0;"></div></div></div>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -50,6 +70,7 @@
         document.querySelector('meta[property="og:description"]').content = (update.content || '').substring(0, 160);
         if (update.coverImage) document.querySelector('meta[property="og:image"]').content = update.coverImage;
 
+        document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('updateDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">

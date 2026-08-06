@@ -1421,6 +1421,15 @@ textarea.form-input {
   width: 100%;
 }
 
+/* Detail page skeleton */
+.skeleton-cover { width: 100%; height: 250px; border-radius: var(--radius); }
+.skeleton-avatar { width: 70px; height: 70px; border-radius: 50%; }
+.skeleton-pill { display: inline-block; width: 60px; height: 24px; border-radius: 100px; margin-right: 0.5rem; }
+.skeleton-sidebar-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1rem; }
+.skeleton-sidebar-card .skeleton-text { height: 12px; margin: 0.5rem 0; border-radius: 4px; }
+.skeleton-sidebar-card .skeleton-text.short { width: 60%; }
+.skeleton-sidebar-card .skeleton-text.shorter { width: 40%; }
+
 /* ===== Random Works Modal ===== */
 .random-modal-overlay {
   display: none;
