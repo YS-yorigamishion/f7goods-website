@@ -1,5 +1,67 @@
 // f7goods Main JS — Navbar, Footer, Utilities
 
+// ===== i18n System =====
+let _lang = localStorage.getItem('f7lang') || 'zh';
+let _i18n = {};
+
+async function loadLang(lang) {
+  try {
+    const res = await fetch('/lang/' + lang + '.json');
+    _i18n = await res.json();
+    _lang = lang;
+    localStorage.setItem('f7lang', lang);
+    applyTranslations();
+    updateLangButtons();
+  } catch (e) {
+    console.error('Failed to load language:', lang, e);
+  }
+}
+
+function t(key) {
+  const keys = key.split('.');
+  let val = _i18n;
+  for (const k of keys) {
+    if (val && typeof val === 'object') val = val[k];
+    else return key;
+  }
+  return val || key;
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const text = t(key);
+    if (text !== key) {
+      if (el.tagName === 'INPUT' && el.type !== 'checkbox' && el.type !== 'radio') {
+        el.placeholder = text;
+      } else {
+        el.textContent = text;
+      }
+    }
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const text = t(key);
+    if (text !== key) el.placeholder = text;
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    const text = t(key);
+    if (text !== key) el.title = text;
+  });
+}
+
+function updateLangButtons() {
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === _lang);
+  });
+}
+
+function getLangName(code) {
+  const names = { zh: '中文', en: 'EN', ja: '日本語', ko: '한국어' };
+  return names[code] || code;
+}
+
 // Category labels (defaults, will be overridden by API)
 let CATEGORIES = {
   figure: '手办/模型',
@@ -223,10 +285,13 @@ function buildNavbar(activePage) {
     : logoText
       ? `<div class="logo-icon">${logoText}</div>`
       : `<div class="logo-icon">F7</div>`;
+  const langOptions = ['zh', 'en', 'ja', 'ko'].map(code =>
+    `<button class="lang-btn ${_lang === code ? 'active' : ''}" data-lang="${code}" onclick="loadLang('${code}')">${getLangName(code)}</button>`
+  ).join('');
   return `
     <div class="brand-bar"></div>
     <div class="nav-inner">
-      <a href="/" class="logo" aria-label="首页">
+      <a href="/" class="logo" aria-label="${t('nav.home')}">
         ${logoContent}
         <span>${brandName}</span>
       </a>
@@ -234,12 +299,13 @@ function buildNavbar(activePage) {
         <span></span><span></span><span></span>
       </button>
       <ul class="nav-links" role="menubar">
-        <li><a href="/" class="${activePage === 'works' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">周边概览</a></li>
-        <li><a href="/events.html" class="${activePage === 'events' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">近期活动</a></li>
-        <li><a href="/circles.html" class="${activePage === 'circles' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">同人作者</a></li>
-        <li><a href="/projects.html" class="${activePage === 'projects' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">同人企划</a></li>
-        <li><a href="/updates.html" class="${activePage === 'updates' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">同人动态</a></li>
-        <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">关于我们</a></li>
+        <li><a href="/" class="${activePage === 'works' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.works')}</a></li>
+        <li><a href="/events.html" class="${activePage === 'events' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.events')}</a></li>
+        <li><a href="/circles.html" class="${activePage === 'circles' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.circles')}</a></li>
+        <li><a href="/projects.html" class="${activePage === 'projects' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.projects')}</a></li>
+        <li><a href="/updates.html" class="${activePage === 'updates' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.updates')}</a></li>
+        <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.contact')}</a></li>
+        <li class="lang-switcher">${langOptions}</li>
       </ul>
     </div>
   `;
@@ -302,7 +368,10 @@ function buildFooter() {
 // Init page structure
 async function initPage(activePage, itemId) {
 
-  // Load settings first
+  // Load language first
+  await loadLang(_lang);
+
+  // Load settings
   await loadSettingsFromAPI();
   applyFavicon();
 
