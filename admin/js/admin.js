@@ -258,7 +258,7 @@ function getChinaDateDaysAgo(days) {
 
 // ===== Pageview Cleanup =====
 async function cleanupPageviews() {
-  if (!confirm('确定要清理365天前的历史浏览数据吗？')) return;
+  if (!await showConfirm('确定要清理365天前的历史浏览数据吗？')) return;
   try {
     const result = await adminAPI('POST', '/api/admin/pageviews/cleanup');
     if (result.success) {
@@ -1388,7 +1388,7 @@ async function rejectWork(id) {
 async function batchApproveWorks() {
   const pendingWorks = adminWorksData.filter(w => w.approvalStatus === 'pending');
   if (pendingWorks.length === 0) { alert('没有待审核的作品'); return; }
-  if (!confirm(`确定批准全部 ${pendingWorks.length} 个待审核作品？`)) return;
+  if (!await showConfirm(`确定批准全部 ${pendingWorks.length} 个待审核作品？`)) return;
 
   let success = 0;
   for (const w of pendingWorks) {
@@ -1404,7 +1404,7 @@ async function batchRejectWorks() {
   if (pendingWorks.length === 0) { alert('没有待审核的作品'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
-  if (!confirm(`确定拒绝全部 ${pendingWorks.length} 个待审核作品？`)) return;
+  if (!await showConfirm(`确定拒绝全部 ${pendingWorks.length} 个待审核作品？`)) return;
 
   let success = 0;
   for (const w of pendingWorks) {
@@ -2096,7 +2096,7 @@ async function editWork(id) {
 }
 
 async function deleteWork(id) {
-  if (!confirm('确定要删除这个作品吗？')) return;
+  if (!await showConfirm('确定要删除这个作品吗？', { danger: true })) return;
   await adminAPI('DELETE', `/api/admin/works/${id}`);
   loadWorks();
 }
@@ -2347,7 +2347,7 @@ async function approveEvent(id) {
 async function batchApproveEvents() {
   const pendingEvents = adminEventsData.filter(e => e.approvalStatus === 'pending');
   if (pendingEvents.length === 0) { alert('没有待审核的活动'); return; }
-  if (!confirm(`确定批准全部 ${pendingEvents.length} 个待审核活动？`)) return;
+  if (!await showConfirm(`确定批准全部 ${pendingEvents.length} 个待审核活动？`)) return;
 
   let success = 0;
   for (const e of pendingEvents) {
@@ -2363,7 +2363,7 @@ async function batchRejectEvents() {
   if (pendingEvents.length === 0) { alert('没有待审核的活动'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
-  if (!confirm(`确定拒绝全部 ${pendingEvents.length} 个待审核活动？`)) return;
+  if (!await showConfirm(`确定拒绝全部 ${pendingEvents.length} 个待审核活动？`)) return;
 
   let success = 0;
   for (const e of pendingEvents) {
@@ -2390,7 +2390,7 @@ function toggleSelectAllEvents() {
 async function batchDeleteEvents() {
   const checked = document.querySelectorAll('.event-checkbox:checked');
   if (checked.length === 0) { alert('请先选择要删除的活动'); return; }
-  if (!confirm(`确定删除选中的 ${checked.length} 个活动？此操作不可撤销。`)) return;
+  if (!await showConfirm(`确定删除选中的 ${checked.length} 个活动？此操作不可撤销。`, { danger: true })) return;
 
   let success = 0;
   for (const cb of checked) {
@@ -2404,7 +2404,7 @@ async function batchDeleteEvents() {
 async function batchDeleteWorks() {
   const checked = document.querySelectorAll('.work-checkbox:checked');
   if (checked.length === 0) { alert('请先选择要删除的作品'); return; }
-  if (!confirm(`确定删除选中的 ${checked.length} 个作品？此操作不可撤销。`)) return;
+  if (!await showConfirm(`确定删除选中的 ${checked.length} 个作品？此操作不可撤销。`, { danger: true })) return;
 
   let success = 0;
   for (const cb of checked) {
@@ -2647,7 +2647,7 @@ async function editEvent(id) {
 }
 
 async function deleteEvent(id) {
-  if (!confirm('确定要删除这个活动吗？')) return;
+  if (!await showConfirm('确定要删除这个活动吗？', { danger: true })) return;
   await adminAPI('DELETE', `/api/admin/events/${id}`);
   loadEvents();
 }
@@ -3167,21 +3167,21 @@ function renderCirclesTable(circles) {
 }
 
 async function approveAuthor(circleId) {
-  if (!confirm('确定批准该作者账号？')) return;
+  if (!await showConfirm('确定批准该作者账号？')) return;
   await adminAPI('POST', `/api/admin/circles/${circleId}/approve-author`);
   showToast('已批准', 'success');
   loadCircles();
 }
 
 async function rejectAuthor(circleId) {
-  if (!confirm('确定拒绝该作者账号？\n拒绝后将清除账号数据，作者需重新申请。')) return;
+  if (!await showConfirm('确定拒绝该作者账号？\n拒绝后将清除账号数据，作者需重新申请。', { danger: true })) return;
   await adminAPI('POST', `/api/admin/circles/${circleId}/reject-author`);
   showToast('已拒绝，账号已清除', 'success');
   loadCircles();
 }
 
 async function removeAuthorAccount(circleId) {
-  if (!confirm('确定删除该作者的登录账号？\n删除后作者需重新申请才能登录。')) return;
+  if (!await showConfirm('确定删除该作者的登录账号？\n删除后作者需重新申请才能登录。', { danger: true })) return;
   await adminAPI('POST', `/api/admin/circles/${circleId}/remove-author`);
   showToast('作者账号已删除', 'success');
   loadCircles();
@@ -3191,7 +3191,7 @@ async function removeAuthorAccount(circleId) {
 async function batchApproveAuthors() {
   const pendingAuthors = adminCirclesData.filter(c => c.authorStatus === 'pending');
   if (pendingAuthors.length === 0) { alert('没有待审核的作者'); return; }
-  if (!confirm(`确定批准全部 ${pendingAuthors.length} 个待审核作者？`)) return;
+  if (!await showConfirm(`确定批准全部 ${pendingAuthors.length} 个待审核作者？`)) return;
 
   let success = 0;
   for (const c of pendingAuthors) {
@@ -3207,7 +3207,7 @@ async function batchRejectAuthors() {
   if (pendingAuthors.length === 0) { alert('没有待审核的作者'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
-  if (!confirm(`确定拒绝全部 ${pendingAuthors.length} 个待审核作者？\n拒绝后将清除账号数据，作者需重新申请。`)) return;
+  if (!await showConfirm(`确定拒绝全部 ${pendingAuthors.length} 个待审核作者？\n拒绝后将清除账号数据，作者需重新申请。`, { danger: true })) return;
 
   let success = 0;
   for (const c of pendingAuthors) {
@@ -3726,7 +3726,7 @@ async function editCircle(id) {
 }
 
 async function deleteCircle(id) {
-  if (!confirm('确定要删除这个作者吗？')) return;
+  if (!await showConfirm('确定要删除这个作者吗？', { danger: true })) return;
   await adminAPI('DELETE', `/api/admin/circles/${id}`);
   loadCircles();
 }
@@ -3917,7 +3917,7 @@ async function rejectProject(id) {
 async function batchApproveProjects() {
   const pendingProjects = adminProjectsData.filter(p => p.approvalStatus === 'pending');
   if (pendingProjects.length === 0) { alert('没有待审核的企划'); return; }
-  if (!confirm(`确定批准全部 ${pendingProjects.length} 个待审核企划？`)) return;
+  if (!await showConfirm(`确定批准全部 ${pendingProjects.length} 个待审核企划？`)) return;
 
   let success = 0;
   for (const p of pendingProjects) {
@@ -3933,7 +3933,7 @@ async function batchRejectProjects() {
   if (pendingProjects.length === 0) { alert('没有待审核的企划'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
-  if (!confirm(`确定拒绝全部 ${pendingProjects.length} 个待审核企划？`)) return;
+  if (!await showConfirm(`确定拒绝全部 ${pendingProjects.length} 个待审核企划？`)) return;
 
   let success = 0;
   for (const p of pendingProjects) {
@@ -3960,7 +3960,7 @@ function toggleSelectAllProjects() {
 async function batchDeleteProjects() {
   const checked = document.querySelectorAll('.project-checkbox:checked');
   if (checked.length === 0) { alert('请先选择要删除的企划'); return; }
-  if (!confirm(`确定删除选中的 ${checked.length} 个企划？此操作不可撤销。`)) return;
+  if (!await showConfirm(`确定删除选中的 ${checked.length} 个企划？此操作不可撤销。`, { danger: true })) return;
 
   let success = 0;
   for (const cb of checked) {
@@ -4198,7 +4198,7 @@ async function editProject(id) {
 }
 
 async function deleteProject(id) {
-  if (!confirm('确定要删除这个企划吗？')) return;
+  if (!await showConfirm('确定要删除这个企划吗？', { danger: true })) return;
   await adminAPI('DELETE', `/api/admin/projects/${id}`);
   loadProjects();
 }
@@ -4645,7 +4645,7 @@ async function batchDeleteImages() {
   const checked = document.querySelectorAll('.image-checkbox:checked');
   if (checked.length === 0) return;
   const count = checked.length;
-  if (!confirm(`确定要删除选中的 ${count} 张图片吗？此操作不可撤销。`)) return;
+  if (!await showConfirm(`确定要删除选中的 ${count} 张图片吗？此操作不可撤销。`, { danger: true })) return;
 
   let deleted = 0;
   for (const cb of checked) {
@@ -4666,7 +4666,7 @@ function copyImageUrl(url) {
 }
 
 async function deleteImage(filename) {
-  if (!confirm(`确定要删除图片 ${filename} 吗？`)) return;
+  if (!await showConfirm(`确定要删除图片 ${filename} 吗？`, { danger: true })) return;
   const result = await adminAPI('DELETE', `/api/admin/images/${filename}`);
   if (result && result.success) {
     showToast('图片已删除', 'success');
@@ -5248,7 +5248,7 @@ async function editAnnouncement(id) {
 }
 
 async function deleteAnnouncement(id) {
-  if (!confirm('确定要删除这条公告吗？')) return;
+  if (!await showConfirm('确定要删除这条公告吗？', { danger: true })) return;
   await adminAPI('DELETE', `/api/admin/announcements/${id}`);
   loadAnnouncements();
 }
@@ -5419,7 +5419,7 @@ async function rejectUpdate(id) {
 async function batchApproveUpdates() {
   const pendingUpdates = adminUpdatesData.filter(u => u.approvalStatus === 'pending');
   if (pendingUpdates.length === 0) { alert('没有待审核的动态'); return; }
-  if (!confirm(`确定批准全部 ${pendingUpdates.length} 个待审核动态？`)) return;
+  if (!await showConfirm(`确定批准全部 ${pendingUpdates.length} 个待审核动态？`)) return;
 
   let success = 0;
   for (const u of pendingUpdates) {
@@ -5435,7 +5435,7 @@ async function batchRejectUpdates() {
   if (pendingUpdates.length === 0) { alert('没有待审核的动态'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
-  if (!confirm(`确定拒绝全部 ${pendingUpdates.length} 个待审核动态？`)) return;
+  if (!await showConfirm(`确定拒绝全部 ${pendingUpdates.length} 个待审核动态？`)) return;
 
   let success = 0;
   for (const u of pendingUpdates) {
@@ -5583,7 +5583,7 @@ async function editUpdate(id) {
 }
 
 async function deleteUpdate(id) {
-  if (!confirm('确定要删除这条动态吗？')) return;
+  if (!await showConfirm('确定要删除这条动态吗？', { danger: true })) return;
   await adminAPI('DELETE', `/api/admin/updates/${id}`);
   loadUpdates();
 }
@@ -6103,7 +6103,7 @@ async function viewAaReadStatus(id) {
 }
 
 async function deleteAuthorAnnouncement(id) {
-  if (!confirm('确定要删除这条公告吗？')) return;
+  if (!await showConfirm('确定要删除这条公告吗？', { danger: true })) return;
   try {
     await adminAPI('DELETE', `/api/admin/author-announcements/${id}`);
     showToast('公告已删除', 'success');
@@ -6209,7 +6209,7 @@ function filterContacts() {
 }
 
 async function deleteContact(id) {
-  if (!confirm('确定要删除这条消息吗？')) return;
+  if (!await showConfirm('确定要删除这条消息吗？', { danger: true })) return;
   await adminAPI('DELETE', `/api/admin/contacts/${id}`);
   loadContacts();
 }

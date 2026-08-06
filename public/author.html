@@ -1058,7 +1058,7 @@
     async function duplicateWork(workId) {
       const work = authorWorksData.find(w => w.id === workId);
       if (!work) return;
-      if (!confirm(`确定复制作品"${work.title}"？`)) return;
+      if (!await showConfirm(`确定复制作品"${work.title}"？`)) return;
 
       const newWork = {
         ...work,
@@ -1082,7 +1082,7 @@
     async function deleteAuthorWork(workId) {
       const work = authorWorksData.find(w => w.id === workId);
       if (!work) return;
-      if (!confirm(`确定删除作品"${work.title}"？此操作不可撤销。`)) return;
+      if (!await showConfirm(`确定删除作品"${work.title}"？此操作不可撤销。`, { danger: true })) return;
 
       const result = await authorAPI('DELETE', '/api/author/works/' + workId);
       if (result && result.success) {
@@ -1473,7 +1473,7 @@
       const selectedWorks = authorWorksData.filter(w => workIds.includes(w.id));
       const titles = selectedWorks.map(w => w.title).join('、');
 
-      if (!confirm(`确定删除以下 ${selectedWorks.length} 个作品？\n${titles}\n\n此操作不可撤销。`)) return;
+      if (!await showConfirm(`确定删除以下 ${selectedWorks.length} 个作品？\n${titles}\n\n此操作不可撤销。`, { danger: true })) return;
 
       showLoading('删除中...');
       try {
@@ -1926,7 +1926,7 @@
     async function batchDeleteAuthorImages() {
       const checked = document.querySelectorAll('.author-img-cb:checked');
       if (checked.length === 0) return;
-      if (!confirm('确定删除选中的 ' + checked.length + ' 张图片？')) return;
+      if (!await showConfirm('确定删除选中的 ' + checked.length + ' 张图片？', { danger: true })) return;
       let deleted = 0;
       for (const cb of checked) {
         const result = await authorAPI('DELETE', '/api/author/images/' + cb.dataset.name);
@@ -2074,7 +2074,7 @@
       if (checked.length === 0) return;
 
       const names = [...checked].map(cb => cb.dataset.name);
-      if (!confirm(`确定删除 ${names.length} 张未使用的图片？此操作不可撤销。`)) return;
+      if (!await showConfirm(`确定删除 ${names.length} 张未使用的图片？此操作不可撤销。`, { danger: true })) return;
 
       let deleted = 0;
       for (const name of names) {
@@ -2088,7 +2088,7 @@
     }
 
     async function deleteAuthorImage(filename) {
-      if (!confirm('确定删除图片 ' + filename + '？')) return;
+      if (!await showConfirm('确定删除图片 ' + filename + '？', { danger: true })) return;
       const result = await authorAPI('DELETE', '/api/author/images/' + filename);
       if (result && result.success) {
         showToast('已删除', 'success');
@@ -2259,7 +2259,7 @@
     }
 
     async function deleteMyEvent(id) {
-      if (!confirm('确定删除此活动？')) return;
+      if (!await showConfirm('确定删除此活动？', { danger: true })) return;
       const result = await authorAPI('DELETE', '/api/author/my-events/' + id);
       if (result && result.success) {
         showToast('已删除', 'success');
@@ -2385,7 +2385,7 @@
     }
 
     async function deleteMyProject(id) {
-      if (!confirm('确定删除此企划？')) return;
+      if (!await showConfirm('确定删除此企划？', { danger: true })) return;
       const result = await authorAPI('DELETE', '/api/author/my-projects/' + id);
       if (result && result.success) {
         showToast('已删除', 'success');
@@ -2479,7 +2479,7 @@
     }
 
     async function deleteMyUpdate(id) {
-      if (!confirm('确定删除此动态？')) return;
+      if (!await showConfirm('确定删除此动态？', { danger: true })) return;
       const result = await authorAPI('DELETE', '/api/author/my-updates/' + id);
       if (result && result.success) {
         showToast('已删除', 'success');
