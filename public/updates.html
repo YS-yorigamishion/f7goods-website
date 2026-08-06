@@ -26,21 +26,17 @@
       <p id="pageSubtitle" class="settings-pending">按发布时间倒序排列</p>
     </div>
 
-    <div class="filter-bar">
-      <div id="updateCategoryFilters" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-        <button class="filter-btn active" data-cat="all">全部</button>
-      </div>
+    <div class="filter-bar" id="statusFilters">
+      <button class="filter-btn active" data-status="all">全部状态</button>
+    </div>
+    <div class="filter-bar" id="categoryFilters">
+      <button class="filter-btn active" data-cat="all">全部分类</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
           <option value="date-desc">发布日期 ↓ 新→旧</option>
           <option value="date-asc">发布日期 ↑ 旧→新</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索动态..." id="searchInput">
-      </div>
-    </div>
-    <div class="filter-bar" id="updateSubCategoryFilters" style="display:none;">
-      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-        <button class="filter-btn active" data-subcat="all">全部</button>
       </div>
     </div>
     <div class="filter-bar">
@@ -66,9 +62,8 @@
     let allUpdates = [];
     let circlesMap = {};
     let circlesData = [];
-    let updateCategoriesData = [];
     let currentUpdateCategory = 'all';
-    let currentUpdateSubCategory = 'all';
+    let currentUpdateStatus = 'all';
     let currentFollowFilter = false;
 
     function toggleFollowFilter() {
@@ -77,42 +72,34 @@
       renderUpdates();
     }
 
-    function buildUpdateCategoryFilters() {
-      const cats = updateCategoriesData;
-      const container = document.getElementById('updateCategoryFilters');
-      container.innerHTML = '<button class="filter-btn active" data-cat="all">全部</button>' +
+    function buildUpdateFilterButtons() {
+      const cats = window._updateCategories || [];
+      const status = window._updateStatus || [];
+      // Category buttons
+      const catContainer = document.getElementById('categoryFilters');
+      const catHtml = '<button class="filter-btn active" data-cat="all">全部分类</button>' +
         cats.map(c => `<button class="filter-btn" data-cat="${c.id}">${escapeHtml(c.name)}</button>`).join('');
-      // Bind click events
-      container.querySelectorAll('.filter-btn').forEach(btn => {
+      // Keep the sort/search area
+      const rightSide = catContainer.querySelector('div[style*="margin-left:auto"]');
+      catContainer.innerHTML = catHtml;
+      if (rightSide) catContainer.appendChild(rightSide);
+      catContainer.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          catContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           currentUpdateCategory = btn.dataset.cat;
-          currentUpdateSubCategory = 'all';
-          buildSubCategoryFilters();
           renderUpdates();
         });
       });
-    }
-
-    function buildSubCategoryFilters() {
-      const subContainer = document.getElementById('updateSubCategoryFilters');
-      if (currentUpdateCategory === 'all') {
-        subContainer.style.display = 'none';
-        return;
-      }
-      const cat = updateCategoriesData.find(c => c.id === currentUpdateCategory);
-      const children = cat?.children || [];
-      if (children.length === 0) { subContainer.style.display = 'none'; return; }
-      subContainer.style.display = '';
-      subContainer.querySelector('div').innerHTML =
-        '<button class="filter-btn active" data-subcat="all">全部</button>' +
-        children.map(c => `<button class="filter-btn" data-subcat="${c.id}">${escapeHtml(c.name)}</button>`).join('');
-      subContainer.querySelectorAll('.filter-btn').forEach(btn => {
+      // Status buttons
+      const statusContainer = document.getElementById('statusFilters');
+      statusContainer.innerHTML = '<button class="filter-btn active" data-status="all">全部状态</button>' +
+        status.map(c => `<button class="filter-btn" data-status="${c.id}">${escapeHtml(c.name)}</button>`).join('');
+      statusContainer.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          subContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          statusContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          currentUpdateSubCategory = btn.dataset.subcat;
+          currentUpdateStatus = btn.dataset.status;
           renderUpdates();
         });
       });
@@ -129,18 +116,17 @@
         applyHeroBg('updates');
         document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
 
-        const [updates, circles] = await Promise.all([
+        const [updates, circles, catsResp] = await Promise.all([
           fetch('/api/updates').then(r => r.json()),
-          F7API.getCircles()
+          F7API.getCircles(),
+          fetch('/api/categories').then(r => r.json())
         ]);
         allUpdates = updates;
         circlesData = circles;
         circles.forEach(c => circlesMap[c.id] = c.name);
-
-        // Load update categories from the categories API
-        const catsResp = await fetch('/api/categories').then(r => r.json());
-        updateCategoriesData = catsResp.updateCategories || [];
-        buildUpdateCategoryFilters();
+        window._updateCategories = catsResp.updateCategories || [];
+        window._updateStatus = catsResp.updateStatus || [];
+        buildUpdateFilterButtons();
 
         renderUpdates();
         document.getElementById('searchInput').addEventListener('input', debounce(renderUpdates));
@@ -159,12 +145,13 @@
       const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
       let filtered = [...allUpdates];
 
-      // Category filter (by update's own category field)
+      // Category filter
       if (currentUpdateCategory !== 'all') {
         filtered = filtered.filter(u => u.category === currentUpdateCategory);
       }
-      if (currentUpdateSubCategory !== 'all') {
-        filtered = filtered.filter(u => u.subCategory === currentUpdateSubCategory);
+      // Status filter
+      if (currentUpdateStatus !== 'all') {
+        filtered = filtered.filter(u => u.status === currentUpdateStatus);
       }
 
       // Follow filter

@@ -2432,8 +2432,8 @@
       const existingImages = isEdit ? (updateData.images || []) : [];
       body.innerHTML = `
         <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" value="${isEdit ? escapeHtml(updateData.title) : ''}" required></div>
-        <div class="form-group"><label>一级分类 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateCategory" onchange="updateMySubCategoryOptions()"><option value="">请选择</option></select></div>
-        <div class="form-group"><label>二级分类 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateSubCategory"><option value="">请先选择一级分类</option></select></div>
+        <div class="form-group"><label>分类 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateCategory"><option value="">请选择</option></select></div>
+        <div class="form-group"><label>状态 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateStatus"><option value="">请选择</option></select></div>
         <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${isEdit ? updateData.publishDate || '' : new Date().toISOString().split('T')[0]}"></div>
         <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:120px;" required>${isEdit ? escapeHtml(updateData.content || '') : ''}</textarea></div>
         <div class="form-group">
@@ -2460,49 +2460,30 @@
       try {
         const cats = await fetch('/api/categories').then(r => r.json());
         const updCats = cats.updateCategories || [];
+        const updStatus = cats.updateStatus || [];
         const catSelect = document.getElementById('myUpdateCategory');
-        const subSelect = document.getElementById('myUpdateSubCategory');
+        const statusSelect = document.getElementById('myUpdateStatus');
         catSelect.innerHTML = '<option value="">请选择</option>' +
           updCats.map(c => `<option value="${c.id}" ${updateData?.category === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
-        if (updateData?.category) {
-          const parentCat = updCats.find(c => c.id === updateData.category);
-          const children = parentCat?.children || [];
-          subSelect.innerHTML = children.length > 0
-            ? '<option value="">请选择</option>' + children.map(c => `<option value="${c.id}" ${updateData.subCategory === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')
-            : '<option value="">无子分类</option>';
-        }
-        // Store for later use
-        window._myUpdateCategories = updCats;
+        statusSelect.innerHTML = '<option value="">请选择</option>' +
+          updStatus.map(c => `<option value="${c.id}" ${updateData?.status === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
       } catch (e) {}
-    }
-
-    function updateMySubCategoryOptions(selectedValue) {
-      const catSelect = document.getElementById('myUpdateCategory');
-      const subSelect = document.getElementById('myUpdateSubCategory');
-      if (!catSelect || !subSelect) return;
-      const catId = catSelect.value;
-      const cats = window._myUpdateCategories || [];
-      const cat = cats.find(c => c.id === catId);
-      const children = cat?.children || [];
-      subSelect.innerHTML = children.length > 0
-        ? `<option value="">请选择</option>` + children.map(c => `<option value="${c.id}" ${selectedValue === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')
-        : '<option value="">无子分类</option>';
     }
 
     async function submitMyUpdate(updateId = '') {
       const title = document.getElementById('myUpdateTitle').value;
       const content = document.getElementById('myUpdateContent').value;
       const category = document.getElementById('myUpdateCategory').value;
-      const subCategory = document.getElementById('myUpdateSubCategory').value;
+      const status = document.getElementById('myUpdateStatus').value;
       if (!title || !content) { showToast('请填写标题和内容', 'error'); return; }
-      if (!category || !subCategory) { showToast('请选择分类', 'error'); return; }
+      if (!category || !status) { showToast('请选择分类和状态', 'error'); return; }
       const coverImg = document.querySelector('#myUpdateCoverPreview img');
       const images = [...document.querySelectorAll('#myUpdateImagesPreview img')].map(img => img.src);
       const data = {
         title,
         content,
         category,
-        subCategory,
+        status,
         publishDate: document.getElementById('myUpdateDate').value,
         coverImage: coverImg ? coverImg.src : '',
         images

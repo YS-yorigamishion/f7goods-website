@@ -1137,7 +1137,7 @@ app.post('/api/author/my-updates', authorAuthMiddleware, (req, res) => {
     relatedEvents: req.body.relatedEvents || [],
     relatedProjects: req.body.relatedProjects || [],
     category: req.body.category || '',
-    subCategory: req.body.subCategory || '',
+    status: req.body.status || '',
     approvalStatus: 'pending',
     submittedBy: req.author.circleId,
     createdAt: new Date().toISOString()
@@ -1162,7 +1162,7 @@ app.put('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
   const isEditable = (updates[index].editableBy || []).includes(circleId);
   if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此动态' });
 
-  const allowed = ['title', 'content', 'publishDate', 'coverImage', 'images', 'relatedEvents', 'relatedProjects', 'category', 'subCategory'];
+  const allowed = ['title', 'content', 'publishDate', 'coverImage', 'images', 'relatedEvents', 'relatedProjects', 'category', 'status'];
   const updates2 = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates2[field] = req.body[field];
@@ -3062,9 +3062,9 @@ app.get('/api/updates', cacheMiddleware(60), (req, res) => {
     const today = getChinaDate();
     // Only return approved updates (or legacy updates without approvalStatus)
     updates = updates.filter(u => (!u.approvalStatus || u.approvalStatus === 'approved') && u.publishDate <= today);
-    // Filter by category/subCategory if provided
+    // Filter by category/status if provided
     if (req.query.category) updates = updates.filter(u => u.category === req.query.category);
-    if (req.query.subCategory) updates = updates.filter(u => u.subCategory === req.query.subCategory);
+    if (req.query.status) updates = updates.filter(u => u.status === req.query.status);
     updates.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
@@ -3122,7 +3122,7 @@ app.post('/api/admin/updates', authMiddleware, (req, res) => {
     relatedEvents: req.body.relatedEvents || [],
     relatedProjects: req.body.relatedProjects || [],
     category: req.body.category || '',
-    subCategory: req.body.subCategory || '',
+    status: req.body.status || '',
     createdAt: new Date().toISOString()
   };
   updates.push(update);
@@ -3172,7 +3172,7 @@ app.put('/api/admin/updates/:id', authMiddleware, (req, res) => {
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
   // Whitelist allowed fields
-  const allowedFields = ['title', 'content', 'publishDate', 'pinned', 'coverImage', 'images', 'relatedCircles', 'relatedEvents', 'relatedProjects', 'category', 'subCategory', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
+  const allowedFields = ['title', 'content', 'publishDate', 'pinned', 'coverImage', 'images', 'relatedCircles', 'relatedEvents', 'relatedProjects', 'category', 'status', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
   const updates2 = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates2[field] = req.body[field];

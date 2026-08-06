@@ -132,43 +132,13 @@
     }
   ],
   "updateCategories": [
-    {
-      "id": "zixun",
-      "name": "资讯",
-      "order": 0,
-      "children": [
-        { "id": "youxixinwen", "name": "游戏新闻", "order": 0 },
-        { "id": "huodonggonggao", "name": "活动公告", "order": 1 },
-        { "id": "shequdongtai", "name": "社区动态", "order": 2 }
-      ]
-    },
-    {
-      "id": "zuopin",
-      "name": "作品",
-      "order": 1,
-      "children": [
-        { "id": "xinzhuofabu", "name": "新作发布", "order": 0 },
-        { "id": "zhizhuorizhi", "name": "制作日志", "order": 1 }
-      ]
-    },
-    {
-      "id": "huodong",
-      "name": "活动",
-      "order": 2,
-      "children": [
-        { "id": "xianxiabajianhui", "name": "线下聚会", "order": 0 },
-        { "id": "manzhanhuodong", "name": "漫展活动", "order": 1 },
-        { "id": "wangshanghuodong", "name": "网上活动", "order": 2 }
-      ]
-    },
-    {
-      "id": "qita",
-      "name": "其它",
-      "order": 3,
-      "children": [
-        { "id": "gonggao", "name": "公告", "order": 0 },
-        { "id": "zongjie", "name": "总结", "order": 1 }
-      ]
-    }
+    { "id": "zixun", "name": "资讯", "order": 0 },
+    { "id": "zuopin", "name": "作品", "order": 1 },
+    { "id": "huodong", "name": "活动", "order": 2 },
+    { "id": "qita", "name": "其它", "order": 3 }
+  ],
+  "updateStatus": [
+    { "id": "jinxingzhong", "name": "进行中", "order": 0 },
+    { "id": "yijiesu", "name": "已结束", "order": 1 }
   ]
 }
