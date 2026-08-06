@@ -490,7 +490,7 @@ async function toggleLike(workId, btn) {
     var res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: getUid() })
+      body: JSON.stringify({})
     });
 
     // Check HTTP status code
@@ -628,7 +628,7 @@ async function submitWant() {
     var res = await fetch('/api/works/' + workId + '/want', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: getUid() })
+      body: JSON.stringify({})
     });
 
     // Check HTTP status code
@@ -678,7 +678,7 @@ async function doUnwant(workId, currentCount) {
     var res = await fetch('/api/works/' + workId + '/unwant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: getUid() })
+      body: JSON.stringify({})
     });
 
     // Check HTTP status code
@@ -736,7 +736,7 @@ async function toggleFollow(circleId, btn) {
     var res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: getUid() })
+      body: JSON.stringify({})
     });
 
     if (!res.ok) {

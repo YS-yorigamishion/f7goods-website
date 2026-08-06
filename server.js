@@ -1379,8 +1379,7 @@ function likeWantRateLimit(req, res, next) {
 
 app.post('/api/works/:id/like', likeWantRateLimit, (req, res) => {
   const workId = req.params.id;
-  const uid = req.body.uid;
-  if (!uid) return res.status(400).json({ error: 'missing uid' });
+  const ip = req.ip;
 
   if (!likesCache[workId]) likesCache[workId] = [];
 
@@ -1388,12 +1387,11 @@ app.post('/api/works/:id/like', likeWantRateLimit, (req, res) => {
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
-  if (likesCache[workId].includes(uid)) {
-    // Already liked - return current count from works.json
+  if (likesCache[workId].includes(ip)) {
     return res.json({ likes: works[index].likes || 0, alreadyLiked: true });
   }
 
-  likesCache[workId].push(uid);
+  likesCache[workId].push(ip);
   saveLikes();
 
   // Increment count based on current value in works.json
@@ -1404,8 +1402,7 @@ app.post('/api/works/:id/like', likeWantRateLimit, (req, res) => {
 
 app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
   const workId = req.params.id;
-  const uid = req.body.uid;
-  if (!uid) return res.status(400).json({ error: 'missing uid' });
+  const ip = req.ip;
 
   if (!likesCache[workId]) likesCache[workId] = [];
 
@@ -1413,7 +1410,7 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
-  const idx = likesCache[workId].indexOf(uid);
+  const idx = likesCache[workId].indexOf(ip);
   if (idx === -1) {
     // Not in cache — this uid never liked the work, ignore the request
     return res.json({ likes: works[index].likes || 0 });
@@ -1430,8 +1427,7 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
 
 app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
   const workId = req.params.id;
-  const uid = req.body.uid;
-  if (!uid) return res.status(400).json({ error: 'missing uid' });
+  const ip = req.ip;
 
   if (!wantsCache[workId]) wantsCache[workId] = [];
 
@@ -1439,12 +1435,11 @@ app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
-  if (wantsCache[workId].includes(uid)) {
-    // Already wanted - return current count from works.json
+  if (wantsCache[workId].includes(ip)) {
     return res.json({ wants: works[index].wants || 0, alreadyWanted: true });
   }
 
-  wantsCache[workId].push(uid);
+  wantsCache[workId].push(ip);
   saveWants();
 
   // Increment count based on current value in works.json
@@ -1455,16 +1450,14 @@ app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
 
 app.get('/api/works/:id/want-status', (req, res) => {
   const workId = req.params.id;
-  const uid = req.query.uid;
-  if (!uid) return res.json({ wanted: false });
-  const wanted = wantsCache[workId] ? wantsCache[workId].includes(uid) : false;
+  const ip = req.ip;
+  const wanted = wantsCache[workId] ? wantsCache[workId].includes(ip) : false;
   res.json({ wanted });
 });
 
 app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
   const workId = req.params.id;
-  const uid = req.body.uid;
-  if (!uid) return res.status(400).json({ error: 'missing uid' });
+  const ip = req.ip;
 
   if (!wantsCache[workId]) wantsCache[workId] = [];
 
@@ -1472,7 +1465,7 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
   const index = works.findIndex(w => w.id === workId);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
 
-  const idx = wantsCache[workId].indexOf(uid);
+  const idx = wantsCache[workId].indexOf(ip);
   if (idx === -1) {
     // Not in cache — this uid never wanted the work, ignore the request
     return res.json({ wants: works[index].wants || 0 });
