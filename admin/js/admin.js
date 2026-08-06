@@ -1155,8 +1155,11 @@ function renderCreationStats(entities) {
     return {
       label: t.label,
       data: counts,
+      borderColor: t.color,
       backgroundColor: t.color,
-      borderRadius: 3
+      fill: false,
+      tension: 0.3,
+      pointRadius: 3
     };
   });
 
@@ -1182,15 +1185,15 @@ function renderCreationStats(entities) {
   const ctx = document.getElementById('chartCreationStats');
   if (!ctx) return;
   _creationChart = new Chart(ctx, {
-    type: 'bar',
+    type: 'line',
     data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { position: 'top' } },
       scales: {
-        x: { stacked: true },
-        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+        x: {},
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
       }
     }
   });
