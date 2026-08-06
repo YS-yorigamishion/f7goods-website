@@ -31,8 +31,10 @@
     </div>
     <div class="filter-bar" id="categoryFilters">
       <button class="filter-btn active" data-cat="all">全部分类</button>
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 我关注的</button>
       <input type="text" class="search-input" placeholder="搜索企划..." id="searchInput">
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 我关注的</button>
     </div>
 
     <div class="cards-grid" id="projectsGrid">
@@ -154,7 +156,6 @@
       const searchInput = document.getElementById('searchInput').outerHTML;
       catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部分类</button>' +
         PROJECT_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('') +
-        '<button class="filter-btn' + (currentFollowFilter ? ' active' : '') + '" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ 我关注的</button>' +
         searchInput;
 
       // Re-bind events
