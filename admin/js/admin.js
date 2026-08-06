@@ -423,6 +423,16 @@ function showAdminNotifications() {
 
 // ===== Dashboard =====
 async function loadDashboard() {
+  // Dynamically load Chart.js if not already loaded
+  if (typeof Chart === 'undefined') {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
   const [works, events, circles, projects, updates, pvData] = await Promise.all([
     adminAPI('GET', '/api/admin/works'),
     adminAPI('GET', '/api/admin/events'),
@@ -3228,7 +3238,7 @@ async function loadCircles(page = 1) {
 function renderCirclesTable(circles) {
   const tbody = document.getElementById('circlesTableBody');
   if (!circles || circles.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--haze);padding:2rem;">暂无作者</td></tr>';
     return;
   }
   tbody.innerHTML = circles.map((c, i) => {
@@ -3259,6 +3269,7 @@ function renderCirclesTable(circles) {
     return `
     <tr>
       <td>${renderOrderControls('circles', c.id, i, circles.length)}</td>
+      <td><input type="checkbox" class="circle-checkbox" value="${c.id}" onchange="updateCircleBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
       <td class="editable-cell" onclick="makeCircleEditable(this, '${c.id}', 'name', '${escapeHtml(c.name)}')">${c.name}</td>
       <td>${CIRCLE_CATEGORIES[c.category] || c.category || '-'}</td>
       <td>${c._worksCount || 0}</td>
@@ -3840,6 +3851,31 @@ async function editCircle(id) {
 async function deleteCircle(id) {
   if (!await showConfirm('确定要删除这个作者吗？', { danger: true })) return;
   await adminAPI('DELETE', `/api/admin/circles/${id}`);
+  loadCircles();
+}
+
+function updateCircleBatchBtn() {
+  const checked = document.querySelectorAll('.circle-checkbox:checked');
+  const btn = document.getElementById('circlesBatchDeleteBtn');
+  if (btn) btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
+}
+
+function toggleSelectAllCircles() {
+  const selectAll = document.getElementById('circlesSelectAll');
+  document.querySelectorAll('.circle-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
+  updateCircleBatchBtn();
+}
+
+async function batchDeleteCircles() {
+  const checked = document.querySelectorAll('.circle-checkbox:checked');
+  if (checked.length === 0) { showToast('请先选择要删除的作者', 'error'); return; }
+  if (!await showConfirm(`确定删除选中的 ${checked.length} 个作者？此操作不可撤销。`, { danger: true })) return;
+  let success = 0;
+  for (const cb of checked) {
+    const result = await adminAPI('DELETE', `/api/admin/circles/${cb.value}`);
+    if (result && result.success) success++;
+  }
+  showToast(`已删除 ${success} 个作者`, 'success');
   loadCircles();
 }
 

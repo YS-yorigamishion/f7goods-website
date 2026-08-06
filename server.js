@@ -1992,6 +1992,54 @@ app.get('/sitemap.xml', cacheMiddleware(3600), (req, res) => {
   }
 });
 
+// RSS feed
+app.get('/rss.xml', cacheMiddleware(3600), (req, res) => {
+  try {
+    const baseUrl = req.protocol + '://' + req.get('host');
+    const siteName = 'f7goods';
+    const updates = readJSON('updates.json')
+      .filter(u => (!u.approvalStatus || u.approvalStatus === 'approved') && u.publishDate <= getChinaDate())
+      .sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate))
+      .slice(0, 20);
+    const works = readJSON('works.json')
+      .filter(w => !w.approvalStatus || w.approvalStatus === 'approved')
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .slice(0, 10);
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<rss version="2.0"><channel>\n';
+    xml += `  <title>${siteName}</title>\n`;
+    xml += `  <link>${baseUrl}</link>\n`;
+    xml += '  <description>同人周边展示平台</description>\n';
+    xml += `  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\n`;
+
+    updates.forEach(u => {
+      xml += '  <item>\n';
+      xml += `    <title>${escapeXml(u.title)}</title>\n`;
+      xml += `    <link>${baseUrl}/update-detail.html?id=${u.id}</link>\n`;
+      xml += `    <pubDate>${new Date(u.publishDate).toUTCString()}</pubDate>\n`;
+      xml += `    <description>${escapeXml((u.content || '').substring(0, 200))}</description>\n`;
+      xml += '  </item>\n';
+    });
+    works.forEach(w => {
+      xml += '  <item>\n';
+      xml += `    <title>${escapeXml(w.title)}</title>\n`;
+      xml += `    <link>${baseUrl}/work-detail.html?id=${w.id}</link>\n`;
+      xml += `    <pubDate>${new Date(w.createdAt || 0).toUTCString()}</pubDate>\n`;
+      xml += `    <description>${escapeXml(w.description || w.title)}</description>\n`;
+      xml += '  </item>\n';
+    });
+    xml += '</channel></rss>';
+    res.type('application/xml').send(xml);
+  } catch (e) {
+    res.status(500).send('Error generating RSS');
+  }
+});
+
+function escapeXml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
 app.put('/api/admin/settings', authMiddleware, (req, res) => {
   const existing = readJSON('settings.json');
   const incoming = req.body;

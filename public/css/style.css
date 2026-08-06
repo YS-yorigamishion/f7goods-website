@@ -1969,15 +1969,18 @@ textarea.form-input {
   }
 
   .calendar-event {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
+    display: block;
+    width: 100%;
+    border-radius: 2px;
     background: var(--accent);
-    margin: 1px;
+    color: white;
+    font-size: 0.5rem;
+    line-height: 1.2;
+    padding: 1px 2px;
+    margin-bottom: 1px;
     overflow: hidden;
-    font-size: 0;
-    padding: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .calendar-weekday {

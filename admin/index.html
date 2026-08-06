@@ -6,7 +6,6 @@
   <title>f7goods — 管理后台</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/admin/css/admin.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 </head>
 <body class="admin-body">
   <!-- Login Screen -->
@@ -366,6 +365,7 @@
             <div style="display:flex;gap:0.5rem;align-items:center;">
               <input type="text" class="form-input" id="circlesSearch" placeholder="搜索作者..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterCircles()">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminCircles()">📥 导出</button>
+              <button id="circlesBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteCircles()">批量删除</button>
               <button class="btn btn-primary" onclick="openCircleModal()">+ 新增作者</button>
             </div>
           </div>
@@ -374,6 +374,7 @@
               <thead>
                 <tr>
                   <th>排序</th>
+                  <th><input type="checkbox" id="circlesSelectAll" onchange="toggleSelectAllCircles()" style="width:16px;height:16px;accent-color:var(--accent);"></th>
                   <th>作者名称</th>
                   <th>分类</th>
                   <th>作品数</th>

@@ -197,11 +197,15 @@
               <select class="form-input" id="pContactType">
                 <option value="qq">QQ</option>
                 <option value="qqGroup">QQ群</option>
+                <option value="wechat">微信</option>
+                <option value="weibo">微博</option>
+                <option value="bilibili">B站</option>
+                <option value="custom">自定义链接</option>
               </select>
             </div>
             <div class="form-group">
               <label>联系方式</label>
-              <input class="form-input" id="pContactValue" placeholder="QQ号或QQ群号">
+              <input class="form-input" id="pContactValue" placeholder="账号、群号或链接">
             </div>
           </div>
           <div class="form-row">
@@ -347,6 +351,10 @@
                   <option value="">— 不修改 —</option>
                   <option value="qq">QQ</option>
                   <option value="qqGroup">QQ群</option>
+                  <option value="wechat">微信</option>
+                  <option value="weibo">微博</option>
+                  <option value="bilibili">B站</option>
+                  <option value="custom">自定义链接</option>
                 </select>
               </div>
               <div class="form-group">
@@ -1689,8 +1697,8 @@
         <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="wfTags" value="${(w.tags||[]).join(', ')}" placeholder="手办, 东方"></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="wfDesc" style="min-height:80px;">${w.description || ''}</textarea></div>
         <div class="form-row">
-          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup ? 'selected' : ''}>无</option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option></select></div>
-          <div class="form-group"><label>联系方式</label><input class="form-input" id="wfContactValue" value="${w.socialLinks?.qq || w.socialLinks?.qqGroup || ''}" placeholder="QQ号或QQ群号"></div>
+          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup && !w.socialLinks?.wechat && !w.socialLinks?.weibo && !w.socialLinks?.bilibili && !w.socialLinks?.custom ? 'selected' : ''}>无</option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${w.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${w.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${w.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${w.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
+          <div class="form-group"><label>联系方式</label><input class="form-input" id="wfContactValue" value="${w.socialLinks?.qq || w.socialLinks?.qqGroup || w.socialLinks?.wechat || w.socialLinks?.weibo || w.socialLinks?.bilibili || w.socialLinks?.custom || ''}" placeholder="账号、群号或链接"></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>联系显示名</label><input class="form-input" id="wfContactLabel" value="${w.socialLinks?.contactLabel || ''}"></div>
@@ -2188,8 +2196,8 @@
         <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth" value="${isEdit ? escapeHtml(eventData.booth || '') : ''}"></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;">${isEdit ? escapeHtml(eventData.description || '') : ''}</textarea></div>
         <div class="form-row">
-          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myEventContactType"><option value="" ${!isEdit || (!eventData.socialLinks?.qq && !eventData.socialLinks?.qqGroup) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && eventData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && eventData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option></select></div>
-          <div class="form-group"><label>联系方式</label><input class="form-input" id="myEventContactValue" value="${isEdit ? (eventData.socialLinks?.qq || eventData.socialLinks?.qqGroup || '') : ''}" placeholder="QQ号或QQ群号"></div>
+          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myEventContactType"><option value="" ${!isEdit || (!eventData.socialLinks?.qq && !eventData.socialLinks?.qqGroup && !eventData.socialLinks?.wechat && !eventData.socialLinks?.weibo && !eventData.socialLinks?.bilibili && !eventData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && eventData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && eventData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && eventData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && eventData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && eventData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && eventData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
+          <div class="form-group"><label>联系方式</label><input class="form-input" id="myEventContactValue" value="${isEdit ? (eventData.socialLinks?.qq || eventData.socialLinks?.qqGroup || eventData.socialLinks?.wechat || eventData.socialLinks?.weibo || eventData.socialLinks?.bilibili || eventData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>联系显示名</label><input class="form-input" id="myEventContactLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.contactLabel || '') : ''}"></div>
@@ -2316,8 +2324,8 @@
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;">${isEdit ? escapeHtml(projectData.description || '') : ''}</textarea></div>
         <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="myProjectTags" value="${isEdit ? (projectData.tags || []).join(', ') : ''}" placeholder="标签1, 标签2"></div>
         <div class="form-row">
-          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="" ${!isEdit || (!projectData.socialLinks?.qq && !projectData.socialLinks?.qqGroup) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option></select></div>
-          <div class="form-group"><label>联系方式</label><input class="form-input" id="myProjectContactValue" value="${isEdit ? (projectData.socialLinks?.qq || projectData.socialLinks?.qqGroup || '') : ''}" placeholder="QQ号或QQ群号"></div>
+          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="" ${!isEdit || (!projectData.socialLinks?.qq && !projectData.socialLinks?.qqGroup && !projectData.socialLinks?.wechat && !projectData.socialLinks?.weibo && !projectData.socialLinks?.bilibili && !projectData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && projectData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && projectData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && projectData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && projectData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
+          <div class="form-group"><label>联系方式</label><input class="form-input" id="myProjectContactValue" value="${isEdit ? (projectData.socialLinks?.qq || projectData.socialLinks?.qqGroup || projectData.socialLinks?.wechat || projectData.socialLinks?.weibo || projectData.socialLinks?.bilibili || projectData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>联系显示名</label><input class="form-input" id="myProjectContactLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.contactLabel || '') : ''}"></div>
