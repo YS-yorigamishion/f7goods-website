@@ -2557,9 +2557,10 @@ async function manageEditableAuthors(type, id) {
       <h3 style="margin:0;">管理可编辑作者</h3>
       <button onclick="document.getElementById('editableAuthorsOverlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
     </div>
-    <p style="font-size:0.85rem;color:var(--haze);margin-bottom:1rem;">选择可以编辑「${escapeHtml(item.title)}」的作者：</p>
+    <p style="font-size:0.85rem;color:var(--haze);margin-bottom:0.5rem;">选择可以编辑「${escapeHtml(item.title)}」的作者：</p>
+    <input type="text" id="editableAuthorSearch" placeholder="搜索作者名称..." style="width:100%;margin-bottom:0.5rem;padding:0.4rem 0.6rem;font-size:0.85rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);box-sizing:border-box;" oninput="filterEditableAuthorsList(this.value)">
     <div id="editableAuthorsList">
-      ${approvedAuthors.map(c => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;cursor:pointer;border-bottom:1px solid var(--border);">
+      ${approvedAuthors.map(c => `<label class="editable-author-item" data-name="${escapeHtml(c.name).toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;cursor:pointer;border-bottom:1px solid var(--border);">
         <input type="checkbox" class="editable-author-cb" value="${c.id}" ${(item.editableBy || []).includes(c.id) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--accent);">
         ${escapeHtml(c.name)}
       </label>`).join('')}
@@ -2583,6 +2584,14 @@ async function saveEditableAuthors(type, id) {
   if (type === 'events') loadEvents();
   else if (type === 'projects') loadProjects();
   else if (type === 'updates') loadUpdates();
+}
+
+function filterEditableAuthorsList(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('.editable-author-item').forEach(item => {
+    const name = item.dataset.name || '';
+    item.style.display = name.includes(q) ? 'flex' : 'none';
+  });
 }
 
 async function rejectEvent(id) {
@@ -3331,9 +3340,10 @@ async function manageCircleEditors(circleId) {
       <h3 style="margin:0;">管理编辑者</h3>
       <button onclick="document.getElementById('circleEditorsOverlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
     </div>
-    <p style="font-size:0.85rem;color:var(--haze);margin-bottom:1rem;">选择可以编辑「${escapeHtml(circle.name)}」后台的其他作者：</p>
+    <p style="font-size:0.85rem;color:var(--haze);margin-bottom:0.5rem;">选择可以编辑「${escapeHtml(circle.name)}」后台的其他作者：</p>
+    <input type="text" id="circleEditorSearch" placeholder="搜索作者名称..." style="width:100%;margin-bottom:0.5rem;padding:0.4rem 0.6rem;font-size:0.85rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);box-sizing:border-box;" oninput="filterCircleEditorsList(this.value)">
     <div id="circleEditorsList">
-      ${approvedAuthors.length > 0 ? approvedAuthors.map(c => `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;cursor:pointer;border-bottom:1px solid var(--border);">
+      ${approvedAuthors.length > 0 ? approvedAuthors.map(c => `<label class="circle-editor-item" data-name="${escapeHtml(c.name).toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;cursor:pointer;border-bottom:1px solid var(--border);">
         <input type="checkbox" class="circle-editor-cb" value="${c.id}" ${(circle.editableBy || []).includes(c.id) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--accent);">
         ${escapeHtml(c.name)}
       </label>`).join('') : '<p style="color:var(--haze);">暂无其他已批准的作者</p>'}
@@ -3349,6 +3359,14 @@ async function saveCircleEditors(circleId) {
   showToast('编辑者已保存', 'success');
   document.getElementById('circleEditorsOverlay')?.remove();
   loadCircles();
+}
+
+function filterCircleEditorsList(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('.circle-editor-item').forEach(item => {
+    const name = item.dataset.name || '';
+    item.style.display = name.includes(q) ? 'flex' : 'none';
+  });
 }
 
 async function resetAuthorPassword(circleId) {
