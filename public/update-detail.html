@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods �?动态详�?/title>
-  <meta name="description" content="查看同人动态详情，了解最新资讯�?>
+  <title>f7goods — 动态详情</title>
+  <meta name="description" content="查看同人动态详情，了解最新资讯。">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="f7goods">`n  <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:site_name" content="f7goods">
+  <meta property="og:image" content="/uploads/og-image.jpg">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -14,7 +15,7 @@
 
   <main class="main-content detail-page">
     <div id="updateDetail">
-      <div class="loading"><div class="spinner"></div><p>加载�?..</p></div>
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
     </div>
   </main>
 
@@ -42,13 +43,13 @@
         const relatedProjects = allProjects.filter(p => (update.relatedProjects || []).includes(p.id));
         const relatedCircles = allCircles.filter(c => (update.relatedCircles || []).includes(c.id));
 
-        document.title = `${update.title} �?f7goods`;
+        document.title = `${update.title} — f7goods`;
 
         const container = document.getElementById('updateDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
-            <a href="/updates.html">同人动�?/a>
-            <span>�?/span>
+            <a href="/updates.html">同人动态</a>
+            <span>›</span>
             <span>${update.title}</span>
           </div>
           <div class="detail-header">
@@ -63,7 +64,7 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">动态内�?/h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">动态内容</h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(update.content)}</p>
 
               ${update.images && update.images.length > 0 ? `
@@ -75,23 +76,23 @@
             </div>
             <div class="detail-sidebar">
               <div class="sidebar-card">
-                <h3>动态信�?/h3>
+                <h3>动态信息</h3>
                 <div class="info-row">
                   <span class="info-label">发布日期</span>
                   <span class="info-value">${formatDate(update.publishDate)}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">作�?/span>
-                  <span class="info-value">${relatedCircles.length > 0 ? relatedCircles.map(c => c.name).join('�?) : '-'}</span>
+                  <span class="info-label">作者</span>
+                  <span class="info-value">${relatedCircles.length > 0 ? relatedCircles.map(c => c.name).join('、') : '-'}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">图片�?/span>
-                  <span class="info-value">${(update.images || []).length} �?/span>
+                  <span class="info-label">图片数</span>
+                  <span class="info-value">${(update.images || []).length} 张</span>
                 </div>
               </div>
               ${relatedCircles.length > 0 ? `
               <div class="sidebar-card">
-                <h3>相关作�?/h3>
+                <h3>相关作者</h3>
                 ${relatedCircles.map(c => `
                   <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -139,7 +140,7 @@
         `;
       } catch (e) {
         document.getElementById('updateDetail').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>动态未找到或加载失�?/p></div>';
+          '<div class="empty-state"><div class="icon">!</div><p>动态未找到或加载失败</p></div>';
       }
     }
 

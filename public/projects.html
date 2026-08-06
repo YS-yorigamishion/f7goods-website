@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods �?同人企划</title>
-  <meta name="description" content="发现正在进行的同人企划，加入创作团队。浏览招募中、进行中和已完成的企划�?>
-  <meta property="og:title" content="f7goods �?同人企划">
-  <meta property="og:description" content="发现正在进行的同人企划，加入创作团队�?>
+  <title>f7goods — 同人企划</title>
+  <meta name="description" content="发现正在进行的同人企划，加入创作团队。浏览招募中、进行中和已完成的企划。">
+  <meta property="og:title" content="f7goods — 同人企划">
+  <meta property="og:description" content="发现正在进行的同人企划，加入创作团队。">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="f7goods">`n  <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:site_name" content="f7goods">
+  <meta property="og:image" content="/uploads/og-image.jpg">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -22,11 +23,11 @@
   <main class="main-content">
     <div class="page-header">
       <h2 id="pageTitle" class="settings-pending">企划列表</h2>
-      <p id="pageSubtitle" class="settings-pending">正在进行或招募中的同人企划项�?/p>
+      <p id="pageSubtitle" class="settings-pending">正在进行或招募中的同人企划项目</p>
     </div>
 
     <div class="filter-bar" id="statusFilters">
-      <button class="filter-btn active" data-status="all">全部状�?/button>
+      <button class="filter-btn active" data-status="all">全部状态</button>
     </div>
     <div class="filter-bar" id="categoryFilters">
       <button class="filter-btn active" data-cat="all">全部分类</button>
@@ -45,7 +46,7 @@
     </div>
   </main>
 
-  <button id="backToTop" class="back-to-top" onclick="scrollToTop()">��</button>`n  <footer class="footer" id="footer"></footer>
+  <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260803"></script>
@@ -100,7 +101,7 @@
       }
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的企�?/p></div>';
+        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的企划</p></div>';
         return;
       }
 
@@ -131,7 +132,7 @@
     function buildProjectFilterButtons() {
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = '<button class="filter-btn active" data-status="all">全部状�?/button>' +
+      statusContainer.innerHTML = '<button class="filter-btn active" data-status="all">全部状态</button>' +
         PROJECT_STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${s.name}</button>`).join('');
 
       // Category filters
