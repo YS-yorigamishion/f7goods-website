@@ -7,6 +7,8 @@
   <meta name="description" content="查看同人作品详情，包括图片、价格、作者信息等。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
+  <meta property="og:title" content="">
+  <meta property="og:description" content="">
   <meta property="og:image" content="/uploads/og-image.jpg">
   <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -42,6 +44,9 @@
         const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(work.id));
         const relatedProjects = allProjects.filter(p => (p.works || []).includes(work.id));
         document.title = `${work.title} — f7goods`;
+        document.querySelector('meta[property="og:title"]').content = work.title;
+        document.querySelector('meta[property="og:description"]').content = (work.description || '').substring(0, 160);
+        if (work.images && work.images[0]) document.querySelector('meta[property="og:image"]').content = work.images[0];
 
         const container = document.getElementById('workDetail');
         container.innerHTML = `

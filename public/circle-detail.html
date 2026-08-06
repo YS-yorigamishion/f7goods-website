@@ -8,6 +8,8 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:title" content="">
+  <meta property="og:description" content="">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -93,24 +95,22 @@
 
       try {
         await loadCategoriesFromAPI();
-        const [circle, allWorks, allEvents, allProjects, allUpdates] = await Promise.all([
+        const [circle, circleWorks, relatedEvents, allProjects, allUpdates] = await Promise.all([
           F7API.getCircle(id),
-          F7API.getWorks(),
-          F7API.getEvents(),
+          F7API.getWorks({ circleId: id }),
+          F7API.getEvents({ circleId: id }),
           F7API.getProjects(),
           fetch('/api/updates').then(r => r.json())
         ]);
-        const circleWorks = allWorks.filter(w => (w.circles || []).includes(circle.id));
         circleWorksData = circleWorks;
         const circleWorkIds = circleWorks.map(w => w.id);
-        const relatedEvents = allEvents.filter(e =>
-          (e.relatedCircles || []).includes(circle.id) ||
-          (e.relatedWorks || []).some(wid => circleWorkIds.includes(wid))
-        );
         const relatedProjects = (allProjects || []).filter(p => (p.circles || []).includes(circle.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedCircles || []).includes(circle.id));
 
         document.title = `${circle.name} — f7goods`;
+        document.querySelector('meta[property="og:title"]').content = circle.name;
+        document.querySelector('meta[property="og:description"]').content = (circle.description || '').substring(0, 160);
+        if (circle.logo) document.querySelector('meta[property="og:image"]').content = circle.logo;
 
         const container = document.getElementById('circleDetail');
         container.innerHTML = `

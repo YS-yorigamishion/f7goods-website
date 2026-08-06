@@ -251,6 +251,14 @@ async function adminAPI(method, path, body) {
   return res.json();
 }
 
+function wrapSaveButton(asyncFn) {
+  const btn = document.getElementById('modalSave');
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+  asyncFn().finally(() => { btn.disabled = false; btn.textContent = origText; });
+}
+
 async function uploadImage(file) {
   const formData = new FormData();
   formData.append('image', file);
@@ -1968,7 +1976,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
     </div>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const data = {
       title: document.getElementById('wTitle').value,
       category: document.getElementById('wCategory').value,
@@ -2029,7 +2037,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
     if (returnToCircleId) {
       setTimeout(() => manageCircleWorks(returnToCircleId), 100);
     }
-  };
+  });
 
   openModal();
 
@@ -2254,7 +2262,7 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
     <p style="color:var(--haze);font-size:0.75rem;margin-top:0.5rem;">提示：留空的字段不会被修改。选中作品共有的值会自动填充，不同值显示"${mixed}"。</p>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const updates = {};
     const cat = document.getElementById('batch_category').value;
     const status = document.getElementById('batch_status').value;
@@ -2285,7 +2293,7 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
     } else {
       loadWorks();
     }
-  };
+  });
 
   openModal();
 }
@@ -2610,7 +2618,7 @@ function openEventModal(event = null) {
     </div>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const data = {
       title: document.getElementById('eTitle').value,
       status: document.getElementById('eStatus').value,
@@ -2646,7 +2654,7 @@ function openEventModal(event = null) {
     }
     closeModal();
     loadEvents();
-  };
+  });
 
   openModal();
 }
@@ -2787,7 +2795,7 @@ async function manageEventWorks(eventId) {
     </div>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const checkedWorkIds = [...document.querySelectorAll('.event-work-checkbox:checked')].map(cb => cb.value);
     const checkedCircleIds = [...document.querySelectorAll('.event-circle-checkbox:checked')].map(cb => cb.value);
     const checkedProjectIds = [...document.querySelectorAll('.event-project-checkbox:checked')].map(cb => cb.value);
@@ -2797,7 +2805,7 @@ async function manageEventWorks(eventId) {
     await adminAPI('PUT', `/api/admin/events/${eventId}`, { ...event, relatedWorks: updatedRelatedWorks, relatedCircles: updatedRelatedCircles, relatedProjects: updatedRelatedProjects });
     closeModal();
     loadEvents();
-  };
+  });
 
   openModal();
 }
@@ -2972,39 +2980,28 @@ async function manageWorkRelations(workId, returnToCircleId) {
     </div>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
-    // Prevent double-submit
-    const saveBtn = document.getElementById('modalSave');
-    if (saveBtn.disabled) return;
-    saveBtn.disabled = true;
-    saveBtn.textContent = '保存中...';
-
-    try {
-      // Add events to work
-      const addEventIds = [...document.querySelectorAll('.work-event-checkbox:checked')].map(cb => cb.value);
-      for (const eventId of addEventIds) {
-        const event = allEvents.find(e => e.id === eventId);
-        if (event) {
-          const updatedWorks = [...new Set([...(event.relatedWorks || []), workId])];
-          await adminAPI('PUT', `/api/admin/events/${eventId}`, { ...event, relatedWorks: updatedWorks });
-        }
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
+    // Add events to work
+    const addEventIds = [...document.querySelectorAll('.work-event-checkbox:checked')].map(cb => cb.value);
+    for (const eventId of addEventIds) {
+      const event = allEvents.find(e => e.id === eventId);
+      if (event) {
+        const updatedWorks = [...new Set([...(event.relatedWorks || []), workId])];
+        await adminAPI('PUT', `/api/admin/events/${eventId}`, { ...event, relatedWorks: updatedWorks });
       }
-      // Add projects to work
-      const addProjectIds = [...document.querySelectorAll('.work-project-checkbox:checked')].map(cb => cb.value);
-      for (const projectId of addProjectIds) {
-        const project = allProjects.find(p => p.id === projectId);
-        if (project) {
-          const updatedWorks = [...new Set([...(project.works || []), workId])];
-          await adminAPI('PUT', `/api/admin/projects/${projectId}`, { ...project, works: updatedWorks });
-        }
-      }
-      closeModal();
-      if (returnToCircleId) manageCircleWorks(returnToCircleId);
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = '保存';
     }
-  };
+    // Add projects to work
+    const addProjectIds = [...document.querySelectorAll('.work-project-checkbox:checked')].map(cb => cb.value);
+    for (const projectId of addProjectIds) {
+      const project = allProjects.find(p => p.id === projectId);
+      if (project) {
+        const updatedWorks = [...new Set([...(project.works || []), workId])];
+        await adminAPI('PUT', `/api/admin/projects/${projectId}`, { ...project, works: updatedWorks });
+      }
+    }
+    closeModal();
+    if (returnToCircleId) manageCircleWorks(returnToCircleId);
+  });
 
   openModal();
 }
@@ -3455,7 +3452,7 @@ async function manageCircleWorks(circleId) {
     </div>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     // Add works to circle
     const addWorkIds = [...document.querySelectorAll('.add-work-checkbox:checked')].map(cb => cb.value);
     for (const workId of addWorkIds) {
@@ -3485,7 +3482,7 @@ async function manageCircleWorks(circleId) {
     }
     closeModal();
     loadCircles();
-  };
+  });
 
   openModal();
 }
@@ -3698,7 +3695,7 @@ function openCircleModal(circle = null) {
     </div>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const data = {
       name: document.getElementById('cName').value,
       category: document.getElementById('cCategory').value,
@@ -3722,7 +3719,7 @@ function openCircleModal(circle = null) {
     }
     closeModal();
     loadCircles();
-  };
+  });
 
   openModal();
 }
@@ -4156,7 +4153,7 @@ function openProjectModal(project = null) {
     </div>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const data = {
       title: document.getElementById('pTitle').value,
       category: document.getElementById('pCategory').value,
@@ -4190,7 +4187,7 @@ function openProjectModal(project = null) {
     }
     closeModal();
     loadProjects();
-  };
+  });
 
   openModal();
 }
@@ -4293,7 +4290,7 @@ async function manageProjectRelations(projectId) {
     </div>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const checkedCircleIds = [...document.querySelectorAll('.project-circle-checkbox:checked')].map(cb => cb.value);
     const checkedEventIds = [...document.querySelectorAll('.project-event-checkbox:checked')].map(cb => cb.value);
     const updatedCircles = [...new Set([...relatedCircleIds, ...checkedCircleIds])];
@@ -4301,7 +4298,7 @@ async function manageProjectRelations(projectId) {
     await adminAPI('PUT', `/api/admin/projects/${projectId}`, { ...project, circles: updatedCircles, events: updatedEvents });
     closeModal();
     loadProjects();
-  };
+  });
 
   openModal();
 }
@@ -4711,7 +4708,7 @@ async function cleanupUnusedImages() {
       <p style="margin-top:1rem;color:var(--accent);font-size:0.85rem;">此操作不可撤销，确定要删除以上图片吗？</p>
     `;
     document.getElementById('modalSave').textContent = `删除 ${preview.count} 张`;
-    document.getElementById('modalSave').onclick = async () => {
+    document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
       const result = await adminAPI('POST', '/api/admin/images/cleanup');
       if (result && result.success) {
         showToast(`已删除 ${result.deleted} 张未使用图片`, 'success');
@@ -4721,7 +4718,7 @@ async function cleanupUnusedImages() {
       } else {
         showToast('清理失败: ' + (result.error || '未知错误'), 'error');
       }
-    };
+    });
     openModal();
   } catch (e) {
     showToast('查询失败: ' + e.message, 'error');
@@ -5223,7 +5220,7 @@ function openAnnouncementModal(announcement = null) {
     </div>
   `;
 
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const data = {
       title: document.getElementById('annTitle').value,
       publishDate: document.getElementById('annPublishDate').value,
@@ -5243,7 +5240,7 @@ function openAnnouncementModal(announcement = null) {
     }
     closeModal();
     loadAnnouncements();
-  };
+  });
 
   openModal();
 }
@@ -5554,7 +5551,7 @@ function openUpdateModal(update = null) {
       </div>
     `;
 
-    document.getElementById('modalSave').onclick = async () => {
+    document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
       const data = {
         title: document.getElementById('updTitle').value,
         publishDate: document.getElementById('updPublishDate').value,
@@ -5577,7 +5574,7 @@ function openUpdateModal(update = null) {
       }
       closeModal();
       loadUpdates();
-    };
+    });
 
     openModal();
   });
@@ -5647,7 +5644,7 @@ function openChangePasswordModal() {
       <input type="password" class="form-input" id="pwConfirm" required>
     </div>
   `;
-  document.getElementById('modalSave').onclick = async () => {
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const oldPassword = document.getElementById('pwOld').value;
     const newPassword = document.getElementById('pwNew').value;
     const confirm = document.getElementById('pwConfirm').value;
@@ -5661,7 +5658,7 @@ function openChangePasswordModal() {
     } else {
       showToast('修改失败: ' + (result.error || '未知错误'), 'error');
     }
-  };
+  });
   openModal();
 }
 

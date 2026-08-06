@@ -8,6 +8,8 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:title" content="">
+  <meta property="og:description" content="">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -103,14 +105,13 @@
 
       try {
         await loadCategoriesFromAPI();
-        const [event, allWorks, allCircles, allProjects, allUpdates] = await Promise.all([
+        const [event, relatedWorks, allCircles, allProjects, allUpdates] = await Promise.all([
           F7API.getEvent(id),
-          F7API.getWorks(),
+          F7API.getWorks({ eventId: id }),
           F7API.getCircles(),
           F7API.getProjects(),
           fetch('/api/updates').then(r => r.json())
         ]);
-        const relatedWorks = allWorks.filter(w => (event.relatedWorks || []).includes(w.id));
         eventRelatedWorks = relatedWorks;
         eventCirclesMap = Object.fromEntries(allCircles.map(c => [c.id, c.name]));
         const relatedProjects = allProjects.filter(p => (event.relatedProjects || []).includes(p.id));
@@ -122,6 +123,9 @@
         const relatedCircles = allCircles.filter(c => relatedCircleIds.includes(c.id));
 
         document.title = `${event.title} — f7goods`;
+        document.querySelector('meta[property="og:title"]').content = event.title;
+        document.querySelector('meta[property="og:description"]').content = (event.description || '').substring(0, 160);
+        if (event.coverImage) document.querySelector('meta[property="og:image"]').content = event.coverImage;
 
         const container = document.getElementById('eventDetail');
         container.innerHTML = `

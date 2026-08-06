@@ -8,6 +8,8 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:title" content="">
+  <meta property="og:description" content="">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -44,6 +46,9 @@
         const relatedCircles = allCircles.filter(c => (update.relatedCircles || []).includes(c.id));
 
         document.title = `${update.title} — f7goods`;
+        document.querySelector('meta[property="og:title"]').content = update.title;
+        document.querySelector('meta[property="og:description"]').content = (update.content || '').substring(0, 160);
+        if (update.coverImage) document.querySelector('meta[property="og:image"]').content = update.coverImage;
 
         const container = document.getElementById('updateDetail');
         container.innerHTML = `

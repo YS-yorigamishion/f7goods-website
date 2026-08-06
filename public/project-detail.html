@@ -8,6 +8,8 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:title" content="">
+  <meta property="og:description" content="">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -46,6 +48,9 @@
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedProjects || []).includes(project.id));
 
         document.title = `${project.title} — f7goods`;
+        document.querySelector('meta[property="og:title"]').content = project.title;
+        document.querySelector('meta[property="og:description"]').content = (project.description || '').substring(0, 160);
+        if (project.coverImage) document.querySelector('meta[property="og:image"]').content = project.coverImage;
 
         const container = document.getElementById('projectDetail');
         container.innerHTML = `

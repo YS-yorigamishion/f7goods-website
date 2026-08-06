@@ -226,20 +226,20 @@ function buildNavbar(activePage) {
   return `
     <div class="brand-bar"></div>
     <div class="nav-inner">
-      <a href="/" class="logo">
+      <a href="/" class="logo" aria-label="首页">
         ${logoContent}
         <span>${brandName}</span>
       </a>
-      <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="菜单">
+      <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="菜单" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
-      <ul class="nav-links">
-        <li><a href="/" class="${activePage === 'works' ? 'active' : ''}">周边概览</a></li>
-        <li><a href="/events.html" class="${activePage === 'events' ? 'active' : ''}">近期活动</a></li>
-        <li><a href="/circles.html" class="${activePage === 'circles' ? 'active' : ''}">同人作者</a></li>
-        <li><a href="/projects.html" class="${activePage === 'projects' ? 'active' : ''}">同人企划</a></li>
-        <li><a href="/updates.html" class="${activePage === 'updates' ? 'active' : ''}">同人动态</a></li>
-        <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}">关于我们</a></li>
+      <ul class="nav-links" role="menubar">
+        <li><a href="/" class="${activePage === 'works' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">周边概览</a></li>
+        <li><a href="/events.html" class="${activePage === 'events' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">近期活动</a></li>
+        <li><a href="/circles.html" class="${activePage === 'circles' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">同人作者</a></li>
+        <li><a href="/projects.html" class="${activePage === 'projects' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">同人企划</a></li>
+        <li><a href="/updates.html" class="${activePage === 'updates' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">同人动态</a></li>
+        <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">关于我们</a></li>
       </ul>
     </div>
   `;
@@ -315,6 +315,8 @@ async function initPage(activePage, itemId) {
   const footer = document.getElementById('footer');
   if (footer) footer.innerHTML = buildFooter();
 
+  initCardAccessibility();
+
   // Navbar scroll effect + back to top button
   window.addEventListener('scroll', () => {
     const nb = document.getElementById('navbar');
@@ -372,6 +374,8 @@ function showToast(message, type = 'info', duration = 3000) {
     toast = document.createElement('div');
     toast.id = 'toast';
     toast.className = 'toast';
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'polite');
     document.body.appendChild(toast);
   }
   toast.textContent = message;
@@ -393,6 +397,22 @@ function formatDate(dateStr) {
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Make cards keyboard-accessible
+function initCardAccessibility() {
+  document.querySelectorAll('.card[onclick]').forEach(card => {
+    if (!card.hasAttribute('tabindex')) {
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'link');
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    }
+  });
 }
 
 // Convert newlines to <br> for HTML display (escapes HTML first)

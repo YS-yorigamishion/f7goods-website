@@ -29,7 +29,10 @@ const F7API = {
     return apiGet(`/api/works${qs ? '?' + qs : ''}`);
   },
   getWork: (id) => apiGet(`/api/works/${id}`),
-  getEvents: () => apiGet('/api/events'),
+  getEvents: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiGet(`/api/events${qs ? '?' + qs : ''}`);
+  },
   getEvent: (id) => apiGet(`/api/events/${id}`),
   getCircles: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
