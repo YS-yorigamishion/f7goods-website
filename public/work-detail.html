@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 作品详情</title>
-  <meta name="description" content="查看同人作品详情，包括图片、价格、作者信息等。">
+  <title>f7goods �?作品详情</title>
+  <meta name="description" content="查看同人作品详情，包括图片、价格、作者信息等�?>
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="f7goods">
+  <meta property="og:site_name" content="f7goods">`n  <meta property="og:image" content="/uploads/og-image.jpg">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
 
   <main class="main-content detail-page">
     <div id="workDetail">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div class="loading"><div class="spinner"></div><p>加载�?..</p></div>
     </div>
   </main>
 
@@ -40,13 +40,13 @@
         const workCircles = (work.circles || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
         const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(work.id));
         const relatedProjects = allProjects.filter(p => (p.works || []).includes(work.id));
-        document.title = `${work.title} — f7goods`;
+        document.title = `${work.title} �?f7goods`;
 
         const container = document.getElementById('workDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/">周边概览</a>
-            <span>›</span>
+            <span>�?/span>
             <span>${work.title}</span>
           </div>
           <div class="detail-header">
@@ -65,7 +65,7 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">简介</h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">简�?/h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(work.description)}</p>
               ${work.images && work.images.length > 0 ? `
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">展示图片</h3>
@@ -88,11 +88,11 @@
                   <span class="info-value" style="color:var(--accent);font-weight:700;">${work.price}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">发售日</span>
+                  <span class="info-label">发售�?/span>
                   <span class="info-value">${formatDate(work.releaseDate)}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">状态</span>
+                  <span class="info-label">状�?/span>
                   <span class="info-value">${STATUS_LABELS[work.status] || work.status}</span>
                 </div>
                 ${work.isCommissioned && work.commissionedBy ? `
@@ -104,7 +104,7 @@
               </div>
               ${workCircles.length > 0 ? `
               <div class="sidebar-card">
-                <h3>作者</h3>
+                <h3>作�?/h3>
                 ${workCircles.map(c => `
                   <a href="/circle-detail.html?id=${c.id}" class="detail-link" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);">
                     ${c.logo
@@ -122,7 +122,7 @@
                   <h3>联系方式</h3>
                   ${Object.entries(work.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
                     const isUrl = url.startsWith('http');
-                    const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key === 'website' ? '访问网站' : key;
+                    const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ�? : key === 'website' ? '访问网站' : key;
                     const label = key === 'website' ? (work.socialLinks.websiteLabel || defaultLabel) : (work.socialLinks.contactLabel || defaultLabel);
                     return isUrl
                       ? `<a href="${url}" target="_blank" class="detail-social-link" style="display:inline-block;padding:0.3rem 0.8rem;color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;">${label}</a>`

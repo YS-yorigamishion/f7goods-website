@@ -309,10 +309,12 @@ async function initPage(activePage, itemId) {
   const footer = document.getElementById('footer');
   if (footer) footer.innerHTML = buildFooter();
 
-  // Navbar scroll effect
+  // Navbar scroll effect + back to top button
   window.addEventListener('scroll', () => {
     const nb = document.getElementById('navbar');
     if (nb) nb.classList.toggle('scrolled', window.scrollY > 10);
+    const btn = document.getElementById('backToTop');
+    if (btn) btn.classList.toggle('show', window.scrollY > 300);
   });
 
   // Load categories from API (non-blocking)
@@ -330,6 +332,27 @@ async function initPage(activePage, itemId) {
   // Check for popup announcements
   checkPopupAnnouncements();
 }
+
+// Back to top
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Image lazy load enhancement - add fade in effect
+function initLazyImages() {
+  const images = document.querySelectorAll('img[loading="lazy"]');
+  images.forEach(img => {
+    if (img.complete) {
+      img.style.opacity = '1';
+    } else {
+      img.style.opacity = '0';
+      img.addEventListener('load', () => {
+        img.style.opacity = '1';
+      }, { once: true });
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', initLazyImages);
 
 // Toast notification
 function showToast(message, type = 'info', duration = 3000) {

@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 企划详情</title>
-  <meta name="description" content="查看同人企划详情，包括状态、参与者、相关作品等。">
+  <title>f7goods �?企划详情</title>
+  <meta name="description" content="查看同人企划详情，包括状态、参与者、相关作品等�?>
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="f7goods">
+  <meta property="og:site_name" content="f7goods">`n  <meta property="og:image" content="/uploads/og-image.jpg">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
 
   <main class="main-content detail-page">
     <div id="projectDetail">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div class="loading"><div class="spinner"></div><p>加载�?..</p></div>
     </div>
   </main>
 
@@ -44,13 +44,13 @@
         const relatedWorks = allWorks.filter(w => (project.works || []).includes(w.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedProjects || []).includes(project.id));
 
-        document.title = `${project.title} — f7goods`;
+        document.title = `${project.title} �?f7goods`;
 
         const container = document.getElementById('projectDetail');
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/projects.html">同人企划</a>
-            <span>›</span>
+            <span>�?/span>
             <span>${project.title}</span>
           </div>
           <div class="detail-header">
@@ -66,7 +66,7 @@
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">企划简介</h3>
+              <h3 style="margin-bottom:1rem;font-size:1.1rem;">企划简�?/h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(project.description)}</p>
 
               ${project.images && project.images.length > 0 ? `
@@ -105,7 +105,7 @@
               <div class="sidebar-card">
                 <h3>企划信息</h3>
                 <div class="info-row">
-                  <span class="info-label">状态</span>
+                  <span class="info-label">状�?/span>
                   <span class="info-value">${PROJECT_STATUS_LABELS[project.status] || project.status}</span>
                 </div>
                 <div class="info-row">
@@ -113,7 +113,7 @@
                   <span class="info-value">${PROJECT_CATEGORIES[project.category] || project.category}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">开始日期</span>
+                  <span class="info-label">开始日�?/span>
                   <span class="info-value">${formatDate(project.startDate)}</span>
                 </div>
                 ${project.endDate ? `
@@ -128,7 +128,7 @@
                 <h3>联系方式</h3>
                 ${Object.entries(project.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
                   const isUrl = url.startsWith('http');
-                  const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ群' : key === 'website' ? '访问网站' : key;
+                  const defaultLabel = key === 'qq' ? 'QQ联系' : key === 'qqGroup' ? 'QQ�? : key === 'website' ? '访问网站' : key;
                   const label = key === 'website' ? (project.socialLinks.websiteLabel || defaultLabel) : (project.socialLinks.contactLabel || defaultLabel);
                   return isUrl
                     ? `<a href="${url}" target="_blank" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
@@ -159,7 +159,7 @@
               ` : ''}
               ${relatedUpdates.length > 0 ? `
               <div class="sidebar-card">
-                <h3>相关动态</h3>
+                <h3>相关动�?/h3>
                 ${relatedUpdates.map(u => `
                   <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
@@ -171,7 +171,7 @@
               ` : ''}
               ${relatedCircles.length > 0 ? `
               <div class="sidebar-card">
-                <h3>关联作者</h3>
+                <h3>关联作�?/h3>
                 ${relatedCircles.map(c => `
                   <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">

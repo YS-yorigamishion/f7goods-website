@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 同人动态</title>
-  <meta name="description" content="了解同人圈的最新动态和重要更新。查看作者发布的新作品、活动信息和企划进展。">
-  <meta property="og:title" content="f7goods — 同人动态">
-  <meta property="og:description" content="了解同人圈的最新动态和重要更新。">
+  <title>f7goods �?同人动�?/title>
+  <meta name="description" content="了解同人圈的最新动态和重要更新。查看作者发布的新作品、活动信息和企划进展�?>
+  <meta property="og:title" content="f7goods �?同人动�?>
+  <meta property="og:description" content="了解同人圈的最新动态和重要更新�?>
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="f7goods">
+  <meta property="og:site_name" content="f7goods">`n  <meta property="og:image" content="/uploads/og-image.jpg">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending">📰 同人动态</h1>
+    <h1 id="heroTitle" class="settings-pending">📰 同人动�?/h1>
     <p id="heroSubtitle" class="settings-pending">了解同人圈的最新动态和重要更新</p>
   </section>
 
   <main class="main-content">
     <div class="page-header">
-      <h2 id="pageTitle" class="settings-pending">动态列表</h2>
+      <h2 id="pageTitle" class="settings-pending">动态列�?/h2>
       <p id="pageSubtitle" class="settings-pending">按发布时间倒序排列</p>
     </div>
 
@@ -33,10 +33,10 @@
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
-          <option value="date-desc">发布日期 ↓ 新→旧</option>
-          <option value="date-asc">发布日期 ↑ 旧→新</option>
+          <option value="date-desc">发布日期 �?新→�?/option>
+          <option value="date-asc">发布日期 �?旧→�?/option>
         </select>
-        <input type="text" class="search-input" placeholder="搜索动态..." id="searchInput">
+        <input type="text" class="search-input" placeholder="搜索动�?.." id="searchInput">
       </div>
     </div>
 
@@ -49,7 +49,7 @@
     </div>
   </main>
 
-  <footer class="footer" id="footer"></footer>
+  <button id="backToTop" class="back-to-top" onclick="scrollToTop()">��</button>`n  <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260803"></script>
@@ -131,13 +131,13 @@
       }
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">📰</div><p>暂无动态</p></div>';
+        grid.innerHTML = '<div class="empty-state"><div class="icon">📰</div><p>暂无动�?/p></div>';
         return;
       }
 
       grid.innerHTML = filtered.map(u => {
         const preview = u.content.length > 60 ? u.content.substring(0, 60) + '...' : u.content;
-        const authorNames = (u.relatedCircles || []).map(cid => circlesMap[cid]).filter(Boolean).join('、');
+        const authorNames = (u.relatedCircles || []).map(cid => circlesMap[cid]).filter(Boolean).join('�?);
         return `
         <div class="card" onclick="location.href='/update-detail.html?id=${u.id}'">
           <div class="card-image" style="${(u.coverImage || (u.images && u.images.length > 0)) ? '' : 'background:linear-gradient(135deg,#9b59b6,#8e44ad);'}">

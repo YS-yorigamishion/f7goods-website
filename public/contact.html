@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 关于我们</title>
-  <meta name="description" content="了解f7goods平台的故事和愿景。联系我们，分享你的同人创作。">
-  <meta property="og:title" content="f7goods — 关于我们">
-  <meta property="og:description" content="了解f7goods平台的故事和愿景。">
+  <title>f7goods �?关于我们</title>
+  <meta name="description" content="了解f7goods平台的故事和愿景。联系我们，分享你的同人创作�?>
+  <meta property="og:title" content="f7goods �?关于我们">
+  <meta property="og:description" content="了解f7goods平台的故事和愿景�?>
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="f7goods">
+  <meta property="og:site_name" content="f7goods">`n  <meta property="og:image" content="/uploads/og-image.jpg">
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .settings-pending { visibility: hidden; }
@@ -79,16 +79,16 @@
     <div class="about-section">
 
       <div class="about-card">
-        <h3 id="storyTitle" class="settings-pending">我们的故事</h3>
+        <h3 id="storyTitle" class="settings-pending">我们的故�?/h3>
         <div id="storyContent" class="settings-pending">
-          <p>f7goods 诞生于对同人创作的热爱。我们相信，每一件同人作品背后都凝聚着创作者的心血与才华——从精心雕琢的手办到反复打磨的音乐编曲，从细腻动人的同人漫画到独具匠心的周边设计。</p>
-          <p>我们建立这个平台，是为了让更多优秀的作品被看见，让创作者与爱好者之间建立更紧密的联系。无论你是资深收藏家还是刚刚踏入同人世界的新朋友，这里都有值得你探索的精彩。</p>
+          <p>f7goods 诞生于对同人创作的热爱。我们相信，每一件同人作品背后都凝聚着创作者的心血与才华——从精心雕琢的手办到反复打磨的音乐编曲，从细腻动人的同人漫画到独具匠心的周边设计�?/p>
+          <p>我们建立这个平台，是为了让更多优秀的作品被看见，让创作者与爱好者之间建立更紧密的联系。无论你是资深收藏家还是刚刚踏入同人世界的新朋友，这里都有值得你探索的精彩�?/p>
         </div>
       </div>
 
       <div class="about-card">
         <h3 id="contactTitle" class="settings-pending">联系我们</h3>
-        <p id="contactContent" class="settings-pending">有任何问题、合作意向或建议，欢迎通过以下方式联系我们：</p>
+        <p id="contactContent" class="settings-pending">有任何问题、合作意向或建议，欢迎通过以下方式联系我们�?/p>
         <div class="social-links settings-pending" id="contactLinksContainer" style="justify-content:flex-start;margin-top:1rem;">
           <a href="#" class="social-link">🐦 Twitter / X</a>
           <a href="#" class="social-link">📧 support@f7goods.com</a>
@@ -99,11 +99,11 @@
           <div class="form-row">
             <div class="form-group">
               <label>昵称</label>
-              <input class="form-input" id="contactName" placeholder="请输入昵称（选填）">
+              <input class="form-input" id="contactName" placeholder="请输入昵称（选填�?>
             </div>
             <div class="form-group">
               <label>联系方式</label>
-              <input class="form-input" id="contactEmail" placeholder="邮箱、QQ、微信等（选填）">
+              <input class="form-input" id="contactEmail" placeholder="邮箱、QQ、微信等（选填�?>
             </div>
           </div>
           <div class="form-group">
@@ -114,14 +114,14 @@
             <label>消息内容 <span style="color:var(--accent)">*</span></label>
             <textarea class="form-input" id="contactMessage" required placeholder="请输入您想说的话..." style="min-height:120px;"></textarea>
           </div>
-          <button type="submit" class="btn btn-primary">发送消息</button>
+          <button type="submit" class="btn btn-primary">发送消�?/button>
         </form>
       </div>
 
     </div>
   </main>
 
-  <footer class="footer" id="footer"></footer>
+  <button id="backToTop" class="back-to-top" onclick="scrollToTop()">��</button>`n  <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260803"></script>
@@ -178,10 +178,10 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast('消息已发送，感谢您的反馈！', 'success');
+          showToast('消息已发送，感谢您的反馈�?, 'success');
           e.target.reset();
         } else {
-          showToast(data.error || '发送失败，请重试', 'error');
+          showToast(data.error || '发送失败，请重�?, 'error');
         }
       } catch (err) {
         showToast('网络错误，请稍后重试', 'error');
