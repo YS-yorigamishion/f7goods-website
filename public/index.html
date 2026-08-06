@@ -260,6 +260,9 @@
         filtered.sort((a, b) => (b.wants || 0) - (a.wants || 0));
       } else if (sortVal === 'wants-asc') {
         filtered.sort((a, b) => (a.wants || 0) - (b.wants || 0));
+      } else {
+        // 默认按创建时间降序（最新上传在前）
+        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       }
 
       // Remove skeleton
