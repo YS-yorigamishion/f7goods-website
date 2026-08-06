@@ -5826,6 +5826,7 @@ async function loadAuthorStats() {
         name: c.name,
         category: CIRCLE_CATEGORIES[c.category] || c.category || '-',
         workCount,
+        follows: c.follows || 0,
         totalLikes,
         totalWants,
         avgLikes: workCount > 0 ? Math.round(totalLikes / workCount) : 0,
@@ -5868,6 +5869,7 @@ function renderAuthorStatsTable() {
       <th>作者名称</th>
       <th>分类</th>
       <th style="cursor:pointer;" onclick="sortAuthorStats('workCount')">作品数 ${getArrow('workCount')}</th>
+      <th style="cursor:pointer;" onclick="sortAuthorStats('follows')">关注量 ${getArrow('follows')}</th>
       <th style="cursor:pointer;" onclick="sortAuthorStats('totalLikes')">总喜爱数 ${getArrow('totalLikes')}</th>
       <th style="cursor:pointer;" onclick="sortAuthorStats('totalWants')">总想要数 ${getArrow('totalWants')}</th>
       <th style="cursor:pointer;" onclick="sortAuthorStats('avgLikes')">平均喜爱 ${getArrow('avgLikes')}</th>
@@ -5881,6 +5883,7 @@ function renderAuthorStatsTable() {
       <td style="font-weight:600;">${escapeHtml(s.name)}</td>
       <td>${s.category}</td>
       <td>${s.workCount}</td>
+      <td>${s.follows || 0}</td>
       <td>${s.totalLikes}</td>
       <td>${s.totalWants}</td>
       <td>${s.avgLikes}</td>
@@ -5893,7 +5896,7 @@ function exportAuthorStats() {
   const rows = document.querySelectorAll('#authorStatsBody tr');
   if (rows.length === 0) { alert('没有数据可导出'); return; }
 
-  const headers = ['作者名称', '分类', '作品数', '总喜爱数', '总想要数', '平均喜爱', '平均想要'];
+  const headers = ['作者名称', '分类', '作品数', '关注量', '总喜爱数', '总想要数', '平均喜爱', '平均想要'];
   const data = [...rows].map(row => {
     const cells = row.querySelectorAll('td');
     return [...cells].map(cell => cell.textContent);

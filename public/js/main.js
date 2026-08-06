@@ -695,11 +695,10 @@ function isFollowing(circleId) {
 
 function renderFollowButton(circleId, follows) {
   var following = isFollowing(circleId);
-  var count = follows || 0;
   if (following) {
-    return '<button class="follow-btn follow-btn--done" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">已关注' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
+    return '<button class="follow-btn follow-btn--done" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">已关注</button>';
   }
-  return '<button class="follow-btn" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">关注' + (count > 0 ? ' (' + count + ')' : '') + '</button>';
+  return '<button class="follow-btn" data-circle-id="' + circleId + '" onclick="event.preventDefault();event.stopPropagation();toggleFollow(\'' + circleId + '\',this)">关注</button>';
 }
 
 async function toggleFollow(circleId, btn) {
@@ -759,10 +758,10 @@ function updateFollowButtons(circleId, following, count) {
     b.disabled = false;
     if (following) {
       b.classList.add('follow-btn--done');
-      b.textContent = '已关注' + (count > 0 ? ' (' + count + ')' : '');
+      b.textContent = '已关注';
     } else {
       b.classList.remove('follow-btn--done');
-      b.textContent = '关注' + (count > 0 ? ' (' + count + ')' : '');
+      b.textContent = '关注';
     }
   });
 }
