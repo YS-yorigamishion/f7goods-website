@@ -31,8 +31,8 @@
       <button class="filter-btn" onclick="randomAuthor()" style="white-space:nowrap;" data-i18n="common.randomAuthor">🎲 随机作者</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:120px;">
-          <option value="order">默认排序</option>
-          <option value="name-asc">名称 A→Z</option>
+          <option value="order" data-i18n="common.sortDefault">默认排序</option>
+          <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
       </div>
@@ -114,7 +114,7 @@
         // Build category filter buttons
         const catContainer = document.getElementById('categoryFilters');
         if (catContainer && CIRCLE_CATEGORIES_ORDERED.length > 0) {
-          catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部</button>' +
+          catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.all')}</button>` +
             CIRCLE_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('');
           catContainer.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {

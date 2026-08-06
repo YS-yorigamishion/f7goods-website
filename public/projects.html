@@ -33,9 +33,9 @@
       <button class="filter-btn active" data-cat="all" data-i18n="common.allCategories">全部分类</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
-          <option value="date-desc">创建日期 ↓ 新→旧</option>
-          <option value="date-asc">创建日期 ↑ 旧→新</option>
-          <option value="name-asc">名称 A→Z</option>
+          <option value="date-desc" data-i18n="common.dateDesc">创建日期 ↓ 新→旧</option>
+          <option value="date-asc" data-i18n="common.dateAsc">创建日期 ↑ 旧→新</option>
+          <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索企划..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
       </div>
@@ -165,13 +165,13 @@
     function buildProjectFilterButtons() {
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = '<button class="filter-btn active" data-status="all">全部状态</button>' +
+      statusContainer.innerHTML = `<button class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
         PROJECT_STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${s.name}</button>`).join('');
 
       // Category filters
       const catContainer = document.getElementById('categoryFilters');
       const rightSide = catContainer.querySelector('div[style*="margin-left:auto"]');
-      catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部分类</button>' +
+      catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.allCategories')}</button>` +
         PROJECT_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('');
       if (rightSide) catContainer.appendChild(rightSide);
 

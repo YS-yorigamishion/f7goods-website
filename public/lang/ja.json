@@ -45,7 +45,19 @@
     "dateAsc": "日付 ↑ 古い順",
     "nameAsc": "名前 A→Z",
     "loadMore": "もっと見る",
-    "randomAuthor": "ランダム作者"
+    "randomAuthor": "ランダム作者",
+    "sortDefault": "デフォルト",
+    "sortDateAsc": "発売日 ↑ 古い順",
+    "sortDateDesc": "発売日 ↓ 新しい順",
+    "sortLikesDesc": "いいね数 ↓ 高い順",
+    "sortLikesAsc": "いいね数 ↑ 低い順",
+    "sortWantsDesc": "欲しい数 ↓ 高い順",
+    "sortWantsAsc": "欲しい数 ↑ 低い順",
+    "browse": "閲覧",
+    "about": "について",
+    "authorLogin": "作者ログイン",
+    "aboutUs": "私たちについて",
+    "copyright": "All rights reserved."
   },
   "works": {
     "title": "グッズ一覧",

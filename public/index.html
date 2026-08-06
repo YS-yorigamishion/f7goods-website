@@ -37,13 +37,13 @@
       <button class="filter-btn active" data-cat="all" data-i18n="common.all">全部</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
-          <option value="default">默认排序</option>
-          <option value="date-asc">发售时间 ↑ 早→晚</option>
-          <option value="date-desc">发售时间 ↓ 晚→早</option>
-          <option value="likes-desc">喜爱数 ↓ 高→低</option>
-          <option value="likes-asc">喜爱数 ↑ 低→高</option>
-          <option value="wants-desc">想要数 ↓ 高→低</option>
-          <option value="wants-asc">想要数 ↑ 低→高</option>
+          <option value="default" data-i18n="common.sortDefault">默认排序</option>
+          <option value="date-asc" data-i18n="common.sortDateAsc">发售时间 ↑ 早→晚</option>
+          <option value="date-desc" data-i18n="common.sortDateDesc">发售时间 ↓ 晚→早</option>
+          <option value="likes-desc" data-i18n="common.sortLikesDesc">喜爱数 ↓ 高→低</option>
+          <option value="likes-asc" data-i18n="common.sortLikesAsc">喜爱数 ↑ 低→高</option>
+          <option value="wants-desc" data-i18n="common.sortWantsDesc">想要数 ↓ 高→低</option>
+          <option value="wants-asc" data-i18n="common.sortWantsAsc">想要数 ↑ 低→高</option>
         </select>
         <input type="text" class="search-input" data-i18n-placeholder="common.searchPlaceholder" placeholder="搜索作品..." id="searchInput">
       </div>
@@ -173,18 +173,18 @@
     function buildFilterButtons() {
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = '<button class="filter-btn active" data-status="all">全部状态</button>' +
+      statusContainer.innerHTML = `<button class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
         STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${s.name}</button>`).join('');
 
       // Category filters
       const catContainer = document.getElementById('categoryFilters');
       const searchInput = document.getElementById('searchInput');
       const sortSelect = document.getElementById('sortSelect');
-      const searchHtml = searchInput ? searchInput.outerHTML : '<input type="text" class="search-input" placeholder="搜索作品..." id="searchInput">';
-      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">默认排序</option><option value="date-asc">发售时间 ↑ 早→晚</option><option value="date-desc">发售时间 ↓ 晚→早</option><option value="likes-desc">喜爱数 ↓ 高→低</option><option value="likes-asc">喜爱数 ↑ 低→高</option><option value="wants-desc">想要数 ↓ 高→低</option><option value="wants-asc">想要数 ↑ 低→高</option></select>`;
-      catContainer.innerHTML = '<button class="filter-btn active" data-cat="all">全部</button>' +
+      const searchHtml = searchInput ? searchInput.outerHTML : `<input type="text" class="search-input" placeholder="${t('common.searchPlaceholder')}" id="searchInput">`;
+      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">${t('common.sortDefault')}</option><option value="date-asc">${t('common.sortDateAsc')}</option><option value="date-desc">${t('common.sortDateDesc')}</option><option value="likes-desc">${t('common.sortLikesDesc')}</option><option value="likes-asc">${t('common.sortLikesAsc')}</option><option value="wants-desc">${t('common.sortWantsDesc')}</option><option value="wants-asc">${t('common.sortWantsAsc')}</option></select>`;
+      catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.all')}</button>` +
         CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${c.name}</button>`).join('') +
-        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;"><button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">🎲 随机周边</button>${sortHtml}${searchHtml}</div>`;
+        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;"><button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">🎲 ${t('common.randomAuthor')}</button>${sortHtml}${searchHtml}</div>`;
 
       // Re-bind events
       document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {

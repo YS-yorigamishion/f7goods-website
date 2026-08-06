@@ -45,7 +45,19 @@
     "dateAsc": "Date ↑ Old→New",
     "nameAsc": "Name A→Z",
     "loadMore": "Load More",
-    "randomAuthor": "Random Author"
+    "randomAuthor": "Random Author",
+    "sortDefault": "Default Sort",
+    "sortDateAsc": "Release Date ↑ Old→New",
+    "sortDateDesc": "Release Date ↓ New→Old",
+    "sortLikesDesc": "Likes ↓ High→Low",
+    "sortLikesAsc": "Likes ↑ Low→High",
+    "sortWantsDesc": "Wants ↓ High→Low",
+    "sortWantsAsc": "Wants ↑ Low→High",
+    "browse": "Browse",
+    "about": "About",
+    "authorLogin": "Author Login",
+    "aboutUs": "About Us",
+    "copyright": "All rights reserved."
   },
   "works": {
     "title": "Works",

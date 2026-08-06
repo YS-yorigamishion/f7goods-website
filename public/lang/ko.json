@@ -45,7 +45,19 @@
     "dateAsc": "날짜 ↑ 오래된순",
     "nameAsc": "이름 A→Z",
     "loadMore": "더보기",
-    "randomAuthor": "랜덤 작가"
+    "randomAuthor": "랜덤 작가",
+    "sortDefault": "기본 정렬",
+    "sortDateAsc": "발매일 ↑ 오래된순",
+    "sortDateDesc": "발매일 ↓ 최신순",
+    "sortLikesDesc": "좋아요 ↓ 높은순",
+    "sortLikesAsc": "좋아요 ↑ 낮은순",
+    "sortWantsDesc": "갖고싶다 ↓ 높은순",
+    "sortWantsAsc": "갖고싶다 ↑ 낮은순",
+    "browse": "둘러보기",
+    "about": "소개",
+    "authorLogin": "작가 로그인",
+    "aboutUs": "关于我们",
+    "copyright": "All rights reserved."
   },
   "works": {
     "title": "굿즈 목록",

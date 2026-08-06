@@ -45,7 +45,19 @@
     "dateAsc": "日期 ↑ 旧→新",
     "nameAsc": "名称 A→Z",
     "loadMore": "加载更多",
-    "randomAuthor": "随机作者"
+    "randomAuthor": "随机作者",
+    "sortDefault": "默认排序",
+    "sortDateAsc": "发售时间 ↑ 早→晚",
+    "sortDateDesc": "发售时间 ↓ 晚→早",
+    "sortLikesDesc": "喜爱数 ↓ 高→低",
+    "sortLikesAsc": "喜爱数 ↑ 低→高",
+    "sortWantsDesc": "想要数 ↓ 高→低",
+    "sortWantsAsc": "想要数 ↑ 低→高",
+    "browse": "浏览",
+    "about": "关于",
+    "authorLogin": "作者登录",
+    "aboutUs": "关于我们",
+    "copyright": "All rights reserved."
   },
   "works": {
     "title": "周边概览",

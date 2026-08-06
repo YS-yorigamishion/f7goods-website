@@ -346,27 +346,27 @@ function buildFooter() {
     <div class="footer-inner">
       <div>
         <div class="footer-brand">${brandName}</div>
-        <p class="footer-desc">${description}</p>
+        <p class="footer-desc">${t('footer.aboutText')}</p>
       </div>
       <div class="footer-col">
-        <h4>浏览</h4>
+        <h4>${t('common.browse')}</h4>
         <ul class="footer-links">
-          <li><a href="/">周边概览</a></li>
-          <li><a href="/events.html">近期活动</a></li>
-          <li><a href="/circles.html">同人作者</a></li>
-          <li><a href="/projects.html">同人企划</a></li>
-          <li><a href="/updates.html">同人动态</a></li>
+          <li><a href="/">${t('nav.works')}</a></li>
+          <li><a href="/events.html">${t('nav.events')}</a></li>
+          <li><a href="/circles.html">${t('nav.circles')}</a></li>
+          <li><a href="/projects.html">${t('nav.projects')}</a></li>
+          <li><a href="/updates.html">${t('nav.updates')}</a></li>
         </ul>
       </div>
       <div class="footer-col">
-        <h4>关于</h4>
+        <h4>${t('common.about')}</h4>
         <ul class="footer-links">
-          <li><a href="/author.html">作者登录</a></li>
-          <li><a href="/contact.html">关于我们</a></li>
+          <li><a href="/author.html">${t('common.authorLogin')}</a></li>
+          <li><a href="/contact.html">${t('common.aboutUs')}</a></li>
         </ul>
       </div>
       <div class="footer-col">
-        <h4>关注</h4>
+        <h4>${t('common.follow')}</h4>
         <ul class="footer-links">
           ${socialLinks.map(link => {
             let url = link.url || '#';
@@ -379,7 +379,7 @@ function buildFooter() {
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; ${new Date().getFullYear()} ${brandName}. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} ${brandName}. ${t('common.copyright')}</p>
     </div>
   `;
 }
