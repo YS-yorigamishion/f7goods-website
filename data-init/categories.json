@@ -1,144 +1,48 @@
 {
   "works": [
-    {
-      "id": "lipai",
-      "name": "立牌",
-      "order": 0
-    },
-    {
-      "id": "yaoshikou",
-      "name": "钥匙扣",
-      "order": 1
-    },
-    {
-      "id": "huizhang",
-      "name": "徽章",
-      "order": 2
-    },
-    {
-      "id": "pailide",
-      "name": "拍立得",
-      "order": 3
-    },
-    {
-      "id": "mingxinpian",
-      "name": "明信片",
-      "order": 4
-    },
-    {
-      "id": "qita",
-      "name": "其它",
-      "order": 5
-    }
+    { "id": "lipai", "name": "立牌", "nameEn": "Acrylic Stand", "nameJa": "アクリルスタンド", "nameKo": "아크릴 스탠드", "order": 0 },
+    { "id": "yaoshikou", "name": "钥匙扣", "nameEn": "Keychain", "nameJa": "キーホルダー", "nameKo": "키체인", "order": 1 },
+    { "id": "huizhang", "name": "徽章", "nameEn": "Badge", "nameJa": "バッジ", "nameKo": "배지", "order": 2 },
+    { "id": "pailide", "name": "拍立得", "nameEn": "Photo Card", "nameJa": "チェキ", "nameKo": "포토카드", "order": 3 },
+    { "id": "mingxinpian", "name": "明信片", "nameEn": "Postcard", "nameJa": "はがき", "nameKo": "엽서", "order": 4 },
+    { "id": "qita", "name": "其它", "nameEn": "Other", "nameJa": "その他", "nameKo": "기타", "order": 5 }
   ],
   "projects": [
-    {
-      "id": "youxi",
-      "name": "游戏",
-      "order": 0
-    },
-    {
-      "id": "shoushu",
-      "name": "手书",
-      "order": 1
-    },
-    {
-      "id": "yinyue",
-      "name": "音乐",
-      "order": 2
-    },
-    {
-      "id": "shipin",
-      "name": "视频",
-      "order": 3
-    }
+    { "id": "youxi", "name": "游戏", "nameEn": "Game", "nameJa": "ゲーム", "nameKo": "게임", "order": 0 },
+    { "id": "shoushu", "name": "手书", "nameEn": "Hand-drawn", "nameJa": "手書き", "nameKo": "손그림", "order": 1 },
+    { "id": "yinyue", "name": "音乐", "nameEn": "Music", "nameJa": "音楽", "nameKo": "음악", "order": 2 },
+    { "id": "shipin", "name": "视频", "nameEn": "Video", "nameJa": "動画", "nameKo": "영상", "order": 3 }
   ],
   "workStatus": [
-    {
-      "id": "yushouzhong",
-      "name": "预售中",
-      "order": 0
-    },
-    {
-      "id": "pintuanzhong",
-      "name": "拼团中",
-      "order": 1
-    },
-    {
-      "id": "fashouzhong",
-      "name": "发售中",
-      "order": 2
-    },
-    {
-      "id": "yishoukong",
-      "name": "已售空",
-      "order": 3
-    }
+    { "id": "yushouzhong", "name": "预售中", "nameEn": "Pre-sale", "nameJa": "予約受付中", "nameKo": "예약 접수 중", "order": 0 },
+    { "id": "pintuanzhong", "name": "拼团中", "nameEn": "Group Buy", "nameJa": "共同購入中", "nameKo": "공동구매 중", "order": 1 },
+    { "id": "fashouzhong", "name": "发售中", "nameEn": "On Sale", "nameJa": "販売中", "nameKo": "판매 중", "order": 2 },
+    { "id": "yishoukong", "name": "已售空", "nameEn": "Sold Out", "nameJa": "売切", "nameKo": "품절", "order": 3 }
   ],
   "projectStatus": [
-    {
-      "id": "weikaiiqi",
-      "name": "未开启",
-      "order": 0
-    },
-    {
-      "id": "zhaomuzhong",
-      "name": "招募中",
-      "order": 1
-    },
-    {
-      "id": "tingzhizhaomu",
-      "name": "停止招募",
-      "order": 2
-    },
-    {
-      "id": "yiwancheng",
-      "name": "已完成",
-      "order": 3
-    }
+    { "id": "weikaiqi", "name": "未开启", "nameEn": "Not Started", "nameJa": "未開始", "nameKo": "미시작", "order": 0 },
+    { "id": "zhaomuzhong", "name": "招募中", "nameEn": "Recruiting", "nameJa": "募集中", "nameKo": "모집 중", "order": 1 },
+    { "id": "tingzhizhaomu", "name": "停止招募", "nameEn": "Closed", "nameJa": "募集終了", "nameKo": "모집 마감", "order": 2 },
+    { "id": "yiwancheng", "name": "已完成", "nameEn": "Completed", "nameJa": "完了", "nameKo": "완료", "order": 3 }
   ],
   "circleCategories": [
-    {
-      "id": "geren",
-      "name": "个人",
-      "order": 0
-    },
-    {
-      "id": "shetuan",
-      "name": "社团",
-      "order": 1
-    },
-    {
-      "id": "guanfang",
-      "name": "官方",
-      "order": 2
-    }
+    { "id": "geren", "name": "个人", "nameEn": "Personal", "nameJa": "個人", "nameKo": "개인", "order": 0 },
+    { "id": "shetuan", "name": "社团", "nameEn": "Group", "nameJa": "サークル", "nameKo": "서클", "order": 1 },
+    { "id": "guanfang", "name": "官方", "nameEn": "Official", "nameJa": "公式", "nameKo": "공식", "order": 2 }
   ],
   "eventStatus": [
-    {
-      "id": "jijiangkaiqi",
-      "name": "即将开启",
-      "order": 0
-    },
-    {
-      "id": "jinxingzhong",
-      "name": "进行中",
-      "order": 1
-    },
-    {
-      "id": "yijiesu",
-      "name": "已结束",
-      "order": 2
-    }
+    { "id": "jijiangkaiqi", "name": "即将开启", "nameEn": "Upcoming", "nameJa": "近日開催", "nameKo": "예정", "order": 0 },
+    { "id": "jinxingzhong", "name": "进行中", "nameEn": "Ongoing", "nameJa": "開催中", "nameKo": "진행 중", "order": 1 },
+    { "id": "yijiesu", "name": "已结束", "nameEn": "Ended", "nameJa": "終了", "nameKo": "종료", "order": 2 }
   ],
   "updateCategories": [
-    { "id": "zixun", "name": "资讯", "order": 0 },
-    { "id": "zuopin", "name": "作品", "order": 1 },
-    { "id": "huodong", "name": "活动", "order": 2 },
-    { "id": "qita", "name": "其它", "order": 3 }
+    { "id": "zixun", "name": "资讯", "nameEn": "News", "nameJa": "ニュース", "nameKo": "뉴스", "order": 0 },
+    { "id": "zuopin", "name": "作品", "nameEn": "Works", "nameJa": "作品", "nameKo": "작품", "order": 1 },
+    { "id": "huodong", "name": "活动", "nameEn": "Event", "nameJa": "イベント", "nameKo": "이벤트", "order": 2 },
+    { "id": "qita", "name": "其它", "nameEn": "Other", "nameJa": "その他", "nameKo": "기타", "order": 3 }
   ],
   "updateStatus": [
-    { "id": "jinxingzhong", "name": "进行中", "order": 0 },
-    { "id": "yijiesu", "name": "已结束", "order": 1 }
+    { "id": "jinxingzhong", "name": "进行中", "nameEn": "Ongoing", "nameJa": "進行中", "nameKo": "진행 중", "order": 0 },
+    { "id": "yijiesu", "name": "已结束", "nameEn": "Ended", "nameJa": "終了", "nameKo": "종료", "order": 1 }
   ]
 }

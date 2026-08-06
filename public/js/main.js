@@ -10,6 +10,11 @@ async function loadLang(lang) {
     _i18n = await res.json();
     _lang = lang;
     localStorage.setItem('f7lang', lang);
+    // Re-render navbar and footer
+    const navbar = document.getElementById('navbar');
+    if (navbar) navbar.innerHTML = buildNavbar(navbar.dataset.activePage);
+    const footer = document.getElementById('footer');
+    if (footer) footer.innerHTML = buildFooter();
     applyTranslations();
     updateLangButtons();
   } catch (e) {
@@ -127,6 +132,17 @@ let EVENT_STATUS_ORDERED = [];
 let CIRCLE_CATEGORIES = {};
 let CIRCLE_CATEGORIES_ORDERED = [];
 
+let UPDATE_CATEGORIES = {};
+let UPDATE_CATEGORIES_ORDERED = [];
+let UPDATE_STATUS_LABELS = {};
+let UPDATE_STATUS_ORDERED = [];
+
+function tCat(cat) {
+  if (_lang === 'zh') return cat.name;
+  const suffix = _lang.charAt(0).toUpperCase() + _lang.slice(1);
+  return cat['name' + suffix] || cat.name;
+}
+
 // Load categories from API
 async function loadCategoriesFromAPI() {
   try {
@@ -137,37 +153,49 @@ async function loadCategoriesFromAPI() {
       const sorted = [...cats.works].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
       CATEGORIES_ORDERED = sorted;
       CATEGORIES = {};
-      sorted.forEach(c => CATEGORIES[c.id] = c.name);
+      sorted.forEach(c => CATEGORIES[c.id] = tCat(c));
     }
     if (cats.workStatus) {
       const sorted = [...cats.workStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
       STATUS_ORDERED = sorted;
       STATUS_LABELS = {};
-      sorted.forEach(c => STATUS_LABELS[c.id] = c.name);
+      sorted.forEach(c => STATUS_LABELS[c.id] = tCat(c));
     }
     if (cats.projects) {
       const sorted = [...cats.projects].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
       PROJECT_CATEGORIES_ORDERED = sorted;
       PROJECT_CATEGORIES = {};
-      sorted.forEach(c => PROJECT_CATEGORIES[c.id] = c.name);
+      sorted.forEach(c => PROJECT_CATEGORIES[c.id] = tCat(c));
     }
     if (cats.projectStatus) {
       const sorted = [...cats.projectStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
       PROJECT_STATUS_ORDERED = sorted;
       PROJECT_STATUS_LABELS = {};
-      sorted.forEach(c => PROJECT_STATUS_LABELS[c.id] = c.name);
+      sorted.forEach(c => PROJECT_STATUS_LABELS[c.id] = tCat(c));
     }
     if (cats.eventStatus) {
       const sorted = [...cats.eventStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
       EVENT_STATUS_ORDERED = sorted;
       EVENT_STATUS_LABELS = {};
-      sorted.forEach(c => EVENT_STATUS_LABELS[c.id] = c.name);
+      sorted.forEach(c => EVENT_STATUS_LABELS[c.id] = tCat(c));
     }
     if (cats.circleCategories) {
       const sorted = [...cats.circleCategories].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
       CIRCLE_CATEGORIES_ORDERED = sorted;
       CIRCLE_CATEGORIES = {};
-      sorted.forEach(c => CIRCLE_CATEGORIES[c.id] = c.name);
+      sorted.forEach(c => CIRCLE_CATEGORIES[c.id] = tCat(c));
+    }
+    if (cats.updateCategories) {
+      const sorted = [...cats.updateCategories].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+      UPDATE_CATEGORIES_ORDERED = sorted;
+      UPDATE_CATEGORIES = {};
+      sorted.forEach(c => UPDATE_CATEGORIES[c.id] = tCat(c));
+    }
+    if (cats.updateStatus) {
+      const sorted = [...cats.updateStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+      UPDATE_STATUS_ORDERED = sorted;
+      UPDATE_STATUS_LABELS = {};
+      sorted.forEach(c => UPDATE_STATUS_LABELS[c.id] = tCat(c));
     }
   } catch (e) {
     // Use defaults if API fails
