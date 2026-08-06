@@ -59,16 +59,16 @@
         <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
           <div class="card-image" style="height:160px;">
             ${work.images && work.images.length > 0
-              ? `<img src="${work.images[0]}" alt="${work.title}">`
+              ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}">`
               : '<span class="placeholder-icon">🎨</span>'}
           </div>
           <div class="card-body" style="padding:0.8rem;">
             <span class="card-tag ${work.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${STATUS_LABELS[work.status] || work.status}</span>
-            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${work.title}</h3>
-            ${authorNames ? `<p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${authorNames}</p>` : ''}
+            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(work.title)}</h3>
+            ${authorNames ? `<p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${escapeHtml(authorNames)}</p>` : ''}
           </div>
           <div class="card-footer" style="padding:0.5rem 0.8rem;">
-            <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${work.price}</span>
+            <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${escapeHtml(work.price)}</span>
             ${renderLikeButton(work.id, work.likes)}
           </div>
         </div>`;
@@ -128,18 +128,18 @@
           <div class="detail-breadcrumb">
             <a href="/events.html">近期活动</a>
             <span>›</span>
-            <span>${event.title}</span>
+            <span>${escapeHtml(event.title)}</span>
           </div>
           <div class="detail-header">
-            ${event.coverImage ? `<img src="${event.coverImage}" alt="${event.title}" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px;margin-bottom:1rem;cursor:pointer;" class="clickable-img" onclick="openLightbox(['${event.coverImage}'], 0)">` : ''}
+            ${event.coverImage ? `<img src="${event.coverImage}" alt="${escapeHtml(event.title)}" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px;margin-bottom:1rem;cursor:pointer;" class="clickable-img" onclick="openLightbox(['${escapeHtml(event.coverImage).replace(/'/g, '&#39;')}'], 0)">` : ''}
             <span class="event-date">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
             <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
-              <h1 style="flex:1;">${event.title}</h1>
+              <h1 style="flex:1;">${escapeHtml(event.title)}</h1>
               ${renderShareButton(event.title, location.href)}
             </div>
             <div class="detail-meta">
               ${event.status ? `<span class="card-tag ${event.status}" style="margin-right:0.5rem;">${EVENT_STATUS_LABELS[event.status] || event.status}</span>` : ''}
-              <span style="display:flex;align-items:center;gap:0.4rem;">📍 ${event.location}</span>
+              <span style="display:flex;align-items:center;gap:0.4rem;">📍 ${escapeHtml(event.location)}</span>
             </div>
           </div>
           <div class="detail-content">
@@ -147,14 +147,14 @@
               <h3 style="margin-bottom:1rem;font-size:1.1rem;">活动简介</h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(event.description)}</p>
 
-              ${event.booth ? `<div style="margin-top:1.5rem;"><span class="event-booth" style="font-size:0.9rem;">展位: ${event.booth}</span></div>` : ''}
+              ${event.booth ? `<div style="margin-top:1.5rem;"><span class="event-booth" style="font-size:0.9rem;">展位: ${escapeHtml(event.booth)}</span></div>` : ''}
 
               ${event.images && event.images.length > 0 ? `
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">活动图片</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
                   ${event.images.map((img, i) => `
-                    <div class="event-img-wrap collapsed" data-images='${JSON.stringify(event.images)}' data-index="${i}" onclick="toggleEventImg(this)">
-                      <img src="${img}" alt="${event.title}" style="width:100%;border-radius:8px;display:block;">
+                    <div class="event-img-wrap collapsed" data-images='${JSON.stringify(event.images).replace(/&/g, '&amp;').replace(/'/g, '&#39;')}' data-index="${i}" onclick="toggleEventImg(this)">
+                      <img src="${img}" alt="${escapeHtml(event.title)}" style="width:100%;border-radius:8px;display:block;">
                       <div class="event-img-expand-hint">&#8595;</div>
                     </div>
                   `).join('')}
@@ -191,12 +191,12 @@
                 ` : ''}
                 <div class="info-row">
                   <span class="info-label">地点</span>
-                  <span class="info-value">${event.location}</span>
+                  <span class="info-value">${escapeHtml(event.location)}</span>
                 </div>
                 ${event.booth ? `
                   <div class="info-row">
                     <span class="info-label">展位</span>
-                    <span class="info-value" style="color:var(--accent);font-weight:600;">${event.booth}</span>
+                    <span class="info-value" style="color:var(--accent);font-weight:600;">${escapeHtml(event.booth)}</span>
                   </div>
                 ` : ''}
               </div>
@@ -209,10 +209,10 @@
                   const label = key === 'website' ? (event.socialLinks.websiteLabel || defaultLabel) : (event.socialLinks.contactLabel || defaultLabel);
                   return isUrl
                     ? `<a href="${url}" target="_blank" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
-                         onmouseover="this.style.background='rgba(233,69,96,0.12)'" onmouseout="this.style.background='rgba(233,69,96,0.06)'">${label}</a>`
+                         onmouseover="this.style.background='rgba(233,69,96,0.12)'" onmouseout="this.style.background='rgba(233,69,96,0.06)'">${escapeHtml(label)}</a>`
                     : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;">
-                         <span style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(15,52,96,0.06);color:var(--accent-alt);border-radius:100px;font-weight:500;">${label}</span>
-                         <span style="color:var(--accent);font-weight:500;">${url}</span>
+                         <span style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(15,52,96,0.06);color:var(--accent-alt);border-radius:100px;font-weight:500;">${escapeHtml(label)}</span>
+                         <span style="color:var(--accent);font-weight:500;">${escapeHtml(url)}</span>
                        </div>`;
                 }).join('')}
               </div>
@@ -224,10 +224,10 @@
                   <a href="/project-detail.html?id=${p.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
                     ${p.coverImage
-                      ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${p.coverImage}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;"></div>`
+                      ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${p.coverImage}" alt="${escapeHtml(p.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
                       : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">📋</div>`}
                     <div>
-                      <div style="font-weight:600;font-size:0.9rem;">${p.title}</div>
+                      <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
                       <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${PROJECT_STATUS_LABELS[p.status] || p.status}</div>
                     </div>
                   </a>
@@ -241,10 +241,10 @@
                   <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
                     ${c.logo
-                      ? `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${c.logo}" alt="${c.name}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">${c.name.charAt(0)}</div>`}
+                      ? `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${c.logo}" alt="${escapeHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;"></div>`
+                      : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">${escapeHtml(c.name.charAt(0))}</div>`}
                     <div>
-                      <div style="font-weight:600;font-size:0.9rem;">${c.name}</div>
+                      <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(c.name)}</div>
                     </div>
                   </a>
                 `).join('')}
@@ -268,7 +268,7 @@
               <div class="sidebar-card">
                 <h3>标签</h3>
                 <div class="tag-list">
-                  ${allTags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${t}</a>`).join('')}
+                  ${allTags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${escapeHtml(t)}</a>`).join('')}
                 </div>
               </div>` : '';
               })()}

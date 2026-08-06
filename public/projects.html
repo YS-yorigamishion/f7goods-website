@@ -109,19 +109,19 @@
         <div class="card" onclick="location.href='/project-detail.html?id=${project.id}'">
           <div class="card-image" style="${(project.coverImage || (project.images && project.images.length > 0)) ? '' : 'background:linear-gradient(135deg,var(--accent-alt),var(--ink));'}">
             ${project.coverImage
-              ? `<img src="${project.coverImage}" alt="${project.title}" loading="lazy">`
+              ? `<img src="${project.coverImage}" alt="${escapeHtml(project.title)}" loading="lazy">`
               : (project.images && project.images.length > 0
-                ? `<img src="${project.images[0]}" alt="${project.title}" loading="lazy">`
+                ? `<img src="${project.images[0]}" alt="${escapeHtml(project.title)}" loading="lazy">`
                 : '<span class="placeholder-icon" style="color:white;">📋</span>')}
           </div>
           <div class="card-body">
-            <span class="card-tag ${project.status}">${PROJECT_STATUS_LABELS[project.status] || project.status}</span>
-            <h3 class="card-title">${project.title}</h3>
-            <p class="card-subtitle">${PROJECT_CATEGORIES[project.category] || project.category}</p>
+            <span class="card-tag ${project.status}">${PROJECT_STATUS_LABELS[project.status] || escapeHtml(project.status)}</span>
+            <h3 class="card-title">${escapeHtml(project.title)}</h3>
+            <p class="card-subtitle">${PROJECT_CATEGORIES[project.category] || escapeHtml(project.category)}</p>
           </div>
           <div class="card-footer">
             <div class="tag-list" style="flex:1;">
-              ${(project.tags || []).slice(0, 3).map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${t}</a>`).join('')}
+              ${(project.tags || []).slice(0, 3).map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${escapeHtml(t)}</a>`).join('')}
             </div>
             <span class="card-date">${formatDate(project.startDate)}</span>
           </div>

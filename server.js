@@ -50,7 +50,11 @@ function clearApiCache(type) {
 const app = express();
 app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'f7goods_secret_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set');
+  process.exit(1);
+}
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'f7goods2026';
 
 // Rate limiting for login endpoints
@@ -142,7 +146,7 @@ const storage = multer.diskStorage({
   }
 });
 const fileFilter = (req, file, cb) => {
-  const allowedImages = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+  const allowedImages = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
   const allowedExcel = ['.xlsx', '.xls'];
   const ext = path.extname(file.originalname).toLowerCase();
   if (allowedImages.includes(ext) || allowedExcel.includes(ext)) cb(null, true);
@@ -163,7 +167,9 @@ function readJSON(file) {
 
 function writeJSON(file, data) {
   const filePath = path.join(__dirname, 'data', file);
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  const tmpPath = filePath + '.tmp';
+  fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  fs.renameSync(tmpPath, filePath);
   // Clear related API cache when data changes
   const type = file.replace('.json', '');
   clearApiCache(type);
@@ -223,12 +229,14 @@ function initAdmin() {
 }
 initAdmin();
 
-// JWT Auth middleware
+// JWT Auth middleware (admin only)
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: '未授权' });
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role === 'author') return res.status(403).json({ error: '权限不足' });
+    req.user = decoded;
     next();
   } catch {
     res.status(401).json({ error: 'Token无效或已过期' });
@@ -715,7 +723,7 @@ app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
     if (req.body[field] !== undefined) workData[field] = req.body[field];
   });
   const work = {
-    id: 'w' + Date.now(),
+    id: 'w' + Date.now() + Math.random().toString(36).substr(2, 5),
     circles: [req.author.circleId],
     images: [],
     moreImages: [],
@@ -962,7 +970,7 @@ app.post('/api/author/my-events', authorAuthMiddleware, (req, res) => {
     if (req.body[field] !== undefined) eventData[field] = req.body[field];
   });
   const event = {
-    id: 'e' + Date.now(),
+    id: 'e' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...eventData,
     relatedCircles: [req.author.circleId],
     approvalStatus: 'pending',
@@ -1040,7 +1048,7 @@ app.post('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
     if (req.body[field] !== undefined) projectData[field] = req.body[field];
   });
   const project = {
-    id: 'p' + Date.now(),
+    id: 'p' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...projectData,
     circles: [req.author.circleId],
     approvalStatus: 'pending',
@@ -1275,6 +1283,14 @@ app.get('/api/works', cacheMiddleware(60), (req, res) => {
     );
   }
   works.sort((a, b) => a.order - b.order);
+  // Optional pagination: ?page=1&limit=20
+  const page = parseInt(req.query.page);
+  const limit = parseInt(req.query.limit);
+  if (page > 0 && limit > 0) {
+    const total = works.length;
+    const items = works.slice((page - 1) * limit, page * limit);
+    return res.json({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
+  }
   res.json(works);
 });
 
@@ -1371,12 +1387,7 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
 
   const idx = likesCache[workId].indexOf(uid);
   if (idx === -1) {
-    // Not in cache - but still decrement if count > 0
-    // (handles case where cache was lost but works.json count exists)
-    if (works[index].likes > 0) {
-      works[index].likes--;
-      writeJSON('works.json', works);
-    }
+    // Not in cache — this uid never liked the work, ignore the request
     return res.json({ likes: works[index].likes || 0 });
   }
 
@@ -1435,12 +1446,7 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
 
   const idx = wantsCache[workId].indexOf(uid);
   if (idx === -1) {
-    // Not in cache - but still decrement if count > 0
-    // (handles case where cache was lost but works.json count exists)
-    if (works[index].wants > 0) {
-      works[index].wants--;
-      writeJSON('works.json', works);
-    }
+    // Not in cache — this uid never wanted the work, ignore the request
     return res.json({ wants: works[index].wants || 0 });
   }
 
@@ -1490,10 +1496,7 @@ app.post('/api/circles/:id/unfollow', likeWantRateLimit, (req, res) => {
 
   const idx = followsCache[circleId].indexOf(uid);
   if (idx === -1) {
-    if (circles[index].follows > 0) {
-      circles[index].follows--;
-      writeJSON('circles.json', circles);
-    }
+    // Not in cache — this uid never followed, ignore the request
     return res.json({ follows: circles[index].follows || 0 });
   }
 
@@ -1521,6 +1524,14 @@ app.get('/api/events', cacheMiddleware(60), (req, res) => {
   const { circleId } = req.query;
   if (circleId) events = events.filter(e => (e.relatedCircles || []).includes(circleId));
   events.sort((a, b) => a.order - b.order);
+  // Optional pagination: ?page=1&limit=20
+  const page = parseInt(req.query.page);
+  const limit = parseInt(req.query.limit);
+  if (page > 0 && limit > 0) {
+    const total = events.length;
+    const items = events.slice((page - 1) * limit, page * limit);
+    return res.json({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
+  }
   res.json(events);
 });
 
@@ -1580,6 +1591,14 @@ app.get('/api/circles', cacheMiddleware(60), (req, res) => {
     const { passwordHash, username, authorStatus, editableBy, ...safe } = c;
     return safe;
   });
+  // Optional pagination: ?page=1&limit=20
+  const page = parseInt(req.query.page);
+  const limit = parseInt(req.query.limit);
+  if (page > 0 && limit > 0) {
+    const total = safeCircles.length;
+    const items = safeCircles.slice((page - 1) * limit, page * limit);
+    return res.json({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
+  }
   res.json(safeCircles);
 });
 
@@ -1619,6 +1638,14 @@ app.get('/api/projects', cacheMiddleware(60), (req, res) => {
     );
   }
   projects.sort((a, b) => a.order - b.order);
+  // Optional pagination: ?page=1&limit=20
+  const page = parseInt(req.query.page);
+  const limit = parseInt(req.query.limit);
+  if (page > 0 && limit > 0) {
+    const total = projects.length;
+    const items = projects.slice((page - 1) * limit, page * limit);
+    return res.json({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
+  }
   res.json(projects);
 });
 
@@ -1924,8 +1951,23 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.put('/api/admin/settings', authMiddleware, (req, res) => {
-  const settings = req.body;
-  writeJSON('settings.json', settings);
+  const existing = readJSON('settings.json');
+  const incoming = req.body;
+  // Deep merge: incoming fields override existing, but preserve nested keys not present in incoming
+  function deepMerge(target, source) {
+    const result = { ...target };
+    for (const key of Object.keys(source)) {
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
+          target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])) {
+        result[key] = deepMerge(target[key], source[key]);
+      } else {
+        result[key] = source[key];
+      }
+    }
+    return result;
+  }
+  const merged = deepMerge(existing, incoming);
+  writeJSON('settings.json', merged);
   res.json({ success: true });
 });
 
@@ -2245,7 +2287,7 @@ app.post('/api/admin/works', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) workData[field] = req.body[field];
   });
   const work = {
-    id: 'w' + Date.now(),
+    id: 'w' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...workData,
     likes: 0,
     wants: 0,
@@ -2439,7 +2481,7 @@ app.post('/api/admin/events', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) eventData[field] = req.body[field];
   });
   const event = {
-    id: 'e' + Date.now(),
+    id: 'e' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...eventData,
     order: maxOrder + 1
   };
@@ -2637,7 +2679,7 @@ app.post('/api/admin/circles', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) circleData[field] = req.body[field];
   });
   const circle = {
-    id: 'c' + Date.now(),
+    id: 'c' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...circleData,
     order: maxOrder + 1
   };
@@ -2927,7 +2969,7 @@ app.post('/api/admin/projects', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) projectData[field] = req.body[field];
   });
   const project = {
-    id: 'p' + Date.now(),
+    id: 'p' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...projectData,
     order: maxOrder + 1,
     createdAt: new Date().toISOString()

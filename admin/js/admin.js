@@ -285,13 +285,13 @@ async function cleanupPageviews() {
     if (result.success) {
       const removedDaily = result.before.dailyCount - result.after.dailyCount;
       const removedVisitors = result.before.visitorCount - result.after.visitorCount;
-      alert(`清理完成！\n删除了 ${removedDaily} 天的浏览记录\n删除了 ${removedVisitors} 天的访客记录`);
+      showToast(`清理完成！ | 删除了 ${removedDaily} 天的浏览记录 | 删除了 ${removedVisitors} 天的访客记录`, 'error');
       loadDashboard(); // Refresh dashboard
     } else {
-      alert('清理失败: ' + (result.error || '未知错误'));
+      showToast('清理失败: ' + (result.error || '未知错误'), 'error');
     }
   } catch (e) {
-    alert('清理失败: ' + e.message);
+    showToast('清理失败: ' + e.message, 'error');
   }
 }
 
@@ -1408,7 +1408,7 @@ async function rejectWork(id) {
 // Batch approve/reject works
 async function batchApproveWorks() {
   const pendingWorks = adminWorksData.filter(w => w.approvalStatus === 'pending');
-  if (pendingWorks.length === 0) { alert('没有待审核的作品'); return; }
+  if (pendingWorks.length === 0) { showToast('没有待审核的作品', 'error'); return; }
   if (!await showConfirm(`确定批准全部 ${pendingWorks.length} 个待审核作品？`)) return;
 
   let success = 0;
@@ -1422,7 +1422,7 @@ async function batchApproveWorks() {
 
 async function batchRejectWorks() {
   const pendingWorks = adminWorksData.filter(w => w.approvalStatus === 'pending');
-  if (pendingWorks.length === 0) { alert('没有待审核的作品'); return; }
+  if (pendingWorks.length === 0) { showToast('没有待审核的作品', 'error'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
   if (!await showConfirm(`确定拒绝全部 ${pendingWorks.length} 个待审核作品？`)) return;
@@ -1560,11 +1560,7 @@ function makeSelectCircles(cell, workId, currentCircles) {
 }
 
 async function inlineUpdateWork(workId, field, value) {
-  const works = await adminAPI('GET', '/api/admin/works');
-  const work = works.find(w => w.id === workId);
-  if (!work) return;
-  work[field] = value;
-  await adminAPI('PUT', `/api/admin/works/${workId}`, work);
+  await adminAPI('PUT', `/api/admin/works/${workId}`, { [field]: value });
   showToast('已保存', 'success');
 }
 
@@ -1611,7 +1607,7 @@ async function exportAdminWorks() {
   showToast('正在获取全部数据...', 'info');
   // Fetch all works without pagination
   const allWorks = await adminAPI('GET', '/api/admin/works');
-  if (!allWorks || allWorks.length === 0) { alert('没有作品可导出'); return; }
+  if (!allWorks || allWorks.length === 0) { showToast('没有作品可导出', 'error'); return; }
 
   const headers = ['作品名称', '作者', '分类', '状态', '价格', '发售日期', '标签', '喜爱数', '想要数', '描述'];
   const rows = allWorks.map(w => [
@@ -1644,7 +1640,7 @@ async function exportAdminWorks() {
 async function exportAdminEvents() {
   showToast('正在获取全部数据...', 'info');
   const allEvents = await adminAPI('GET', '/api/admin/events');
-  if (!allEvents || allEvents.length === 0) { alert('没有活动可导出'); return; }
+  if (!allEvents || allEvents.length === 0) { showToast('没有活动可导出', 'error'); return; }
   const headers = ['活动名称', '状态', '开始日期', '结束日期', '地点', '描述'];
   const rows = allEvents.map(e => [
     e.title,
@@ -1668,7 +1664,7 @@ async function exportAdminEvents() {
 async function exportAdminCircles() {
   showToast('正在获取全部数据...', 'info');
   const allCircles = await adminAPI('GET', '/api/admin/circles');
-  if (!allCircles || allCircles.length === 0) { alert('没有作者可导出'); return; }
+  if (!allCircles || allCircles.length === 0) { showToast('没有作者可导出', 'error'); return; }
   const headers = ['作者名称', '分类', '描述', '联系方式'];
   const rows = allCircles.map(c => [
     c.name,
@@ -1690,7 +1686,7 @@ async function exportAdminCircles() {
 async function exportAdminProjects() {
   showToast('正在获取全部数据...', 'info');
   const allProjects = await adminAPI('GET', '/api/admin/projects');
-  if (!allProjects || allProjects.length === 0) { alert('没有企划可导出'); return; }
+  if (!allProjects || allProjects.length === 0) { showToast('没有企划可导出', 'error'); return; }
   const headers = ['企划名称', '分类', '状态', '描述'];
   const rows = allProjects.map(p => [
     p.title,
@@ -1712,7 +1708,7 @@ async function exportAdminProjects() {
 async function exportAdminUpdates() {
   showToast('正在获取全部数据...', 'info');
   const allUpdates = await adminAPI('GET', '/api/admin/updates');
-  if (!allUpdates || allUpdates.length === 0) { alert('没有动态可导出'); return; }
+  if (!allUpdates || allUpdates.length === 0) { showToast('没有动态可导出', 'error'); return; }
   const headers = ['标题', '发布日期', '置顶', '内容'];
   const rows = allUpdates.map(u => [
     u.title,
@@ -1746,13 +1742,13 @@ async function importAdminWorks(input) {
     });
     const result = await res.json();
     if (result.error) {
-      alert('导入失败: ' + result.error);
+      showToast('导入失败: ' + result.error, 'error');
     } else {
       showToast(`导入完成：新增 ${result.added || 0}，更新 ${result.updated || 0}`, 'success');
       loadWorks();
     }
   } catch (e) {
-    alert('导入失败: ' + e.message);
+    showToast('导入失败: ' + e.message, 'error');
   }
   input.value = '';
 }
@@ -1772,13 +1768,13 @@ async function importAdminEvents(input) {
     });
     const result = await res.json();
     if (result.error) {
-      alert('导入失败: ' + result.error);
+      showToast('导入失败: ' + result.error, 'error');
     } else {
       showToast(`导入完成：新增 ${result.added || 0}，更新 ${result.updated || 0}`, 'success');
       loadEvents();
     }
   } catch (e) {
-    alert('导入失败: ' + e.message);
+    showToast('导入失败: ' + e.message, 'error');
   }
   input.value = '';
 }
@@ -1798,13 +1794,13 @@ async function importAdminProjects(input) {
     });
     const result = await res.json();
     if (result.error) {
-      alert('导入失败: ' + result.error);
+      showToast('导入失败: ' + result.error, 'error');
     } else {
       showToast(`导入完成：新增 ${result.added || 0}，更新 ${result.updated || 0}`, 'success');
       loadProjects();
     }
   } catch (e) {
-    alert('导入失败: ' + e.message);
+    showToast('导入失败: ' + e.message, 'error');
   }
   input.value = '';
 }
@@ -1824,13 +1820,13 @@ async function importAdminUpdates(input) {
     });
     const result = await res.json();
     if (result.error) {
-      alert('导入失败: ' + result.error);
+      showToast('导入失败: ' + result.error, 'error');
     } else {
       showToast(`导入完成：新增 ${result.added || 0}，更新 ${result.updated || 0}`, 'success');
       loadUpdates();
     }
   } catch (e) {
-    alert('导入失败: ' + e.message);
+    showToast('导入失败: ' + e.message, 'error');
   }
   input.value = '';
 }
@@ -2003,7 +1999,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
       if (wantsInput) data.wants = parseInt(wantsInput.value) || 0;
     }
 
-    if (!data.title) { alert('请填写标题'); return; }
+    if (!data.title) { showToast('请填写标题', 'error'); return; }
 
     // Handle project association
     const selectedProjectIds = [...document.querySelectorAll('.w-project-cb:checked')].map(cb => cb.value);
@@ -2066,7 +2062,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
 async function uploadWorkImages() {
   const input = document.getElementById('wImage');
   const preview = document.getElementById('wImagePreview');
-  if (!input.files.length) { alert('请选择图片'); return; }
+  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
   for (const file of input.files) {
     const res = await uploadImage(file);
     if (res.url) {
@@ -2082,7 +2078,7 @@ async function uploadWorkImages() {
 async function uploadWorkMoreImages() {
   const input = document.getElementById('wMoreImage');
   const preview = document.getElementById('wMoreImagePreview');
-  if (!input.files.length) { alert('请选择图片'); return; }
+  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
   for (const file of input.files) {
     const res = await uploadImage(file);
     if (res.url) {
@@ -2164,7 +2160,7 @@ function clearBatchCircles() {
 
 async function openBatchEditModal() {
   const checkedIds = [...document.querySelectorAll('.work-checkbox:checked')].map(cb => cb.value);
-  if (checkedIds.length < 2) { alert('请至少选择2个作品'); return; }
+  if (checkedIds.length < 2) { showToast('请至少选择2个作品', 'error'); return; }
   const works = await adminAPI('GET', '/api/admin/works');
   const selectedWorks = works.filter(w => checkedIds.includes(w.id));
   renderBatchEditForm(selectedWorks);
@@ -2172,7 +2168,7 @@ async function openBatchEditModal() {
 
 async function openCircleBatchEdit(circleId) {
   const checkedIds = [...document.querySelectorAll('.circle-work-checkbox:checked')].map(cb => cb.value);
-  if (checkedIds.length < 2) { alert('请至少选择2个作品'); return; }
+  if (checkedIds.length < 2) { showToast('请至少选择2个作品', 'error'); return; }
   const works = await adminAPI('GET', '/api/admin/works');
   const selectedWorks = works.filter(w => checkedIds.includes(w.id));
   renderBatchEditForm(selectedWorks, circleId);
@@ -2276,7 +2272,7 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
     if (tags) updates.tags = tags.split(',').map(t => t.trim()).filter(Boolean);
     if (desc) updates.description = desc;
 
-    if (Object.keys(updates).length === 0) { alert('未修改任何内容'); return; }
+    if (Object.keys(updates).length === 0) { showToast('未修改任何内容', 'error'); return; }
 
     for (const work of selectedWorks) {
       await adminAPI('PUT', `/api/admin/works/${work.id}`, { ...work, ...updates });
@@ -2367,7 +2363,7 @@ async function approveEvent(id) {
 // Batch approve/reject events
 async function batchApproveEvents() {
   const pendingEvents = adminEventsData.filter(e => e.approvalStatus === 'pending');
-  if (pendingEvents.length === 0) { alert('没有待审核的活动'); return; }
+  if (pendingEvents.length === 0) { showToast('没有待审核的活动', 'error'); return; }
   if (!await showConfirm(`确定批准全部 ${pendingEvents.length} 个待审核活动？`)) return;
 
   let success = 0;
@@ -2381,7 +2377,7 @@ async function batchApproveEvents() {
 
 async function batchRejectEvents() {
   const pendingEvents = adminEventsData.filter(e => e.approvalStatus === 'pending');
-  if (pendingEvents.length === 0) { alert('没有待审核的活动'); return; }
+  if (pendingEvents.length === 0) { showToast('没有待审核的活动', 'error'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
   if (!await showConfirm(`确定拒绝全部 ${pendingEvents.length} 个待审核活动？`)) return;
@@ -2410,7 +2406,7 @@ function toggleSelectAllEvents() {
 
 async function batchDeleteEvents() {
   const checked = document.querySelectorAll('.event-checkbox:checked');
-  if (checked.length === 0) { alert('请先选择要删除的活动'); return; }
+  if (checked.length === 0) { showToast('请先选择要删除的活动', 'error'); return; }
   if (!await showConfirm(`确定删除选中的 ${checked.length} 个活动？此操作不可撤销。`, { danger: true })) return;
 
   let success = 0;
@@ -2424,7 +2420,7 @@ async function batchDeleteEvents() {
 
 async function batchDeleteWorks() {
   const checked = document.querySelectorAll('.work-checkbox:checked');
-  if (checked.length === 0) { alert('请先选择要删除的作品'); return; }
+  if (checked.length === 0) { showToast('请先选择要删除的作品', 'error'); return; }
   if (!await showConfirm(`确定删除选中的 ${checked.length} 个作品？此操作不可撤销。`, { danger: true })) return;
 
   let success = 0;
@@ -2489,11 +2485,7 @@ async function rejectEvent(id) {
 }
 
 async function inlineUpdateEvent(eventId, field, value) {
-  const events = await adminAPI('GET', '/api/admin/events');
-  const event = events.find(e => e.id === eventId);
-  if (!event) return;
-  event[field] = value;
-  await adminAPI('PUT', `/api/admin/events/${eventId}`, event);
+  await adminAPI('PUT', `/api/admin/events/${eventId}`, { [field]: value });
   showToast('已保存', 'success');
 }
 
@@ -2645,7 +2637,7 @@ function openEventModal(event = null) {
       relatedProjects: event?.relatedProjects || []
     };
 
-    if (!data.title) { alert('请填写活动名称'); return; }
+    if (!data.title) { showToast('请填写活动名称', 'error'); return; }
 
     if (isEdit) {
       await adminAPI('PUT', `/api/admin/events/${event.id}`, data);
@@ -2814,16 +2806,16 @@ async function removeEventWork(eventId, workId) {
   try {
     const events = await adminAPI('GET', '/api/admin/events');
     const event = events.find(e => e.id === eventId);
-    if (!event) { alert('活动未找到'); return; }
+    if (!event) { showToast('活动未找到', 'error'); return; }
     const updatedRelatedWorks = (event.relatedWorks || []).filter(id => id !== workId);
     const result = await adminAPI('PUT', `/api/admin/events/${eventId}`, { ...event, relatedWorks: updatedRelatedWorks });
     if (result && !result.error) {
       manageEventWorks(eventId);
     } else {
-      alert('移除失败: ' + (result.error || '未知错误'));
+      showToast('移除失败: ' + (result.error || '未知错误'), 'error');
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
@@ -2856,16 +2848,16 @@ async function removeEventProject(eventId, projectId) {
   try {
     const events = await adminAPI('GET', '/api/admin/events');
     const event = events.find(e => e.id === eventId);
-    if (!event) { alert('活动未找到'); return; }
+    if (!event) { showToast('活动未找到', 'error'); return; }
     const updatedRelatedProjects = (event.relatedProjects || []).filter(id => id !== projectId);
     const result = await adminAPI('PUT', `/api/admin/events/${eventId}`, { ...event, relatedProjects: updatedRelatedProjects });
     if (result && !result.error) {
       manageEventWorks(eventId);
     } else {
-      alert('移除失败: ' + (result.error || '未知错误'));
+      showToast('移除失败: ' + (result.error || '未知错误'), 'error');
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
@@ -2896,7 +2888,7 @@ async function removeCircleProject(circleId, projectId) {
       manageCircleWorks(circleId);
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
@@ -2908,7 +2900,7 @@ async function manageWorkRelations(workId, returnToCircleId) {
     adminAPI('GET', '/api/admin/projects')
   ]);
   const work = works.find(w => w.id === workId);
-  if (!work) { alert('作品未找到'); return; }
+  if (!work) { showToast('作品未找到', 'error'); return; }
 
   const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(workId));
   const otherEvents = allEvents.filter(e => !relatedEvents.find(re => re.id === e.id));
@@ -3044,7 +3036,7 @@ async function removeWorkEvent(workId, eventId, returnToCircleId) {
       manageWorkRelations(workId, returnToCircleId);
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
@@ -3059,7 +3051,7 @@ async function removeWorkProject(workId, projectId, returnToCircleId) {
       manageWorkRelations(workId, returnToCircleId);
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
@@ -3075,23 +3067,23 @@ async function removeEventCircle(eventId, circleId) {
   try {
     const events = await adminAPI('GET', '/api/admin/events');
     const event = events.find(e => e.id === eventId);
-    if (!event) { alert('活动未找到'); return; }
+    if (!event) { showToast('活动未找到', 'error'); return; }
     const updatedRelatedCircles = (event.relatedCircles || []).filter(id => id !== circleId);
     const result = await adminAPI('PUT', `/api/admin/events/${eventId}`, { ...event, relatedCircles: updatedRelatedCircles });
     if (result && !result.error) {
       manageEventWorks(eventId);
     } else {
-      alert('移除失败: ' + (result.error || '未知错误'));
+      showToast('移除失败: ' + (result.error || '未知错误'), 'error');
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
 async function uploadEventCover() {
   const input = document.getElementById('eCoverInput');
   const preview = document.getElementById('eCoverPreview');
-  if (!input.files.length) { alert('请选择首图'); return; }
+  if (!input.files.length) { showToast('请选择首图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
     preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
@@ -3102,7 +3094,7 @@ async function uploadEventCover() {
 async function uploadEventImages() {
   const input = document.getElementById('eImageInput');
   const preview = document.getElementById('eImagesPreview');
-  if (!input.files.length) { alert('请选择图片'); return; }
+  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
   for (const file of input.files) {
     const res = await uploadImage(file);
     if (res.url) {
@@ -3212,7 +3204,7 @@ async function removeAuthorAccount(circleId) {
 // Batch approve/reject authors
 async function batchApproveAuthors() {
   const pendingAuthors = adminCirclesData.filter(c => c.authorStatus === 'pending');
-  if (pendingAuthors.length === 0) { alert('没有待审核的作者'); return; }
+  if (pendingAuthors.length === 0) { showToast('没有待审核的作者', 'error'); return; }
   if (!await showConfirm(`确定批准全部 ${pendingAuthors.length} 个待审核作者？`)) return;
 
   let success = 0;
@@ -3226,7 +3218,7 @@ async function batchApproveAuthors() {
 
 async function batchRejectAuthors() {
   const pendingAuthors = adminCirclesData.filter(c => c.authorStatus === 'pending');
-  if (pendingAuthors.length === 0) { alert('没有待审核的作者'); return; }
+  if (pendingAuthors.length === 0) { showToast('没有待审核的作者', 'error'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
   if (!await showConfirm(`确定拒绝全部 ${pendingAuthors.length} 个待审核作者？\n拒绝后将清除账号数据，作者需重新申请。`, { danger: true })) return;
@@ -3277,17 +3269,13 @@ async function saveCircleEditors(circleId) {
 
 async function resetAuthorPassword(circleId) {
   const newPw = prompt('请输入新密码（至少6位）：');
-  if (!newPw || newPw.length < 6) { if (newPw !== null) alert('密码至少6位'); return; }
+  if (!newPw || newPw.length < 6) { if (newPw !== null) showToast('密码至少6位', 'error'); return; }
   await adminAPI('POST', `/api/admin/circles/${circleId}/reset-password`, { newPassword: newPw });
   showToast('密码已重置', 'success');
 }
 
 async function inlineUpdateCircle(circleId, field, value) {
-  const circles = await adminAPI('GET', '/api/admin/circles');
-  const circle = circles.find(c => c.id === circleId);
-  if (!circle) return;
-  circle[field] = value;
-  await adminAPI('PUT', `/api/admin/circles/${circleId}`, circle);
+  await adminAPI('PUT', `/api/admin/circles/${circleId}`, { [field]: value });
   showToast('已保存', 'success');
 }
 
@@ -3513,7 +3501,7 @@ async function removeCircleEvent(circleId, eventId) {
       manageCircleWorks(circleId);
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
@@ -3527,10 +3515,10 @@ async function toggleCircleWork(workId, circleIdToRemove, circleId, btn) {
     if (result && !result.error) {
       manageCircleWorks(circleId);
     } else {
-      alert('移除失败: ' + (result.error || '未知错误'));
+      showToast('移除失败: ' + (result.error || '未知错误'), 'error');
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
@@ -3573,7 +3561,7 @@ function importCircleExcel(circleId) {
       });
       const result = await res.json();
       if (result.error) {
-        alert('导入失败: ' + result.error);
+        showToast('导入失败: ' + result.error, 'error');
         return;
       }
       // Show result modal
@@ -3613,7 +3601,7 @@ function importCircleExcel(circleId) {
       };
       openModal();
     } catch (e) {
-      alert('导入失败: ' + e.message);
+      showToast('导入失败: ' + e.message, 'error');
     }
   };
   input.click();
@@ -3725,7 +3713,7 @@ function openCircleModal(circle = null) {
       images: [...document.querySelectorAll('#cImagesPreview img')].map(img => img.src)
     };
 
-    if (!data.name) { alert('请填写作者名称'); return; }
+    if (!data.name) { showToast('请填写作者名称', 'error'); return; }
 
     if (isEdit) {
       await adminAPI('PUT', `/api/admin/circles/${circle.id}`, data);
@@ -3756,7 +3744,7 @@ async function deleteCircle(id) {
 async function uploadCircleLogo() {
   const input = document.getElementById('cLogoInput');
   const preview = document.getElementById('cLogoPreview');
-  if (!input.files.length) { alert('请选择头像图片'); return; }
+  if (!input.files.length) { showToast('请选择头像图片', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
     preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
@@ -3767,7 +3755,7 @@ async function uploadCircleLogo() {
 async function uploadCircleImages() {
   const input = document.getElementById('cImageInput');
   const preview = document.getElementById('cImagesPreview');
-  if (!input.files.length) { alert('请选择图片'); return; }
+  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
   for (const file of input.files) {
     const res = await uploadImage(file);
     if (res.url) {
@@ -3795,7 +3783,7 @@ function filterImageLibrary(query) {
 async function pickImageFromLibrary(type) {
   const images = await adminAPI('GET', '/api/admin/images');
   if (!images || images.length === 0) {
-    alert('图片库为空，请先在图片管理中上传图片');
+    showToast('图片库为空，请先在图片管理中上传图片', 'error');
     return;
   }
   const savedBody = document.getElementById('modalBody').innerHTML;
@@ -3818,7 +3806,7 @@ async function pickImageFromLibrary(type) {
   document.getElementById('modalSave').textContent = '确定选择';
   document.getElementById('modalSave').onclick = () => {
     const selected = [...document.querySelectorAll('.image-pick-item.selected')].map(el => el.dataset.url);
-    if (selected.length === 0) { alert('请至少选择一张图片'); return; }
+    if (selected.length === 0) { showToast('请至少选择一张图片', 'error'); return; }
 
     document.getElementById('modalBody').innerHTML = savedBody;
     document.getElementById('modalTitle').textContent = savedTitle;
@@ -3938,7 +3926,7 @@ async function rejectProject(id) {
 // Batch approve/reject projects
 async function batchApproveProjects() {
   const pendingProjects = adminProjectsData.filter(p => p.approvalStatus === 'pending');
-  if (pendingProjects.length === 0) { alert('没有待审核的企划'); return; }
+  if (pendingProjects.length === 0) { showToast('没有待审核的企划', 'error'); return; }
   if (!await showConfirm(`确定批准全部 ${pendingProjects.length} 个待审核企划？`)) return;
 
   let success = 0;
@@ -3952,7 +3940,7 @@ async function batchApproveProjects() {
 
 async function batchRejectProjects() {
   const pendingProjects = adminProjectsData.filter(p => p.approvalStatus === 'pending');
-  if (pendingProjects.length === 0) { alert('没有待审核的企划'); return; }
+  if (pendingProjects.length === 0) { showToast('没有待审核的企划', 'error'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
   if (!await showConfirm(`确定拒绝全部 ${pendingProjects.length} 个待审核企划？`)) return;
@@ -3981,7 +3969,7 @@ function toggleSelectAllProjects() {
 
 async function batchDeleteProjects() {
   const checked = document.querySelectorAll('.project-checkbox:checked');
-  if (checked.length === 0) { alert('请先选择要删除的企划'); return; }
+  if (checked.length === 0) { showToast('请先选择要删除的企划', 'error'); return; }
   if (!await showConfirm(`确定删除选中的 ${checked.length} 个企划？此操作不可撤销。`, { danger: true })) return;
 
   let success = 0;
@@ -3994,11 +3982,7 @@ async function batchDeleteProjects() {
 }
 
 async function inlineUpdateProject(projectId, field, value) {
-  const projects = await adminAPI('GET', '/api/admin/projects');
-  const project = projects.find(p => p.id === projectId);
-  if (!project) return;
-  project[field] = value;
-  await adminAPI('PUT', `/api/admin/projects/${projectId}`, project);
+  await adminAPI('PUT', `/api/admin/projects/${projectId}`, { [field]: value });
   showToast('已保存', 'success');
 }
 
@@ -4197,7 +4181,7 @@ function openProjectModal(project = null) {
       images: [...document.querySelectorAll('#pImagesPreview img')].map(img => img.src)
     };
 
-    if (!data.title) { alert('请填写企划名称'); return; }
+    if (!data.title) { showToast('请填写企划名称', 'error'); return; }
 
     if (isEdit) {
       await adminAPI('PUT', `/api/admin/projects/${project.id}`, data);
@@ -4326,16 +4310,16 @@ async function removeProjectCircle(projectId, circleId) {
   try {
     const projects = await adminAPI('GET', '/api/admin/projects');
     const project = projects.find(p => p.id === projectId);
-    if (!project) { alert('企划未找到'); return; }
+    if (!project) { showToast('企划未找到', 'error'); return; }
     const updatedCircles = (project.circles || []).filter(id => id !== circleId);
     const result = await adminAPI('PUT', `/api/admin/projects/${projectId}`, { ...project, circles: updatedCircles });
     if (result && !result.error) {
       manageProjectRelations(projectId);
     } else {
-      alert('移除失败: ' + (result.error || '未知错误'));
+      showToast('移除失败: ' + (result.error || '未知错误'), 'error');
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
@@ -4343,23 +4327,23 @@ async function removeProjectEvent(projectId, eventId) {
   try {
     const projects = await adminAPI('GET', '/api/admin/projects');
     const project = projects.find(p => p.id === projectId);
-    if (!project) { alert('企划未找到'); return; }
+    if (!project) { showToast('企划未找到', 'error'); return; }
     const updatedEvents = (project.events || []).filter(id => id !== eventId);
     const result = await adminAPI('PUT', `/api/admin/projects/${projectId}`, { ...project, events: updatedEvents });
     if (result && !result.error) {
       manageProjectRelations(projectId);
     } else {
-      alert('移除失败: ' + (result.error || '未知错误'));
+      showToast('移除失败: ' + (result.error || '未知错误'), 'error');
     }
   } catch (e) {
-    alert('移除失败: ' + e.message);
+    showToast('移除失败: ' + e.message, 'error');
   }
 }
 
 async function uploadProjectCover() {
   const input = document.getElementById('pCoverInput');
   const preview = document.getElementById('pCoverPreview');
-  if (!input.files.length) { alert('请选择首图'); return; }
+  if (!input.files.length) { showToast('请选择首图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
     preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
@@ -4370,7 +4354,7 @@ async function uploadProjectCover() {
 async function uploadProjectImages() {
   const input = document.getElementById('pImageInput');
   const preview = document.getElementById('pImagesPreview');
-  if (!input.files.length) { alert('请选择图片'); return; }
+  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
   for (const file of input.files) {
     const res = await uploadImage(file);
     if (res.url) {
@@ -4556,10 +4540,10 @@ async function saveCategories() {
       if (currentPage === 'works') renderWorksTable(adminWorksData);
       else if (currentPage === 'projects') renderProjectsTable(adminProjectsData);
     } else {
-      alert('保存失败: ' + (result.error || '未知错误'));
+      showToast('保存失败: ' + (result.error || '未知错误'), 'error');
     }
   } catch (e) {
-    alert('保存失败: ' + e.message);
+    showToast('保存失败: ' + e.message, 'error');
   }
 }
 
@@ -4694,7 +4678,7 @@ async function deleteImage(filename) {
     showToast('图片已删除', 'success');
     loadImages();
   } else {
-    alert('删除失败');
+    showToast('删除失败', 'error');
   }
 }
 
@@ -4703,7 +4687,7 @@ async function cleanupUnusedImages() {
     // First, get preview of unused images
     const preview = await adminAPI('GET', '/api/admin/images/unused');
     if (!preview || preview.error) {
-      alert('查询失败: ' + (preview.error || '未知错误'));
+      showToast('查询失败: ' + (preview.error || '未知错误'), 'error');
       return;
     }
 
@@ -4735,12 +4719,12 @@ async function cleanupUnusedImages() {
         document.getElementById('modalSave').textContent = '保存';
         loadImages();
       } else {
-        alert('清理失败: ' + (result.error || '未知错误'));
+        showToast('清理失败: ' + (result.error || '未知错误'), 'error');
       }
     };
     openModal();
   } catch (e) {
-    alert('查询失败: ' + e.message);
+    showToast('查询失败: ' + e.message, 'error');
   }
 }
 
@@ -5003,10 +4987,10 @@ async function saveSettings() {
       currentSettings.authorRegistrationNotice = authorRegistrationNotice;
       showToast('设置保存成功', 'success');
     } else {
-      alert('保存失败');
+      showToast('保存失败', 'error');
     }
   } catch (e) {
-    alert('保存失败: ' + e.message);
+    showToast('保存失败: ' + e.message, 'error');
   }
 }
 
@@ -5040,7 +5024,7 @@ function addAboutContactLink() {
 
 async function uploadFavicon() {
   const input = document.getElementById('faviconInput');
-  if (!input.files.length) { alert('请选择图标文件'); return; }
+  if (!input.files.length) { showToast('请选择图标文件', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
     currentSettings.site = currentSettings.site || {};
@@ -5097,7 +5081,7 @@ function selectFaviconFromLibrary(url) {
 async function uploadHeroBg(pageKey) {
   const input = document.getElementById(`setting_${pageKey}_heroBgInput`);
   const preview = document.getElementById(`setting_${pageKey}_heroBgPreview`);
-  if (!input.files.length) { alert('请选择背景图'); return; }
+  if (!input.files.length) { showToast('请选择背景图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
     document.getElementById(`setting_${pageKey}_heroBg`).value = res.url;
@@ -5248,9 +5232,9 @@ function openAnnouncementModal(announcement = null) {
       popup: document.getElementById('annPopup').checked
     };
 
-    if (!data.title) { alert('请填写标题'); return; }
-    if (!data.publishDate) { alert('请选择发布日期'); return; }
-    if (!data.content) { alert('请填写内容'); return; }
+    if (!data.title) { showToast('请填写标题', 'error'); return; }
+    if (!data.publishDate) { showToast('请选择发布日期', 'error'); return; }
+    if (!data.content) { showToast('请填写内容', 'error'); return; }
 
     if (isEdit) {
       await adminAPI('PUT', `/api/admin/announcements/${announcement.id}`, data);
@@ -5441,7 +5425,7 @@ async function rejectUpdate(id) {
 // Batch approve/reject updates
 async function batchApproveUpdates() {
   const pendingUpdates = adminUpdatesData.filter(u => u.approvalStatus === 'pending');
-  if (pendingUpdates.length === 0) { alert('没有待审核的动态'); return; }
+  if (pendingUpdates.length === 0) { showToast('没有待审核的动态', 'error'); return; }
   if (!await showConfirm(`确定批准全部 ${pendingUpdates.length} 个待审核动态？`)) return;
 
   let success = 0;
@@ -5455,7 +5439,7 @@ async function batchApproveUpdates() {
 
 async function batchRejectUpdates() {
   const pendingUpdates = adminUpdatesData.filter(u => u.approvalStatus === 'pending');
-  if (pendingUpdates.length === 0) { alert('没有待审核的动态'); return; }
+  if (pendingUpdates.length === 0) { showToast('没有待审核的动态', 'error'); return; }
   const reason = prompt('拒绝原因（可选）');
   if (reason === null) return;
   if (!await showConfirm(`确定拒绝全部 ${pendingUpdates.length} 个待审核动态？`)) return;
@@ -5583,8 +5567,8 @@ function openUpdateModal(update = null) {
         relatedProjects: [...document.querySelectorAll('.upd-project-cb:checked')].map(cb => cb.value)
       };
 
-      if (!data.title) { alert('请填写标题'); return; }
-      if (!data.content) { alert('请填写内容'); return; }
+      if (!data.title) { showToast('请填写标题', 'error'); return; }
+      if (!data.content) { showToast('请填写内容', 'error'); return; }
 
       if (isEdit) {
         await adminAPI('PUT', `/api/admin/updates/${update.id}`, data);
@@ -5622,7 +5606,7 @@ function filterUpdateCirclesList(query) {
 async function uploadUpdateCover() {
   const input = document.getElementById('updCoverInput');
   const preview = document.getElementById('updCoverPreview');
-  if (!input.files.length) { alert('请选择首图'); return; }
+  if (!input.files.length) { showToast('请选择首图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
     preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
@@ -5633,7 +5617,7 @@ async function uploadUpdateCover() {
 async function uploadUpdateImages() {
   const input = document.getElementById('updImagesInput');
   const preview = document.getElementById('updImagesPreview');
-  if (!input.files.length) { alert('请选择图片'); return; }
+  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
   for (const file of input.files) {
     const res = await uploadImage(file);
     if (res.url) {
@@ -5667,15 +5651,15 @@ function openChangePasswordModal() {
     const oldPassword = document.getElementById('pwOld').value;
     const newPassword = document.getElementById('pwNew').value;
     const confirm = document.getElementById('pwConfirm').value;
-    if (!oldPassword || !newPassword) { alert('请填写所有字段'); return; }
-    if (newPassword.length < 6) { alert('新密码至少6个字符'); return; }
-    if (newPassword !== confirm) { alert('两次输入的新密码不一致'); return; }
+    if (!oldPassword || !newPassword) { showToast('请填写所有字段', 'error'); return; }
+    if (newPassword.length < 6) { showToast('新密码至少6个字符', 'error'); return; }
+    if (newPassword !== confirm) { showToast('两次输入的新密码不一致', 'error'); return; }
     const result = await adminAPI('POST', '/api/admin/change-password', { oldPassword, newPassword });
     if (result && result.success) {
       showToast('密码修改成功', 'success');
       closeModal();
     } else {
-      alert('修改失败: ' + (result.error || '未知错误'));
+      showToast('修改失败: ' + (result.error || '未知错误'), 'error');
     }
   };
   openModal();
@@ -5774,7 +5758,7 @@ function filterEditLog() {
 function exportEditLog() {
   const rows = document.querySelectorAll('#editLogContainer > div');
   const visibleRows = [...rows].filter(r => r.style.display !== 'none');
-  if (visibleRows.length === 0) { alert('没有可导出的记录'); return; }
+  if (visibleRows.length === 0) { showToast('没有可导出的记录', 'error'); return; }
 
   const headers = ['时间', '编辑人', '操作', '目标', '详情'];
   const data = visibleRows.map(row => {
@@ -5904,7 +5888,7 @@ function filterAuthorStats() {
 
 function exportAuthorStats() {
   const rows = document.querySelectorAll('#authorStatsBody tr');
-  if (rows.length === 0) { alert('没有数据可导出'); return; }
+  if (rows.length === 0) { showToast('没有数据可导出', 'error'); return; }
 
   const headers = ['作者名称', '分类', '作品数', '关注量', '总喜爱数', '总想要数', '平均喜爱', '平均想要'];
   const data = [...rows].map(row => {
