@@ -155,6 +155,13 @@
           <!-- 待审批统计 -->
           <div class="stats-grid" style="margin-top:1rem;">
             <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
+              <div class="stat-icon" style="background:rgba(233,69,96,0.1);color:var(--accent);">🎨</div>
+              <div class="stat-info">
+                <div class="stat-number" id="statPendingWorks">0</div>
+                <div class="stat-label">待审核作品</div>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
               <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">⏳</div>
               <div class="stat-info">
                 <div class="stat-number" id="statPendingAuthors">0</div>
@@ -579,6 +586,16 @@
           </div>
           <div class="admin-card" style="margin-bottom:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h4 style="margin:0;">🎨 待审核作品</h4>
+              <div style="display:flex;gap:0.3rem;">
+                <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveWorks()">全部批准</button>
+                <button class="btn-sm btn-delete" onclick="batchRejectWorks()">全部拒绝</button>
+              </div>
+            </div>
+            <div id="approvalWorks"><p style="color:var(--haze);">加载中...</p></div>
+          </div>
+          <div class="admin-card" style="margin-bottom:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
               <h4 style="margin:0;">📅 待审核活动</h4>
               <div style="display:flex;gap:0.3rem;">
                 <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveEvents()">全部批准</button>
@@ -803,6 +820,21 @@
               </select>
             </div>
             <div id="pvSearchResults" style="margin-top:1rem;"></div>
+          </div>
+
+          <!-- 新增内容统计 -->
+          <div class="admin-card" style="margin-top:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h3 style="margin:0;">📊 新增内容统计</h3>
+              <div style="display:flex;gap:0.3rem;">
+                <button class="view-btn active" data-creation-range="7" onclick="switchCreationRange(7)">近7天</button>
+                <button class="view-btn" data-creation-range="30" onclick="switchCreationRange(30)">近30天</button>
+                <button class="view-btn" data-creation-range="90" onclick="switchCreationRange(90)">近90天</button>
+                <button class="view-btn" data-creation-range="365" onclick="switchCreationRange(365)">近1年</button>
+              </div>
+            </div>
+            <div style="height:250px;"><canvas id="chartCreationStats"></canvas></div>
+            <div id="creationStatsSummary" style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.8rem;margin-top:1rem;"></div>
           </div>
 
           <!-- 各页面浏览量 -->

@@ -446,6 +446,8 @@ async function loadDashboard() {
   document.getElementById('statPendingEvents').textContent = pendingEvents;
   document.getElementById('statPendingProjects').textContent = pendingProjects;
   document.getElementById('statPendingUpdates').textContent = pendingUpdates;
+  const pendingWorks = (works || []).filter(w => w.approvalStatus === 'pending').length;
+  document.getElementById('statPendingWorks').textContent = pendingWorks;
 
   // Load notifications using already-fetched data
   loadAdminNotificationsWithData(works, events, circles, projects, updates);
@@ -586,6 +588,7 @@ async function loadPageStats() {
   renderPageCategoryStats(pvData);
   renderPageCharts(pvData);
   renderItemRanking(pvData, _pageStatsEntities);
+  renderCreationStats(_pageStatsEntities);
 }
 
 function getPageUrl(key) {
@@ -1099,6 +1102,96 @@ function renderItemTrendChart(topItems, items, days) {
       responsive: true,
       plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
       scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+}
+
+// ===== Creation Stats =====
+let _creationChart = null;
+let _creationRange = 7;
+
+function switchCreationRange(days) {
+  _creationRange = days;
+  document.querySelectorAll('[data-creation-range]').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.creationRange) === days);
+  });
+  renderCreationStats(_pageStatsEntities);
+}
+
+function renderCreationStats(entities) {
+  if (!entities) return;
+  const days = _creationRange;
+  const now = new Date();
+  const startDate = new Date(now);
+  startDate.setDate(startDate.getDate() - days + 1);
+  startDate.setHours(0, 0, 0, 0);
+
+  const types = [
+    { key: 'works', label: '作品', color: 'rgba(233,69,96,0.7)' },
+    { key: 'events', label: '活动', color: 'rgba(52,152,219,0.7)' },
+    { key: 'circles', label: '作者', color: 'rgba(46,204,113,0.7)' },
+    { key: 'projects', label: '企划', color: 'rgba(243,156,18,0.7)' },
+    { key: 'updates', label: '动态', color: 'rgba(155,89,182,0.7)' }
+  ];
+
+  // Build date labels
+  const labels = [];
+  const dateKeys = [];
+  for (let d = new Date(startDate); d <= now; d.setDate(d.getDate() + 1)) {
+    const ds = d.toISOString().slice(0, 10);
+    labels.push(ds.slice(5)); // MM-DD
+    dateKeys.push(ds);
+  }
+
+  // Count creations per day per type
+  const datasets = types.map(t => {
+    const items = entities[t.key] || [];
+    const counts = dateKeys.map(dk => {
+      return items.filter(item => {
+        const created = (item.createdAt || '').slice(0, 10);
+        return created === dk;
+      }).length;
+    });
+    return {
+      label: t.label,
+      data: counts,
+      backgroundColor: t.color,
+      borderRadius: 3
+    };
+  });
+
+  // Summary counts
+  const summary = types.map(t => {
+    const items = (entities[t.key] || []).filter(item => {
+      const created = (item.createdAt || '').slice(0, 10);
+      return created >= startDate.toISOString().slice(0, 10);
+    });
+    return { label: t.label, count: items.length, color: t.color };
+  });
+
+  // Render summary cards
+  document.getElementById('creationStatsSummary').innerHTML = summary.map(s =>
+    `<div style="text-align:center;padding:0.6rem;background:var(--card-bg);border-radius:8px;border:1px solid var(--border);">
+      <div style="font-size:1.3rem;font-weight:700;color:${s.color};">${s.count}</div>
+      <div style="font-size:0.75rem;color:var(--haze);">${s.label}</div>
+    </div>`
+  ).join('');
+
+  // Render chart
+  if (_creationChart) _creationChart.destroy();
+  const ctx = document.getElementById('chartCreationStats');
+  if (!ctx) return;
+  _creationChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+      }
     }
   });
 }
@@ -5841,7 +5934,8 @@ function exportAuthorStats() {
 // ===== Approval Page =====
 async function loadApprovalPage() {
   try {
-    const [circles, events, projects, updates] = await Promise.all([
+    const [works, circles, events, projects, updates] = await Promise.all([
+      adminAPI('GET', '/api/admin/works'),
       adminAPI('GET', '/api/admin/circles'),
       adminAPI('GET', '/api/admin/events'),
       adminAPI('GET', '/api/admin/projects'),
@@ -5867,6 +5961,25 @@ async function loadApprovalPage() {
           <button class="btn-sm btn-delete" onclick="rejectAuthor('${c.id}')">拒绝</button>
         </div>
       `).join('');
+    }
+
+    // Pending works
+    const pendingWorks = (works || []).filter(w => w.approvalStatus === 'pending');
+    const worksDiv = document.getElementById('approvalWorks');
+    if (pendingWorks.length === 0) {
+      worksDiv.innerHTML = '<p style="color:var(--haze);">无待审核作品</p>';
+    } else {
+      worksDiv.innerHTML = pendingWorks.map(w => {
+        const author = circles?.find(c => (w.circles || []).includes(c.id));
+        return `<div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+          <span style="font-weight:600;flex:1;">${escapeHtml(w.title)}</span>
+          <span style="font-size:0.8rem;color:var(--haze);">作者: ${author ? escapeHtml(author.name) : '未知'}</span>
+          <span style="font-size:0.8rem;color:var(--haze);">${w.category || ''}</span>
+          <button class="btn-sm btn-edit" onclick="viewApprovalDetail('work','${w.id}')">查看</button>
+          <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveWork('${w.id}')">批准</button>
+          <button class="btn-sm btn-delete" onclick="rejectWork('${w.id}')">拒绝</button>
+        </div>`;
+      }).join('');
     }
 
     // Pending events

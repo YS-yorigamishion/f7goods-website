@@ -314,6 +314,7 @@ app.post('/api/author/register', rateLimitMiddleware, (req, res) => {
   circle.username = username;
   circle.passwordHash = bcrypt.hashSync(password, 10);
   circle.authorStatus = 'pending';
+  circle.createdAt = new Date().toISOString();
   writeJSON('circles.json', circles);
   res.json({ success: true, message: '注册成功，等待管理员审批' });
 });
@@ -2482,7 +2483,8 @@ app.post('/api/admin/events', authMiddleware, (req, res) => {
   const event = {
     id: 'e' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...eventData,
-    order: maxOrder + 1
+    order: maxOrder + 1,
+    createdAt: new Date().toISOString()
   };
   events.push(event);
   writeJSON('events.json', events);
@@ -2680,7 +2682,8 @@ app.post('/api/admin/circles', authMiddleware, (req, res) => {
   const circle = {
     id: 'c' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...circleData,
-    order: maxOrder + 1
+    order: maxOrder + 1,
+    createdAt: new Date().toISOString()
   };
   circles.push(circle);
   writeJSON('circles.json', circles);
