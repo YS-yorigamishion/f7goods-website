@@ -4972,6 +4972,7 @@ async function saveSettings() {
   pages.about.contactLinks = aboutContactLinks;
 
   const site = {
+    ...currentSettings.site,
     logoText: document.getElementById('setting_site_logoText')?.value || 'F7',
     brandName: document.getElementById('setting_site_brandName')?.value || 'f7goods',
     favicon: currentSettings.site?.favicon || ''

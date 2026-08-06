@@ -215,13 +215,19 @@ function closeAnnouncementPopup(id) {
 // Build navbar HTML
 function buildNavbar(activePage) {
   const site = getSiteSettings();
-  const logoText = site.logoText || 'F7';
+  const logoText = site.logoText || '';
   const brandName = site.brandName || 'f7goods';
+  const favicon = site.favicon;
+  const logoContent = favicon
+    ? `<img src="${favicon}" alt="${brandName}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">`
+    : logoText
+      ? `<div class="logo-icon">${logoText}</div>`
+      : `<div class="logo-icon">F7</div>`;
   return `
     <div class="brand-bar"></div>
     <div class="nav-inner">
       <a href="/" class="logo">
-        <div class="logo-icon">${logoText}</div>
+        ${logoContent}
         <span>${brandName}</span>
       </a>
       <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="菜单">
