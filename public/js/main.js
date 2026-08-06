@@ -338,22 +338,6 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Image lazy load enhancement - add fade in effect
-function initLazyImages() {
-  const images = document.querySelectorAll('img[loading="lazy"]');
-  images.forEach(img => {
-    if (img.complete) {
-      img.style.opacity = '1';
-    } else {
-      img.style.opacity = '0';
-      img.addEventListener('load', () => {
-        img.style.opacity = '1';
-      }, { once: true });
-    }
-  });
-}
-document.addEventListener('DOMContentLoaded', initLazyImages);
-
 // Toast notification
 function showToast(message, type = 'info', duration = 3000) {
   let toast = document.getElementById('toast');

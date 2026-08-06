@@ -2242,12 +2242,4 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Image lazy load fade in */
-img[loading="lazy"] {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-img[loading="lazy"].loaded,
-img[loading="lazy"][complete] {
-  opacity: 1;
-}
+
