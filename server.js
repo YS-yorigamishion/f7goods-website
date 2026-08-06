@@ -1192,6 +1192,7 @@ app.post('/api/admin/circles/:id/approve-author', authMiddleware, (req, res) => 
 
   circles[index].authorStatus = 'approved';
   writeJSON('circles.json', circles);
+  logEdit('管理员', '批准作者账号', circles[index].name, `账号: ${circles[index].username}`);
   res.json({ success: true });
 });
 
