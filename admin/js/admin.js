@@ -4465,6 +4465,7 @@ let currentCatTab = 'works';
 
 function saveCurrentTabEdits() {
   if (!currentCategories) return;
+  if (currentCatTab === 'updates') { saveUpdateCategoryEdits(); return; }
   const types = currentCatTab === 'works'
     ? ['works', 'workStatus']
     : currentCatTab === 'circles'
@@ -4580,6 +4581,45 @@ function renderCategories() {
         </div>
       </div>
     `;
+  } else if (currentCatTab === 'updates') {
+    const cats = currentCategories.updateCategories || [];
+    container.innerHTML = `
+      <div class="admin-card">
+        <h3 style="margin-bottom:1rem;color:#e67e22;">动态分类（二级）</h3>
+        <p style="color:var(--haze);font-size:0.8rem;margin-bottom:0.8rem;">用于同人动态页面的分类筛选。每个一级分类下可包含多个二级子分类。</p>
+        <div id="updateCategoriesList">
+          ${cats.map((cat, pi) => `
+            <div class="update-cat-parent" data-parent="${pi}" style="border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:0.8rem;overflow:hidden;">
+              <div style="display:flex;gap:0.5rem;padding:0.6rem;background:var(--card-bg);align-items:center;">
+                <div style="display:flex;gap:2px;">
+                  <button class="btn-sm" onclick="reorderUpdateCategory(${pi}, -1)" ${pi === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
+                  <button class="btn-sm" onclick="reorderUpdateCategory(${pi}, 1)" ${pi === cats.length - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
+                </div>
+                <input class="form-input" value="${cat.id}" data-field="id" data-parent="${pi}" style="flex:1;" placeholder="一级分类 ID">
+                <input class="form-input" value="${cat.name}" data-field="name" data-parent="${pi}" style="flex:2;" placeholder="一级分类名称">
+                <button class="btn-sm" onclick="toggleUpdateCategory(${pi})" id="toggleCat${pi}" style="font-size:0.75rem;">${(cat._collapsed) ? '展开' : '收起'}</button>
+                <button class="btn-sm btn-delete" onclick="removeUpdateCategory(${pi})">删除</button>
+              </div>
+              <div id="updateCatChildren${pi}" style="padding:0.5rem 0.5rem 0.5rem 1.5rem;${(cat._collapsed) ? 'display:none;' : ''}">
+                ${(cat.children || []).map((child, ci) => `
+                  <div style="display:flex;gap:0.5rem;margin-bottom:0.4rem;align-items:center;">
+                    <div style="display:flex;gap:2px;">
+                      <button class="btn-sm" onclick="reorderUpdateSubCategory(${pi}, ${ci}, -1)" ${ci === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
+                      <button class="btn-sm" onclick="reorderUpdateSubCategory(${pi}, ${ci}, 1)" ${ci === (cat.children || []).length - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
+                    </div>
+                    <input class="form-input" value="${child.id}" data-field="id" data-parent="${pi}" data-child="${ci}" style="flex:1;" placeholder="二级分类 ID">
+                    <input class="form-input" value="${child.name}" data-field="name" data-parent="${pi}" data-child="${ci}" style="flex:2;" placeholder="二级分类名称">
+                    <button class="btn-sm btn-delete" onclick="removeUpdateSubCategory(${pi}, ${ci})">删除</button>
+                  </div>
+                `).join('')}
+                <button class="btn-sm btn-edit" onclick="addUpdateSubCategory(${pi})" style="margin-top:0.3rem;">+ 添加子分类</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn-sm btn-edit" onclick="addUpdateCategory()" style="margin-top:0.5rem;">+ 添加一级分类</button>
+      </div>
+    `;
   }
   container.innerHTML += '<p style="color:var(--haze);font-size:0.8rem;margin-top:1rem;">提示：ID 用于系统内部标识（英文小写），名称用于前台显示。使用上下箭头调整排序。修改后请点击右上角"保存更改"。</p>';
 }
@@ -4604,6 +4644,92 @@ function addCategory(type) {
 function removeCategory(type, index) {
   saveCurrentTabEdits();
   currentCategories[type].splice(index, 1);
+  renderCategories();
+}
+
+// --- Update category (二级分类) management ---
+function saveUpdateCategoryEdits() {
+  if (!currentCategories) return;
+  const cats = currentCategories.updateCategories || [];
+  // Preserve collapsed state
+  const collapsed = cats.map(c => !!c._collapsed);
+  // Read parent values from DOM
+  document.querySelectorAll('.update-cat-parent').forEach((el, pi) => {
+    if (!cats[pi]) return;
+    const inputs = el.querySelectorAll(':scope > div:first-child > input[data-parent]');
+    inputs.forEach(inp => {
+      if (inp.dataset.field === 'id') cats[pi].id = inp.value.trim();
+      if (inp.dataset.field === 'name') cats[pi].name = inp.value.trim();
+    });
+    // Read child values
+    const childContainer = el.querySelector(`[id^="updateCatChildren"]`);
+    if (childContainer) {
+      const children = [];
+      childContainer.querySelectorAll(':scope > div').forEach(row => {
+        const childInputs = row.querySelectorAll('input[data-child]');
+        if (childInputs.length < 2) return;
+        const cid = childInputs[0].value.trim();
+        const cname = childInputs[1].value.trim();
+        if (cid && cname) children.push({ id: cid, name: cname, order: children.length });
+      });
+      cats[pi].children = children;
+    }
+  });
+  cats.forEach((c, i) => { c.order = i; c._collapsed = collapsed[i]; });
+  currentCategories.updateCategories = cats;
+}
+
+function addUpdateCategory() {
+  saveUpdateCategoryEdits();
+  if (!currentCategories.updateCategories) currentCategories.updateCategories = [];
+  currentCategories.updateCategories.push({ id: '', name: '', order: currentCategories.updateCategories.length, children: [] });
+  renderCategories();
+}
+
+function removeUpdateCategory(pi) {
+  saveUpdateCategoryEdits();
+  currentCategories.updateCategories.splice(pi, 1);
+  renderCategories();
+}
+
+function addUpdateSubCategory(pi) {
+  saveUpdateCategoryEdits();
+  const cat = currentCategories.updateCategories[pi];
+  if (!cat.children) cat.children = [];
+  cat.children.push({ id: '', name: '', order: cat.children.length });
+  renderCategories();
+}
+
+function removeUpdateSubCategory(pi, ci) {
+  saveUpdateCategoryEdits();
+  currentCategories.updateCategories[pi].children.splice(ci, 1);
+  renderCategories();
+}
+
+function reorderUpdateCategory(pi, direction) {
+  saveUpdateCategoryEdits();
+  const cats = currentCategories.updateCategories;
+  const newPi = pi + direction;
+  if (newPi < 0 || newPi >= cats.length) return;
+  [cats[pi], cats[newPi]] = [cats[newPi], cats[pi]];
+  cats.forEach((c, i) => c.order = i);
+  renderCategories();
+}
+
+function reorderUpdateSubCategory(pi, ci, direction) {
+  saveUpdateCategoryEdits();
+  const children = currentCategories.updateCategories[pi].children;
+  const newCi = ci + direction;
+  if (newCi < 0 || newCi >= children.length) return;
+  [children[ci], children[newCi]] = [children[newCi], children[ci]];
+  children.forEach((c, i) => c.order = i);
+  renderCategories();
+}
+
+function toggleUpdateCategory(pi) {
+  saveUpdateCategoryEdits();
+  const cat = currentCategories.updateCategories[pi];
+  cat._collapsed = !cat._collapsed;
   renderCategories();
 }
 
@@ -5371,7 +5497,7 @@ async function loadUpdates(page = 1) {
 
     const tbody = document.getElementById('updatesTableBody');
     if (!updates || updates.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--haze);padding:2rem;">暂无动态</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--haze);padding:2rem;">暂无动态</td></tr>';
       return;
     }
     tbody.innerHTML = updates
@@ -5394,9 +5520,18 @@ async function loadUpdates(page = 1) {
           const circle = circlesMap[cid];
           return circle ? `<span style="background:var(--paper);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.7rem;margin-right:0.2rem;">${escapeHtml(circle)}</span>` : '';
         }).join('') || '<span style="color:var(--haze);font-size:0.75rem;">-</span>';
+        // Build category display
+        const updCats = currentCategories?.updateCategories || [];
+        const parentCat = updCats.find(c => c.id === u.category);
+        const subCat = parentCat?.children?.find(c => c.id === u.subCategory);
+        const catDisplay = parentCat
+          ? `<span style="font-size:0.75rem;">${escapeHtml(parentCat.name)}${subCat ? ' / ' + escapeHtml(subCat.name) : ''}</span>`
+          : '<span style="color:var(--haze);font-size:0.75rem;">-</span>';
+
         return `
         <tr>
           <td>${u.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escapeHtml(u.title)}</td>
+          <td>${catDisplay}</td>
           <td>${approvalBadge}</td>
           <td>${formatDateAdmin(u.publishDate)}</td>
           <td style="text-align:center;">${u.pinned ? '<span style="color:var(--accent);font-weight:600;">✓</span>' : '<span style="color:var(--haze);">-</span>'}</td>
@@ -5560,6 +5695,21 @@ function openUpdateModal(update = null) {
       </div>
       <div class="form-row">
         <div class="form-group">
+          <label>一级分类 <span style="color:var(--accent)">*</span></label>
+          <select class="form-input" id="updCategory" onchange="updateSubCategoryOptions()">
+            <option value="">请选择</option>
+            ${(currentCategories?.updateCategories || []).map(c => `<option value="${c.id}" ${update?.category === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>二级分类 <span style="color:var(--accent)">*</span></label>
+          <select class="form-input" id="updSubCategory">
+            <option value="">请先选择一级分类</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
           <label>发布日期 <span style="color:var(--accent)">*</span></label>
           <input type="date" class="form-input" id="updPublishDate" value="${update?.publishDate || new Date().toISOString().split('T')[0]}">
         </div>
@@ -5635,9 +5785,16 @@ function openUpdateModal(update = null) {
       </div>
     `;
 
+    // Initialize sub-category dropdown if editing
+    if (update?.category) {
+      setTimeout(() => updateSubCategoryOptions(update.subCategory), 0);
+    }
+
     document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
       const data = {
         title: document.getElementById('updTitle').value,
+        category: document.getElementById('updCategory').value,
+        subCategory: document.getElementById('updSubCategory').value,
         publishDate: document.getElementById('updPublishDate').value,
         content: document.getElementById('updContent').value,
         pinned: document.getElementById('updPinned').checked,
@@ -5649,6 +5806,8 @@ function openUpdateModal(update = null) {
       };
 
       if (!data.title) { showToast('请填写标题', 'error'); return; }
+      if (!data.category) { showToast('请选择一级分类', 'error'); return; }
+      if (!data.subCategory) { showToast('请选择二级分类', 'error'); return; }
       if (!data.content) { showToast('请填写内容', 'error'); return; }
 
       if (isEdit) {
@@ -5662,6 +5821,19 @@ function openUpdateModal(update = null) {
 
     openModal();
   });
+}
+
+function updateSubCategoryOptions(selectedValue) {
+  const catSelect = document.getElementById('updCategory');
+  const subSelect = document.getElementById('updSubCategory');
+  if (!catSelect || !subSelect) return;
+  const catId = catSelect.value;
+  const cats = currentCategories?.updateCategories || [];
+  const cat = cats.find(c => c.id === catId);
+  const children = cat?.children || [];
+  subSelect.innerHTML = children.length > 0
+    ? `<option value="">请选择</option>` + children.map(c => `<option value="${c.id}" ${selectedValue === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')
+    : '<option value="">无子分类</option>';
 }
 
 async function editUpdate(id) {

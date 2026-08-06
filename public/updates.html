@@ -29,8 +29,6 @@
     <div class="filter-bar">
       <div id="updateCategoryFilters" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
         <button class="filter-btn active" data-cat="all">全部</button>
-        <button class="filter-btn" data-cat="geren">个人</button>
-        <button class="filter-btn" data-cat="shetuan">社团</button>
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
@@ -38,6 +36,11 @@
           <option value="date-asc">发布日期 ↑ 旧→新</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索动态..." id="searchInput">
+      </div>
+    </div>
+    <div class="filter-bar" id="updateSubCategoryFilters" style="display:none;">
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button class="filter-btn active" data-subcat="all">全部</button>
       </div>
     </div>
     <div class="filter-bar">
@@ -63,13 +66,56 @@
     let allUpdates = [];
     let circlesMap = {};
     let circlesData = [];
+    let updateCategoriesData = [];
     let currentUpdateCategory = 'all';
+    let currentUpdateSubCategory = 'all';
     let currentFollowFilter = false;
 
     function toggleFollowFilter() {
       currentFollowFilter = !currentFollowFilter;
       document.getElementById('followFilterBtn').classList.toggle('active', currentFollowFilter);
       renderUpdates();
+    }
+
+    function buildUpdateCategoryFilters() {
+      const cats = updateCategoriesData;
+      const container = document.getElementById('updateCategoryFilters');
+      container.innerHTML = '<button class="filter-btn active" data-cat="all">全部</button>' +
+        cats.map(c => `<button class="filter-btn" data-cat="${c.id}">${escapeHtml(c.name)}</button>`).join('');
+      // Bind click events
+      container.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentUpdateCategory = btn.dataset.cat;
+          currentUpdateSubCategory = 'all';
+          buildSubCategoryFilters();
+          renderUpdates();
+        });
+      });
+    }
+
+    function buildSubCategoryFilters() {
+      const subContainer = document.getElementById('updateSubCategoryFilters');
+      if (currentUpdateCategory === 'all') {
+        subContainer.style.display = 'none';
+        return;
+      }
+      const cat = updateCategoriesData.find(c => c.id === currentUpdateCategory);
+      const children = cat?.children || [];
+      if (children.length === 0) { subContainer.style.display = 'none'; return; }
+      subContainer.style.display = '';
+      subContainer.querySelector('div').innerHTML =
+        '<button class="filter-btn active" data-subcat="all">全部</button>' +
+        children.map(c => `<button class="filter-btn" data-subcat="${c.id}">${escapeHtml(c.name)}</button>`).join('');
+      subContainer.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          subContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentUpdateSubCategory = btn.dataset.subcat;
+          renderUpdates();
+        });
+      });
     }
 
     async function loadUpdates() {
@@ -91,15 +137,10 @@
         circlesData = circles;
         circles.forEach(c => circlesMap[c.id] = c.name);
 
-        // Bind category filter events
-        document.querySelectorAll('#updateCategoryFilters .filter-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            document.querySelectorAll('#updateCategoryFilters .filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentUpdateCategory = btn.dataset.cat;
-            renderUpdates();
-          });
-        });
+        // Load update categories from the categories API
+        const catsResp = await fetch('/api/categories').then(r => r.json());
+        updateCategoriesData = catsResp.updateCategories || [];
+        buildUpdateCategoryFilters();
 
         renderUpdates();
         document.getElementById('searchInput').addEventListener('input', debounce(renderUpdates));
@@ -118,14 +159,12 @@
       const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
       let filtered = [...allUpdates];
 
-      // Category filter
+      // Category filter (by update's own category field)
       if (currentUpdateCategory !== 'all') {
-        filtered = filtered.filter(u => {
-          return (u.relatedCircles || []).some(cid => {
-            const circle = circlesData.find(c => c.id === cid);
-            return circle && circle.category === currentUpdateCategory;
-          });
-        });
+        filtered = filtered.filter(u => u.category === currentUpdateCategory);
+      }
+      if (currentUpdateSubCategory !== 'all') {
+        filtered = filtered.filter(u => u.subCategory === currentUpdateSubCategory);
       }
 
       // Follow filter
