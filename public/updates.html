@@ -78,7 +78,7 @@
       // Category buttons
       const catContainer = document.getElementById('categoryFilters');
       const catHtml = `<button class="filter-btn active" data-cat="all">${t('common.allCategories')}</button>` +
-        cats.map(c => `<button class="filter-btn" data-cat="${c.id}">${escapeHtml(c.name)}</button>`).join('');
+        cats.map(c => `<button class="filter-btn" data-cat="${c.id}">${escapeHtml(tCat(c))}</button>`).join('');
       // Keep the sort/search area
       const rightSide = catContainer.querySelector('div[style*="margin-left:auto"]');
       catContainer.innerHTML = catHtml;
@@ -94,7 +94,7 @@
       // Status buttons
       const statusContainer = document.getElementById('statusFilters');
       statusContainer.innerHTML = `<button class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
-        status.map(c => `<button class="filter-btn" data-status="${c.id}">${escapeHtml(c.name)}</button>`).join('');
+        status.map(c => `<button class="filter-btn" data-status="${c.id}">${escapeHtml(tCat(c))}</button>`).join('');
       statusContainer.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           statusContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
