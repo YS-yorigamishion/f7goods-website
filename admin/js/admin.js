@@ -4560,7 +4560,7 @@ function renderCategories() {
         </div>
       </div>
     `;
-  } else {
+  } else if (currentCatTab === 'projects') {
     container.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
         <div class="admin-card">
