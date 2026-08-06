@@ -1118,6 +1118,35 @@ function switchCreationRange(days) {
   renderCreationStats(_pageStatsEntities);
 }
 
+function showCreationDetail(typeKey) {
+  if (!_pageStatsEntities) return;
+  const types = { works: '作品', events: '活动', circles: '作者', projects: '企划', updates: '动态' };
+  const label = types[typeKey] || typeKey;
+  const items = (_pageStatsEntities[typeKey] || []).filter(item => {
+    const created = (item.createdAt || '').slice(0, 10);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - _creationRange + 1);
+    return created >= startDate.toISOString().slice(0, 10);
+  }).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+  document.getElementById('modalTitle').textContent = `新增${label}明细（近${_creationRange}天）`;
+  if (items.length === 0) {
+    document.getElementById('modalBody').innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无数据</p>';
+  } else {
+    document.getElementById('modalBody').innerHTML = `
+      <table class="admin-table" style="width:100%;">
+        <thead><tr><th>名称</th><th>创建时间</th></tr></thead>
+        <tbody>${items.map(item => `<tr>
+          <td>${escapeHtml(item.title || item.name || item.id)}</td>
+          <td>${(item.createdAt || '').slice(0, 16).replace('T', ' ')}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+  }
+  document.getElementById('modalSave').style.display = 'none';
+  openModal();
+  document.getElementById('modalSave').style.display = '';
+}
+
 function renderCreationStats(entities) {
   if (!entities) return;
   const days = _creationRange;
@@ -1169,12 +1198,12 @@ function renderCreationStats(entities) {
       const created = (item.createdAt || '').slice(0, 10);
       return created >= startDate.toISOString().slice(0, 10);
     });
-    return { label: t.label, count: items.length, color: t.color };
+    return { label: t.label, count: items.length, color: t.color, key: t.key };
   });
 
   // Render summary cards
   document.getElementById('creationStatsSummary').innerHTML = summary.map(s =>
-    `<div style="text-align:center;padding:0.6rem;background:var(--card-bg);border-radius:8px;border:1px solid var(--border);">
+    `<div style="text-align:center;padding:0.6rem;background:var(--card-bg);border-radius:8px;border:1px solid var(--border);cursor:pointer;" onclick="showCreationDetail('${s.key}')">
       <div style="font-size:1.3rem;font-weight:700;color:${s.color};">${s.count}</div>
       <div style="font-size:0.75rem;color:var(--haze);">${s.label}</div>
     </div>`
