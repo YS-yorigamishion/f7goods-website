@@ -193,7 +193,19 @@ async function loadSettingsFromAPI() {
 }
 
 function getPageSettings(pageKey) {
-  return siteSettings?.pages?.[pageKey] || {};
+  const ps = siteSettings?.pages?.[pageKey] || {};
+  if (_lang === 'zh') return ps;
+  const suffix = _lang.charAt(0).toUpperCase() + _lang.slice(1); // En, Ja, Ko
+  const result = {};
+  for (const [key, val] of Object.entries(ps)) {
+    if (key.endsWith('Input') || key === 'heroBg' || key === 'contactLinks') {
+      result[key] = val; // Non-text fields pass through
+    } else {
+      const langKey = key + suffix;
+      result[key] = (ps[langKey] !== undefined && ps[langKey] !== '') ? ps[langKey] : val;
+    }
+  }
+  return result;
 }
 
 function getSiteSettings() {
@@ -286,8 +298,9 @@ function buildNavbar(activePage) {
       ? `<div class="logo-icon">${logoText}</div>`
       : `<div class="logo-icon">F7</div>`;
   const langOptions = ['zh', 'ko', 'en', 'ja'].map(code =>
-    `<button class="lang-btn ${_lang === code ? 'active' : ''}" data-lang="${code}" onclick="loadLang('${code}')">${getLangName(code)}</button>`
+    `<button class="lang-btn ${_lang === code ? 'active' : ''}" data-lang="${code}" onclick="loadLang('${code}');document.querySelector('.lang-dropdown').classList.remove('open')">${getLangName(code)}</button>`
   ).join('');
+  const currentLangName = getLangName(_lang);
   return `
     <div class="brand-bar"></div>
     <div class="nav-inner">
@@ -295,6 +308,14 @@ function buildNavbar(activePage) {
         ${logoContent}
         <span>${brandName}</span>
       </a>
+      <div class="lang-switcher-nav">
+        <button class="lang-current" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Language">
+          🌐 ${currentLangName}
+        </button>
+        <div class="lang-dropdown">
+          ${langOptions}
+        </div>
+      </div>
       <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="菜单" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -305,7 +326,6 @@ function buildNavbar(activePage) {
         <li><a href="/projects.html" class="${activePage === 'projects' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.projects')}</a></li>
         <li><a href="/updates.html" class="${activePage === 'updates' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.updates')}</a></li>
         <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.contact')}</a></li>
-        <li class="lang-switcher">${langOptions}</li>
       </ul>
     </div>
   `;
@@ -379,6 +399,14 @@ async function initPage(activePage, itemId) {
   if (navbar) {
     navbar.dataset.activePage = activePage;
     navbar.innerHTML = buildNavbar(activePage);
+    // Close lang dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const dropdown = document.querySelector('.lang-dropdown');
+      const switcher = document.querySelector('.lang-switcher-nav');
+      if (dropdown && switcher && !switcher.contains(e.target)) {
+        dropdown.classList.remove('open');
+      }
+    });
   }
 
   const footer = document.getElementById('footer');
