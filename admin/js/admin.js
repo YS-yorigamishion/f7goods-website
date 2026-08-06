@@ -259,6 +259,40 @@ function wrapSaveButton(asyncFn) {
   asyncFn().finally(() => { btn.disabled = false; btn.textContent = origText; });
 }
 
+function removeImageButton(extraOnClick) {
+  const onclick = extraOnClick ? `this.parentElement.remove();${extraOnClick}` : 'this.parentElement.remove()';
+  return `<button onclick="${onclick}" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
+}
+
+function exportToCSV(filename, headers, rows) {
+  if (rows.length === 0) { showToast('没有数据可导出', 'error'); return; }
+  const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function uploadImagesToField(inputId, previewId, shape = 'square') {
+  const input = document.getElementById(inputId);
+  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
+  const preview = document.getElementById(previewId);
+  const borderRadius = shape === 'circle' ? '50%' : '6px';
+  for (const file of input.files) {
+    const res = await uploadImage(file);
+    if (res.url) {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:relative;';
+      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:${borderRadius};">` + removeImageButton();
+      preview.appendChild(div);
+    }
+  }
+  input.value = '';
+}
+
 async function uploadImage(file) {
   const formData = new FormData();
   formData.append('image', file);
@@ -306,6 +340,47 @@ async function cleanupPageviews() {
 // ===== Admin Notifications =====
 let adminNotifications = [];
 
+function loadAdminNotificationsWithData(works, events, circles, projects, updates) {
+  adminNotifications = [];
+
+  // Pending authors
+  const pendingAuthors = (circles || []).filter(c => c.authorStatus === 'pending');
+  pendingAuthors.forEach(c => {
+    adminNotifications.push({ type: 'author', id: c.id, title: c.name, message: '新作者注册待审核' });
+  });
+
+  // Pending events
+  const pendingEvents = (events || []).filter(e => e.approvalStatus === 'pending');
+  pendingEvents.forEach(e => {
+    adminNotifications.push({ type: 'event', id: e.id, title: e.title, message: '新活动待审核' });
+  });
+
+  // Pending projects
+  const pendingProjects = (projects || []).filter(p => p.approvalStatus === 'pending');
+  pendingProjects.forEach(p => {
+    adminNotifications.push({ type: 'project', id: p.id, title: p.title, message: '新企划待审核' });
+  });
+
+  // Pending updates
+  const pendingUpdates = (updates || []).filter(u => u.approvalStatus === 'pending');
+  pendingUpdates.forEach(u => {
+    adminNotifications.push({ type: 'update', id: u.id, title: u.title, message: '新动态待审核' });
+  });
+
+  // Pending works
+  const pendingWorks = (works || []).filter(w => w.approvalStatus === 'pending');
+  pendingWorks.forEach(w => {
+    adminNotifications.push({ type: 'work', id: w.id, title: w.title, message: '新作品待审核' });
+  });
+
+  // Update badge
+  const badge = document.getElementById('adminNotifBadge');
+  if (badge) {
+    badge.textContent = adminNotifications.length;
+    badge.style.display = adminNotifications.length > 0 ? 'block' : 'none';
+  }
+}
+
 async function loadAdminNotifications() {
   try {
     const [circles, events, projects, updates, works] = await Promise.all([
@@ -315,45 +390,7 @@ async function loadAdminNotifications() {
       adminAPI('GET', '/api/admin/updates'),
       adminAPI('GET', '/api/admin/works')
     ]);
-
-    adminNotifications = [];
-
-    // Pending authors
-    const pendingAuthors = (circles || []).filter(c => c.authorStatus === 'pending');
-    pendingAuthors.forEach(c => {
-      adminNotifications.push({ type: 'author', id: c.id, title: c.name, message: '新作者注册待审核' });
-    });
-
-    // Pending events
-    const pendingEvents = (events || []).filter(e => e.approvalStatus === 'pending');
-    pendingEvents.forEach(e => {
-      adminNotifications.push({ type: 'event', id: e.id, title: e.title, message: '新活动待审核' });
-    });
-
-    // Pending projects
-    const pendingProjects = (projects || []).filter(p => p.approvalStatus === 'pending');
-    pendingProjects.forEach(p => {
-      adminNotifications.push({ type: 'project', id: p.id, title: p.title, message: '新企划待审核' });
-    });
-
-    // Pending updates
-    const pendingUpdates = (updates || []).filter(u => u.approvalStatus === 'pending');
-    pendingUpdates.forEach(u => {
-      adminNotifications.push({ type: 'update', id: u.id, title: u.title, message: '新动态待审核' });
-    });
-
-    // Pending works
-    const pendingWorks = (works || []).filter(w => w.approvalStatus === 'pending');
-    pendingWorks.forEach(w => {
-      adminNotifications.push({ type: 'work', id: w.id, title: w.title, message: '新作品待审核' });
-    });
-
-    // Update badge
-    const badge = document.getElementById('adminNotifBadge');
-    if (badge) {
-      badge.textContent = adminNotifications.length;
-      badge.style.display = adminNotifications.length > 0 ? 'block' : 'none';
-    }
+    loadAdminNotificationsWithData(works, events, circles, projects, updates);
   } catch (e) {
     console.error('Failed to load notifications:', e);
   }
@@ -410,8 +447,8 @@ async function loadDashboard() {
   document.getElementById('statPendingProjects').textContent = pendingProjects;
   document.getElementById('statPendingUpdates').textContent = pendingUpdates;
 
-  // Load notifications
-  loadAdminNotifications();
+  // Load notifications using already-fetched data
+  loadAdminNotificationsWithData(works, events, circles, projects, updates);
 
   // Page view stats
   const daily = pvData?.daily || {};
@@ -1613,10 +1650,8 @@ function filterWorks() {
 // Export works to Excel
 async function exportAdminWorks() {
   showToast('正在获取全部数据...', 'info');
-  // Fetch all works without pagination
   const allWorks = await adminAPI('GET', '/api/admin/works');
   if (!allWorks || allWorks.length === 0) { showToast('没有作品可导出', 'error'); return; }
-
   const headers = ['作品名称', '作者', '分类', '状态', '价格', '发售日期', '标签', '喜爱数', '想要数', '描述'];
   const rows = allWorks.map(w => [
     w.title,
@@ -1630,17 +1665,7 @@ async function exportAdminWorks() {
     w.wants || 0,
     w.description || ''
   ]);
-
-  let csv = '\uFEFF' + headers.join(',') + '\n';
-  rows.forEach(row => {
-    csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
-  });
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `作品列表_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
+  exportToCSV(`作品列表_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
   showToast(`导出成功，共 ${allWorks.length} 条`, 'success');
 }
 
@@ -1658,13 +1683,7 @@ async function exportAdminEvents() {
     e.location || '',
     e.description || ''
   ]);
-  let csv = '\uFEFF' + headers.join(',') + '\n';
-  rows.forEach(row => { csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n'; });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `活动列表_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
+  exportToCSV(`活动列表_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
   showToast(`导出成功，共 ${allEvents.length} 条`, 'success');
 }
 
@@ -1680,13 +1699,7 @@ async function exportAdminCircles() {
     c.description || '',
     c.socialLinks?.qq || c.socialLinks?.qqGroup || ''
   ]);
-  let csv = '\uFEFF' + headers.join(',') + '\n';
-  rows.forEach(row => { csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n'; });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `作者列表_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
+  exportToCSV(`作者列表_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
   showToast(`导出成功，共 ${allCircles.length} 条`, 'success');
 }
 
@@ -1702,13 +1715,7 @@ async function exportAdminProjects() {
     PROJECT_STATUS_LABELS[p.status] || p.status || '',
     p.description || ''
   ]);
-  let csv = '\uFEFF' + headers.join(',') + '\n';
-  rows.forEach(row => { csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n'; });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `企划列表_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
+  exportToCSV(`企划列表_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
   showToast(`导出成功，共 ${allProjects.length} 条`, 'success');
 }
 
@@ -1724,13 +1731,7 @@ async function exportAdminUpdates() {
     u.pinned ? '是' : '否',
     u.content || ''
   ]);
-  let csv = '\uFEFF' + headers.join(',') + '\n';
-  rows.forEach(row => { csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n'; });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `动态列表_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
+  exportToCSV(`动态列表_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
   showToast(`导出成功，共 ${allUpdates.length} 条`, 'success');
 }
 
@@ -1936,7 +1937,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
         ${(work?.images || []).map((img, i) => `
           <div style="position:relative;">
             <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
-            <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>
+            ${removeImageButton()}
           </div>
         `).join('')}
       </div>
@@ -1952,7 +1953,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
         ${(work?.moreImages || []).map((img, i) => `
           <div style="position:relative;">
             <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
-            <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>
+            ${removeImageButton()}
           </div>
         `).join('')}
       </div>
@@ -2068,35 +2069,11 @@ function openWorkModal(work = null, returnToCircleId = null) {
 }
 
 async function uploadWorkImages() {
-  const input = document.getElementById('wImage');
-  const preview = document.getElementById('wImagePreview');
-  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
-  for (const file of input.files) {
-    const res = await uploadImage(file);
-    if (res.url) {
-      const div = document.createElement('div');
-      div.style.position = 'relative';
-      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
-      preview.appendChild(div);
-    }
-  }
-  input.value = '';
+  await uploadImagesToField('wImage', 'wImagePreview');
 }
 
 async function uploadWorkMoreImages() {
-  const input = document.getElementById('wMoreImage');
-  const preview = document.getElementById('wMoreImagePreview');
-  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
-  for (const file of input.files) {
-    const res = await uploadImage(file);
-    if (res.url) {
-      const div = document.createElement('div');
-      div.style.position = 'relative';
-      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
-      preview.appendChild(div);
-    }
-  }
-  input.value = '';
+  await uploadImagesToField('wMoreImage', 'wMoreImagePreview');
 }
 
 function filterWorkProjectsList(query) {
@@ -2592,7 +2569,7 @@ function openEventModal(event = null) {
     <div class="form-group">
       <label>首图（时间轴和多格视图的封面图，仅限1张）</label>
       <div id="eCoverPreview" style="margin-bottom:0.5rem;">
-        ${event?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${event.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
+        ${event?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${event.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
       </div>
       <input type="file" id="eCoverInput" accept="image/*" style="font-size:0.85rem;">
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -2606,7 +2583,7 @@ function openEventModal(event = null) {
         ${(event?.images || []).map((img, i) => `
           <div style="position:relative;">
             <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
-            <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>
+            ${removeImageButton()}
           </div>
         `).join('')}
       </div>
@@ -3083,25 +3060,13 @@ async function uploadEventCover() {
   if (!input.files.length) { showToast('请选择首图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
-    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
   }
   input.value = '';
 }
 
 async function uploadEventImages() {
-  const input = document.getElementById('eImageInput');
-  const preview = document.getElementById('eImagesPreview');
-  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
-  for (const file of input.files) {
-    const res = await uploadImage(file);
-    if (res.url) {
-      const div = document.createElement('div');
-      div.style.position = 'relative';
-      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
-      preview.appendChild(div);
-    }
-  }
-  input.value = '';
+  await uploadImagesToField('eImageInput', 'eImagesPreview');
 }
 
 // ===== Circles =====
@@ -3669,7 +3634,7 @@ function openCircleModal(circle = null) {
     <div class="form-group">
       <label>作者头像</label>
       <div id="cLogoPreview" style="margin-bottom:0.5rem;">
-        ${circle?.logo ? `<div style="position:relative;display:inline-block;"><img src="${circle.logo}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;"><button onclick="this.parentElement.remove();document.getElementById('cLogoInput').dataset.cleared='1';" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
+        ${circle?.logo ? `<div style="position:relative;display:inline-block;"><img src="${circle.logo}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;">${removeImageButton("document.getElementById('cLogoInput').dataset.cleared='1'")}</div>` : ''}
       </div>
       <input type="file" id="cLogoInput" accept="image/*" style="font-size:0.85rem;">
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -3683,7 +3648,7 @@ function openCircleModal(circle = null) {
         ${(circle?.images || []).map((img, i) => `
           <div style="position:relative;">
             <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
-            <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>
+            ${removeImageButton()}
           </div>
         `).join('')}
       </div>
@@ -3744,28 +3709,19 @@ async function uploadCircleLogo() {
   if (!input.files.length) { showToast('请选择头像图片', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
-    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;">${removeImageButton()}</div>`;
   }
   input.value = '';
 }
 
 async function uploadCircleImages() {
-  const input = document.getElementById('cImageInput');
-  const preview = document.getElementById('cImagesPreview');
-  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
-  for (const file of input.files) {
-    const res = await uploadImage(file);
-    if (res.url) {
-      appendImagePreview(preview, res.url);
-    }
-  }
-  input.value = '';
+  await uploadImagesToField('cImageInput', 'cImagesPreview');
 }
 
 function appendImagePreview(container, url) {
   const div = document.createElement('div');
-  div.style.position = 'relative';
-  div.innerHTML = `<img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
+  div.style.cssText = 'position:relative;';
+  div.innerHTML = `<img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">` + removeImageButton();
   container.appendChild(div);
 }
 
@@ -3812,19 +3768,19 @@ async function pickImageFromLibrary(type) {
 
     if (type === 'circle-logo') {
       const preview = document.getElementById('cLogoPreview');
-      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
     } else if (type === 'circle-images') {
       const preview = document.getElementById('cImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
     } else if (type === 'event-cover') {
       const preview = document.getElementById('eCoverPreview');
-      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
     } else if (type === 'event-images') {
       const preview = document.getElementById('eImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
     } else if (type === 'project-cover') {
       const preview = document.getElementById('pCoverPreview');
-      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
     } else if (type === 'project-images') {
       const preview = document.getElementById('pImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
@@ -3836,7 +3792,7 @@ async function pickImageFromLibrary(type) {
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
     } else if (type === 'update-cover') {
       const preview = document.getElementById('updCoverPreview');
-      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
     } else if (type === 'update-images') {
       const preview = document.getElementById('updImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
@@ -4127,7 +4083,7 @@ function openProjectModal(project = null) {
     <div class="form-group">
       <label>首图（列表页封面图，仅限1张）</label>
       <div id="pCoverPreview" style="margin-bottom:0.5rem;">
-        ${project?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${project.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
+        ${project?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${project.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
       </div>
       <input type="file" id="pCoverInput" accept="image/*" style="font-size:0.85rem;">
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -4141,7 +4097,7 @@ function openProjectModal(project = null) {
         ${(project?.images || []).map((img, i) => `
           <div style="position:relative;">
             <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
-            <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>
+            ${removeImageButton()}
           </div>
         `).join('')}
       </div>
@@ -4343,25 +4299,13 @@ async function uploadProjectCover() {
   if (!input.files.length) { showToast('请选择首图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
-    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
   }
   input.value = '';
 }
 
 async function uploadProjectImages() {
-  const input = document.getElementById('pImageInput');
-  const preview = document.getElementById('pImagesPreview');
-  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
-  for (const file of input.files) {
-    const res = await uploadImage(file);
-    if (res.url) {
-      const div = document.createElement('div');
-      div.style.position = 'relative';
-      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
-      preview.appendChild(div);
-    }
-  }
-  input.value = '';
+  await uploadImagesToField('pImageInput', 'pImagesPreview');
 }
 
 // ===== Categories =====
@@ -5491,7 +5435,7 @@ function openUpdateModal(update = null) {
       <div class="form-group">
         <label>首图</label>
         <div id="updCoverPreview" style="margin-bottom:0.5rem;">
-          ${update?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${update.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
+          ${update?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${update.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
         </div>
         <input type="file" id="updCoverInput" accept="image/*" style="font-size:0.85rem;">
         <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -5505,7 +5449,7 @@ function openUpdateModal(update = null) {
           ${(update?.images || []).map((img, i) => `
             <div style="position:relative;">
               <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
-              <button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>
+              ${removeImageButton()}
             </div>
           `).join('')}
         </div>
@@ -5606,25 +5550,13 @@ async function uploadUpdateCover() {
   if (!input.files.length) { showToast('请选择首图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
-    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>`;
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
   }
   input.value = '';
 }
 
 async function uploadUpdateImages() {
-  const input = document.getElementById('updImagesInput');
-  const preview = document.getElementById('updImagesPreview');
-  if (!input.files.length) { showToast('请选择图片', 'error'); return; }
-  for (const file of input.files) {
-    const res = await uploadImage(file);
-    if (res.url) {
-      const div = document.createElement('div');
-      div.style.position = 'relative';
-      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button>`;
-      preview.appendChild(div);
-    }
-  }
-  input.value = '';
+  await uploadImagesToField('updImagesInput', 'updImagesPreview');
 }
 
 // ===== Change Password =====

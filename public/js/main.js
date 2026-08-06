@@ -874,9 +874,9 @@ function openLightbox(images, startIndex = 0) {
       img.classList.remove('lightbox-dragging');
     });
 
-    document.addEventListener('keydown', lightboxKeyHandler);
   }
 
+  document.addEventListener('keydown', lightboxKeyHandler);
   updateLightbox();
   requestAnimationFrame(() => overlay.classList.add('open'));
 }
@@ -900,6 +900,7 @@ function closeLightbox() {
     resetZoom(overlay.querySelector('img'));
     overlay.classList.remove('open');
   }
+  document.removeEventListener('keydown', lightboxKeyHandler);
 }
 
 function navLightbox(dir) {
