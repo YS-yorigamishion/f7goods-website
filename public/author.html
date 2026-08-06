@@ -1317,25 +1317,45 @@
     }
 
     // Load author history
+    let authorHistoryData = [];
+    let authorHistoryPage = 0;
+    const AUTHOR_HISTORY_PAGE_SIZE = 50;
+
     async function loadAuthorHistory() {
       const container = document.getElementById('authorHistoryContainer');
       try {
-        const log = await authorAPI('GET', '/api/author/history');
-        if (!log || log.length === 0) {
-          container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无操作记录</p>';
-          return;
-        }
-        container.innerHTML = log.slice(0, 50).map(entry => {
-          const time = new Date(entry.time).toLocaleString('zh-CN');
-          return `<div style="display:flex;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.8rem;">
-            <span style="color:var(--haze);white-space:nowrap;">${time}</span>
-            <span style="color:var(--accent-alt);font-weight:500;">${escapeHtml(entry.action)}</span>
-            <span style="flex:1;">${escapeHtml(entry.target || '')}</span>
-          </div>`;
-        }).join('');
+        authorHistoryData = await authorAPI('GET', '/api/author/history') || [];
+        authorHistoryPage = 0;
+        renderAuthorHistory();
       } catch (e) {
         container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无操作记录</p>';
       }
+    }
+
+    function renderAuthorHistory() {
+      const container = document.getElementById('authorHistoryContainer');
+      if (!authorHistoryData || authorHistoryData.length === 0) {
+        container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无操作记录</p>';
+        return;
+      }
+      const end = (authorHistoryPage + 1) * AUTHOR_HISTORY_PAGE_SIZE;
+      const items = authorHistoryData.slice(0, end);
+      container.innerHTML = items.map(entry => {
+        const time = new Date(entry.time).toLocaleString('zh-CN');
+        return `<div style="display:flex;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.8rem;">
+          <span style="color:var(--haze);white-space:nowrap;">${time}</span>
+          <span style="color:var(--accent-alt);font-weight:500;">${escapeHtml(entry.action)}</span>
+          <span style="flex:1;">${escapeHtml(entry.target || '')}</span>
+        </div>`;
+      }).join('');
+      if (end < authorHistoryData.length) {
+        container.innerHTML += `<div style="text-align:center;padding:1rem;"><button class="btn" onclick="loadMoreAuthorHistory()">加载更多 (${items.length}/${authorHistoryData.length})</button></div>`;
+      }
+    }
+
+    function loadMoreAuthorHistory() {
+      authorHistoryPage++;
+      renderAuthorHistory();
     }
 
     // Build category filter buttons
@@ -1949,7 +1969,9 @@
       // 上传剩余文件
       let uploaded = 0;
       const errors = [];
+      const compressed = [];
       const actAs = localStorage.getItem('f7author_actAs');
+      showLoading('上传中...');
       for (const file of toUpload) {
         const formData = new FormData();
         formData.append('image', file);
@@ -1958,18 +1980,27 @@
         if (actAs) headers['X-Act-As'] = actAs;
         const res = await fetch('/api/author/upload', { method: 'POST', headers, body: formData });
         if (res.ok) {
+          const data = await res.json().catch(() => ({}));
           uploaded++;
+          // 检查是否被压缩
+          if (data.originalSize && data.compressedSize && data.originalSize > data.compressedSize) {
+            compressed.push(`${file.name}: ${(data.originalSize/1024).toFixed(0)}KB → ${(data.compressedSize/1024).toFixed(0)}KB`);
+          }
         } else {
           const data = await res.json().catch(() => ({}));
           errors.push(`${file.name}: ${data.error || '上传失败'}`);
         }
       }
+      hideLoading();
 
       // 显示结果
       let msg = `成功上传 ${uploaded} 张图片`;
       if (skipped.length > 0) msg += `，跳过 ${skipped.length} 张（超过5MB）`;
       if (errors.length > 0) msg += `，失败 ${errors.length} 张`;
       showToast(msg, uploaded > 0 ? 'success' : 'error', 5000);
+      if (compressed.length > 0) {
+        showToast(`已压缩: ${compressed.join('、')}`, 'info', 8000);
+      }
 
       input.value = '';
       loadAuthorImages();

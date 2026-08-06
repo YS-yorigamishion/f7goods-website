@@ -338,6 +338,27 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// Custom confirm dialog
+function showConfirm(message, options = {}) {
+  return new Promise((resolve) => {
+    const { title = '确认', confirmText = '确定', cancelText = '取消', danger = false } = options;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+    overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:100%;box-shadow:var(--shadow-lg);">
+      <h3 style="margin:0 0 1rem;font-size:1.1rem;">${title}</h3>
+      <p style="color:var(--ink);margin:0 0 1.5rem;line-height:1.6;white-space:pre-wrap;">${message}</p>
+      <div style="display:flex;gap:0.8rem;justify-content:flex-end;">
+        <button class="btn" id="confirmCancel" style="background:var(--border);color:var(--ink);">${cancelText}</button>
+        <button class="btn" id="confirmOk" style="background:${danger ? 'var(--accent)' : 'var(--accent-alt)'};color:white;">${confirmText}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#confirmCancel').onclick = () => { overlay.remove(); resolve(false); };
+    overlay.querySelector('#confirmOk').onclick = () => { overlay.remove(); resolve(true); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
+  });
+}
+
 // Toast notification
 function showToast(message, type = 'info', duration = 3000) {
   let toast = document.getElementById('toast');
