@@ -199,6 +199,18 @@ function logEdit(user, action, target, details, imageUrl) {
   writeJSON('edit-log.json', log);
 }
 
+function clearEditLogImageUrl(imageUrl) {
+  const log = readJSON('edit-log.json');
+  let changed = false;
+  log.forEach(entry => {
+    if (entry.imageUrl === imageUrl) {
+      entry.imageUrl = '';
+      changed = true;
+    }
+  });
+  if (changed) writeJSON('edit-log.json', log);
+}
+
 // Author notifications system
 function addAuthorNotification(circleId, type, title, message, rejectReason) {
   let notifications = [];
@@ -835,6 +847,7 @@ app.delete('/api/author/images/:filename', authorAuthMiddleware, (req, res) => {
     delete meta[filename];
     writeJSON('uploads-meta.json', meta);
     logEdit(authorName, '删除图片', filename, '');
+    clearEditLogImageUrl('/uploads/' + safeFilename);
     res.json({ success: true });
   } else {
     res.status(404).json({ error: '文件不存在' });
@@ -3464,6 +3477,7 @@ app.delete('/api/admin/images/:filename', authMiddleware, (req, res) => {
       writeJSON('uploads-meta.json', meta);
     } catch {}
     logEdit('管理员', '删除图片', req.params.filename, '');
+    clearEditLogImageUrl('/uploads/' + filename);
     res.json({ success: true });
   } else {
     res.status(404).json({ error: '文件不存在' });
