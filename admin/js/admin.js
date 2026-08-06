@@ -1122,11 +1122,10 @@ function showCreationDetail(typeKey) {
   if (!_pageStatsEntities) return;
   const types = { works: '作品', events: '活动', circles: '作者', projects: '企划', updates: '动态' };
   const label = types[typeKey] || typeKey;
+  const startStr = getChinaDateDaysAgo(_creationRange - 1);
   const items = (_pageStatsEntities[typeKey] || []).filter(item => {
     const created = (item.createdAt || '').slice(0, 10);
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - _creationRange + 1);
-    return created >= startDate.toISOString().slice(0, 10);
+    return created >= startStr;
   }).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 
   document.getElementById('modalTitle').textContent = `新增${label}明细（近${_creationRange}天）`;
@@ -1150,10 +1149,8 @@ function showCreationDetail(typeKey) {
 function renderCreationStats(entities) {
   if (!entities) return;
   const days = _creationRange;
-  const now = new Date();
-  const startDate = new Date(now);
-  startDate.setDate(startDate.getDate() - days + 1);
-  startDate.setHours(0, 0, 0, 0);
+  const todayStr = getChinaDate();
+  const startStr = getChinaDateDaysAgo(days - 1);
 
   const types = [
     { key: 'works', label: '作品', color: 'rgba(233,69,96,0.7)' },
@@ -1166,10 +1163,12 @@ function renderCreationStats(entities) {
   // Build date labels
   const labels = [];
   const dateKeys = [];
-  for (let d = new Date(startDate); d <= now; d.setDate(d.getDate() + 1)) {
-    const ds = d.toISOString().slice(0, 10);
-    labels.push(ds.slice(5)); // MM-DD
-    dateKeys.push(ds);
+  for (let d = startStr; d <= todayStr; ) {
+    labels.push(d.slice(5)); // MM-DD
+    dateKeys.push(d);
+    const next = new Date(d + 'T00:00:00+08:00');
+    next.setDate(next.getDate() + 1);
+    d = next.toISOString().slice(0, 10);
   }
 
   // Count creations per day per type
@@ -1196,7 +1195,7 @@ function renderCreationStats(entities) {
   const summary = types.map(t => {
     const items = (entities[t.key] || []).filter(item => {
       const created = (item.createdAt || '').slice(0, 10);
-      return created >= startDate.toISOString().slice(0, 10);
+      return created >= startStr;
     });
     return { label: t.label, count: items.length, color: t.color, key: t.key };
   });
@@ -5867,12 +5866,8 @@ async function loadAuthorStats() {
 
     // Filter works by time range
     let filteredWorks = works || [];
-    let startDate = null;
     if (_authorStatsRange > 0) {
-      startDate = new Date();
-      startDate.setDate(startDate.getDate() - _authorStatsRange + 1);
-      startDate.setHours(0, 0, 0, 0);
-      const startStr = startDate.toISOString().slice(0, 10);
+      const startStr = getChinaDateDaysAgo(_authorStatsRange - 1);
       filteredWorks = filteredWorks.filter(w => (w.createdAt || '').slice(0, 10) >= startStr);
     }
 
