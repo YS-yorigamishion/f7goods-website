@@ -29,7 +29,13 @@
     <div class="filter-bar" id="categoryFilters"></div>
     <div class="filter-bar" style="display:flex;gap:0.5rem;align-items:center;">
       <button class="filter-btn" onclick="randomAuthor()" style="white-space:nowrap;">🎲 随机作者</button>
-      <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" style="flex:1;margin-left:0;">
+      <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
+        <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:120px;">
+          <option value="order">默认排序</option>
+          <option value="name-asc">名称 A→Z</option>
+        </select>
+        <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput">
+      </div>
     </div>
     <div class="filter-bar" id="circleUserFilters" style="display:none;">
       <button class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')">⭐ 我关注的</button>
@@ -151,6 +157,14 @@
         );
       }
 
+      // Sorting
+      const sortVal = document.getElementById('sortSelect')?.value || 'order';
+      if (sortVal === 'name-asc') {
+        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      } else {
+        filtered.sort((a, b) => (a.order || 0) - (b.order || 0));
+      }
+
       if (filtered.length === 0) {
         grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的作者</p></div>';
         return;
@@ -175,6 +189,7 @@
     }
 
     document.getElementById('searchInput').addEventListener('input', debounce(renderCircles));
+    document.getElementById('sortSelect').addEventListener('change', renderCircles);
 
     loadCircles();
     checkCircleUserFilters();

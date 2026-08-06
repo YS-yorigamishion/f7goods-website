@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const cors = require('cors');
 const compression = require('compression');
+const helmet = require('helmet');
 const fs = require('fs');
 const path = require('path');
 const XLSX = require('xlsx');
@@ -48,7 +49,11 @@ function clearApiCache(type) {
 }
 
 const app = express();
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'f7goods_secret_2026';
 if (!process.env.JWT_SECRET) {
@@ -148,7 +153,8 @@ const fileFilter = (req, file, cb) => {
   const allowedImages = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
   const allowedExcel = ['.xlsx', '.xls'];
   const ext = path.extname(file.originalname).toLowerCase();
-  if (allowedImages.includes(ext) || allowedExcel.includes(ext)) cb(null, true);
+  const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+  if ((allowedImages.includes(ext) || allowedExcel.includes(ext)) && allowedMimes.includes(file.mimetype)) cb(null, true);
   else cb(new Error('只允许上传图片或Excel文件'), false);
 };
 const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
@@ -234,7 +240,7 @@ function authMiddleware(req, res, next) {
   if (!token) return res.status(401).json({ error: '未授权' });
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (decoded.role === 'author') return res.status(403).json({ error: '权限不足' });
+    if (decoded.role !== 'admin') return res.status(403).json({ error: '权限不足' });
     req.user = decoded;
     next();
   } catch {
@@ -249,7 +255,7 @@ app.post('/api/admin/login', rateLimitMiddleware, (req, res) => {
   if (username !== admin.username || !bcrypt.compareSync(password, admin.passwordHash)) {
     return res.status(401).json({ error: '用户名或密码错误' });
   }
-  const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
+  const token = jwt.sign({ username, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
   res.json({ token });
 });
 
@@ -1959,6 +1965,33 @@ app.get('/api/settings', (req, res) => {
   }
 });
 
+// Dynamic sitemap
+app.get('/sitemap.xml', cacheMiddleware(3600), (req, res) => {
+  try {
+    const baseUrl = req.protocol + '://' + req.get('host');
+    const works = readJSON('works.json').filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
+    const circles = readJSON('circles.json');
+    const events = readJSON('events.json').filter(e => !e.approvalStatus || e.approvalStatus === 'approved');
+    const projects = readJSON('projects.json').filter(p => !p.approvalStatus || p.approvalStatus === 'approved');
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    // Static pages
+    ['/', '/events', '/projects', '/updates', '/circles', '/announcements', '/contact'].forEach(p => {
+      xml += `  <url><loc>${baseUrl}${p}</loc><changefreq>daily</changefreq></url>\n`;
+    });
+    // Dynamic pages
+    works.forEach(w => { xml += `  <url><loc>${baseUrl}/work-detail.html?id=${w.id}</loc><changefreq>weekly</changefreq></url>\n`; });
+    circles.forEach(c => { xml += `  <url><loc>${baseUrl}/circle-detail.html?id=${c.id}</loc><changefreq>weekly</changefreq></url>\n`; });
+    events.forEach(e => { xml += `  <url><loc>${baseUrl}/event-detail.html?id=${e.id}</loc><changefreq>weekly</changefreq></url>\n`; });
+    projects.forEach(p => { xml += `  <url><loc>${baseUrl}/project-detail.html?id=${p.id}</loc><changefreq>weekly</changefreq></url>\n`; });
+    xml += '</urlset>';
+    res.type('application/xml').send(xml);
+  } catch (e) {
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
 app.put('/api/admin/settings', authMiddleware, (req, res) => {
   const existing = readJSON('settings.json');
   const incoming = req.body;
@@ -3506,5 +3539,10 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`\n  f7goods server running at http://localhost:${PORT}`);
   console.log(`  Admin panel: http://localhost:${PORT}/admin`);
-  console.log(`  Default credentials: admin / ${ADMIN_PASSWORD}\n`);
+  if (process.env.ADMIN_PASSWORD) {
+    console.log('  Admin credentials configured via ADMIN_PASSWORD env var.');
+  } else {
+    console.log('  WARNING: Using default admin password. Set ADMIN_PASSWORD env var for production.');
+  }
+  console.log('');
 });

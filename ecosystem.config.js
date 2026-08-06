@@ -6,7 +6,10 @@ module.exports = {
     instances: 1,
     env: {
       NODE_ENV: 'production',
-      PORT: 3000
+      PORT: 3000,
+      JWT_SECRET: 'CHANGE_ME_TO_A_RANDOM_SECRET',
+      ADMIN_PASSWORD: 'CHANGE_ME_TO_A_STRONG_PASSWORD',
+      ALLOWED_ORIGIN: ''
     },
     env_development: {
       NODE_ENV: 'development',

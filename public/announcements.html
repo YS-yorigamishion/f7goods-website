@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>f7goods — 公告</title>
   <meta name="description" content="了解 f7goods 的最新公告和重要通知，掌握同人活动资讯。">
+  <meta property="og:title" content="f7goods — 公告">
+  <meta property="og:description" content="了解 f7goods 的最新公告和重要通知，掌握同人活动资讯。">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="f7goods">
+  <meta property="og:image" content="/uploads/og-image.jpg">
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .announcement-card {
@@ -119,6 +124,14 @@
 
     async function loadAnnouncements() {
       try {
+        await loadSettingsFromAPI();
+        const ps = getPageSettings('announcements');
+        if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
+        if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
+        if (ps.pageTitle) document.getElementById('pageTitle').textContent = ps.pageTitle;
+        if (ps.pageSubtitle) document.getElementById('pageSubtitle').textContent = ps.pageSubtitle;
+        applyHeroBg('announcements');
+
         const res = await fetch('/api/announcements');
         if (!res.ok) throw new Error('Failed to load');
         const announcements = await res.json();
