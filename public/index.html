@@ -283,7 +283,8 @@
 
     function renderRandomWorks() {
       const shuffled = [...allWorks].sort(() => Math.random() - 0.5);
-      const selected = shuffled.slice(0, 6);
+      const isMobile = window.innerWidth <= 600;
+      const selected = shuffled.slice(0, isMobile ? 4 : 6);
       document.getElementById('randomGrid').innerHTML = selected.map(work => `
         <a href="/work-detail.html?id=${work.id}" style="text-decoration:none;color:inherit;">
           <div class="card" style="margin:0;">
