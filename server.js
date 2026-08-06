@@ -875,6 +875,12 @@ app.get('/api/author/images/unused', authorAuthMiddleware, (req, res) => {
     if (u.coverImage) { const f = extractFilename(u.coverImage); if (f) referenced.add(f); }
   });
 
+  // 收集该作者圈子中引用的图片（logo + images）
+  if (circle) {
+    if (circle.logo) { const f = extractFilename(circle.logo); if (f) referenced.add(f); }
+    (circle.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
+  }
+
   // 获取该作者的所有图片
   try {
     const allFiles = fs.readdirSync(uploadsDir)
