@@ -659,6 +659,7 @@
           <div class="page-toolbar">
             <h3>📊 作者数据统计</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
+              <input type="text" class="form-input" id="authorStatsSearch" placeholder="搜索作者..." oninput="filterAuthorStats()" style="width:150px;font-size:0.85rem;">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAuthorStats()">📥 导出</button>
               <button class="btn btn-primary" onclick="loadAuthorStats()">刷新</button>
             </div>

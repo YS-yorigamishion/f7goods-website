@@ -5892,6 +5892,15 @@ function renderAuthorStatsTable() {
   `).join('');
 }
 
+function filterAuthorStats() {
+  const query = document.getElementById('authorStatsSearch')?.value.toLowerCase().trim() || '';
+  const rows = document.querySelectorAll('#authorStatsBody tr');
+  rows.forEach(row => {
+    const name = row.querySelector('td:first-child')?.textContent.toLowerCase() || '';
+    row.style.display = (!query || name.includes(query)) ? '' : 'none';
+  });
+}
+
 function exportAuthorStats() {
   const rows = document.querySelectorAll('#authorStatsBody tr');
   if (rows.length === 0) { alert('没有数据可导出'); return; }
