@@ -12,6 +12,15 @@ async function loadLang(lang) {
     localStorage.setItem('f7lang', lang);
     // Reload categories with new language
     await loadCategoriesFromAPI();
+    // Re-apply page settings with new language
+    const pageKey = document.getElementById('navbar')?.dataset?.activePage;
+    if (pageKey) {
+      const ps = getPageSettings(pageKey);
+      if (ps.heroTitle) { const el = document.getElementById('heroTitle'); if (el) el.textContent = ps.heroTitle; }
+      if (ps.heroSubtitle) { const el = document.getElementById('heroSubtitle'); if (el) el.textContent = ps.heroSubtitle; }
+      if (ps.pageTitle) { const el = document.getElementById('pageTitle'); if (el) el.textContent = ps.pageTitle; }
+      if (ps.pageSubtitle) { const el = document.getElementById('pageSubtitle'); if (el) el.textContent = ps.pageSubtitle; }
+    }
     // Re-render navbar and footer
     const navbar = document.getElementById('navbar');
     if (navbar) navbar.innerHTML = buildNavbar(navbar.dataset.activePage);
