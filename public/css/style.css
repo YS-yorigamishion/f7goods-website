@@ -1465,10 +1465,31 @@ textarea.form-input {
 }
 @media (max-width: 600px) {
   .random-grid {
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.6rem;
   }
   .random-modal {
     padding: 1rem;
+    max-height: 85vh;
+  }
+  .random-grid .card-image {
+    height: 100px;
+  }
+  .random-grid .card-body {
+    padding: 0.5rem;
+  }
+  .random-grid .card-title {
+    font-size: 0.75rem;
+    -webkit-line-clamp: 1;
+  }
+  .random-grid .card-subtitle {
+    font-size: 0.65rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .random-grid .card-footer {
+    padding: 0.3rem 0.5rem;
   }
 }
 
