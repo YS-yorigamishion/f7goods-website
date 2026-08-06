@@ -2005,17 +2005,25 @@ app.get('/rss.xml', cacheMiddleware(3600), (req, res) => {
       .filter(w => !w.approvalStatus || w.approvalStatus === 'approved')
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, 10);
+    const events = readJSON('events.json')
+      .filter(e => !e.approvalStatus || e.approvalStatus === 'approved')
+      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+      .slice(0, 10);
+    const projects = readJSON('projects.json')
+      .filter(p => !p.approvalStatus || p.approvalStatus === 'approved')
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .slice(0, 10);
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<rss version="2.0"><channel>\n';
     xml += `  <title>${siteName}</title>\n`;
     xml += `  <link>${baseUrl}</link>\n`;
-    xml += '  <description>同人周边展示平台</description>\n';
+    xml += '  <description>同人周边展示平台 — 动态、作品、活动、企划</description>\n';
     xml += `  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\n`;
 
     updates.forEach(u => {
       xml += '  <item>\n';
-      xml += `    <title>${escapeXml(u.title)}</title>\n`;
+      xml += `    <title>[动态] ${escapeXml(u.title)}</title>\n`;
       xml += `    <link>${baseUrl}/update-detail.html?id=${u.id}</link>\n`;
       xml += `    <pubDate>${new Date(u.publishDate).toUTCString()}</pubDate>\n`;
       xml += `    <description>${escapeXml((u.content || '').substring(0, 200))}</description>\n`;
@@ -2023,10 +2031,26 @@ app.get('/rss.xml', cacheMiddleware(3600), (req, res) => {
     });
     works.forEach(w => {
       xml += '  <item>\n';
-      xml += `    <title>${escapeXml(w.title)}</title>\n`;
+      xml += `    <title>[作品] ${escapeXml(w.title)}</title>\n`;
       xml += `    <link>${baseUrl}/work-detail.html?id=${w.id}</link>\n`;
       xml += `    <pubDate>${new Date(w.createdAt || 0).toUTCString()}</pubDate>\n`;
       xml += `    <description>${escapeXml(w.description || w.title)}</description>\n`;
+      xml += '  </item>\n';
+    });
+    events.forEach(e => {
+      xml += '  <item>\n';
+      xml += `    <title>[活动] ${escapeXml(e.title)}</title>\n`;
+      xml += `    <link>${baseUrl}/event-detail.html?id=${e.id}</link>\n`;
+      xml += `    <pubDate>${new Date(e.date || 0).toUTCString()}</pubDate>\n`;
+      xml += `    <description>${escapeXml(e.location || e.title)}</description>\n`;
+      xml += '  </item>\n';
+    });
+    projects.forEach(p => {
+      xml += '  <item>\n';
+      xml += `    <title>[企划] ${escapeXml(p.title)}</title>\n`;
+      xml += `    <link>${baseUrl}/project-detail.html?id=${p.id}</link>\n`;
+      xml += `    <pubDate>${new Date(p.createdAt || 0).toUTCString()}</pubDate>\n`;
+      xml += `    <description>${escapeXml(p.description || p.title)}</description>\n`;
       xml += '  </item>\n';
     });
     xml += '</channel></rss>';
