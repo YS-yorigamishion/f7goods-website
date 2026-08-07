@@ -115,6 +115,7 @@
         if (ps.pageSubtitle) document.getElementById('pageSubtitle').textContent = ps.pageSubtitle;
         applyHeroBg('updates');
         document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+        document.querySelectorAll('.hero, .page-header').forEach(el => el.style.visibility = '');
 
         const [updates, circles, catsResp] = await Promise.all([
           fetch('/api/updates').then(r => r.json()),

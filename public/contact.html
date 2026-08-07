@@ -151,6 +151,7 @@
       if (ps.contactContent) document.getElementById('contactContent').textContent = ps.contactContent;
 
       document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+      document.querySelectorAll('.hero, .page-header').forEach(el => el.style.visibility = '');
 
       // Render contact links
       if (ps.contactLinks && ps.contactLinks.length > 0) {

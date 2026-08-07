@@ -95,6 +95,7 @@
         applyHeroBg('events');
 
         document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+        document.querySelectorAll('.hero, .page-header').forEach(el => el.style.visibility = '');
 
         renderEvents();
       } catch (e) {

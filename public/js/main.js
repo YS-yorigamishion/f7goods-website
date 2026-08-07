@@ -35,6 +35,9 @@ async function loadLang(lang, isInit = false) {
     updateLangButtons();
     // Reload page on language change (not on initial load) to update card tags
     if (!isInit && oldLang !== lang) {
+      // Hide content before reload to prevent flash of old language text
+      document.querySelectorAll('.hero, .page-header').forEach(el => el.style.visibility = 'hidden');
+      localStorage.setItem('f7lang_switch', '1');
       location.reload();
     }
   } catch (e) {
