@@ -819,8 +819,8 @@ async function submitWant() {
   }
 }
 
-function confirmUnwant(workId, currentCount) {
-  if (!confirm(t('common.unwantConfirm'))) return;
+async function confirmUnwant(workId, currentCount) {
+  if (!await showConfirm(t('common.unwantConfirm'), { danger: true })) return;
   doUnwant(workId, currentCount);
 }
 

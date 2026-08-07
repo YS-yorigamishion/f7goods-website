@@ -1946,6 +1946,39 @@ app.post('/api/admin/pageviews/cleanup', authMiddleware, (req, res) => {
   });
 });
 
+// Admin: dashboard stats (lightweight)
+app.get('/api/admin/stats', authMiddleware, (req, res) => {
+  try {
+    const works = readJSON('works.json');
+    const events = readJSON('events.json');
+    const circles = readJSON('circles.json');
+    const projects = readJSON('projects.json');
+    const updates = readJSON('updates.json');
+    const contacts = readJSON('contact.json');
+    const pendingWorks = works.filter(w => w.approvalStatus === 'pending').length;
+    const pendingCircles = circles.filter(c => c.authorStatus === 'pending').length;
+    const pendingEvents = events.filter(e => e.approvalStatus === 'pending').length;
+    const pendingProjects = projects.filter(p => p.approvalStatus === 'pending').length;
+    const pendingUpdates = updates.filter(u => u.approvalStatus === 'pending').length;
+    res.json({
+      works: works.length,
+      events: events.length,
+      circles: circles.length,
+      projects: projects.length,
+      updates: updates.length,
+      contacts: contacts.length,
+      pendingWorks,
+      pendingCircles,
+      pendingEvents,
+      pendingProjects,
+      pendingUpdates,
+      totalPending: pendingWorks + pendingCircles + pendingEvents + pendingProjects + pendingUpdates
+    });
+  } catch (e) {
+    res.json({ works: 0, events: 0, circles: 0, projects: 0, updates: 0, contacts: 0, pendingWorks: 0, pendingCircles: 0, pendingUpdates: 0, totalPending: 0 });
+  }
+});
+
 // Edit log
 app.get('/api/admin/edit-log', authMiddleware, (req, res) => {
   let log = [];

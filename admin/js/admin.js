@@ -433,34 +433,30 @@ async function loadDashboard() {
       document.head.appendChild(script);
     });
   }
-  const [works, events, circles, projects, updates, pvData] = await Promise.all([
-    adminAPI('GET', '/api/admin/works'),
-    adminAPI('GET', '/api/admin/events'),
-    adminAPI('GET', '/api/admin/circles'),
-    adminAPI('GET', '/api/admin/projects'),
-    adminAPI('GET', '/api/admin/updates'),
+  const [stats, pvData] = await Promise.all([
+    adminAPI('GET', '/api/admin/stats'),
     adminAPI('GET', '/api/admin/pageviews?summary=true')
   ]);
-  document.getElementById('statWorks').textContent = works?.length || 0;
-  document.getElementById('statEvents').textContent = events?.length || 0;
-  document.getElementById('statCircles').textContent = circles?.length || 0;
-  document.getElementById('statProjects').textContent = projects?.length || 0;
-  document.getElementById('statUpdates').textContent = updates?.length || 0;
+  document.getElementById('statWorks').textContent = stats?.works || 0;
+  document.getElementById('statEvents').textContent = stats?.events || 0;
+  document.getElementById('statCircles').textContent = stats?.circles || 0;
+  document.getElementById('statProjects').textContent = stats?.projects || 0;
+  document.getElementById('statUpdates').textContent = stats?.updates || 0;
 
   // Pending approval counts
-  const pendingAuthors = (circles || []).filter(c => c.authorStatus === 'pending').length;
-  const pendingEvents = (events || []).filter(e => e.approvalStatus === 'pending').length;
-  const pendingProjects = (projects || []).filter(p => p.approvalStatus === 'pending').length;
-  const pendingUpdates = (updates || []).filter(u => u.approvalStatus === 'pending').length;
+  const pendingAuthors = stats?.pendingCircles || 0;
+  const pendingEvents = stats?.pendingEvents || 0;
+  const pendingProjects = stats?.pendingProjects || 0;
+  const pendingUpdates = stats?.pendingUpdates || 0;
+  const pendingWorks = stats?.pendingWorks || 0;
   document.getElementById('statPendingAuthors').textContent = pendingAuthors;
   document.getElementById('statPendingEvents').textContent = pendingEvents;
   document.getElementById('statPendingProjects').textContent = pendingProjects;
   document.getElementById('statPendingUpdates').textContent = pendingUpdates;
-  const pendingWorks = (works || []).filter(w => w.approvalStatus === 'pending').length;
   document.getElementById('statPendingWorks').textContent = pendingWorks;
 
-  // Load notifications using already-fetched data
-  loadAdminNotificationsWithData(works, events, circles, projects, updates);
+  // Load notifications asynchronously
+  loadAdminNotifications();
 
   // Page view stats
   const daily = pvData?.daily || {};

@@ -68,6 +68,21 @@
         document.querySelector('meta[property="og:description"]').content = (work.description || '').substring(0, 160);
         if (work.images && work.images[0]) document.querySelector('meta[property="og:image"]').content = work.images[0];
 
+        // JSON-LD structured data
+        const jsonLd = {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          'name': work.title,
+          'description': work.description || work.title,
+          'image': work.images || [],
+          'url': window.location.href,
+          'brand': { '@type': 'Organization', 'name': authorNames },
+          'offers': work.price ? { '@type': 'Offer', 'price': work.price, 'priceCurrency': 'CNY' } : undefined
+        };
+        let ldScript = document.getElementById('jsonLd');
+        if (!ldScript) { ldScript = document.createElement('script'); ldScript.id = 'jsonLd'; ldScript.type = 'application/ld+json'; document.head.appendChild(ldScript); }
+        ldScript.textContent = JSON.stringify(jsonLd);
+
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('workDetail');
         container.innerHTML = `

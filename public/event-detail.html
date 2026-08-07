@@ -146,6 +146,22 @@
         document.querySelector('meta[property="og:description"]').content = (event.description || '').substring(0, 160);
         if (event.coverImage) document.querySelector('meta[property="og:image"]').content = event.coverImage;
 
+        // JSON-LD structured data
+        const jsonLd = {
+          '@context': 'https://schema.org',
+          '@type': 'Event',
+          'name': event.title,
+          'description': event.description || event.title,
+          'image': event.coverImage || '',
+          'url': window.location.href,
+          'startDate': event.date,
+          'endDate': event.endDate || event.date,
+          'location': event.location ? { '@type': 'Place', 'name': event.location } : undefined
+        };
+        let ldScript = document.getElementById('jsonLd');
+        if (!ldScript) { ldScript = document.createElement('script'); ldScript.id = 'jsonLd'; ldScript.type = 'application/ld+json'; document.head.appendChild(ldScript); }
+        ldScript.textContent = JSON.stringify(jsonLd);
+
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('eventDetail');
         container.innerHTML = `
