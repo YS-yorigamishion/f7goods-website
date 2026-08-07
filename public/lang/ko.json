@@ -153,7 +153,7 @@
   "updates": {
     "title": "뉴스",
     "subtitle": "동인지 커뮤니티의 최신 소식",
-    "heroTitle": "📰 뉴스",
+    "heroTitle": "뉴스",
     "heroSubtitle": "동인지 커뮤니티의 최신 소식 및 업데이트",
     "listTitle": "뉴스 목록",
     "listSubtitle": "작성일 내림차순 정렬",
@@ -198,7 +198,7 @@
   "contact": {
     "title": "문의하기",
     "subtitle": "질문이나 제안이 있으시면 언제든 문의해 주세요",
-    "heroTitle": "📬 문의하기",
+    "heroTitle": "문의하기",
     "heroSubtitle": "질문이나 제안이 있으시면 언제든 문의해 주세요",
     "name": "이름",
     "namePlaceholder": "이름을 입력하세요",

@@ -153,7 +153,7 @@
   "updates": {
     "title": "Updates",
     "subtitle": "Latest news and updates from the fan community",
-    "heroTitle": "📰 Updates",
+    "heroTitle": "Updates",
     "heroSubtitle": "Latest news and updates from the fan community",
     "listTitle": "Updates List",
     "listSubtitle": "Sorted by publish date descending",
@@ -198,7 +198,7 @@
   "contact": {
     "title": "Contact Us",
     "subtitle": "Feel free to contact us with any questions or suggestions",
-    "heroTitle": "📬 Contact Us",
+    "heroTitle": "Contact Us",
     "heroSubtitle": "Feel free to contact us with any questions or suggestions",
     "name": "Your Name",
     "namePlaceholder": "Enter your name",
