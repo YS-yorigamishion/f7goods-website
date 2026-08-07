@@ -430,6 +430,7 @@ function buildFooter() {
     </div>
     <div class="footer-bottom">
       <p>&copy; ${new Date().getFullYear()} ${brandName}. ${t('common.copyright')}</p>
+      <p style="margin-top:0.3rem;font-size:0.75rem;"><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" style="color:var(--haze);text-decoration:none;">苏ICP备2026054886号</a></p>
     </div>
   `;
 }
