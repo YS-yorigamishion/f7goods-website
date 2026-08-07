@@ -763,7 +763,7 @@ async function submitWant() {
   var errorEl = document.getElementById('wantModalError');
   var btn = document.getElementById('wantModalSubmit');
 
-  var wantText = {zh:'我想要', en:'I Want', ja:'欲しい', ko:'갖고싶다'}[_lang] || '我想要';
+  var wantText = {zh:'想要', en:'I Want', ja:'欲しい', ko:'갖고싶다'}[_lang] || '想要';
   if (input.value.trim() !== wantText) {
     errorEl.textContent = t('common.wantConfirm');
     errorEl.style.display = 'block';
