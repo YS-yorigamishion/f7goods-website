@@ -4,8 +4,9 @@
 let _lang = localStorage.getItem('f7lang') || 'zh';
 let _i18n = {};
 
-async function loadLang(lang) {
+async function loadLang(lang, isInit = false) {
   try {
+    const oldLang = _lang;
     const res = await fetch('/lang/' + lang + '.json');
     _i18n = await res.json();
     _lang = lang;
@@ -32,8 +33,10 @@ async function loadLang(lang) {
     if (typeof buildUpdateFilterButtons === 'function') buildUpdateFilterButtons();
     applyTranslations();
     updateLangButtons();
-    // Reload page to update all dynamic content (card tags, etc.)
-    location.reload();
+    // Reload page on language change (not on initial load) to update card tags
+    if (!isInit && oldLang !== lang) {
+      location.reload();
+    }
   } catch (e) {
     console.error('Failed to load language:', lang, e);
   }
@@ -434,7 +437,7 @@ function buildFooter() {
 async function initPage(activePage, itemId) {
 
   // Load language first
-  await loadLang(_lang);
+  await loadLang(_lang, true);
 
   // Load settings
   await loadSettingsFromAPI();
