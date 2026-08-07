@@ -120,6 +120,7 @@
         </div>
         <div style="font-size:0.8rem;color:var(--haze);margin-bottom:1rem;">${formatDate(a.publishDate)}</div>
         <div style="line-height:1.8;color:var(--ink);white-space:pre-wrap;">${nl2br(a.content)}</div>
+        ${(a.images && a.images.length > 0) ? '<div style="margin-top:1rem;display:flex;flex-direction:column;gap:0.5rem;">' + a.images.map(url => '<img src="' + url + '" style="width:100%;border-radius:8px;cursor:pointer;" onclick="window.open(this.src)">').join('') + '</div>' : ''}
       </div>`;
       overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);

@@ -309,14 +309,23 @@ async function checkPopupAnnouncements() {
 }
 
 function showAnnouncementPopup(ann) {
+  var imagesHtml = '';
+  if (ann.images && ann.images.length > 0) {
+    imagesHtml = '<div class="ann-popup-images">' +
+      ann.images.map(function(url) {
+        return '<img src="' + url + '" style="width:100%;border-radius:8px;margin-bottom:0.5rem;cursor:pointer;" onclick="window.open(this.src)">';
+      }).join('') +
+    '</div>';
+  }
   var overlay = document.createElement('div');
   overlay.id = 'annPopupOverlay';
   overlay.className = 'ann-popup-overlay';
   overlay.innerHTML = '<div class="ann-popup">' +
-    '<button class="ann-popup-close" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">&times;</button>' +
+    '<button class="ann-popup-close" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">×</button>' +
     '<h3 class="ann-popup-title">' + escapeHtml(ann.title) + '</h3>' +
     '<div class="ann-popup-date">' + formatDate(ann.publishDate) + '</div>' +
     '<div class="ann-popup-content">' + nl2br(ann.content) + '</div>' +
+    imagesHtml +
     '<button class="btn btn-primary ann-popup-btn" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">' + t('common.gotIt') + '</button>' +
   '</div>';
   document.body.appendChild(overlay);

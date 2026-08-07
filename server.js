@@ -2266,8 +2266,10 @@ app.post('/api/admin/announcements', authMiddleware, async (req, res) => {
     id: 'ann' + Date.now(),
     title: req.body.title || '',
     content: req.body.content || '',
+    images: req.body.images || [],
     publishDate: req.body.publishDate || new Date().toISOString().split('T')[0],
     popup: req.body.popup || false,
+    pinned: req.body.pinned || false,
     createdAt: new Date().toISOString()
   };
   announcements.push(announcement);
@@ -2281,7 +2283,7 @@ app.put('/api/admin/announcements/:id', authMiddleware, async (req, res) => {
   const index = announcements.findIndex(a => a.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '公告未找到' });
   // Whitelist allowed fields
-  const allowedFields = ['title', 'content', 'publishDate', 'pinned', 'popup'];
+  const allowedFields = ['title', 'content', 'images', 'publishDate', 'pinned', 'popup'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];

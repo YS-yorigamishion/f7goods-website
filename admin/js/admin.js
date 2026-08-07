@@ -4000,6 +4000,9 @@ async function pickImageFromLibrary(type) {
     } else if (type === 'update-images') {
       const preview = document.getElementById('updImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
+    } else if (type === 'ann-images') {
+      const preview = document.getElementById('annImagesPreview');
+      if (preview) selected.forEach(url => appendImagePreview(preview, url));
     }
   };
   openModal();
@@ -5327,6 +5330,10 @@ function selectHeroBgFromLibrary(el, pageKey) {
 // ===== Announcements =====
 let adminAnnouncementsData = [];
 
+async function uploadAnnImages() {
+  await uploadImagesToField('annImageInput', 'annImagesPreview');
+}
+
 async function loadAnnouncements() {
   try {
     const announcements = await adminAPI('GET', '/api/admin/announcements');
@@ -5399,6 +5406,22 @@ function openAnnouncementModal(announcement = null) {
       <label>公告内容 <span style="color:var(--accent)">*</span></label>
       <textarea class="form-input" id="annContent" style="min-height:150px;">${announcement?.content || ''}</textarea>
     </div>
+    <div class="form-group">
+      <label>公告图片</label>
+      <div id="annImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+        ${(announcement?.images || []).map(img => `
+          <div style="position:relative;">
+            <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+            ${removeImageButton()}
+          </div>
+        `).join('')}
+      </div>
+      <input type="file" id="annImageInput" accept="image/*" multiple style="font-size:0.85rem;">
+      <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+        <button type="button" class="btn-sm btn-edit" onclick="uploadAnnImages()">上传图片</button>
+        <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageFromLibrary('ann-images')">从图片库选择</button>
+      </div>
+    </div>
     <div class="form-group" style="display:flex;align-items:center;gap:0.6rem;">
       <input type="checkbox" id="annPinned" style="width:16px;height:16px;accent-color:var(--accent);" ${announcement?.pinned ? 'checked' : ''}>
       <label for="annPinned" style="font-size:0.9rem;cursor:pointer;">置顶公告</label>
@@ -5410,10 +5433,12 @@ function openAnnouncementModal(announcement = null) {
   `;
 
   document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
+    const images = [...document.querySelectorAll('#annImagesPreview img')].map(img => img.src);
     const data = {
       title: document.getElementById('annTitle').value,
       publishDate: document.getElementById('annPublishDate').value,
       content: document.getElementById('annContent').value,
+      images,
       pinned: document.getElementById('annPinned').checked,
       popup: document.getElementById('annPopup').checked
     };
