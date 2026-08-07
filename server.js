@@ -1349,6 +1349,19 @@ app.post('/api/admin/circles/:id/toggle-approval', authMiddleware, async (req, r
   res.json({ success: true, requireApproval: circles[index].requireApproval });
 });
 
+// Admin: toggle author visibility on public page
+app.post('/api/admin/circles/:id/toggle-visible', authMiddleware, async (req, res) => {
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  circles[index].visible = !circles[index].visible;
+  await writeJSON('circles.json', circles);
+  logEdit('管理员', '切换作者显示', circles[index].name,
+    circles[index].visible ? '显示' : '隐藏');
+  res.json({ success: true, visible: circles[index].visible });
+});
+
 // ===== Public API =====
 // Works
 app.get('/api/works', cacheMiddleware(60), (req, res) => {
@@ -1672,6 +1685,8 @@ app.get('/api/circles', cacheMiddleware(60), (req, res) => {
     (w.circles || []).forEach(cid => circlesWithApprovedWorks.add(cid));
   });
   circles = circles.filter(c => {
+    if (c.visible === true) return true;
+    if (c.visible === false) return false;
     if (!c.username) return true;
     return circlesWithApprovedWorks.has(c.id);
   });
@@ -1685,7 +1700,7 @@ app.get('/api/circles', cacheMiddleware(60), (req, res) => {
   circles.sort((a, b) => a.order - b.order);
   // Remove sensitive fields
   const safeCircles = circles.map(c => {
-    const { passwordHash, username, authorStatus, editableBy, ...safe } = c;
+    const { passwordHash, username, authorStatus, editableBy, visible, requireApproval, ...safe } = c;
     return safe;
   });
   // Optional pagination: ?page=1&limit=20
@@ -1714,7 +1729,7 @@ app.get('/api/circles/:id', (req, res) => {
   const circle = circles.find(c => c.id === req.params.id);
   if (!circle) return res.status(404).json({ error: '作者未找到' });
   // Remove sensitive fields
-  const { passwordHash, username, authorStatus, editableBy, ...safe } = circle;
+  const { passwordHash, username, authorStatus, editableBy, visible, requireApproval, ...safe } = circle;
   res.json(safe);
 });
 
