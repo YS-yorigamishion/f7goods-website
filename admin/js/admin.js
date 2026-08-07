@@ -4512,11 +4512,15 @@ function saveCurrentTabEdits() {
     : ['projects', 'projectStatus'];
   types.forEach(type => {
     const inputs = document.querySelectorAll(`[data-type="${type}"]`);
+    const oldItems = currentCategories[type] || [];
     const items = [];
     for (let i = 0; i < inputs.length; i += 2) {
       const id = inputs[i].value.trim();
       const name = inputs[i + 1].value.trim();
-      if (id && name) items.push({ id, name, order: i / 2 });
+      if (id && name) {
+        const existing = oldItems.find(o => o.id === id) || {};
+        items.push({ ...existing, id, name, order: i / 2 });
+      }
     }
     currentCategories[type] = items;
   });
