@@ -2634,7 +2634,7 @@
       document.getElementById('workModalOverlay').classList.remove('open');
     };
 
-    checkAuthorAuth();
+    loadLang(_lang, true).finally(() => checkAuthorAuth());
   </script>
 </body>
 </html>
