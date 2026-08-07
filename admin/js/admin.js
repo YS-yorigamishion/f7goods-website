@@ -5543,6 +5543,25 @@ async function viewApprovalDetail(type, id) {
       <div style="margin-bottom:1rem;"><strong>联系方式：</strong>${item.socialLinks?.qq || item.socialLinks?.qqGroup || '无'}</div>
       ${item.logo ? `<div style="margin-bottom:1rem;"><strong>头像：</strong><br><img src="${item.logo}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;margin-top:0.5rem;"></div>` : ''}
     `;
+  } else if (type === 'work') {
+    const works = await adminAPI('GET', '/api/admin/works');
+    item = works?.find(w => w.id === id);
+    if (!item) return;
+    const circles = await adminAPI('GET', '/api/admin/circles');
+    const author = circles?.find(c => (item.circles || []).includes(c.id));
+    const allImages = [...(item.images || []), ...(item.moreImages || [])];
+    html = `
+      <div style="margin-bottom:1rem;"><strong>作品名称：</strong>${escapeHtml(item.title)}</div>
+      ${item.titleEn ? `<div style="margin-bottom:1rem;"><strong>英文名：</strong>${escapeHtml(item.titleEn)}</div>` : ''}
+      <div style="margin-bottom:1rem;"><strong>作者：</strong>${author ? escapeHtml(author.name) : '未知'}</div>
+      <div style="margin-bottom:1rem;"><strong>分类：</strong>${CATEGORIES[item.category] || item.category || '未分类'}</div>
+      <div style="margin-bottom:1rem;"><strong>价格：</strong>${escapeHtml(item.price || '未设置')}</div>
+      <div style="margin-bottom:1rem;"><strong>状态：</strong>${STATUS_LABELS[item.status] || item.status || '未设置'}</div>
+      <div style="margin-bottom:1rem;"><strong>发售日期：</strong>${item.releaseDate || '未设置'}</div>
+      ${item.tags && item.tags.length ? `<div style="margin-bottom:1rem;"><strong>标签：</strong>${item.tags.map(t => `<span style="background:var(--paper);padding:2px 8px;border-radius:4px;font-size:0.8rem;margin-right:4px;">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+      ${item.description ? `<div style="margin-bottom:1rem;"><strong>描述：</strong><div style="background:var(--paper);padding:1rem;border-radius:8px;margin-top:0.5rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escapeHtml(item.description)}</div></div>` : ''}
+      ${allImages.length ? `<div style="margin-bottom:1rem;"><strong>图片：</strong><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:0.5rem;">${allImages.map(img => `<img src="${img}" style="max-width:150px;max-height:150px;object-fit:contain;border-radius:6px;cursor:pointer;" onclick="window.open('${img}','_blank')">`).join('')}</div></div>` : ''}
+    `;
   } else if (type === 'event') {
     const events = await adminAPI('GET', '/api/admin/events');
     item = events?.find(e => e.id === id);
