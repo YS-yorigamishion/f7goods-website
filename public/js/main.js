@@ -571,20 +571,6 @@ function nl2br(str) {
   return escapeHtml(str).replace(/\n/g, '<br>');
 }
 
-// Render HTML safely - allows basic formatting tags, strips dangerous ones
-function renderSafeHtml(html) {
-  if (!html) return '';
-  // If content doesn't contain HTML tags, treat as plain text with nl2br
-  if (!/<[a-z][\s\S]*>/i.test(html)) return nl2br(html);
-  // Allow safe tags, strip dangerous ones
-  const safeHtml = html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/on\w+="[^"]*"/gi, '')
-    .replace(/on\w+='[^']*'/gi, '');
-  return safeHtml;
-}
-
 // Share functionality
 async function sharePage(title, url) {
   if (navigator.share) {

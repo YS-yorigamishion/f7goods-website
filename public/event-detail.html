@@ -188,7 +188,7 @@
           <div class="detail-content">
             <div class="detail-main">
               <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('events.description')}</h3>
-              <p style="line-height:1.8;color:var(--ink);">${renderSafeHtml(event.description)}</p>
+              <p style="line-height:1.8;color:var(--ink);">${nl2br(event.description)}</p>
 
               ${event.booth ? `<div style="margin-top:1.5rem;"><span class="event-booth" style="font-size:0.9rem;">${t('events.booth')}: ${escapeHtml(event.booth)}</span></div>` : ''}
 
