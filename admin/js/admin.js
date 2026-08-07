@@ -4511,15 +4511,22 @@ function saveCurrentTabEdits() {
     ? ['updateCategories', 'updateStatus']
     : ['projects', 'projectStatus'];
   types.forEach(type => {
-    const inputs = document.querySelectorAll(`[data-type="${type}"]`);
+    const container = document.querySelector(`[id$="${type}List"], [id$="${type}StatusList"]`) || document.getElementById('categoriesContent');
+    const groups = container ? container.querySelectorAll(':scope > div[data-parent], :scope > div > div[data-parent], :scope > div') : [];
     const oldItems = currentCategories[type] || [];
     const items = [];
-    for (let i = 0; i < inputs.length; i += 2) {
-      const id = inputs[i].value.trim();
-      const name = inputs[i + 1].value.trim();
+    // Read by grouping inputs per category item
+    const allInputs = document.querySelectorAll(`[data-type="${type}"]`);
+    const fieldsPerItem = 5; // id, name, nameEn, nameJa, nameKo
+    for (let i = 0; i < allInputs.length; i += fieldsPerItem) {
+      const id = allInputs[i].value.trim();
+      const name = allInputs[i + 1].value.trim();
       if (id && name) {
+        const nameEn = (allInputs[i + 2]?.value || '').trim();
+        const nameJa = (allInputs[i + 3]?.value || '').trim();
+        const nameKo = (allInputs[i + 4]?.value || '').trim();
         const existing = oldItems.find(o => o.id === id) || {};
-        items.push({ ...existing, id, name, order: i / 2 });
+        items.push({ ...existing, id, name, nameEn, nameJa, nameKo, order: i / fieldsPerItem });
       }
     }
     currentCategories[type] = items;
@@ -4542,14 +4549,21 @@ function renderCategories() {
 
   function renderCategoryItems(items, type) {
     return items.map((cat, i) => `
-      <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;">
-        <div style="display:flex;gap:2px;">
-          <button class="btn-sm" onclick="reorderCategory('${type}', ${i}, -1)" ${i === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
-          <button class="btn-sm" onclick="reorderCategory('${type}', ${i}, 1)" ${i === items.length - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;margin-bottom:0.5rem;">
+        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.3rem;">
+          <div style="display:flex;gap:2px;">
+            <button class="btn-sm" onclick="reorderCategory('${type}', ${i}, -1)" ${i === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
+            <button class="btn-sm" onclick="reorderCategory('${type}', ${i}, 1)" ${i === items.length - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
+          </div>
+          <input class="form-input" value="${cat.id}" data-field="id" data-index="${i}" data-type="${type}" style="flex:1;" placeholder="ID">
+          <input class="form-input" value="${escapeHtml(cat.name || '')}" data-field="name" data-index="${i}" data-type="${type}" style="flex:2;" placeholder="中文名称">
+          <button class="btn-sm btn-delete" onclick="removeCategory('${type}', ${i})">删除</button>
         </div>
-        <input class="form-input" value="${cat.id}" data-field="id" data-index="${i}" data-type="${type}" style="flex:1;" placeholder="ID">
-        <input class="form-input" value="${cat.name}" data-field="name" data-index="${i}" data-type="${type}" style="flex:2;" placeholder="显示名称">
-        <button class="btn-sm btn-delete" onclick="removeCategory('${type}', ${i})">删除</button>
+        <div style="display:flex;gap:0.5rem;padding-left:3.5rem;">
+          <input class="form-input" value="${escapeHtml(cat.nameEn || '')}" data-field="nameEn" data-index="${i}" data-type="${type}" style="flex:1;font-size:0.8rem;padding:0.25rem 0.4rem;" placeholder="English">
+          <input class="form-input" value="${escapeHtml(cat.nameJa || '')}" data-field="nameJa" data-index="${i}" data-type="${type}" style="flex:1;font-size:0.8rem;padding:0.25rem 0.4rem;" placeholder="日本語">
+          <input class="form-input" value="${escapeHtml(cat.nameKo || '')}" data-field="nameKo" data-index="${i}" data-type="${type}" style="flex:1;font-size:0.8rem;padding:0.25rem 0.4rem;" placeholder="한국어">
+        </div>
       </div>
     `).join('');
   }
