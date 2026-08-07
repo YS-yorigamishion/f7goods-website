@@ -123,12 +123,8 @@
       <!-- Register Form -->
       <form id="registerForm" style="display:none;" onsubmit="handleRegister(event)">
         <div class="form-group">
-          <label>选择作者 <span style="color:var(--accent)">*</span></label>
-          <div style="position:relative;">
-            <input type="text" class="form-input" id="regCircleSearch" placeholder="搜索作者名称..." oninput="filterCircleOptions()" onfocus="showCircleDropdown()" autocomplete="off" required>
-            <input type="hidden" name="circleId" id="regCircleId">
-            <div id="circleDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:200px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);z-index:10;margin-top:2px;box-shadow:var(--shadow);"></div>
-          </div>
+          <label>作者名称 <span style="color:var(--accent)">*</span></label>
+          <input type="text" class="form-input" name="authorName" id="regAuthorName" required placeholder="输入你的作者/社团名称">
         </div>
         <div class="form-group">
           <label>用户名 <span style="color:var(--accent)">*</span></label>
@@ -573,7 +569,6 @@
       document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
       document.getElementById('authError').style.display = 'none';
       document.getElementById('authSuccess').style.display = 'none';
-      if (tab === 'register') loadCirclesForRegister();
     }
 
     // Registration notice
@@ -600,63 +595,6 @@
       </div>`;
       document.body.appendChild(overlay);
     }
-
-    // Load circles for registration
-    let availableCircles = [];
-
-    async function loadCirclesForRegister() {
-      try {
-        const res = await fetch('/api/circles/registrable');
-        availableCircles = await res.json();
-        renderCircleDropdown(availableCircles);
-      } catch (e) {}
-    }
-
-    function renderCircleDropdown(circles) {
-      const dropdown = document.getElementById('circleDropdown');
-      if (!circles.length) {
-        dropdown.innerHTML = '<div style="padding:0.6rem 0.8rem;color:var(--haze);font-size:0.85rem;">没有找到匹配的作者</div>';
-        return;
-      }
-      dropdown.innerHTML = circles.map(c =>
-        `<div class="circle-option" data-id="${c.id}" data-name="${c.name.replace(/"/g, '&quot;')}" style="padding:0.6rem 0.8rem;cursor:pointer;font-size:0.85rem;border-bottom:1px solid var(--border);transition:background 0.15s;">${escapeHtml(c.name)}</div>`
-      ).join('');
-      // Event delegation for click
-      dropdown.querySelectorAll('.circle-option').forEach(opt => {
-        opt.addEventListener('click', function() {
-          selectCircle(this.dataset.id, this.dataset.name);
-        });
-        opt.addEventListener('mouseover', function() { this.style.background = 'var(--paper)'; });
-        opt.addEventListener('mouseout', function() { this.style.background = ''; });
-      });
-    }
-
-    function filterCircleOptions() {
-      const query = document.getElementById('regCircleSearch').value.toLowerCase().trim();
-      const filtered = availableCircles.filter(c => c.name.toLowerCase().includes(query));
-      renderCircleDropdown(filtered);
-      showCircleDropdown();
-    }
-
-    function showCircleDropdown() {
-      document.getElementById('circleDropdown').style.display = 'block';
-    }
-
-    function selectCircle(id, name) {
-      document.getElementById('regCircleId').value = id;
-      document.getElementById('regCircleSearch').value = name;
-      document.getElementById('regUsername').value = name;
-      document.getElementById('circleDropdown').style.display = 'none';
-    }
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-      const search = document.getElementById('regCircleSearch');
-      const dropdown = document.getElementById('circleDropdown');
-      if (search && dropdown && !search.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.style.display = 'none';
-      }
-    });
 
     // Login
     async function handleLogin(e) {
@@ -699,8 +637,8 @@
       errEl.style.display = 'none';
       successEl.style.display = 'none';
 
-      if (!form.circleId.value) {
-        errEl.textContent = '请先搜索并选择作者';
+      if (!form.authorName.value.trim()) {
+        errEl.textContent = '请输入作者名称';
         errEl.style.display = 'block';
         return;
       }
@@ -710,7 +648,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            circleId: form.circleId.value,
+            authorName: form.authorName.value.trim(),
             username: form.username.value,
             password: form.password.value
           })
@@ -2592,14 +2530,13 @@
             if (data.needReapply) {
               alert('您的作者账号已被管理员删除，请重新申请。');
               authorLogout();
-              loadCirclesForRegister();
+              switchAuthTab('register');
               return;
             }
           }
         } catch (e) {}
         authorLogout();
       }
-      loadCirclesForRegister();
     }
 
     // ===== Form Draft System =====

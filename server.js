@@ -336,34 +336,37 @@ function authorAuthMiddleware(req, res, next) {
 }
 
 app.post('/api/author/register', rateLimitMiddleware, async (req, res) => {
-  const { circleId, username, password } = req.body;
-  if (!circleId || !username || !password) return res.status(400).json({ error: '请填写完整信息' });
+  const { authorName, username, password } = req.body;
+  if (!authorName || !username || !password) return res.status(400).json({ error: '请填写完整信息' });
   if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
 
   const circles = readJSON('circles.json');
-  const circle = circles.find(c => c.id === circleId);
-  if (!circle) return res.status(404).json({ error: '作者未找到' });
-  if (circle.username && circle.authorStatus !== 'rejected' && circle.authorStatus !== 'disabled') {
-    return res.status(400).json({ error: '该作者已注册' });
+
+  if (circles.some(c => c.name === authorName.trim())) {
+    return res.status(400).json({ error: '该作者名称已存在' });
   }
 
-  // 被拒绝或被禁用的圈子重新注册时，清除旧数据
-  if (circle.authorStatus === 'rejected' || circle.authorStatus === 'disabled') {
-    delete circle.username;
-    delete circle.passwordHash;
-    delete circle.authorStatus;
-  }
-
-  // Check username uniqueness
   if (circles.some(c => c.username === username)) {
     return res.status(400).json({ error: '用户名已存在' });
   }
 
-  circle.username = username;
-  circle.passwordHash = bcrypt.hashSync(password, 10);
-  circle.authorStatus = 'active';
-  circle.requireApproval = true;
-  circle.createdAt = new Date().toISOString();
+  const newCircle = {
+    id: 'c' + Date.now() + Math.random().toString(36).substr(2, 5),
+    name: authorName.trim(),
+    description: '',
+    logo: '',
+    images: [],
+    socialLinks: {},
+    order: 0,
+    category: 'geren',
+    follows: 0,
+    username: username,
+    passwordHash: bcrypt.hashSync(password, 10),
+    authorStatus: 'active',
+    requireApproval: true,
+    createdAt: new Date().toISOString()
+  };
+  circles.push(newCircle);
   await writeJSON('circles.json', circles);
   res.json({ success: true, message: '注册成功，请登录' });
 });
