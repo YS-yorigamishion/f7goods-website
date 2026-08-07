@@ -69,6 +69,7 @@
         if (work.images && work.images[0]) document.querySelector('meta[property="og:image"]').content = work.images[0];
 
         // JSON-LD structured data
+        const authorNames = workCircles.map(c => c.name).join(', ');
         const jsonLd = {
           '@context': 'https://schema.org',
           '@type': 'Product',
