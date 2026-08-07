@@ -343,12 +343,6 @@ let adminNotifications = [];
 function loadAdminNotificationsWithData(works, events, circles, projects, updates) {
   adminNotifications = [];
 
-  // Pending authors
-  const pendingAuthors = (circles || []).filter(c => c.authorStatus === 'pending');
-  pendingAuthors.forEach(c => {
-    adminNotifications.push({ type: 'author', id: c.id, title: c.name, message: '新作者注册待审核' });
-  });
-
   // Pending events
   const pendingEvents = (events || []).filter(e => e.approvalStatus === 'pending');
   pendingEvents.forEach(e => {
@@ -444,12 +438,12 @@ async function loadDashboard() {
   document.getElementById('statUpdates').textContent = stats?.updates || 0;
 
   // Pending approval counts
-  const pendingAuthors = stats?.pendingCircles || 0;
+  const activeAuthors = stats?.activeCircles || 0;
   const pendingEvents = stats?.pendingEvents || 0;
   const pendingProjects = stats?.pendingProjects || 0;
   const pendingUpdates = stats?.pendingUpdates || 0;
   const pendingWorks = stats?.pendingWorks || 0;
-  document.getElementById('statPendingAuthors').textContent = pendingAuthors;
+  document.getElementById('statPendingAuthors').textContent = activeAuthors;
   document.getElementById('statPendingEvents').textContent = pendingEvents;
   document.getElementById('statPendingProjects').textContent = pendingProjects;
   document.getElementById('statPendingUpdates').textContent = pendingUpdates;
@@ -2580,7 +2574,7 @@ async function manageEditableAuthors(type, id) {
   if (!item) return;
 
   const circles = await adminAPI('GET', '/api/admin/circles');
-  const approvedAuthors = (circles || []).filter(c => c.authorStatus === 'approved');
+  const approvedAuthors = (circles || []).filter(c => c.authorStatus === 'approved' || c.authorStatus === 'active');
 
   const overlay = document.createElement('div');
   overlay.id = 'editableAuthorsOverlay';
@@ -3267,27 +3261,27 @@ function renderCirclesTable(circles) {
   tbody.innerHTML = circles.map((c, i) => {
     let accountHtml = '<span style="color:var(--haze);font-size:0.8rem;">未注册</span>';
     if (c.username) {
-      if (c.authorStatus === 'approved') {
-        accountHtml = '<span style="color:#2ecc71;font-weight:600;font-size:0.8rem;">✓ 已批准</span><br><span style="font-size:0.7rem;color:var(--haze);">' + escapeHtml(c.username) + '</span>';
-      } else if (c.authorStatus === 'pending') {
-        accountHtml = '<span style="color:#f39c12;font-weight:600;font-size:0.8rem;">待审批</span><br><span style="font-size:0.7rem;color:var(--haze);">' + escapeHtml(c.username) + '</span>';
-      } else if (c.authorStatus === 'rejected') {
-        accountHtml = '<span style="color:var(--accent);font-weight:600;font-size:0.8rem;">已拒绝</span><br><span style="font-size:0.7rem;color:var(--haze);">' + escapeHtml(c.username) + '</span>';
+      if (c.authorStatus === 'active' || c.authorStatus === 'approved') {
+        accountHtml = '<span style="color:#2ecc71;font-weight:600;font-size:0.8rem;">✓ 活跃</span><br><span style="font-size:0.7rem;color:var(--haze);">' + escapeHtml(c.username) + '</span>';
+      } else if (c.authorStatus === 'disabled') {
+        accountHtml = '<span style="color:var(--accent);font-weight:600;font-size:0.8rem;">已禁用</span><br><span style="font-size:0.7rem;color:var(--haze);">' + escapeHtml(c.username) + '</span>';
       }
     }
     let actionBtns = `
       <button class="btn-sm btn-edit" onclick="manageCircleWorks('${c.id}')">关联</button>
-      ${c.username && c.authorStatus === 'approved' ? `<button class="btn-sm btn-edit" onclick="manageCircleEditors('${c.id}')">编辑者</button>` : ''}
+      ${(c.username && (c.authorStatus === 'active' || c.authorStatus === 'approved')) ? `<button class="btn-sm btn-edit" onclick="manageCircleEditors('${c.id}')">编辑者</button>` : ''}
       <button class="btn-sm btn-edit" onclick="exportCircleExcel('${c.id}')" title="导出Excel">📥导出</button>
       <button class="btn-sm btn-edit" onclick="importCircleExcel('${c.id}')" title="导入Excel">📤导入</button>
       <button class="btn-sm btn-edit" onclick="editCircle('${c.id}')">编辑</button>
       <button class="btn-sm btn-delete" onclick="deleteCircle('${c.id}')">删除</button>`;
-    if (c.username && c.authorStatus === 'pending') {
-      actionBtns = `<button class="btn-sm btn-edit" style="background:rgba(46,204,113,0.15);color:#2ecc71;" onclick="approveAuthor('${c.id}')">批准</button>
-        <button class="btn-sm btn-delete" onclick="rejectAuthor('${c.id}')">拒绝</button>` + actionBtns;
-    } else if (c.username && c.authorStatus === 'approved') {
+    if (c.username && (c.authorStatus === 'active' || c.authorStatus === 'approved')) {
+      const approvalLabel = c.requireApproval !== false ? '免审核' : '需审核';
       actionBtns = `<button class="btn-sm btn-edit" onclick="resetAuthorPassword('${c.id}')">重置密码</button>
-        <button class="btn-sm btn-delete" onclick="removeAuthorAccount('${c.id}')">删除账号</button>` + actionBtns;
+        <button class="btn-sm" style="background:rgba(52,152,219,0.15);color:#3498db;" onclick="toggleAuthorApproval('${c.id}')">${approvalLabel}</button>
+        <button class="btn-sm btn-delete" onclick="disableAuthor('${c.id}')">禁用</button>` + actionBtns;
+    } else if (c.username && c.authorStatus === 'disabled') {
+      actionBtns = `<button class="btn-sm" style="background:rgba(46,204,113,0.15);color:#2ecc71;" onclick="approveAuthor('${c.id}')">启用</button>
+        <button class="btn-sm btn-edit" onclick="resetAuthorPassword('${c.id}')">重置密码</button>` + actionBtns;
     }
     return `
     <tr>
@@ -3308,16 +3302,16 @@ function renderCirclesTable(circles) {
 }
 
 async function approveAuthor(circleId) {
-  if (!await showConfirm('确定批准该作者账号？')) return;
+  if (!await showConfirm('确定启用该作者账号？')) return;
   await adminAPI('POST', `/api/admin/circles/${circleId}/approve-author`);
-  showToast('已批准', 'success');
+  showToast('已启用', 'success');
   loadCircles();
 }
 
 async function rejectAuthor(circleId) {
-  if (!await showConfirm('确定拒绝该作者账号？\n拒绝后将清除账号数据，作者需重新申请。', { danger: true })) return;
+  if (!await showConfirm('确定删除该作者账号？\n删除后作者需重新申请。', { danger: true })) return;
   await adminAPI('POST', `/api/admin/circles/${circleId}/reject-author`);
-  showToast('已拒绝，账号已清除', 'success');
+  showToast('账号已删除', 'success');
   loadCircles();
 }
 
@@ -3328,34 +3322,33 @@ async function removeAuthorAccount(circleId) {
   loadCircles();
 }
 
-// Batch approve/reject authors
-async function batchApproveAuthors() {
-  const pendingAuthors = adminCirclesData.filter(c => c.authorStatus === 'pending');
-  if (pendingAuthors.length === 0) { showToast('没有待审核的作者', 'error'); return; }
-  if (!await showConfirm(`确定批准全部 ${pendingAuthors.length} 个待审核作者？`)) return;
-
-  let success = 0;
-  for (const c of pendingAuthors) {
-    const result = await adminAPI('POST', `/api/admin/circles/${c.id}/approve-author`);
-    if (result && result.success) success++;
-  }
-  showToast(`已批准 ${success} 个作者`, 'success');
+async function disableAuthor(circleId) {
+  if (!await showConfirm('确定禁用该作者账号？\n禁用后作者将无法登录。')) return;
+  await adminAPI('POST', `/api/admin/circles/${circleId}/disable-author`);
+  showToast('已禁用', 'success');
   loadCircles();
 }
 
-async function batchRejectAuthors() {
-  const pendingAuthors = adminCirclesData.filter(c => c.authorStatus === 'pending');
-  if (pendingAuthors.length === 0) { showToast('没有待审核的作者', 'error'); return; }
-  const reason = prompt('拒绝原因（可选）');
-  if (reason === null) return;
-  if (!await showConfirm(`确定拒绝全部 ${pendingAuthors.length} 个待审核作者？\n拒绝后将清除账号数据，作者需重新申请。`, { danger: true })) return;
+async function toggleAuthorApproval(circleId) {
+  const result = await adminAPI('POST', `/api/admin/circles/${circleId}/toggle-approval`);
+  if (result && result.success) {
+    showToast(result.requireApproval ? '已设为需要审核' : '已设为免审核', 'success');
+    loadCircles();
+  }
+}
+
+// Batch disable authors
+async function batchDisableAuthors() {
+  const activeAuthors = adminCirclesData.filter(c => c.username && (c.authorStatus === 'active' || c.authorStatus === 'approved'));
+  if (activeAuthors.length === 0) { showToast('没有已激活的作者', 'error'); return; }
+  if (!await showConfirm(`确定禁用全部 ${activeAuthors.length} 个已激活作者？`, { danger: true })) return;
 
   let success = 0;
-  for (const c of pendingAuthors) {
-    const result = await adminAPI('POST', `/api/admin/circles/${c.id}/reject-author`, { reason });
+  for (const c of activeAuthors) {
+    const result = await adminAPI('POST', `/api/admin/circles/${c.id}/disable-author`);
     if (result && result.success) success++;
   }
-  showToast(`已拒绝 ${success} 个作者`, 'success');
+  showToast(`已禁用 ${success} 个作者`, 'success');
   loadCircles();
 }
 
@@ -3364,7 +3357,7 @@ async function manageCircleEditors(circleId) {
   const circle = circles.find(c => c.id === circleId);
   if (!circle) return;
 
-  const approvedAuthors = circles.filter(c => c.authorStatus === 'approved' && c.id !== circleId);
+  const approvedAuthors = circles.filter(c => (c.authorStatus === 'approved' || c.authorStatus === 'active') && c.id !== circleId);
 
   const overlay = document.createElement('div');
   overlay.id = 'circleEditorsOverlay';
@@ -6149,23 +6142,6 @@ async function loadApprovalPage() {
     loadAuthorAnnouncementAuthors();
     loadAuthorAnnouncements();
 
-    // Pending authors
-    const pendingAuthors = (circles || []).filter(c => c.authorStatus === 'pending');
-    const authorsDiv = document.getElementById('approvalAuthors');
-    if (pendingAuthors.length === 0) {
-      authorsDiv.innerHTML = '<p style="color:var(--haze);">无待审核作者</p>';
-    } else {
-      authorsDiv.innerHTML = pendingAuthors.map(c => `
-        <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
-          <span style="font-weight:600;flex:1;">${escapeHtml(c.name)}</span>
-          <span style="font-size:0.8rem;color:var(--haze);">${c.username || ''}</span>
-          <button class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="viewApprovalDetail('author','${c.id}')">查看</button>
-          <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveAuthor('${c.id}')">批准</button>
-          <button class="btn-sm btn-delete" onclick="rejectAuthor('${c.id}')">拒绝</button>
-        </div>
-      `).join('');
-    }
-
     // Pending works
     const pendingWorks = (works || []).filter(w => w.approvalStatus === 'pending');
     const worksDiv = document.getElementById('approvalWorks');
@@ -6255,10 +6231,10 @@ let aaAllCircles = [];
 async function loadAuthorAnnouncementAuthors() {
   try {
     const circles = await adminAPI('GET', '/api/admin/circles');
-    aaAllCircles = (circles || []).filter(c => c.authorStatus === 'approved');
+    aaAllCircles = (circles || []).filter(c => c.authorStatus === 'approved' || c.authorStatus === 'active');
     const listDiv = document.getElementById('aaAuthorList');
     if (aaAllCircles.length === 0) {
-      listDiv.innerHTML = '<span style="color:var(--haze);">暂无已批准的作者</span>';
+      listDiv.innerHTML = '<span style="color:var(--haze);">暂无已注册的作者</span>';
       return;
     }
     listDiv.innerHTML = aaAllCircles.map(c => `

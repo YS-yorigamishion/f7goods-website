@@ -721,10 +721,10 @@
           errEl.style.display = 'block';
           return;
         }
-        successEl.textContent = data.message || '注册成功';
+        successEl.textContent = data.message || '注册成功，请登录';
         successEl.style.display = 'block';
         form.reset();
-        setTimeout(() => switchAuthTab('login'), 2000);
+        setTimeout(() => switchAuthTab('login'), 1000);
       } catch (e) {
         errEl.textContent = '网络错误';
         errEl.style.display = 'block';

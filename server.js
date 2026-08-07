@@ -307,11 +307,11 @@ function authorAuthMiddleware(req, res, next) {
     const decoded = jwt.verify(token, JWT_SECRET);
     if (decoded.role !== 'author') return res.status(403).json({ error: '权限不足' });
 
-    // Check if author account is still approved
+    // Check if author account is still active
     const circles = getCirclesForAuth();
     const circle = circles.find(c => c.id === decoded.circleId);
-    if (!circle || circle.authorStatus !== 'approved') {
-      return res.status(403).json({ error: '账号已被禁用，请重新申请', needReapply: true });
+    if (!circle || (circle.authorStatus !== 'approved' && circle.authorStatus !== 'active')) {
+      return res.status(403).json({ error: '账号已被禁用，请联系管理员', needReapply: true });
     }
 
     // Support X-Act-As header for switching author identity
@@ -319,7 +319,7 @@ function authorAuthMiddleware(req, res, next) {
     if (actAs && actAs !== decoded.circleId) {
       const targetCircle = circles.find(c => c.id === actAs);
       if (!targetCircle) return res.status(404).json({ error: '目标作者不存在' });
-      if (targetCircle.authorStatus !== 'approved') return res.status(403).json({ error: '目标作者账号未激活' });
+      if (targetCircle.authorStatus !== 'approved' && targetCircle.authorStatus !== 'active') return res.status(403).json({ error: '目标作者账号未激活' });
 
       const isEditable = (targetCircle.editableBy || []).includes(decoded.circleId);
       if (!isEditable) return res.status(403).json({ error: '无权操作该作者后台' });
@@ -343,10 +343,12 @@ app.post('/api/author/register', rateLimitMiddleware, async (req, res) => {
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === circleId);
   if (!circle) return res.status(404).json({ error: '作者未找到' });
-  if (circle.username && circle.authorStatus !== 'rejected') return res.status(400).json({ error: '该作者已注册' });
+  if (circle.username && circle.authorStatus !== 'rejected' && circle.authorStatus !== 'disabled') {
+    return res.status(400).json({ error: '该作者已注册' });
+  }
 
-  // 被拒绝的圈子重新注册时，清除旧数据
-  if (circle.authorStatus === 'rejected') {
+  // 被拒绝或被禁用的圈子重新注册时，清除旧数据
+  if (circle.authorStatus === 'rejected' || circle.authorStatus === 'disabled') {
     delete circle.username;
     delete circle.passwordHash;
     delete circle.authorStatus;
@@ -359,10 +361,11 @@ app.post('/api/author/register', rateLimitMiddleware, async (req, res) => {
 
   circle.username = username;
   circle.passwordHash = bcrypt.hashSync(password, 10);
-  circle.authorStatus = 'pending';
+  circle.authorStatus = 'active';
+  circle.requireApproval = true;
   circle.createdAt = new Date().toISOString();
   await writeJSON('circles.json', circles);
-  res.json({ success: true, message: '注册成功，等待管理员审批' });
+  res.json({ success: true, message: '注册成功，请登录' });
 });
 
 app.post('/api/author/login', rateLimitMiddleware, (req, res) => {
@@ -375,8 +378,8 @@ app.post('/api/author/login', rateLimitMiddleware, (req, res) => {
   if (!bcrypt.compareSync(password, circle.passwordHash)) {
     return res.status(401).json({ error: '用户名或密码错误' });
   }
-  if (circle.authorStatus !== 'approved') {
-    return res.status(403).json({ error: '账号待审批，请联系管理员' });
+  if (circle.authorStatus !== 'approved' && circle.authorStatus !== 'active') {
+    return res.status(403).json({ error: '账号已被禁用，请联系管理员' });
   }
 
   const token = jwt.sign({ circleId: circle.id, role: 'author' }, JWT_SECRET, { expiresIn: '24h' });
@@ -761,7 +764,11 @@ app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
   // Check if work approval is required
   let settings = {};
   try { settings = readJSON('settings.json'); } catch {}
-  const requireApproval = settings.site?.requireWorkApproval !== false;
+  const circles = readJSON('circles.json');
+  const authorCircle = circles.find(c => c.id === req.author.circleId);
+  const authorRequireApproval = authorCircle?.requireApproval !== false;
+  const globalRequireApproval = settings.site?.requireWorkApproval !== false;
+  const requireApproval = authorRequireApproval && globalRequireApproval;
   // Whitelist allowed fields to prevent mass assignment
   const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
   const workData = {};
@@ -798,8 +805,8 @@ app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
     await writeJSON('projects.json', projects);
   }
 
-  const circles = readJSON('circles.json');
-  const circle = circles.find(c => c.id === req.author.circleId);
+  const logCircles = readJSON('circles.json');
+  const circle = logCircles.find(c => c.id === req.author.circleId);
   logEdit(circle?.name || '作者', '创建作品', work.title || work.id, '');
 
   res.json(work);
@@ -1238,16 +1245,16 @@ app.delete('/api/author/my-updates/:id', authorAuthMiddleware, async (req, res) 
   res.json({ success: true });
 });
 
-// Admin: approve author
+// Admin: approve author (enable account)
 app.post('/api/admin/circles/:id/approve-author', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
   if (!circles[index].username) return res.status(400).json({ error: '该作者未注册' });
 
-  circles[index].authorStatus = 'approved';
+  circles[index].authorStatus = 'active';
   await writeJSON('circles.json', circles);
-  logEdit('管理员', '批准作者账号', circles[index].name, `账号: ${circles[index].username}`);
+  logEdit('管理员', '启用作者账号', circles[index].name, `账号: ${circles[index].username}`);
   res.json({ success: true });
 });
 
@@ -1309,6 +1316,32 @@ app.post('/api/admin/circles/:id/reset-password', authMiddleware, async (req, re
   circles[index].passwordHash = bcrypt.hashSync(newPassword, 10);
   await writeJSON('circles.json', circles);
   res.json({ success: true });
+});
+
+// Admin: disable author account
+app.post('/api/admin/circles/:id/disable-author', authMiddleware, async (req, res) => {
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+  if (!circles[index].username) return res.status(400).json({ error: '该作者未注册' });
+
+  circles[index].authorStatus = 'disabled';
+  await writeJSON('circles.json', circles);
+  logEdit('管理员', '禁用作者账号', circles[index].name, `账号: ${circles[index].username}`);
+  res.json({ success: true });
+});
+
+// Admin: toggle work approval requirement for author
+app.post('/api/admin/circles/:id/toggle-approval', authMiddleware, async (req, res) => {
+  let circles = readJSON('circles.json');
+  const index = circles.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '作者未找到' });
+
+  circles[index].requireApproval = !circles[index].requireApproval;
+  await writeJSON('circles.json', circles);
+  logEdit('管理员', '切换作品审核', circles[index].name,
+    circles[index].requireApproval ? '需要审核' : '免审核');
+  res.json({ success: true, requireApproval: circles[index].requireApproval });
 });
 
 // ===== Public API =====
@@ -1627,6 +1660,16 @@ ensureAllOrders();
 
 app.get('/api/circles', cacheMiddleware(60), (req, res) => {
   let circles = readJSON('circles.json');
+  let works = readJSON('works.json');
+  const approvedWorks = works.filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
+  const circlesWithApprovedWorks = new Set();
+  approvedWorks.forEach(w => {
+    (w.circles || []).forEach(cid => circlesWithApprovedWorks.add(cid));
+  });
+  circles = circles.filter(c => {
+    if (!c.username) return true;
+    return circlesWithApprovedWorks.has(c.id);
+  });
   const { search } = req.query;
   if (search) {
     const s = search.toLowerCase();
@@ -1651,11 +1694,11 @@ app.get('/api/circles', cacheMiddleware(60), (req, res) => {
   res.json(safeCircles);
 });
 
-// Circles available for registration (no username or rejected) - must be before :id route
+// Circles available for registration (no username or disabled) - must be before :id route
 app.get('/api/circles/registrable', (req, res) => {
   const circles = readJSON('circles.json');
   const registrable = circles
-    .filter(c => !c.username || c.authorStatus !== 'approved')
+    .filter(c => !c.username || c.authorStatus === 'disabled')
     .sort((a, b) => a.order - b.order)
     .map(c => ({ id: c.id, name: c.name, logo: c.logo }));
   res.json(registrable);
@@ -1984,7 +2027,7 @@ app.get('/api/admin/stats', authMiddleware, (req, res) => {
     const updates = readJSON('updates.json');
     const contacts = readJSON('contact.json');
     const pendingWorks = works.filter(w => w.approvalStatus === 'pending').length;
-    const pendingCircles = circles.filter(c => c.authorStatus === 'pending').length;
+    const activeCircles = circles.filter(c => c.authorStatus === 'active' || c.authorStatus === 'approved').length;
     const pendingEvents = events.filter(e => e.approvalStatus === 'pending').length;
     const pendingProjects = projects.filter(p => p.approvalStatus === 'pending').length;
     const pendingUpdates = updates.filter(u => u.approvalStatus === 'pending').length;
@@ -1996,11 +2039,12 @@ app.get('/api/admin/stats', authMiddleware, (req, res) => {
       updates: updates.length,
       contacts: contacts.length,
       pendingWorks,
-      pendingCircles,
+      pendingCircles: 0,
+      activeCircles,
       pendingEvents,
       pendingProjects,
       pendingUpdates,
-      totalPending: pendingWorks + pendingCircles + pendingEvents + pendingProjects + pendingUpdates
+      totalPending: pendingWorks + pendingEvents + pendingProjects + pendingUpdates
     });
   } catch (e) {
     res.json({ works: 0, events: 0, circles: 0, projects: 0, updates: 0, contacts: 0, pendingWorks: 0, pendingCircles: 0, pendingUpdates: 0, totalPending: 0 });

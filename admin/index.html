@@ -163,11 +163,11 @@
                 <div class="stat-label">待审核作品</div>
               </div>
             </div>
-            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
-              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">⏳</div>
+            <div class="stat-card" style="cursor:pointer;border-left:3px solid #2ecc71;" onclick="navigateTo('circles')">
+              <div class="stat-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🏠</div>
               <div class="stat-info">
                 <div class="stat-number" id="statPendingAuthors">0</div>
-                <div class="stat-label">待审核作者</div>
+                <div class="stat-label">已注册作者</div>
               </div>
             </div>
             <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
@@ -581,16 +581,6 @@
               <button class="btn" style="background:var(--accent-alt);color:white;" onclick="toggleAaForm()">📢 发送作者公告</button>
               <button class="btn btn-primary" onclick="loadApprovalPage()">刷新</button>
             </div>
-          </div>
-          <div class="admin-card" style="margin-bottom:1.5rem;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-              <h4 style="margin:0;">🏠 待审核作者账号</h4>
-              <div style="display:flex;gap:0.3rem;">
-                <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveAuthors()">全部批准</button>
-                <button class="btn-sm btn-delete" onclick="batchRejectAuthors()">全部拒绝</button>
-              </div>
-            </div>
-            <div id="approvalAuthors"><p style="color:var(--haze);">加载中...</p></div>
           </div>
           <div class="admin-card" style="margin-bottom:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
