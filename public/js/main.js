@@ -308,12 +308,64 @@ async function checkPopupAnnouncements() {
   } catch (e) {}
 }
 
+// Image lightbox with zoom support
+function showImageLightbox(src) {
+  var overlay = document.createElement('div');
+  overlay.id = 'imageLightbox';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:10001;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+  
+  var scale = 1;
+  var img = document.createElement('img');
+  img.src = src;
+  img.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;transition:transform 0.2s;cursor:grab;';
+  img.onload = function() { img.style.cursor = 'grab'; };
+  
+  // Zoom with mouse wheel
+  overlay.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var delta = e.deltaY > 0 ? -0.1 : 0.1;
+    scale = Math.max(0.5, Math.min(5, scale + delta));
+    img.style.transform = 'scale(' + scale + ')';
+  });
+  
+  // Close on click outside image
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  });
+  
+  // Close button
+  var closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '×';
+  closeBtn.style.cssText = 'position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.2);border:none;color:white;font-size:2rem;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+  closeBtn.onclick = function() { overlay.remove(); };
+  
+  // Zoom hint
+  var hint = document.createElement('div');
+  hint.textContent = '滚轮缩放，点击空白处关闭';
+  hint.style.cssText = 'position:absolute;bottom:1rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-size:0.85rem;';
+  
+  overlay.appendChild(img);
+  overlay.appendChild(closeBtn);
+  overlay.appendChild(hint);
+  document.body.appendChild(overlay);
+  
+  // ESC key to close
+  document.addEventListener('keydown', function handler(e) {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.removeEventListener('keydown', handler);
+    }
+  });
+}
+
 function showAnnouncementPopup(ann) {
   var imagesHtml = '';
   if (ann.images && ann.images.length > 0) {
     imagesHtml = '<div class="ann-popup-images">' +
       ann.images.map(function(url) {
-        return '<img src="' + url + '" style="width:100%;border-radius:8px;margin-bottom:0.5rem;cursor:pointer;" onclick="window.open(this.src)">';
+        return '<img src="' + url + '" style="width:100%;border-radius:8px;margin-bottom:0.5rem;cursor:pointer;" onclick="showImageLightbox(this.src)">';
       }).join('') +
     '</div>';
   }
