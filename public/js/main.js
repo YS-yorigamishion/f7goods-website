@@ -384,7 +384,9 @@ function buildFooter() {
   const site = getSiteSettings();
   const footer = siteSettings?.footer || {};
   const brandName = site.brandName || 'f7goods';
-  const description = footer.description || '专注同人周边的展示与推荐平台，为创作者和爱好者搭建桥梁。';
+  // Get description in current language from settings API
+  const descSuffix = _lang === 'zh' ? '' : _lang.charAt(0).toUpperCase() + _lang.slice(1);
+  const description = footer['description' + descSuffix] || footer.description || '';
   const socialLinks = footer.socialLinks || [
     { name: 'Twitter / X', url: '#', icon: '🐦' },
     { name: 'Weibo', url: '#', icon: '📱' }
@@ -394,7 +396,7 @@ function buildFooter() {
     <div class="footer-inner">
       <div>
         <div class="footer-brand">${brandName}</div>
-        <p class="footer-desc">${t('footer.aboutText')}</p>
+        <p class="footer-desc">${description}</p>
       </div>
       <div class="footer-col">
         <h4>${t('common.browse')}</h4>
