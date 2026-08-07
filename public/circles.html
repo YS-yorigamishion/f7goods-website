@@ -59,6 +59,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
+  <script src="/js/pull-to-refresh.js"></script>
   <script src="/js/main.js?v=20260803"></script>
   <script>
     initPage('circles');
@@ -197,6 +198,24 @@
 
     loadCircles();
     checkCircleUserFilters();
+
+    PullToRefresh.init({
+      onRefresh: async () => {
+        const [circles, works] = await Promise.all([
+          F7API.getCircles(),
+          F7API.getWorks()
+        ]);
+        allCircles = circles;
+        circleTagsMap = {};
+        works.forEach(w => {
+          (w.circles || []).forEach(cid => {
+            if (!circleTagsMap[cid]) circleTagsMap[cid] = [];
+            circleTagsMap[cid].push(...(w.tags || []));
+          });
+        });
+        renderCircles();
+      }
+    });
   </script>
 </body>
 </html>

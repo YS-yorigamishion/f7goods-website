@@ -58,6 +58,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
+  <script src="/js/pull-to-refresh.js"></script>
   <script src="/js/main.js?v=20260803"></script>
   <script>
     initPage('events');
@@ -267,6 +268,19 @@
     document.getElementById('searchInput').addEventListener('input', debounce(renderEvents));
 
     loadEvents();
+
+    PullToRefresh.init({
+      onRefresh: async () => {
+        const [events, works] = await Promise.all([
+          F7API.getEvents(),
+          F7API.getWorks()
+        ]);
+        allEvents = events;
+        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+        allWorks = works;
+        renderEvents();
+      }
+    });
   </script>
 </body>
 </html>

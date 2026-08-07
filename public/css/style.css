@@ -2117,6 +2117,8 @@ textarea.form-input {
   cursor: default;
   user-select: none;
   -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
   will-change: transform;
 }
 
@@ -2357,6 +2359,50 @@ body {
   .lang-current {
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
+  }
+}
+
+/* Pull-to-refresh */
+html.pull-to-refresh-active {
+  overscroll-behavior-y: contain;
+}
+.ptr-indicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.15));
+  transition: transform 0.2s ease;
+  pointer-events: none;
+}
+.ptr-indicator.pulling {
+  transition: none;
+}
+.ptr-indicator.refreshing {
+  transform: translateX(-50%) translateY(60px);
+}
+.ptr-indicator svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+  transition: transform 0.2s ease;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ptr-indicator,
+  .ptr-indicator svg {
+    transition: none !important;
+    animation: none !important;
   }
 }
 

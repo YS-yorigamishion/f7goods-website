@@ -89,6 +89,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
+  <script src="/js/pull-to-refresh.js"></script>
   <script src="/js/main.js?v=20260803"></script>
   <script>
     initPage('works');
@@ -376,6 +377,21 @@
     });
 
     loadWorks();
+
+    PullToRefresh.init({
+      onRefresh: async () => {
+        window._worksPage = 1;
+        const [works, circles, events] = await Promise.all([
+          F7API.getWorks(),
+          F7API.getCircles(),
+          F7API.getEvents()
+        ]);
+        allWorks = works;
+        allEvents = events;
+        circles.forEach(c => circlesMap[c.id] = c.name);
+        renderWorks();
+      }
+    });
   </script>
 </body>
 </html>
