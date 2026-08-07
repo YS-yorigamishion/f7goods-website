@@ -357,7 +357,7 @@ app.post('/api/author/register', rateLimitMiddleware, async (req, res) => {
     logo: '',
     images: [],
     socialLinks: {},
-    order: 0,
+    order: circles.reduce((max, c) => Math.max(max, c.order ?? 0), 0) + 1,
     category: 'geren',
     follows: 0,
     username: username,
@@ -642,6 +642,8 @@ app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file')
           wants: 0,
           order: works.length,
           createdAt: new Date().toISOString(),
+          approvalStatus: 'pending',
+          submittedBy: req.author.circleId,
           socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : undefined
         });
         added++;
