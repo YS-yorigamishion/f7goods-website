@@ -1,6 +1,4 @@
 /* ===== f7goods Design System ===== */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap');
-/* Note: Consider moving font loading to <link rel="preload"> in HTML for better performance */
 
 :root {
   --ink: #1a1a2e;

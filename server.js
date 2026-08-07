@@ -5,6 +5,7 @@ const multer = require('multer');
 const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
+const morgan = require('morgan');
 const fs = require('fs');
 const path = require('path');
 const XLSX = require('xlsx');
@@ -133,6 +134,16 @@ app.use(express.static('public', { maxAge: '1d', etag: true }));
 app.use('/admin', express.static('admin', { maxAge: '1d', etag: true }));
 app.use('/uploads', express.static('uploads', { maxAge: '7d', etag: true }));
 
+// Request logging
+if (process.env.NODE_ENV === 'production') {
+  const logDir = path.join(__dirname, 'logs');
+  if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+  const accessLogStream = fs.createWriteStream(path.join(logDir, 'access.log'), { flags: 'a' });
+  app.use(morgan('combined', { stream: accessLogStream }));
+} else {
+  app.use(morgan('dev'));
+}
+
 // Multer config for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
@@ -170,18 +181,22 @@ function readJSON(file) {
   }
 }
 
-function writeJSON(file, data) {
+async function writeJSON(file, data) {
   const filePath = path.join(__dirname, 'data', file);
   const tmpPath = filePath + '.tmp';
-  fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
-  fs.renameSync(tmpPath, filePath);
+  await fs.promises.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  await fs.promises.rename(tmpPath, filePath);
   // Clear related API cache when data changes
   const type = file.replace('.json', '');
   clearApiCache(type);
+  // Invalidate auth cache when circles change
+  if (file === 'circles.json') {
+    circlesAuthCache = { data: null, ts: 0 };
+  }
 }
 
 // Edit log system
-function logEdit(user, action, target, details, imageUrl) {
+async function logEdit(user, action, target, details, imageUrl) {
   let log = [];
   try { log = readJSON('edit-log.json'); } catch {}
   if (!Array.isArray(log)) log = [];
@@ -196,10 +211,10 @@ function logEdit(user, action, target, details, imageUrl) {
   });
   // Keep max 500 entries
   if (log.length > 500) log = log.slice(-500);
-  writeJSON('edit-log.json', log);
+  await writeJSON('edit-log.json', log);
 }
 
-function clearEditLogImageUrl(imageUrl) {
+async function clearEditLogImageUrl(imageUrl) {
   const log = readJSON('edit-log.json');
   let changed = false;
   log.forEach(entry => {
@@ -208,11 +223,11 @@ function clearEditLogImageUrl(imageUrl) {
       changed = true;
     }
   });
-  if (changed) writeJSON('edit-log.json', log);
+  if (changed) await writeJSON('edit-log.json', log);
 }
 
 // Author notifications system
-function addAuthorNotification(circleId, type, title, message, rejectReason) {
+async function addAuthorNotification(circleId, type, title, message, rejectReason) {
   let notifications = [];
   try { notifications = readJSON('author-notifications.json'); } catch {}
   if (!Array.isArray(notifications)) notifications = [];
@@ -233,15 +248,15 @@ function addAuthorNotification(circleId, type, title, message, rejectReason) {
     const removeIds = new Set(toRemove.map(n => n.id));
     notifications = notifications.filter(n => !removeIds.has(n.id) || n.circleId !== circleId);
   }
-  writeJSON('author-notifications.json', notifications);
+  await writeJSON('author-notifications.json', notifications);
 }
 
 // Initialize admin password hash if placeholder
-function initAdmin() {
+async function initAdmin() {
   const admin = readJSON('admin.json');
   if (admin.passwordHash === '$2a$10$placeholder') {
     admin.passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
-    writeJSON('admin.json', admin);
+    await writeJSON('admin.json', admin);
   }
 }
 initAdmin();
@@ -272,6 +287,19 @@ app.post('/api/admin/login', rateLimitMiddleware, (req, res) => {
 });
 
 // ===== Author Auth =====
+// Cache for circles.json used in auth (avoids disk read on every request)
+let circlesAuthCache = { data: null, ts: 0 };
+const CIRCLES_AUTH_TTL = 30000; // 30 seconds
+
+function getCirclesForAuth() {
+  const now = Date.now();
+  if (!circlesAuthCache.data || now - circlesAuthCache.ts > CIRCLES_AUTH_TTL) {
+    circlesAuthCache.data = readJSON('circles.json');
+    circlesAuthCache.ts = now;
+  }
+  return circlesAuthCache.data;
+}
+
 function authorAuthMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: '未授权' });
@@ -280,7 +308,7 @@ function authorAuthMiddleware(req, res, next) {
     if (decoded.role !== 'author') return res.status(403).json({ error: '权限不足' });
 
     // Check if author account is still approved
-    const circles = readJSON('circles.json');
+    const circles = getCirclesForAuth();
     const circle = circles.find(c => c.id === decoded.circleId);
     if (!circle || circle.authorStatus !== 'approved') {
       return res.status(403).json({ error: '账号已被禁用，请重新申请', needReapply: true });
@@ -307,7 +335,7 @@ function authorAuthMiddleware(req, res, next) {
   }
 }
 
-app.post('/api/author/register', rateLimitMiddleware, (req, res) => {
+app.post('/api/author/register', rateLimitMiddleware, async (req, res) => {
   const { circleId, username, password } = req.body;
   if (!circleId || !username || !password) return res.status(400).json({ error: '请填写完整信息' });
   if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
@@ -333,7 +361,7 @@ app.post('/api/author/register', rateLimitMiddleware, (req, res) => {
   circle.passwordHash = bcrypt.hashSync(password, 10);
   circle.authorStatus = 'pending';
   circle.createdAt = new Date().toISOString();
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
   res.json({ success: true, message: '注册成功，等待管理员审批' });
 });
 
@@ -398,7 +426,7 @@ app.get('/api/author/accessible-accounts', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: update own profile
-app.put('/api/author/profile', authorAuthMiddleware, (req, res) => {
+app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.author.circleId);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
@@ -413,7 +441,7 @@ app.put('/api/author/profile', authorAuthMiddleware, (req, res) => {
   });
 
   circles[index] = { ...circles[index], ...updates };
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
 
   // Log specific changes
   const changes = [];
@@ -434,7 +462,7 @@ app.put('/api/author/profile', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: change password
-app.post('/api/author/change-password', authorAuthMiddleware, (req, res) => {
+app.post('/api/author/change-password', authorAuthMiddleware, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   if (!oldPassword || !newPassword) return res.status(400).json({ error: '请填写完整信息' });
   if (newPassword.length < 6) return res.status(400).json({ error: '新密码至少6位' });
@@ -448,7 +476,7 @@ app.post('/api/author/change-password', authorAuthMiddleware, (req, res) => {
   }
 
   circles[index].passwordHash = bcrypt.hashSync(newPassword, 10);
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
   res.json({ success: true });
 });
 
@@ -481,7 +509,7 @@ app.get('/api/author/works', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: reorder works
-app.post('/api/author/works/reorder', authorAuthMiddleware, (req, res) => {
+app.post('/api/author/works/reorder', authorAuthMiddleware, async (req, res) => {
   const { orderedIds } = req.body;
   if (!Array.isArray(orderedIds)) return res.status(400).json({ error: '无效的排序数据' });
 
@@ -492,7 +520,7 @@ app.post('/api/author/works/reorder', authorAuthMiddleware, (req, res) => {
       work.order = index;
     }
   });
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   res.json({ success: true });
 });
 
@@ -541,7 +569,7 @@ app.get('/api/author/works/export', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: import works from Excel
-app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file'), (req, res) => {
+app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
 
   try {
@@ -614,7 +642,7 @@ app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file')
       }
     });
 
-    writeJSON('works.json', works);
+    await writeJSON('works.json', works);
     fs.unlinkSync(req.file.path);
 
     const circles = readJSON('circles.json');
@@ -656,7 +684,7 @@ app.get('/api/author/notifications', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: mark notification as read
-app.put('/api/author/notifications/:id/read', authorAuthMiddleware, (req, res) => {
+app.put('/api/author/notifications/:id/read', authorAuthMiddleware, async (req, res) => {
   let notifications = [];
   try { notifications = readJSON('author-notifications.json'); } catch {}
   if (!Array.isArray(notifications)) notifications = [];
@@ -665,12 +693,12 @@ app.put('/api/author/notifications/:id/read', authorAuthMiddleware, (req, res) =
   if (index === -1) return res.status(404).json({ error: '通知未找到' });
 
   notifications[index].read = true;
-  writeJSON('author-notifications.json', notifications);
+  await writeJSON('author-notifications.json', notifications);
   res.json({ success: true });
 });
 
 // Author: update own work
-app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
+app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
@@ -692,7 +720,7 @@ app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
   });
 
   works[index] = { ...works[index], ...updates };
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
 
   // Handle project associations if provided
   if (req.body.relatedProjects !== undefined) {
@@ -708,7 +736,7 @@ app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
         proj.works.push(req.params.id);
       }
     });
-    writeJSON('projects.json', projects);
+    await writeJSON('projects.json', projects);
   }
 
   // Log changes
@@ -727,7 +755,7 @@ app.put('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: create new work
-app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
+app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
   // Check if work approval is required
@@ -755,7 +783,7 @@ app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
     ...workData
   };
   works.push(work);
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
 
   // Handle project associations
   if (req.body.relatedProjects && req.body.relatedProjects.length > 0) {
@@ -767,7 +795,7 @@ app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
         proj.works.push(work.id);
       }
     });
-    writeJSON('projects.json', projects);
+    await writeJSON('projects.json', projects);
   }
 
   const circles = readJSON('circles.json');
@@ -778,7 +806,7 @@ app.post('/api/author/works', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: delete own work
-app.delete('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
+app.delete('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
@@ -790,7 +818,7 @@ app.delete('/api/author/works/:id', authorAuthMiddleware, (req, res) => {
 
   const workTitle = works[index].title;
   works.splice(index, 1);
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
 
   // Log the deletion
   const circles = readJSON('circles.json');
@@ -828,7 +856,7 @@ app.get('/api/author/images', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: delete own image
-app.delete('/api/author/images/:filename', authorAuthMiddleware, (req, res) => {
+app.delete('/api/author/images/:filename', authorAuthMiddleware, async (req, res) => {
   const filename = req.params.filename;
   let meta = {};
   try { meta = readJSON('uploads-meta.json'); } catch {}
@@ -845,7 +873,7 @@ app.delete('/api/author/images/:filename', authorAuthMiddleware, (req, res) => {
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
     delete meta[filename];
-    writeJSON('uploads-meta.json', meta);
+    await writeJSON('uploads-meta.json', meta);
     logEdit(authorName, '删除图片', filename, '');
     clearEditLogImageUrl('/uploads/' + safeFilename);
     res.json({ success: true });
@@ -932,7 +960,7 @@ app.get('/api/author/events', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: toggle event association
-app.put('/api/author/events/:id/toggle', authorAuthMiddleware, (req, res) => {
+app.put('/api/author/events/:id/toggle', authorAuthMiddleware, async (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
@@ -947,12 +975,12 @@ app.put('/api/author/events/:id/toggle', authorAuthMiddleware, (req, res) => {
     events[index].relatedCircles.splice(idx, 1);
   }
 
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   res.json(events[index]);
 });
 
 // Author: toggle project association
-app.put('/api/author/projects/:id/toggle', authorAuthMiddleware, (req, res) => {
+app.put('/api/author/projects/:id/toggle', authorAuthMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
@@ -967,7 +995,7 @@ app.put('/api/author/projects/:id/toggle', authorAuthMiddleware, (req, res) => {
     projects[index].circles.splice(idx, 1);
   }
 
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   res.json(projects[index]);
 });
 
@@ -985,7 +1013,7 @@ app.get('/api/author/my-events', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: create event
-app.post('/api/author/my-events', authorAuthMiddleware, (req, res) => {
+app.post('/api/author/my-events', authorAuthMiddleware, async (req, res) => {
   let events = readJSON('events.json');
   const maxOrder = events.reduce((max, e) => Math.max(max, e.order ?? 0), 0);
   // Whitelist allowed fields to prevent mass assignment
@@ -1003,7 +1031,7 @@ app.post('/api/author/my-events', authorAuthMiddleware, (req, res) => {
     order: maxOrder + 1
   };
   events.push(event);
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -1013,7 +1041,7 @@ app.post('/api/author/my-events', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: update own event (re-approval required)
-app.put('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
+app.put('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
@@ -1029,12 +1057,12 @@ app.put('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
   });
 
   events[index] = { ...events[index], ...updates, approvalStatus: 'pending' };
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   res.json(events[index]);
 });
 
 // Author: delete own event (any status)
-app.delete('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
+app.delete('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
@@ -1042,7 +1070,7 @@ app.delete('/api/author/my-events/:id', authorAuthMiddleware, (req, res) => {
 
   const eventTitle = events[index].title;
   events.splice(index, 1);
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -1063,7 +1091,7 @@ app.get('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: create project
-app.post('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
+app.post('/api/author/my-projects', authorAuthMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
   // Whitelist allowed fields to prevent mass assignment
@@ -1082,7 +1110,7 @@ app.post('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
     createdAt: new Date().toISOString()
   };
   projects.push(project);
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -1092,7 +1120,7 @@ app.post('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: update own project (re-approval required)
-app.put('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
+app.put('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
@@ -1108,12 +1136,12 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
   });
 
   projects[index] = { ...projects[index], ...updates, approvalStatus: 'pending' };
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   res.json(projects[index]);
 });
 
 // Author: delete own project (any status)
-app.delete('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
+app.delete('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
@@ -1121,7 +1149,7 @@ app.delete('/api/author/my-projects/:id', authorAuthMiddleware, (req, res) => {
 
   const projectTitle = projects[index].title;
   projects.splice(index, 1);
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -1142,7 +1170,7 @@ app.get('/api/author/my-updates', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: create update
-app.post('/api/author/my-updates', authorAuthMiddleware, (req, res) => {
+app.post('/api/author/my-updates', authorAuthMiddleware, async (req, res) => {
   let updates = readJSON('updates.json');
   const update = {
     id: 'upd' + Date.now(),
@@ -1162,7 +1190,7 @@ app.post('/api/author/my-updates', authorAuthMiddleware, (req, res) => {
     createdAt: new Date().toISOString()
   };
   updates.push(update);
-  writeJSON('updates.json', updates);
+  await writeJSON('updates.json', updates);
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -1172,7 +1200,7 @@ app.post('/api/author/my-updates', authorAuthMiddleware, (req, res) => {
 });
 
 // Author: update own update (re-approval required)
-app.put('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
+app.put('/api/author/my-updates/:id', authorAuthMiddleware, async (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
@@ -1188,12 +1216,12 @@ app.put('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
   });
 
   updates[index] = { ...updates[index], ...updates2, approvalStatus: 'pending' };
-  writeJSON('updates.json', updates);
+  await writeJSON('updates.json', updates);
   res.json(updates[index]);
 });
 
 // Author: delete own update (any status)
-app.delete('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
+app.delete('/api/author/my-updates/:id', authorAuthMiddleware, async (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
@@ -1201,7 +1229,7 @@ app.delete('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
 
   const updateTitle = updates[index].title;
   updates.splice(index, 1);
-  writeJSON('updates.json', updates);
+  await writeJSON('updates.json', updates);
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -1211,20 +1239,20 @@ app.delete('/api/author/my-updates/:id', authorAuthMiddleware, (req, res) => {
 });
 
 // Admin: approve author
-app.post('/api/admin/circles/:id/approve-author', authMiddleware, (req, res) => {
+app.post('/api/admin/circles/:id/approve-author', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
   if (!circles[index].username) return res.status(400).json({ error: '该作者未注册' });
 
   circles[index].authorStatus = 'approved';
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
   logEdit('管理员', '批准作者账号', circles[index].name, `账号: ${circles[index].username}`);
   res.json({ success: true });
 });
 
 // Admin: reject author
-app.post('/api/admin/circles/:id/reject-author', authMiddleware, (req, res) => {
+app.post('/api/admin/circles/:id/reject-author', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
@@ -1233,14 +1261,14 @@ app.post('/api/admin/circles/:id/reject-author', authMiddleware, (req, res) => {
   delete circles[index].username;
   delete circles[index].passwordHash;
   delete circles[index].authorStatus;
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
 
   logEdit('管理员', '拒绝作者账号', circles[index].name, `原账号: ${authorName || '无'}`);
   res.json({ success: true });
 });
 
 // Admin: remove author account
-app.post('/api/admin/circles/:id/remove-author', authMiddleware, (req, res) => {
+app.post('/api/admin/circles/:id/remove-author', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
@@ -1249,28 +1277,28 @@ app.post('/api/admin/circles/:id/remove-author', authMiddleware, (req, res) => {
   delete circles[index].username;
   delete circles[index].passwordHash;
   delete circles[index].authorStatus;
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
 
   logEdit('管理员', '删除作者账号', circles[index].name, `原账号: ${authorName || '无'}`);
   res.json({ success: true });
 });
 
 // Admin: set editors for author
-app.post('/api/admin/circles/:id/set-editors', authMiddleware, (req, res) => {
+app.post('/api/admin/circles/:id/set-editors', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
 
   const { editorIds } = req.body;
   circles[index].editableBy = Array.isArray(editorIds) ? editorIds : [];
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
 
   logEdit('管理员', '修改作者编辑者', circles[index].name, `编辑者数量: ${circles[index].editableBy.length}`);
   res.json({ success: true });
 });
 
 // Admin: reset author password
-app.post('/api/admin/circles/:id/reset-password', authMiddleware, (req, res) => {
+app.post('/api/admin/circles/:id/reset-password', authMiddleware, async (req, res) => {
   const { newPassword } = req.body;
   if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: '密码至少6位' });
 
@@ -1279,7 +1307,7 @@ app.post('/api/admin/circles/:id/reset-password', authMiddleware, (req, res) => 
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
 
   circles[index].passwordHash = bcrypt.hashSync(newPassword, 10);
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
   res.json({ success: true });
 });
 
@@ -1337,24 +1365,24 @@ app.get('/api/works/:id', (req, res) => {
 let likesCache = {};
 try { likesCache = readJSON('likes.json'); } catch {}
 
-function saveLikes() {
-  writeJSON('likes.json', likesCache);
+async function saveLikes() {
+  await writeJSON('likes.json', likesCache);
 }
 
 // ===== Want System (我想要) =====
 let wantsCache = {};
 try { wantsCache = readJSON('wants.json'); } catch {}
 
-function saveWants() {
-  writeJSON('wants.json', wantsCache);
+async function saveWants() {
+  await writeJSON('wants.json', wantsCache);
 }
 
 // ===== Follow System (关注) =====
 let followsCache = {};
 try { followsCache = readJSON('follows.json'); } catch {}
 
-function saveFollows() {
-  writeJSON('follows.json', followsCache);
+async function saveFollows() {
+  await writeJSON('follows.json', followsCache);
 }
 
 // Rate limiting for like/want endpoints
@@ -1377,7 +1405,7 @@ function likeWantRateLimit(req, res, next) {
   next();
 }
 
-app.post('/api/works/:id/like', likeWantRateLimit, (req, res) => {
+app.post('/api/works/:id/like', likeWantRateLimit, async (req, res) => {
   const workId = req.params.id;
   const ip = req.ip;
 
@@ -1396,11 +1424,11 @@ app.post('/api/works/:id/like', likeWantRateLimit, (req, res) => {
 
   // Increment count based on current value in works.json
   works[index].likes = (works[index].likes || 0) + 1;
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   res.json({ likes: works[index].likes });
 });
 
-app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
+app.post('/api/works/:id/unlike', likeWantRateLimit, async (req, res) => {
   const workId = req.params.id;
   const ip = req.ip;
 
@@ -1421,11 +1449,11 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, (req, res) => {
 
   // Decrement count based on current value in works.json
   works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   res.json({ likes: works[index].likes });
 });
 
-app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
+app.post('/api/works/:id/want', likeWantRateLimit, async (req, res) => {
   const workId = req.params.id;
   const ip = req.ip;
 
@@ -1444,7 +1472,7 @@ app.post('/api/works/:id/want', likeWantRateLimit, (req, res) => {
 
   // Increment count based on current value in works.json
   works[index].wants = (works[index].wants || 0) + 1;
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   res.json({ wants: works[index].wants });
 });
 
@@ -1455,7 +1483,7 @@ app.get('/api/works/:id/want-status', (req, res) => {
   res.json({ wanted });
 });
 
-app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
+app.post('/api/works/:id/unwant', likeWantRateLimit, async (req, res) => {
   const workId = req.params.id;
   const ip = req.ip;
 
@@ -1476,12 +1504,12 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, (req, res) => {
 
   // Decrement count based on current value in works.json
   works[index].wants = Math.max(0, (works[index].wants || 0) - 1);
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   res.json({ wants: works[index].wants });
 });
 
 // ===== Follow/Unfollow Circle =====
-app.post('/api/circles/:id/follow', likeWantRateLimit, (req, res) => {
+app.post('/api/circles/:id/follow', likeWantRateLimit, async (req, res) => {
   const circleId = req.params.id;
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: 'missing uid' });
@@ -1500,11 +1528,11 @@ app.post('/api/circles/:id/follow', likeWantRateLimit, (req, res) => {
   saveFollows();
 
   circles[index].follows = (circles[index].follows || 0) + 1;
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
   res.json({ follows: circles[index].follows });
 });
 
-app.post('/api/circles/:id/unfollow', likeWantRateLimit, (req, res) => {
+app.post('/api/circles/:id/unfollow', likeWantRateLimit, async (req, res) => {
   const circleId = req.params.id;
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: 'missing uid' });
@@ -1525,7 +1553,7 @@ app.post('/api/circles/:id/unfollow', likeWantRateLimit, (req, res) => {
   saveFollows();
 
   circles[index].follows = Math.max(0, (circles[index].follows || 0) - 1);
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
   res.json({ follows: circles[index].follows });
 });
 
@@ -1587,13 +1615,13 @@ function reindexOrder(items) {
 }
 
 // Ensure order on startup (not during public GET requests)
-function ensureAllOrders() {
-  ['works.json', 'events.json', 'circles.json', 'projects.json'].forEach(file => {
+async function ensureAllOrders() {
+  for (const file of ['works.json', 'events.json', 'circles.json', 'projects.json']) {
     try {
       const items = readJSON(file);
-      if (ensureOrder(items)) writeJSON(file, items);
+      if (ensureOrder(items)) await writeJSON(file, items);
     } catch {}
-  });
+  }
 }
 ensureAllOrders();
 
@@ -1706,7 +1734,7 @@ function contactRateLimit(req, res, next) {
   next();
 }
 
-app.post('/api/contact', contactRateLimit, (req, res) => {
+app.post('/api/contact', contactRateLimit, async (req, res) => {
   const { name, email, subject, message } = req.body;
   if (!message) {
     return res.status(400).json({ error: '请填写消息内容' });
@@ -1720,7 +1748,7 @@ app.post('/api/contact', contactRateLimit, (req, res) => {
     name, email, subject, message,
     createdAt: new Date().toISOString()
   });
-  writeJSON('contact.json', contacts);
+  await writeJSON('contact.json', contacts);
   res.json({ success: true, message: '消息已发送，我们会尽快回复！' });
 });
 
@@ -1732,8 +1760,8 @@ if (!pageviews.visitors) pageviews.visitors = {};
 if (!pageviews.pages) pageviews.pages = {};
 if (!pageviews.items) pageviews.items = {};
 
-function savePageviews() {
-  writeJSON('pageviews.json', pageviews);
+async function savePageviews() {
+  await writeJSON('pageviews.json', pageviews);
 }
 
 // Helper: get current date in Chinese time (UTC+8)
@@ -2103,7 +2131,7 @@ function escapeXml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-app.put('/api/admin/settings', authMiddleware, (req, res) => {
+app.put('/api/admin/settings', authMiddleware, async (req, res) => {
   const existing = readJSON('settings.json');
   const incoming = req.body;
   // Deep merge: incoming fields override existing, but preserve nested keys not present in incoming
@@ -2120,7 +2148,7 @@ app.put('/api/admin/settings', authMiddleware, (req, res) => {
     return result;
   }
   const merged = deepMerge(existing, incoming);
-  writeJSON('settings.json', merged);
+  await writeJSON('settings.json', merged);
   res.json({ success: true });
 });
 
@@ -2166,7 +2194,7 @@ app.get('/api/admin/announcements', authMiddleware, (req, res) => {
 });
 
 // Admin: create announcement
-app.post('/api/admin/announcements', authMiddleware, (req, res) => {
+app.post('/api/admin/announcements', authMiddleware, async (req, res) => {
   let announcements = [];
   try { announcements = readJSON('announcements.json'); } catch {}
   const announcement = {
@@ -2178,12 +2206,12 @@ app.post('/api/admin/announcements', authMiddleware, (req, res) => {
     createdAt: new Date().toISOString()
   };
   announcements.push(announcement);
-  writeJSON('announcements.json', announcements);
+  await writeJSON('announcements.json', announcements);
   res.json(announcement);
 });
 
 // Admin: update announcement
-app.put('/api/admin/announcements/:id', authMiddleware, (req, res) => {
+app.put('/api/admin/announcements/:id', authMiddleware, async (req, res) => {
   let announcements = readJSON('announcements.json');
   const index = announcements.findIndex(a => a.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '公告未找到' });
@@ -2194,15 +2222,15 @@ app.put('/api/admin/announcements/:id', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
   announcements[index] = { ...announcements[index], ...updates };
-  writeJSON('announcements.json', announcements);
+  await writeJSON('announcements.json', announcements);
   res.json(announcements[index]);
 });
 
 // Admin: delete announcement
-app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/announcements/:id', authMiddleware, async (req, res) => {
   let announcements = readJSON('announcements.json');
   announcements = announcements.filter(a => a.id !== req.params.id);
-  writeJSON('announcements.json', announcements);
+  await writeJSON('announcements.json', announcements);
   res.json({ success: true });
 });
 
@@ -2212,12 +2240,12 @@ app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
 function getAuthorAnnouncementReads() {
   try { return readJSON('author-announcement-reads.json'); } catch { return {}; }
 }
-function saveAuthorAnnouncementReads(reads) {
-  writeJSON('author-announcement-reads.json', reads);
+async function saveAuthorAnnouncementReads(reads) {
+  await writeJSON('author-announcement-reads.json', reads);
 }
 
 // Admin: send announcement to authors
-app.post('/api/admin/author-announcements', authMiddleware, (req, res) => {
+app.post('/api/admin/author-announcements', authMiddleware, async (req, res) => {
   const { title, content, circleIds, pinned, popup } = req.body;
   if (!title || !content) return res.status(400).json({ error: '请填写标题和内容' });
 
@@ -2248,7 +2276,7 @@ app.post('/api/admin/author-announcements', authMiddleware, (req, res) => {
   };
 
   announcements.push(announcement);
-  writeJSON('author-announcements.json', announcements);
+  await writeJSON('author-announcements.json', announcements);
 
   res.json({ success: true, sentTo: targetCircles.length, announcement });
 });
@@ -2285,7 +2313,7 @@ app.get('/api/admin/author-announcements/:id/read-status', authMiddleware, (req,
 
 // Admin: delete author announcement
 // Admin: update author announcement
-app.put('/api/admin/author-announcements/:id', authMiddleware, (req, res) => {
+app.put('/api/admin/author-announcements/:id', authMiddleware, async (req, res) => {
   const { title, content, pinned, popup } = req.body;
   let announcements = [];
   try { announcements = readJSON('author-announcements.json'); } catch {}
@@ -2295,17 +2323,17 @@ app.put('/api/admin/author-announcements/:id', authMiddleware, (req, res) => {
   if (content !== undefined) announcements[idx].content = content;
   if (pinned !== undefined) announcements[idx].pinned = pinned;
   if (popup !== undefined) announcements[idx].popup = popup;
-  writeJSON('author-announcements.json', announcements);
+  await writeJSON('author-announcements.json', announcements);
   res.json({ success: true, announcement: announcements[idx] });
 });
 
-app.delete('/api/admin/author-announcements/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/author-announcements/:id', authMiddleware, async (req, res) => {
   let announcements = [];
   try { announcements = readJSON('author-announcements.json'); } catch {}
   const idx = announcements.findIndex(a => a.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: '公告不存在' });
   announcements.splice(idx, 1);
-  writeJSON('author-announcements.json', announcements);
+  await writeJSON('author-announcements.json', announcements);
   // Also clean up read records
   const reads = getAuthorAnnouncementReads();
   delete reads[req.params.id];
@@ -2389,31 +2417,31 @@ app.get('/api/admin/contacts', authMiddleware, (req, res) => {
   res.json(contacts);
 });
 
-app.put('/api/admin/contacts/:id/read', authMiddleware, (req, res) => {
+app.put('/api/admin/contacts/:id/read', authMiddleware, async (req, res) => {
   let contacts = [];
   try { contacts = readJSON('contact.json'); } catch {}
   if (!Array.isArray(contacts)) contacts = [];
   const index = contacts.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '消息未找到' });
   contacts[index].read = true;
-  writeJSON('contact.json', contacts);
+  await writeJSON('contact.json', contacts);
   res.json({ success: true });
 });
 
-app.delete('/api/admin/contacts/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/contacts/:id', authMiddleware, async (req, res) => {
   let contacts = [];
   try { contacts = readJSON('contact.json'); } catch {}
   if (!Array.isArray(contacts)) contacts = [];
   contacts = contacts.filter(c => c.id !== req.params.id);
-  writeJSON('contact.json', contacts);
+  await writeJSON('contact.json', contacts);
   res.json({ success: true });
 });
 
 // ===== Admin CRUD =====
 // --- Works ---
-app.get('/api/admin/works', authMiddleware, (req, res) => {
+app.get('/api/admin/works', authMiddleware, async (req, res) => {
   let works = readJSON('works.json');
-  if (ensureOrder(works)) writeJSON('works.json', works);
+  if (ensureOrder(works)) await writeJSON('works.json', works);
   works.sort((a, b) => a.order - b.order);
 
   // Pagination (only if page/limit params provided)
@@ -2430,7 +2458,7 @@ app.get('/api/admin/works', authMiddleware, (req, res) => {
   res.json(works);
 });
 
-app.post('/api/admin/works', authMiddleware, (req, res) => {
+app.post('/api/admin/works', authMiddleware, async (req, res) => {
   const works = readJSON('works.json');
   const maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
   // Whitelist allowed fields
@@ -2448,13 +2476,13 @@ app.post('/api/admin/works', authMiddleware, (req, res) => {
     createdAt: new Date().toISOString()
   };
   works.push(work);
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   logEdit('管理员', '创建作品', work.title || work.id, '');
   res.json(work);
 });
 
 // Admin: import works from Excel
-app.post('/api/admin/works/import', authMiddleware, upload.single('file'), (req, res) => {
+app.post('/api/admin/works/import', authMiddleware, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
 
   try {
@@ -2519,7 +2547,7 @@ app.post('/api/admin/works/import', authMiddleware, upload.single('file'), (req,
       }
     });
 
-    writeJSON('works.json', works);
+    await writeJSON('works.json', works);
     fs.unlinkSync(req.file.path);
 
     logEdit('管理员', '导入作品', '', `新增${added}个，更新${updated}个`);
@@ -2531,12 +2559,12 @@ app.post('/api/admin/works/import', authMiddleware, upload.single('file'), (req,
 });
 
 // Admin: approve work
-app.post('/api/admin/works/:id/approve', authMiddleware, (req, res) => {
+app.post('/api/admin/works/:id/approve', authMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
   works[index].approvalStatus = 'approved';
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   logEdit('管理员', '批准作品', works[index].title || req.params.id, '');
   // Notify author
   if (works[index].submittedBy) {
@@ -2546,13 +2574,13 @@ app.post('/api/admin/works/:id/approve', authMiddleware, (req, res) => {
 });
 
 // Admin: reject work
-app.post('/api/admin/works/:id/reject', authMiddleware, (req, res) => {
+app.post('/api/admin/works/:id/reject', authMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
   works[index].approvalStatus = 'rejected';
   if (req.body.reason) works[index].rejectReason = req.body.reason;
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   logEdit('管理员', '拒绝作品', works[index].title || req.params.id, req.body.reason || '');
   // Notify author
   if (works[index].submittedBy) {
@@ -2561,7 +2589,7 @@ app.post('/api/admin/works/:id/reject', authMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
-app.put('/api/admin/works/:id', authMiddleware, (req, res) => {
+app.put('/api/admin/works/:id', authMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
@@ -2573,41 +2601,41 @@ app.put('/api/admin/works/:id', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
   works[index] = { ...works[index], ...updates };
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   logEdit('管理员', '编辑作品', oldTitle || req.params.id, '');
   res.json(works[index]);
 });
 
-app.delete('/api/admin/works/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/works/:id', authMiddleware, async (req, res) => {
   const workId = req.params.id;
   let works = readJSON('works.json');
   works = works.filter(w => w.id !== workId);
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   // Cascade: remove from events.relatedWorks
   let events = readJSON('events.json');
   events.forEach(e => { e.relatedWorks = (e.relatedWorks || []).filter(id => id !== workId); });
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   // Cascade: remove from projects.works
   let projects = readJSON('projects.json');
   projects.forEach(p => { p.works = (p.works || []).filter(id => id !== workId); });
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   // Cascade: remove from likes.json
   let likesData = {};
   try { likesData = readJSON('likes.json'); } catch {}
   delete likesData[workId];
-  writeJSON('likes.json', likesData);
+  await writeJSON('likes.json', likesData);
   // Cascade: remove from wants.json
   let wantsData = {};
   try { wantsData = readJSON('wants.json'); } catch {}
   delete wantsData[workId];
-  writeJSON('wants.json', wantsData);
+  await writeJSON('wants.json', wantsData);
   res.json({ success: true });
 });
 
 // --- Events ---
-app.get('/api/admin/events', authMiddleware, (req, res) => {
+app.get('/api/admin/events', authMiddleware, async (req, res) => {
   let events = readJSON('events.json');
-  if (ensureOrder(events)) writeJSON('events.json', events);
+  if (ensureOrder(events)) await writeJSON('events.json', events);
   events.sort((a, b) => a.order - b.order);
 
   // Pagination (only if page/limit params provided)
@@ -2624,7 +2652,7 @@ app.get('/api/admin/events', authMiddleware, (req, res) => {
   res.json(events);
 });
 
-app.post('/api/admin/events', authMiddleware, (req, res) => {
+app.post('/api/admin/events', authMiddleware, async (req, res) => {
   const events = readJSON('events.json');
   const maxOrder = events.reduce((max, e) => Math.max(max, e.order ?? 0), 0);
   // Whitelist allowed fields
@@ -2640,12 +2668,12 @@ app.post('/api/admin/events', authMiddleware, (req, res) => {
     createdAt: new Date().toISOString()
   };
   events.push(event);
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   res.json(event);
 });
 
 // Admin: import events from Excel
-app.post('/api/admin/events/import', authMiddleware, upload.single('file'), (req, res) => {
+app.post('/api/admin/events/import', authMiddleware, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
   try {
     const wb = XLSX.readFile(req.file.path);
@@ -2673,7 +2701,7 @@ app.post('/api/admin/events/import', authMiddleware, upload.single('file'), (req
         added++;
       }
     });
-    writeJSON('events.json', events);
+    await writeJSON('events.json', events);
     fs.unlinkSync(req.file.path);
     logEdit('管理员', '导入活动', '', `新增${added}个，更新${updated}个`);
     res.json({ success: true, added, updated });
@@ -2683,7 +2711,7 @@ app.post('/api/admin/events/import', authMiddleware, upload.single('file'), (req
   }
 });
 
-app.put('/api/admin/events/:id', authMiddleware, (req, res) => {
+app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
@@ -2694,29 +2722,29 @@ app.put('/api/admin/events/:id', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
   events[index] = { ...events[index], ...updates };
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   res.json(events[index]);
 });
 
-app.delete('/api/admin/events/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/events/:id', authMiddleware, async (req, res) => {
   const eventId = req.params.id;
   let events = readJSON('events.json');
   events = events.filter(e => e.id !== eventId);
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   // Cascade: remove from projects.events
   let projects = readJSON('projects.json');
   projects.forEach(p => { p.events = (p.events || []).filter(id => id !== eventId); });
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   res.json({ success: true });
 });
 
 // Admin: approve event
-app.post('/api/admin/events/:id/approve', authMiddleware, (req, res) => {
+app.post('/api/admin/events/:id/approve', authMiddleware, async (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
   events[index].approvalStatus = 'approved';
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   logEdit('管理员', '批准活动', events[index].title || req.params.id, '');
   // Notify author
   if (events[index].submittedBy) {
@@ -2726,13 +2754,13 @@ app.post('/api/admin/events/:id/approve', authMiddleware, (req, res) => {
 });
 
 // Admin: reject event
-app.post('/api/admin/events/:id/reject', authMiddleware, (req, res) => {
+app.post('/api/admin/events/:id/reject', authMiddleware, async (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
   events[index].approvalStatus = 'rejected';
   if (req.body.reason) events[index].rejectReason = req.body.reason;
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   logEdit('管理员', '拒绝活动', events[index].title || req.params.id, req.body.reason || '');
   // Notify author
   if (events[index].submittedBy) {
@@ -2742,12 +2770,12 @@ app.post('/api/admin/events/:id/reject', authMiddleware, (req, res) => {
 });
 
 // Admin: approve project
-app.post('/api/admin/projects/:id/approve', authMiddleware, (req, res) => {
+app.post('/api/admin/projects/:id/approve', authMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
   projects[index].approvalStatus = 'approved';
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   logEdit('管理员', '批准企划', projects[index].title || req.params.id, '');
   // Notify author
   if (projects[index].submittedBy) {
@@ -2757,13 +2785,13 @@ app.post('/api/admin/projects/:id/approve', authMiddleware, (req, res) => {
 });
 
 // Admin: reject project
-app.post('/api/admin/projects/:id/reject', authMiddleware, (req, res) => {
+app.post('/api/admin/projects/:id/reject', authMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
   projects[index].approvalStatus = 'rejected';
   if (req.body.reason) projects[index].rejectReason = req.body.reason;
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   logEdit('管理员', '拒绝企划', projects[index].title || req.params.id, req.body.reason || '');
   // Notify author
   if (projects[index].submittedBy) {
@@ -2773,12 +2801,12 @@ app.post('/api/admin/projects/:id/reject', authMiddleware, (req, res) => {
 });
 
 // Admin: approve update
-app.post('/api/admin/updates/:id/approve', authMiddleware, (req, res) => {
+app.post('/api/admin/updates/:id/approve', authMiddleware, async (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
   updates[index].approvalStatus = 'approved';
-  writeJSON('updates.json', updates);
+  await writeJSON('updates.json', updates);
   logEdit('管理员', '批准动态', updates[index].title || req.params.id, '');
   // Notify author
   if (updates[index].submittedBy) {
@@ -2788,13 +2816,13 @@ app.post('/api/admin/updates/:id/approve', authMiddleware, (req, res) => {
 });
 
 // Admin: reject update
-app.post('/api/admin/updates/:id/reject', authMiddleware, (req, res) => {
+app.post('/api/admin/updates/:id/reject', authMiddleware, async (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
   updates[index].approvalStatus = 'rejected';
   if (req.body.reason) updates[index].rejectReason = req.body.reason;
-  writeJSON('updates.json', updates);
+  await writeJSON('updates.json', updates);
   logEdit('管理员', '拒绝动态', updates[index].title || req.params.id, req.body.reason || '');
   // Notify author
   if (updates[index].submittedBy) {
@@ -2804,9 +2832,9 @@ app.post('/api/admin/updates/:id/reject', authMiddleware, (req, res) => {
 });
 
 // --- Circles ---
-app.get('/api/admin/circles', authMiddleware, (req, res) => {
+app.get('/api/admin/circles', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
-  if (ensureOrder(circles)) writeJSON('circles.json', circles);
+  if (ensureOrder(circles)) await writeJSON('circles.json', circles);
   circles.sort((a, b) => a.order - b.order);
 
   // Pagination (only if page/limit params provided)
@@ -2823,7 +2851,7 @@ app.get('/api/admin/circles', authMiddleware, (req, res) => {
   res.json(circles);
 });
 
-app.post('/api/admin/circles', authMiddleware, (req, res) => {
+app.post('/api/admin/circles', authMiddleware, async (req, res) => {
   const circles = readJSON('circles.json');
   const maxOrder = circles.reduce((max, c) => Math.max(max, c.order ?? 0), 0);
   // Whitelist allowed fields - NEVER allow passwordHash, username, authorStatus
@@ -2839,11 +2867,11 @@ app.post('/api/admin/circles', authMiddleware, (req, res) => {
     createdAt: new Date().toISOString()
   };
   circles.push(circle);
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
   res.json(circle);
 });
 
-app.put('/api/admin/circles/:id', authMiddleware, (req, res) => {
+app.put('/api/admin/circles/:id', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
@@ -2854,26 +2882,26 @@ app.put('/api/admin/circles/:id', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
   circles[index] = { ...circles[index], ...updates };
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
   res.json(circles[index]);
 });
 
-app.delete('/api/admin/circles/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/circles/:id', authMiddleware, async (req, res) => {
   const circleId = req.params.id;
   let circles = readJSON('circles.json');
   circles = circles.filter(c => c.id !== circleId);
-  writeJSON('circles.json', circles);
+  await writeJSON('circles.json', circles);
   // Cascade: remove circle from work.circles references
   let works = readJSON('works.json');
   works.forEach(w => { w.circles = (w.circles || []).filter(id => id !== circleId); });
-  writeJSON('works.json', works);
+  await writeJSON('works.json', works);
   // Cascade: remove from events.relatedCircles and projects.circles
   let events = readJSON('events.json');
   events.forEach(e => { e.relatedCircles = (e.relatedCircles || []).filter(id => id !== circleId); });
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   let projects = readJSON('projects.json');
   projects.forEach(p => { p.circles = (p.circles || []).filter(id => id !== circleId); });
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   res.json({ success: true });
 });
 
@@ -2951,7 +2979,7 @@ app.get('/api/admin/circles/:id/export', authMiddleware, (req, res) => {
   res.send(buf);
 });
 
-app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'), (req, res) => {
+app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'), async (req, res) => {
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.params.id);
   if (!circle) return res.status(404).json({ error: '作者未找到' });
@@ -3080,9 +3108,9 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
     });
 
     works = [...otherWorks, ...newCircleWorks];
-    writeJSON('works.json', works);
-    writeJSON('events.json', events);
-    writeJSON('projects.json', projects);
+    await writeJSON('works.json', works);
+    await writeJSON('events.json', events);
+    await writeJSON('projects.json', projects);
 
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
@@ -3095,9 +3123,9 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
 });
 
 // --- Projects ---
-app.get('/api/admin/projects', authMiddleware, (req, res) => {
+app.get('/api/admin/projects', authMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
-  if (ensureOrder(projects)) writeJSON('projects.json', projects);
+  if (ensureOrder(projects)) await writeJSON('projects.json', projects);
   projects.sort((a, b) => a.order - b.order);
 
   // Pagination (only if page/limit params provided)
@@ -3114,7 +3142,7 @@ app.get('/api/admin/projects', authMiddleware, (req, res) => {
   res.json(projects);
 });
 
-app.post('/api/admin/projects', authMiddleware, (req, res) => {
+app.post('/api/admin/projects', authMiddleware, async (req, res) => {
   const projects = readJSON('projects.json');
   const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
   // Whitelist allowed fields
@@ -3130,12 +3158,12 @@ app.post('/api/admin/projects', authMiddleware, (req, res) => {
     createdAt: new Date().toISOString()
   };
   projects.push(project);
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   res.json(project);
 });
 
 // Admin: import projects from Excel
-app.post('/api/admin/projects/import', authMiddleware, upload.single('file'), (req, res) => {
+app.post('/api/admin/projects/import', authMiddleware, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
   try {
     const wb = XLSX.readFile(req.file.path);
@@ -3161,7 +3189,7 @@ app.post('/api/admin/projects/import', authMiddleware, upload.single('file'), (r
         added++;
       }
     });
-    writeJSON('projects.json', projects);
+    await writeJSON('projects.json', projects);
     fs.unlinkSync(req.file.path);
     logEdit('管理员', '导入企划', '', `新增${added}个，更新${updated}个`);
     res.json({ success: true, added, updated });
@@ -3171,7 +3199,7 @@ app.post('/api/admin/projects/import', authMiddleware, upload.single('file'), (r
   }
 });
 
-app.put('/api/admin/projects/:id', authMiddleware, (req, res) => {
+app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
@@ -3182,19 +3210,19 @@ app.put('/api/admin/projects/:id', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
   projects[index] = { ...projects[index], ...updates };
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   res.json(projects[index]);
 });
 
-app.delete('/api/admin/projects/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   const projectId = req.params.id;
   let projects = readJSON('projects.json');
   projects = projects.filter(p => p.id !== projectId);
-  writeJSON('projects.json', projects);
+  await writeJSON('projects.json', projects);
   // Cascade: remove from events.relatedProjects
   let events = readJSON('events.json');
   events.forEach(e => { e.relatedProjects = (e.relatedProjects || []).filter(id => id !== projectId); });
-  writeJSON('events.json', events);
+  await writeJSON('events.json', events);
   res.json({ success: true });
 });
 
@@ -3214,6 +3242,18 @@ app.get('/api/updates', cacheMiddleware(60), (req, res) => {
       if (!a.pinned && b.pinned) return 1;
       return new Date(b.publishDate) - new Date(a.publishDate);
     });
+
+    // Pagination (only if page/limit params provided)
+    if (req.query.page || req.query.limit) {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const total = updates.length;
+      const totalPages = Math.ceil(total / limit);
+      const start = (page - 1) * limit;
+      const items = updates.slice(start, start + limit);
+      return res.json({ items, total, page, limit, totalPages });
+    }
+
     res.json(updates);
   } catch (e) { res.json([]); }
 });
@@ -3251,7 +3291,7 @@ app.get('/api/admin/updates', authMiddleware, (req, res) => {
   } catch (e) { res.json([]); }
 });
 
-app.post('/api/admin/updates', authMiddleware, (req, res) => {
+app.post('/api/admin/updates', authMiddleware, async (req, res) => {
   let updates = [];
   try { updates = readJSON('updates.json'); } catch {}
   const update = {
@@ -3270,12 +3310,12 @@ app.post('/api/admin/updates', authMiddleware, (req, res) => {
     createdAt: new Date().toISOString()
   };
   updates.push(update);
-  writeJSON('updates.json', updates);
+  await writeJSON('updates.json', updates);
   res.json(update);
 });
 
 // Admin: import updates from Excel
-app.post('/api/admin/updates/import', authMiddleware, upload.single('file'), (req, res) => {
+app.post('/api/admin/updates/import', authMiddleware, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
   try {
     const wb = XLSX.readFile(req.file.path);
@@ -3301,7 +3341,7 @@ app.post('/api/admin/updates/import', authMiddleware, upload.single('file'), (re
         added++;
       }
     });
-    writeJSON('updates.json', updates);
+    await writeJSON('updates.json', updates);
     fs.unlinkSync(req.file.path);
     logEdit('管理员', '导入动态', '', `新增${added}个，更新${updated}个`);
     res.json({ success: true, added, updated });
@@ -3311,7 +3351,7 @@ app.post('/api/admin/updates/import', authMiddleware, upload.single('file'), (re
   }
 });
 
-app.put('/api/admin/updates/:id', authMiddleware, (req, res) => {
+app.put('/api/admin/updates/:id', authMiddleware, async (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
@@ -3322,15 +3362,15 @@ app.put('/api/admin/updates/:id', authMiddleware, (req, res) => {
     if (req.body[field] !== undefined) updates2[field] = req.body[field];
   });
   updates[index] = { ...updates[index], ...updates2 };
-  writeJSON('updates.json', updates);
+  await writeJSON('updates.json', updates);
   res.json(updates[index]);
 });
 
-app.delete('/api/admin/updates/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/updates/:id', authMiddleware, async (req, res) => {
   const updateId = req.params.id;
   let updates = readJSON('updates.json');
   updates = updates.filter(u => u.id !== updateId);
-  writeJSON('updates.json', updates);
+  await writeJSON('updates.json', updates);
   res.json({ success: true });
 });
 
@@ -3339,17 +3379,17 @@ app.get('/api/admin/categories', authMiddleware, (req, res) => {
   res.json(readJSON('categories.json'));
 });
 
-app.put('/api/admin/categories', authMiddleware, (req, res) => {
+app.put('/api/admin/categories', authMiddleware, async (req, res) => {
   const categories = req.body;
   if (!categories.works || !categories.projects) {
     return res.status(400).json({ error: '无效的分类数据' });
   }
-  writeJSON('categories.json', categories);
+  await writeJSON('categories.json', categories);
   res.json({ success: true, categories });
 });
 
 // --- Reorder ---
-app.post('/api/admin/reorder/:type', authMiddleware, (req, res) => {
+app.post('/api/admin/reorder/:type', authMiddleware, async (req, res) => {
   const { type } = req.params;
   const { orderedIds } = req.body;
   if (!Array.isArray(orderedIds)) return res.status(400).json({ error: '无效的排序数据' });
@@ -3363,16 +3403,16 @@ app.post('/api/admin/reorder/:type', authMiddleware, (req, res) => {
     const item = items.find(i => i.id === id);
     if (item) item.order = index;
   });
-  writeJSON(file, items);
+  await writeJSON(file, items);
   res.json({ success: true });
 });
 
 // --- Upload ---
-function saveUploadMeta(filename, uploader) {
+async function saveUploadMeta(filename, uploader) {
   let meta = {};
   try { meta = readJSON('uploads-meta.json'); } catch {}
   meta[filename] = { uploader, uploadedAt: new Date().toISOString() };
-  writeJSON('uploads-meta.json', meta);
+  await writeJSON('uploads-meta.json', meta);
 }
 
 app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res) => {
@@ -3462,7 +3502,33 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
 
   saveUploadMeta(req.file.filename, authorName);
   logEdit(authorName, '上传图片', req.file.filename, '', '/uploads/' + req.file.filename);
-  res.json({ url: '/uploads/' + req.file.filename });
+
+  // Generate responsive image variants (thumbnail + medium WebP)
+  const variants = {};
+  if (sharp) {
+    const filePath = path.join(__dirname, 'uploads', req.file.filename);
+    const ext = path.extname(req.file.filename).toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext)) {
+      try {
+        const baseName = path.basename(req.file.filename, ext);
+        const uploadsDir = path.join(__dirname, 'uploads');
+
+        // Thumbnail: 400px wide WebP
+        await sharp(filePath).resize(400).webp({ quality: 80 })
+          .toFile(path.join(uploadsDir, `${baseName}_thumb.webp`));
+        variants.thumb = `/uploads/${baseName}_thumb.webp`;
+
+        // Medium: 800px wide WebP
+        await sharp(filePath).resize(800).webp({ quality: 85 })
+          .toFile(path.join(uploadsDir, `${baseName}_medium.webp`));
+        variants.medium = `/uploads/${baseName}_medium.webp`;
+      } catch (e) {
+        console.error('Responsive variant generation failed:', e.message);
+      }
+    }
+  }
+
+  res.json({ url: '/uploads/' + req.file.filename, variants });
 });
 
 // List all uploaded images
@@ -3489,7 +3555,7 @@ app.get('/api/admin/images', authMiddleware, (req, res) => {
 });
 
 // Delete an uploaded image
-app.delete('/api/admin/images/:filename', authMiddleware, (req, res) => {
+app.delete('/api/admin/images/:filename', authMiddleware, async (req, res) => {
   const filename = path.basename(req.params.filename); // Prevent path traversal
   const uploadsDir = path.join(__dirname, 'uploads');
   const filePath = path.join(uploadsDir, filename);
@@ -3500,7 +3566,7 @@ app.delete('/api/admin/images/:filename', authMiddleware, (req, res) => {
     try {
       const meta = readJSON('uploads-meta.json');
       delete meta[req.params.filename];
-      writeJSON('uploads-meta.json', meta);
+      await writeJSON('uploads-meta.json', meta);
     } catch {}
     logEdit('管理员', '删除图片', req.params.filename, '');
     clearEditLogImageUrl('/uploads/' + filename);
@@ -3608,8 +3674,49 @@ app.post('/api/admin/images/cleanup', authMiddleware, (req, res) => {
   }
 });
 
+// Batch generate responsive variants for existing images
+app.post('/api/admin/images/generate-variants', authMiddleware, async (req, res) => {
+  if (!sharp) return res.status(500).json({ error: 'sharp 未安装，无法生成图片变体' });
+  const uploadsDir = path.join(__dirname, 'uploads');
+  try {
+    const files = fs.readdirSync(uploadsDir)
+      .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f) && !/_thumb\.webp$|_medium\.webp$/.test(f));
+
+    let generated = 0;
+    let skipped = 0;
+    let errors = 0;
+
+    for (const file of files) {
+      const ext = path.extname(file).toLowerCase();
+      const baseName = path.basename(file, ext);
+      const thumbPath = path.join(uploadsDir, `${baseName}_thumb.webp`);
+      const mediumPath = path.join(uploadsDir, `${baseName}_medium.webp`);
+
+      // Skip if variants already exist
+      if (fs.existsSync(thumbPath) && fs.existsSync(mediumPath)) {
+        skipped++;
+        continue;
+      }
+
+      try {
+        const filePath = path.join(uploadsDir, file);
+        await sharp(filePath).resize(400).webp({ quality: 80 }).toFile(thumbPath);
+        await sharp(filePath).resize(800).webp({ quality: 85 }).toFile(mediumPath);
+        generated++;
+      } catch (e) {
+        console.error(`Failed to generate variants for ${file}:`, e.message);
+        errors++;
+      }
+    }
+
+    res.json({ success: true, total: files.length, generated, skipped, errors });
+  } catch (e) {
+    res.status(500).json({ error: '批量生成失败: ' + e.message });
+  }
+});
+
 // --- Change password ---
-app.post('/api/admin/change-password', authMiddleware, (req, res) => {
+app.post('/api/admin/change-password', authMiddleware, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   if (!newPassword || newPassword.length < 6) {
     return res.status(400).json({ error: '新密码至少6个字符' });
@@ -3619,7 +3726,7 @@ app.post('/api/admin/change-password', authMiddleware, (req, res) => {
     return res.status(400).json({ error: '原密码错误' });
   }
   admin.passwordHash = bcrypt.hashSync(newPassword, 10);
-  writeJSON('admin.json', admin);
+  await writeJSON('admin.json', admin);
   res.json({ success: true, message: '密码修改成功' });
 });
 
