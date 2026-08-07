@@ -32,6 +32,8 @@ async function loadLang(lang) {
     if (typeof buildUpdateFilterButtons === 'function') buildUpdateFilterButtons();
     applyTranslations();
     updateLangButtons();
+    // Reload page to update all dynamic content (card tags, etc.)
+    location.reload();
   } catch (e) {
     console.error('Failed to load language:', lang, e);
   }
