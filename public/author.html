@@ -1666,6 +1666,18 @@
       body.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>';
       overlay.classList.add('open');
       body.innerHTML = await buildWorkFormHTML({});
+
+      // Check for saved draft
+      const draft = FormDraft.load('work');
+      if (draft) {
+        const hasContent = Object.values(draft).some(v => v && v !== '' && v !== false);
+        if (hasContent && await showConfirm('检测到上次未保存的草稿，是否恢复？')) {
+          FormDraft.apply(draft);
+        } else {
+          FormDraft.clear('work');
+        }
+      }
+      FormDraft.startTracking('work');
     }
 
     async function buildWorkFormHTML(work) {
@@ -1698,7 +1710,7 @@
           <input class="form-input" id="wfCommissionedBy" value="${escapeHtml(w.commissionedBy || '')}" placeholder="请输入约稿作者名字">
         </div>
         <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="wfTags" value="${(w.tags||[]).join(', ')}" placeholder="手办, 东方"></div>
-        <div class="form-group"><label>描述</label><textarea class="form-input" id="wfDesc" style="min-height:80px;">${w.description || ''}</textarea></div>
+        <div class="form-group"><label>描述</label>${createRichEditor('wfDesc', '请输入作品描述...', w.description || '')}</div>
         <div class="form-row">
           <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup && !w.socialLinks?.wechat && !w.socialLinks?.weibo && !w.socialLinks?.bilibili && !w.socialLinks?.custom ? 'selected' : ''}>无</option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${w.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${w.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${w.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${w.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
           <div class="form-group"><label>联系方式</label><input class="form-input" id="wfContactValue" value="${w.socialLinks?.qq || w.socialLinks?.qqGroup || w.socialLinks?.wechat || w.socialLinks?.weibo || w.socialLinks?.bilibili || w.socialLinks?.custom || ''}" placeholder="账号、群号或链接"></div>
@@ -1800,7 +1812,7 @@
         price: document.getElementById('wfPrice').value,
         releaseDate: document.getElementById('wfReleaseDate').value,
         tags: document.getElementById('wfTags').value.split(',').map(t => t.trim()).filter(Boolean),
-        description: document.getElementById('wfDesc').value,
+        description: getRichContent('wfDesc'),
         images: [...document.querySelectorAll('#wfImagesPreview img')].map(img => img.src),
         moreImages: [...document.querySelectorAll('#wfMoreImagesPreview img')].map(img => img.src),
         socialLinks,
@@ -1837,6 +1849,7 @@
           }
         }
         if (result) {
+          FormDraft.clear('work');
           showToast('作品已保存', 'success');
           closeWorkModal();
           loadAuthorWorks();
@@ -2174,7 +2187,7 @@
       }).join('');
     }
 
-    function openMyEventForm(eventData = null) {
+    async function openMyEventForm(eventData = null) {
       const isEdit = !!eventData;
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
@@ -2197,7 +2210,7 @@
           <div class="form-group"><label>状态</label><select class="form-input" id="myEventStatus">${eventStatusOptions}</select></div>
         </div>
         <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth" value="${isEdit ? escapeHtml(eventData.booth || '') : ''}"></div>
-        <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;">${isEdit ? escapeHtml(eventData.description || '') : ''}</textarea></div>
+        <div class="form-group"><label>描述</label>${createRichEditor('myEventDesc', '请输入活动描述...', isEdit ? (eventData.description || '') : '')}</div>
         <div class="form-row">
           <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myEventContactType"><option value="" ${!isEdit || (!eventData.socialLinks?.qq && !eventData.socialLinks?.qqGroup && !eventData.socialLinks?.wechat && !eventData.socialLinks?.weibo && !eventData.socialLinks?.bilibili && !eventData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && eventData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && eventData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && eventData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && eventData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && eventData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && eventData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
           <div class="form-group"><label>联系方式</label><input class="form-input" id="myEventContactValue" value="${isEdit ? (eventData.socialLinks?.qq || eventData.socialLinks?.qqGroup || eventData.socialLinks?.wechat || eventData.socialLinks?.weibo || eventData.socialLinks?.bilibili || eventData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div>
@@ -2227,6 +2240,20 @@
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>`;
       overlay.classList.add('open');
+
+      // Draft support for new events
+      if (!isEdit) {
+        const draft = FormDraft.load('event');
+        if (draft) {
+          const hasContent = Object.values(draft).some(v => v && v !== '' && v !== false);
+          if (hasContent && await showConfirm('检测到上次未保存的草稿，是否恢复？')) {
+            FormDraft.apply(draft);
+          } else {
+            FormDraft.clear('event');
+          }
+        }
+        FormDraft.startTracking('event');
+      }
     }
 
     async function submitMyEvent(eventId = '') {
@@ -2249,7 +2276,7 @@
         endDate: document.getElementById('myEventEndDate').value,
         location: document.getElementById('myEventLocation').value,
         booth: document.getElementById('myEventBooth').value,
-        description: document.getElementById('myEventDesc').value,
+        description: getRichContent('myEventDesc'),
         status: document.getElementById('myEventStatus').value,
         coverImage: coverImg ? coverImg.src : '',
         images,
@@ -2265,6 +2292,7 @@
         if (result) showToast('活动已提交，等待审核', 'success');
       }
       if (result) {
+        FormDraft.clear('event');
         closeWorkModal();
         loadMyEvents();
       }
@@ -2324,7 +2352,7 @@
           <div class="form-group"><label>分类</label><select class="form-input" id="myProjectCategory">${PROJECT_CATEGORIES_ORDERED.map(c => `<option value="${c.id}" ${isEdit && projectData.category === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
           <div class="form-group"><label>状态</label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && projectData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div>
         </div>
-        <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;">${isEdit ? escapeHtml(projectData.description || '') : ''}</textarea></div>
+        <div class="form-group"><label>描述</label>${createRichEditor('myProjectDesc', '请输入企划描述...', isEdit ? (projectData.description || '') : '')}</div>
         <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="myProjectTags" value="${isEdit ? (projectData.tags || []).join(', ') : ''}" placeholder="标签1, 标签2"></div>
         <div class="form-row">
           <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="" ${!isEdit || (!projectData.socialLinks?.qq && !projectData.socialLinks?.qqGroup && !projectData.socialLinks?.wechat && !projectData.socialLinks?.weibo && !projectData.socialLinks?.bilibili && !projectData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && projectData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && projectData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && projectData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && projectData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
@@ -2375,7 +2403,7 @@
         title,
         category: document.getElementById('myProjectCategory').value,
         status: document.getElementById('myProjectStatus').value,
-        description: document.getElementById('myProjectDesc').value,
+        description: getRichContent('myProjectDesc'),
         tags: document.getElementById('myProjectTags').value.split(',').map(t => t.trim()).filter(Boolean),
         coverImage: coverImg ? coverImg.src : '',
         images,
@@ -2446,7 +2474,7 @@
         <div class="form-group"><label>分类 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateCategory"><option value="">请选择</option></select></div>
         <div class="form-group"><label>状态 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateStatus"><option value="">请选择</option></select></div>
         <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${isEdit ? updateData.publishDate || '' : new Date().toISOString().split('T')[0]}"></div>
-        <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:120px;" required>${isEdit ? escapeHtml(updateData.content || '') : ''}</textarea></div>
+        <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label>${createRichEditor('myUpdateContent', '请输入动态内容...', isEdit ? (updateData.content || '') : '')}</div>
         <div class="form-group">
           <label>封面图片</label>
           <div id="myUpdateCoverPreview" style="margin-bottom:0.5rem;">${isEdit && updateData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + updateData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
@@ -2483,7 +2511,7 @@
 
     async function submitMyUpdate(updateId = '') {
       const title = document.getElementById('myUpdateTitle').value;
-      const content = document.getElementById('myUpdateContent').value;
+      const content = getRichContent('myUpdateContent');
       const category = document.getElementById('myUpdateCategory').value;
       const status = document.getElementById('myUpdateStatus').value;
       if (!title || !content) { showToast('请填写标题和内容', 'error'); return; }
@@ -2573,6 +2601,141 @@
       }
       loadCirclesForRegister();
     }
+
+    // ===== Form Draft System =====
+    const FormDraft = {
+      _currentType: null,
+      _hasChanges: false,
+      _saveTimer: null,
+
+      // Start tracking a form type
+      startTracking(formType) {
+        this._currentType = formType;
+        this._hasChanges = false;
+        // Listen for changes on all form inputs
+        const body = document.getElementById('workModalBody');
+        if (!body) return;
+        body.addEventListener('input', this._onInput.bind(this));
+        body.addEventListener('change', this._onInput.bind(this));
+      },
+
+      _onInput() {
+        this._hasChanges = true;
+        clearTimeout(this._saveTimer);
+        this._saveTimer = setTimeout(() => this.save(), 800);
+      },
+
+      // Save current form state to sessionStorage
+      save() {
+        if (!this._currentType) return;
+        const body = document.getElementById('workModalBody');
+        if (!body) return;
+        const data = {};
+        body.querySelectorAll('input, textarea, select').forEach(el => {
+          if (!el.id || el.type === 'file') return;
+          if (el.type === 'checkbox') data[el.id] = el.checked;
+          else if (el.type === 'radio') { if (el.checked) data[el.name] = el.value; }
+          else data[el.id] = el.value;
+        });
+        try {
+          sessionStorage.setItem(`f7draft_${this._currentType}`, JSON.stringify(data));
+        } catch (e) {}
+      },
+
+      // Load draft from sessionStorage
+      load(formType) {
+        try {
+          const saved = sessionStorage.getItem(`f7draft_${formType}`);
+          return saved ? JSON.parse(saved) : null;
+        } catch (e) { return null; }
+      },
+
+      // Apply draft data to form fields
+      apply(data) {
+        if (!data) return;
+        const body = document.getElementById('workModalBody');
+        if (!body) return;
+        Object.entries(data).forEach(([id, value]) => {
+          const el = body.querySelector(`#${CSS.escape(id)}`) || body.querySelector(`[name="${id}"]`);
+          if (!el) return;
+          if (el.type === 'checkbox') el.checked = value;
+          else if (el.type === 'radio') { /* handled by name selector */ }
+          else el.value = value;
+        });
+        this._hasChanges = true;
+      },
+
+      // Clear draft for a form type
+      clear(formType) {
+        sessionStorage.removeItem(`f7draft_${formType || this._currentType}`);
+        this._hasChanges = false;
+      },
+
+      // Stop tracking
+      stopTracking() {
+        this._currentType = null;
+        this._hasChanges = false;
+        clearTimeout(this._saveTimer);
+        const body = document.getElementById('workModalBody');
+        if (body) {
+          body.removeEventListener('input', this._onInput);
+          body.removeEventListener('change', this._onInput);
+        }
+      },
+
+      hasChanges() { return this._hasChanges; }
+    };
+
+    // ===== Rich Text Editor =====
+    function createRichEditor(id, placeholder, initialHtml = '') {
+      return `
+        <div class="rich-editor" id="${id}-wrapper">
+          <div class="rich-editor-toolbar">
+            <button type="button" onclick="execRichCmd('${id}','bold')" title="粗体"><b>B</b></button>
+            <button type="button" onclick="execRichCmd('${id}','italic')" title="斜体"><i>I</i></button>
+            <button type="button" onclick="execRichCmd('${id}','insertUnorderedList')" title="无序列表">•≡</button>
+            <button type="button" onclick="execRichCmd('${id}','insertOrderedList')" title="有序列表">1.</button>
+            <button type="button" onclick="execRichLink('${id}')" title="插入链接">🔗</button>
+            <button type="button" onclick="execRichCmd('${id}','removeFormat')" title="清除格式" style="font-size:0.8rem;">✕</button>
+          </div>
+          <div class="rich-editor-content" id="${id}" contenteditable="true" data-placeholder="${placeholder || '请输入内容...'}">${initialHtml}</div>
+        </div>
+      `;
+    }
+
+    function execRichCmd(editorId, cmd) {
+      document.execCommand(cmd, false, null);
+      document.getElementById(editorId).focus();
+    }
+
+    function execRichLink(editorId) {
+      const url = prompt('请输入链接地址 (URL):', 'https://');
+      if (url) {
+        document.execCommand('createLink', false, url);
+        document.getElementById(editorId).focus();
+      }
+    }
+
+    function getRichContent(editorId) {
+      const el = document.getElementById(editorId);
+      return el ? el.innerHTML : '';
+    }
+
+    function setRichContent(editorId, html) {
+      const el = document.getElementById(editorId);
+      if (el) el.innerHTML = html || '';
+    }
+
+    // Override closeWorkModal to check for unsaved changes
+    const _originalCloseWorkModal = closeWorkModal;
+    closeWorkModal = async function() {
+      if (FormDraft.hasChanges()) {
+        const confirmed = await showConfirm('有未保存的修改，确定关闭吗？');
+        if (!confirmed) return;
+      }
+      FormDraft.stopTracking();
+      document.getElementById('workModalOverlay').classList.remove('open');
+    };
 
     checkAuthorAuth();
   </script>

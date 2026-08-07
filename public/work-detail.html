@@ -112,7 +112,7 @@
           <div class="detail-content">
             <div class="detail-main">
               <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('works.description')}</h3>
-              <p style="line-height:1.8;color:var(--ink);">${nl2br(work.description)}</p>
+              <p style="line-height:1.8;color:var(--ink);">${renderSafeHtml(work.description)}</p>
               ${work.images && work.images.length > 0 ? `
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('works.gallery')}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">

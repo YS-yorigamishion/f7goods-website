@@ -433,6 +433,7 @@
               <input type="text" class="form-input" id="updatesSearch" placeholder="搜索动态..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterUpdates()">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminUpdates()">📥 导出</button>
               <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminUpdates(this)"></label>
+              <button id="updatesBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteUpdates()">批量删除</button>
               <button class="btn btn-primary" onclick="openUpdateModal()">+ 新增动态</button>
             </div>
           </div>
@@ -440,6 +441,7 @@
             <table class="admin-table" id="updatesTable">
               <thead>
                 <tr>
+                  <th><input type="checkbox" id="updatesSelectAll" onchange="toggleSelectAllUpdates()" style="width:16px;height:16px;accent-color:var(--accent);"></th>
                   <th>标题</th>
                   <th>分类</th>
                   <th>审核</th>

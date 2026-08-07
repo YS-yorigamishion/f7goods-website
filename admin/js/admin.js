@@ -2531,6 +2531,33 @@ async function batchDeleteEvents() {
   loadEvents();
 }
 
+// Batch delete updates
+function updateUpdateBatchBtn() {
+  const checked = document.querySelectorAll('.update-checkbox:checked');
+  const btn = document.getElementById('updatesBatchDeleteBtn');
+  if (btn) btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
+}
+
+function toggleSelectAllUpdates() {
+  const selectAll = document.getElementById('updatesSelectAll');
+  document.querySelectorAll('.update-checkbox').forEach(cb => cb.checked = selectAll.checked);
+  updateUpdateBatchBtn();
+}
+
+async function batchDeleteUpdates() {
+  const checked = document.querySelectorAll('.update-checkbox:checked');
+  if (checked.length === 0) { showToast('请先选择要删除的动态', 'error'); return; }
+  if (!await showConfirm(`确定删除选中的 ${checked.length} 个动态？此操作不可撤销。`, { danger: true })) return;
+
+  let success = 0;
+  for (const cb of checked) {
+    const result = await adminAPI('DELETE', `/api/admin/updates/${cb.value}`);
+    if (result && result.success) success++;
+  }
+  showToast(`已删除 ${success} 个动态`, 'success');
+  loadUpdates();
+}
+
 async function batchDeleteWorks() {
   const checked = document.querySelectorAll('.work-checkbox:checked');
   if (checked.length === 0) { showToast('请先选择要删除的作品', 'error'); return; }
@@ -5444,7 +5471,7 @@ async function loadUpdates(page = 1) {
 
     const tbody = document.getElementById('updatesTableBody');
     if (!updates || updates.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--haze);padding:2rem;">暂无动态</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--haze);padding:2rem;">暂无动态</td></tr>';
       return;
     }
     tbody.innerHTML = updates
@@ -5478,6 +5505,7 @@ async function loadUpdates(page = 1) {
 
         return `
         <tr>
+          <td><input type="checkbox" class="update-checkbox" value="${u.id}" onchange="updateUpdateBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
           <td>${u.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escapeHtml(u.title)}</td>
           <td>${catDisplay}</td>
           <td>${approvalBadge}</td>
@@ -5501,7 +5529,7 @@ async function loadUpdates(page = 1) {
     if (paginationEl) paginationEl.innerHTML = renderPagination('updates', 'loadUpdates');
   } catch (e) {
     document.getElementById('updatesTableBody').innerHTML =
-      '<tr><td colspan="7" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
+      '<tr><td colspan="10" style="text-align:center;color:var(--haze);padding:2rem;">加载失败</td></tr>';
   }
 }
 
