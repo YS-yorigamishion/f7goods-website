@@ -419,7 +419,7 @@ app.get('/api/author/accessible-accounts', authorAuthMiddleware, (req, res) => {
 
   // Authorized accounts
   circles.forEach(c => {
-    if (c.id !== realCircleId && (c.editableBy || []).includes(realCircleId) && c.authorStatus === 'approved') {
+    if (c.id !== realCircleId && (c.editableBy || []).includes(realCircleId) && (c.authorStatus === 'approved' || c.authorStatus === 'active')) {
       accounts.push({
         id: c.id,
         name: c.name,
