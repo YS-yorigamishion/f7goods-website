@@ -277,6 +277,7 @@
           <div style="display:flex;gap:0.5rem;">
             <button id="authorBatchEditBtn" class="btn" style="background:var(--accent-alt);color:white;display:none;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openAuthorBatchEdit()">批量编辑</button>
             <button id="authorBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="batchDeleteWorks()">批量删除</button>
+            <button id="authorUseFormatBtn" class="btn" style="background:#6c5ce7;color:white;display:none;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openUseFormatFlow()">使用格式</button>
             <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openBatchCreateFromImages()">🖼️ 批量创建</button>
             <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="exportWorksToExcel()">📥 导出</button>
             <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importWorksFromExcel(this)"></label>
@@ -1066,6 +1067,23 @@
 
     // Batch create works from images
     let _batchCreateSelectedImages = [];
+    let _useFormatTemplateFields = null;
+    let _useFormatTemplateEvents = null;
+    let _useFormatTemplateProjects = null;
+
+    const FORMAT_FIELDS = [
+      { key: 'title', label: '标题', getValue: w => w.title || '' },
+      { key: 'category', label: '分类', getValue: w => CATEGORIES[w.category] || w.category || '' },
+      { key: 'status', label: '状态', getValue: w => STATUS_LABELS[w.status] || w.status || '' },
+      { key: 'price', label: '价格', getValue: w => w.price || '' },
+      { key: 'releaseDate', label: '发售日', getValue: w => w.releaseDate || '' },
+      { key: 'tags', label: '标签', getValue: w => (w.tags || []).join(', ') },
+      { key: 'description', label: '描述', getValue: w => { const d = w.description || ''; return d.length > 60 ? d.substring(0, 60) + '...' : d; } },
+      { key: 'commissioned', label: '约稿作品 + 约稿作者', getValue: w => w.isCommissioned ? '是 (' + (w.commissionedBy || '未填') + ')' : '否' },
+      { key: 'socialLinks', label: '联系方式', getValue: w => { const sl = w.socialLinks || {}; const keys = Object.keys(sl).filter(k => sl[k]); return keys.length ? keys.map(k => k + ': ' + sl[k]).join(', ') : '(无)'; } },
+      { key: 'relatedEvents', label: '关联活动', getValue: (w, events) => { if (!events || events.length === 0) return '(无活动)'; const related = events.filter(e => (e.relatedCircles || []).includes(w.circles?.[0])); return related.length ? related.map(e => e.title).join(', ') : '(无)'; } },
+      { key: 'relatedProjects', label: '关联企划', getValue: (w, events, projects) => { if (!projects || projects.length === 0) return '(无企划)'; const ids = w._relatedProjects || []; const related = projects.filter(p => ids.includes(p.id)); return related.length ? related.map(p => p.title).join(', ') : '(无)'; } }
+    ];
     async function openBatchCreateFromImages() {
       const images = await authorAPI('GET', '/api/author/images');
       if (!images || images.length === 0) { showToast('图片库为空，请先在图片管理中上传图片', 'error'); return; }
@@ -1116,8 +1134,17 @@
         '<div class="form-group"><label>标题前缀 <span style="color:var(--accent)">*</span></label><input class="form-input" id="batchCreatePrefix" placeholder="例如: 手办" value="作品"><p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">作品标题将自动生成为: '+ '"标题 1"、"标题 2"...</p></div>' +
         '<div class="form-group"><label>分类</label><select class="form-input" id="batchCreateCategory">'+catOptions+'</select></div>' +
         '<div class="form-group"><label>状态</label><select class="form-input" id="batchCreateStatus">'+statusOptions+'</select></div>' +
+        '<div class="form-group"><button class="btn" style="background:#6c5ce7;color:white;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openUseFormatForBatchCreate()">使用格式</button></div>' +
+        '<div id="batchCreateFormatIndicator"></div>' +
         '<button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" id="batchCreateSubmitBtn" onclick="submitBatchCreate()">确认创建 '+count+' 个作品</button></div>';
       document.body.appendChild(overlay);
+      updateBatchCreateFormatIndicator();
+    }
+
+    async function openUseFormatForBatchCreate() {
+      if (!authorWorksData || authorWorksData.length === 0) { showToast('暂无可选作品作为模板', 'error'); return; }
+      document.getElementById('batchCreateConfigOverlay').remove();
+      renderWorkPickerModal([], 'batchCreate');
     }
 
     async function submitBatchCreate() {
@@ -1129,20 +1156,55 @@
       btn.textContent = '创建中...';
       let created = 0;
       let failed = 0;
+      const createdWorkIds = [];
       for (let i = 0; i < _batchCreateSelectedImages.length; i++) {
         try {
-          await authorAPI('POST', '/api/author/works', {
+          const body = {
             title: prefix + ' ' + (i + 1),
             images: [_batchCreateSelectedImages[i]],
             category: category,
             status: status
-          });
+          };
+          if (_useFormatTemplateFields) {
+            for (const [k, v] of Object.entries(_useFormatTemplateFields)) {
+              if (k === 'title' || k === 'category' || k === 'status') continue;
+              if (v !== undefined && v !== null) body[k] = v;
+            }
+          }
+          const result = await authorAPI('POST', '/api/author/works', body);
+          if (result && result.id) createdWorkIds.push(result.id);
           created++;
         } catch (e) {
           console.error('Failed to create work ' + (i + 1) + ':', e);
           failed++;
         }
       }
+
+      if (_useFormatTemplateEvents && createdWorkIds.length > 0) {
+        try {
+          const allEvents = await authorAPI('GET', '/api/author/events');
+          if (allEvents) {
+            await Promise.all(allEvents.map(evt => {
+              const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
+              const shouldBeRelated = _useFormatTemplateEvents.includes(evt.id);
+              if (isRelated !== shouldBeRelated) {
+                return authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
+              }
+            }));
+          }
+        } catch (e) { console.error('Failed to sync events:', e); }
+      }
+
+      if (_useFormatTemplateProjects && createdWorkIds.length > 0) {
+        try {
+          await Promise.all(createdWorkIds.map(id => authorAPI('PUT', '/api/author/works/' + id, { relatedProjects: _useFormatTemplateProjects })));
+        } catch (e) { console.error('Failed to sync projects:', e); }
+      }
+
+      _useFormatTemplateFields = null;
+      _useFormatTemplateEvents = null;
+      _useFormatTemplateProjects = null;
+
       document.getElementById('batchCreateConfigOverlay').remove();
       if (failed > 0) {
         showToast('创建完成: '+created+' 个成功, '+failed+' 个失败', 'error');
@@ -1493,6 +1555,7 @@
       const checked = document.querySelectorAll('.author-work-cb:checked');
       const editBtn = document.getElementById('authorBatchEditBtn');
       const deleteBtn = document.getElementById('authorBatchDeleteBtn');
+      const formatBtn = document.getElementById('authorUseFormatBtn');
       if (editBtn) {
         editBtn.style.display = checked.length > 1 ? 'inline-flex' : 'none';
         editBtn.textContent = `批量编辑 (${checked.length})`;
@@ -1500,6 +1563,10 @@
       if (deleteBtn) {
         deleteBtn.style.display = checked.length > 0 ? 'inline-flex' : 'none';
         deleteBtn.textContent = `批量删除 (${checked.length})`;
+      }
+      if (formatBtn) {
+        formatBtn.style.display = checked.length >= 1 ? 'inline-flex' : 'none';
+        formatBtn.textContent = `使用格式 (${checked.length})`;
       }
     }
 
@@ -1523,6 +1590,245 @@
       } finally {
         hideLoading();
       }
+    }
+
+    // ============ 使用格式 (Use Format) ============
+    async function openUseFormatFlow() {
+      const checked = document.querySelectorAll('.author-work-cb:checked');
+      if (checked.length === 0) { showToast('请先选择作品', 'error'); return; }
+      if (!authorWorksData || authorWorksData.length === 0) { showToast('暂无可选作品作为模板', 'error'); return; }
+      const workIds = [...checked].map(cb => cb.dataset.id);
+      renderWorkPickerModal(workIds, 'batchEdit');
+    }
+
+    function renderWorkPickerModal(excludeIds, source) {
+      const existing = document.getElementById('useFormatPickerOverlay');
+      if (existing) existing.remove();
+      const overlay = document.createElement('div');
+      overlay.id = 'useFormatPickerOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1001;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      const works = authorWorksData.filter(w => !excludeIds.includes(w.id));
+      if (works.length === 0) {
+        showToast('没有其他作品可作为模板', 'error');
+        return;
+      }
+      overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;display:flex;flex-direction:column;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">选择模板作品</h3><button onclick="document.getElementById(\'useFormatPickerOverlay\').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">×</button></div>' +
+        '<input type="text" class="form-input" placeholder="搜索作品标题..." oninput="filterWorkPickerCards(this.value)" style="margin-bottom:0.8rem;font-size:0.85rem;padding:0.35rem 0.6rem;">' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.5rem;overflow-y:auto;flex:1;" id="workPickerGrid">' +
+        works.map(w => {
+          const img = (w.images && w.images[0]) || '';
+          const catName = CATEGORIES[w.category] || w.category || '';
+          return '<div class="work-pick-card" data-title="' + escapeHtml(w.title) + '" data-id="' + w.id + '" onclick="selectTemplateWork(\'' + w.id + '\',\'' + source + '\')" style="border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:border-color 0.2s;" onmouseenter="this.style.borderColor=\'var(--accent)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">' +
+            (img ? '<img src="' + img + '" style="width:100%;height:90px;object-fit:cover;display:block;">' : '<div style="width:100%;height:90px;background:var(--border);display:flex;align-items:center;justify-content:center;color:var(--haze);font-size:0.8rem;">无图片</div>') +
+            '<div style="padding:0.4rem;"><div style="font-size:0.75rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(w.title) + '">' + escapeHtml(w.title) + '</div>' +
+            '<div style="font-size:0.65rem;color:var(--haze);">' + escapeHtml(catName) + '</div></div></div>';
+        }).join('') +
+        '</div></div>';
+      document.body.appendChild(overlay);
+    }
+
+    function filterWorkPickerCards(query) {
+      const cards = document.querySelectorAll('.work-pick-card');
+      const q = query.toLowerCase();
+      cards.forEach(c => {
+        c.style.display = c.dataset.title.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+
+    async function selectTemplateWork(workId, source) {
+      const templateWork = authorWorksData.find(w => w.id === workId);
+      if (!templateWork) { showToast('模板作品不存在', 'error'); return; }
+      document.getElementById('useFormatPickerOverlay').remove();
+      let allEvents = null, allProjects = null;
+      try {
+        [allEvents, allProjects] = await Promise.all([
+          authorAPI('GET', '/api/author/events'),
+          authorAPI('GET', '/api/author/projects')
+        ]);
+      } catch {}
+      renderFieldSelectorModal(templateWork, source, allEvents, allProjects);
+    }
+
+    function renderFieldSelectorModal(templateWork, source, allEvents, allProjects) {
+      const existing = document.getElementById('useFormatFieldOverlay');
+      if (existing) existing.remove();
+      const overlay = document.createElement('div');
+      overlay.id = 'useFormatFieldOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1001;display:flex;align-items:center;justify-content:center;padding:1rem;';
+
+      const templateRelatedEvents = (allEvents || []).filter(e => (e.relatedCircles || []).includes(templateWork.circles?.[0]));
+      const templateRelatedProjectIds = templateWork._relatedProjects || [];
+      const templateRelatedProjects = (allProjects || []).filter(p => templateRelatedProjectIds.includes(p.id));
+
+      const fieldsHTML = FORMAT_FIELDS.map(f => {
+        let val = '';
+        if (f.key === 'relatedEvents') {
+          val = templateRelatedEvents.length ? templateRelatedEvents.map(e => escapeHtml(e.title)).join(', ') : '(无)';
+        } else if (f.key === 'relatedProjects') {
+          val = templateRelatedProjects.length ? templateRelatedProjects.map(p => escapeHtml(p.title)).join(', ') : '(无)';
+        } else {
+          val = escapeHtml(f.getValue(templateWork));
+        }
+        const hasValue = val && val !== '(无)' && val !== '否' && val !== '(无活动)' && val !== '(无企划)';
+        return '<label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.5rem;border-bottom:1px solid var(--border);cursor:pointer;">' +
+          '<input type="checkbox" class="ufield-cb" data-key="' + f.key + '" ' + (hasValue ? 'checked' : '') + ' style="width:16px;height:16px;accent-color:var(--accent);margin-top:2px;flex-shrink:0;">' +
+          '<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:0.85rem;">' + f.label + '</div>' +
+          '<div style="font-size:0.75rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + val.replace(/"/g, '"') + '">' + (val || '(空)') + '</div></div></label>';
+      }).join('');
+
+      overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;"><h3 style="margin:0;">选择要应用的字段</h3><button onclick="document.getElementById(\'useFormatFieldOverlay\').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">×</button></div>' +
+        '<div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.8rem;">模板: ' + escapeHtml(templateWork.title) + ' · ' + escapeHtml(CATEGORIES[templateWork.category] || templateWork.category || '') + ' · ' + escapeHtml(STATUS_LABELS[templateWork.status] || templateWork.status || '') + '</div>' +
+        '<div style="overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:1rem;">' + fieldsHTML + '</div>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+        '<button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;flex:1;" onclick="toggleAllFormatFields(true)">全选</button>' +
+        '<button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;flex:1;" onclick="toggleAllFormatFields(false)">全不选</button>' +
+        '<button class="btn btn-primary" style="font-size:0.85rem;flex:2;" onclick="confirmUseFormat(\'' + templateWork.id + '\',\'' + source + '\')">确认应用</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+    }
+
+    function toggleAllFormatFields(checked) {
+      document.querySelectorAll('.ufield-cb').forEach(cb => cb.checked = checked);
+    }
+
+    async function confirmUseFormat(templateWorkId, source) {
+      const templateWork = authorWorksData.find(w => w.id === templateWorkId);
+      if (!templateWork) { showToast('模板作品不存在', 'error'); return; }
+      const selectedKeys = [...document.querySelectorAll('.ufield-cb:checked')].map(cb => cb.dataset.key);
+      if (selectedKeys.length === 0) { showToast('请至少选择一个字段', 'error'); return; }
+      document.getElementById('useFormatFieldOverlay').remove();
+
+      if (source === 'batchEdit') {
+        await applyFormatToSelectedWorks(selectedKeys, templateWork);
+      } else if (source === 'batchCreate') {
+        await applyFormatToBatchCreate(selectedKeys, templateWork);
+      }
+    }
+
+    async function applyFormatToSelectedWorks(selectedKeys, templateWork) {
+      const checked = document.querySelectorAll('.author-work-cb:checked');
+      const workIds = [...checked].map(cb => cb.dataset.id);
+
+      const updateData = {};
+      for (const key of selectedKeys) {
+        switch (key) {
+          case 'title': updateData.title = templateWork.title; break;
+          case 'category': updateData.category = templateWork.category; break;
+          case 'status': updateData.status = templateWork.status; break;
+          case 'price': updateData.price = templateWork.price; break;
+          case 'releaseDate': updateData.releaseDate = templateWork.releaseDate; break;
+          case 'tags': updateData.tags = templateWork.tags; break;
+          case 'description': updateData.description = templateWork.description; break;
+          case 'commissioned':
+            updateData.isCommissioned = templateWork.isCommissioned;
+            updateData.commissionedBy = templateWork.commissionedBy;
+            break;
+          case 'socialLinks': updateData.socialLinks = JSON.parse(JSON.stringify(templateWork.socialLinks || {})); break;
+        }
+      }
+
+      const hasBasicChanges = Object.keys(updateData).length > 0;
+      const hasEventSync = selectedKeys.includes('relatedEvents');
+      const hasProjectSync = selectedKeys.includes('relatedProjects');
+
+      showLoading('应用格式中...');
+      try {
+        if (hasBasicChanges) {
+          await Promise.all(workIds.map(id => authorAPI('PUT', '/api/author/works/' + id, updateData)));
+        }
+
+        if (hasEventSync) {
+          const allEvents = await authorAPI('GET', '/api/author/events');
+          if (allEvents) {
+            const templateCircleId = templateWork.circles?.[0];
+            const templateEventIds = allEvents.filter(e => (e.relatedCircles || []).includes(templateCircleId)).map(e => e.id);
+            await Promise.all(allEvents.map(evt => {
+              const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
+              const shouldBeRelated = templateEventIds.includes(evt.id);
+              if (isRelated !== shouldBeRelated) {
+                return authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
+              }
+            }));
+          }
+        }
+
+        if (hasProjectSync) {
+          const templateProjectIds = templateWork._relatedProjects || [];
+          await Promise.all(workIds.map(id => authorAPI('PUT', '/api/author/works/' + id, { relatedProjects: templateProjectIds })));
+        }
+
+        showToast(`已将格式应用到 ${workIds.length} 个作品`, 'success');
+        loadAuthorWorks();
+      } catch (e) {
+        showToast('应用格式失败: ' + e.message, 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function applyFormatToBatchCreate(selectedKeys, templateWork) {
+      _useFormatTemplateFields = {};
+      _useFormatTemplateEvents = null;
+      _useFormatTemplateProjects = null;
+
+      for (const key of selectedKeys) {
+        switch (key) {
+          case 'title': _useFormatTemplateFields.title = templateWork.title; break;
+          case 'category': _useFormatTemplateFields.category = templateWork.category; break;
+          case 'status': _useFormatTemplateFields.status = templateWork.status; break;
+          case 'price': _useFormatTemplateFields.price = templateWork.price; break;
+          case 'releaseDate': _useFormatTemplateFields.releaseDate = templateWork.releaseDate; break;
+          case 'tags': _useFormatTemplateFields.tags = templateWork.tags; break;
+          case 'description': _useFormatTemplateFields.description = templateWork.description; break;
+          case 'commissioned':
+            _useFormatTemplateFields.isCommissioned = templateWork.isCommissioned;
+            _useFormatTemplateFields.commissionedBy = templateWork.commissionedBy;
+            break;
+          case 'socialLinks': _useFormatTemplateFields.socialLinks = JSON.parse(JSON.stringify(templateWork.socialLinks || {})); break;
+          case 'relatedEvents':
+            const allEvents = await authorAPI('GET', '/api/author/events');
+            if (allEvents) {
+              const templateCircleId = templateWork.circles?.[0];
+              _useFormatTemplateEvents = allEvents.filter(e => (e.relatedCircles || []).includes(templateCircleId)).map(e => e.id);
+            }
+            break;
+          case 'relatedProjects':
+            _useFormatTemplateProjects = templateWork._relatedProjects || [];
+            break;
+        }
+      }
+      showToast('格式已选择，创建时将应用', 'success');
+      openBatchCreateConfigModal();
+    }
+
+    function updateBatchCreateFormatIndicator() {
+      const indicator = document.getElementById('batchCreateFormatIndicator');
+      if (!indicator) return;
+      if (!_useFormatTemplateFields && !_useFormatTemplateEvents && !_useFormatTemplateProjects) {
+        indicator.innerHTML = '';
+        return;
+      }
+      const fieldNames = [];
+      if (_useFormatTemplateFields) {
+        Object.keys(_useFormatTemplateFields).forEach(k => {
+          const f = FORMAT_FIELDS.find(ff => ff.key === k);
+          if (f) fieldNames.push(f.label);
+        });
+      }
+      if (_useFormatTemplateEvents) fieldNames.push('关联活动');
+      if (_useFormatTemplateProjects) fieldNames.push('关联企划');
+      indicator.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:rgba(108,92,231,0.1);border-radius:var(--radius-sm);font-size:0.8rem;color:#6c5ce7;">' +
+        '<span>已使用格式: ' + fieldNames.join(', ') + '</span>' +
+        '<button onclick="clearBatchCreateFormat()" style="background:none;border:1px solid #6c5ce7;color:#6c5ce7;border-radius:4px;padding:0.1rem 0.5rem;cursor:pointer;font-size:0.75rem;">清除</button></div>';
+    }
+
+    function clearBatchCreateFormat() {
+      _useFormatTemplateFields = null;
+      _useFormatTemplateEvents = null;
+      _useFormatTemplateProjects = null;
+      updateBatchCreateFormatIndicator();
     }
 
     // Open batch edit
