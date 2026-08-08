@@ -948,7 +948,7 @@ async function toggleFollow(circleId, btn) {
     var res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify({ uid: getUid() })
     });
 
     if (!res.ok) {
