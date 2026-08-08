@@ -3629,6 +3629,13 @@ app.delete('/api/admin/images/:filename', authMiddleware, async (req, res) => {
   if (!filePath.startsWith(uploadsDir)) return res.status(403).json({ error: '禁止访问' });
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
+    // Also delete auto-generated variant files
+    const ext = path.extname(filename);
+    const baseName = path.basename(filename, ext);
+    const thumbPath = path.join(uploadsDir, `${baseName}_thumb.webp`);
+    const mediumPath = path.join(uploadsDir, `${baseName}_medium.webp`);
+    if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+    if (fs.existsSync(mediumPath)) fs.unlinkSync(mediumPath);
     // Clean up uploads-meta.json
     try {
       const meta = readJSON('uploads-meta.json');
