@@ -51,6 +51,13 @@ function clearApiCache(type) {
 
 const app = express();
 app.set('trust proxy', 1);
+// Redirect www to non-www
+app.use((req, res, next) => {
+  if (req.hostname === 'www.f7goods.com') {
+    return res.redirect(301, 'https://f7goods.com' + req.originalUrl);
+  }
+  next();
+});
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
