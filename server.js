@@ -3570,32 +3570,7 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
   saveUploadMeta(req.file.filename, authorName);
   logEdit(authorName, '上传图片', req.file.filename, '', '/uploads/' + req.file.filename);
 
-  // Generate responsive image variants (thumbnail + medium WebP)
-  const variants = {};
-  if (sharp) {
-    const filePath = path.join(__dirname, 'uploads', req.file.filename);
-    const ext = path.extname(req.file.filename).toLowerCase();
-    if (['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext)) {
-      try {
-        const baseName = path.basename(req.file.filename, ext);
-        const uploadsDir = path.join(__dirname, 'uploads');
-
-        // Thumbnail: 400px wide WebP
-        await sharp(filePath).resize(400).webp({ quality: 80 })
-          .toFile(path.join(uploadsDir, `${baseName}_thumb.webp`));
-        variants.thumb = `/uploads/${baseName}_thumb.webp`;
-
-        // Medium: 800px wide WebP
-        await sharp(filePath).resize(800).webp({ quality: 85 })
-          .toFile(path.join(uploadsDir, `${baseName}_medium.webp`));
-        variants.medium = `/uploads/${baseName}_medium.webp`;
-      } catch (e) {
-        console.error('Responsive variant generation failed:', e.message);
-      }
-    }
-  }
-
-  res.json({ url: '/uploads/' + req.file.filename, variants });
+  res.json({ url: '/uploads/' + req.file.filename });
 });
 
 // List all uploaded images
@@ -3605,7 +3580,7 @@ app.get('/api/admin/images', authMiddleware, (req, res) => {
   try { meta = readJSON('uploads-meta.json'); } catch {}
   try {
     const files = fs.readdirSync(uploadsDir)
-      .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f) && !/_thumb\.webp$|_medium\.webp$/i.test(f))
+      .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f))
       .map(f => ({
         name: f,
         url: '/uploads/' + f,
@@ -3629,13 +3604,6 @@ app.delete('/api/admin/images/:filename', authMiddleware, async (req, res) => {
   if (!filePath.startsWith(uploadsDir)) return res.status(403).json({ error: '禁止访问' });
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
-    // Also delete auto-generated variant files
-    const ext = path.extname(filename);
-    const baseName = path.basename(filename, ext);
-    const thumbPath = path.join(uploadsDir, `${baseName}_thumb.webp`);
-    const mediumPath = path.join(uploadsDir, `${baseName}_medium.webp`);
-    if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
-    if (fs.existsSync(mediumPath)) fs.unlinkSync(mediumPath);
     // Clean up uploads-meta.json
     try {
       const meta = readJSON('uploads-meta.json');
@@ -3745,47 +3713,6 @@ app.post('/api/admin/images/cleanup', authMiddleware, (req, res) => {
     res.json({ success: true, total: files.length, deleted, kept: files.length - deleted });
   } catch (e) {
     res.status(500).json({ error: '清理失败: ' + e.message });
-  }
-});
-
-// Batch generate responsive variants for existing images
-app.post('/api/admin/images/generate-variants', authMiddleware, async (req, res) => {
-  if (!sharp) return res.status(500).json({ error: 'sharp 未安装，无法生成图片变体' });
-  const uploadsDir = path.join(__dirname, 'uploads');
-  try {
-    const files = fs.readdirSync(uploadsDir)
-      .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f) && !/_thumb\.webp$|_medium\.webp$/.test(f));
-
-    let generated = 0;
-    let skipped = 0;
-    let errors = 0;
-
-    for (const file of files) {
-      const ext = path.extname(file).toLowerCase();
-      const baseName = path.basename(file, ext);
-      const thumbPath = path.join(uploadsDir, `${baseName}_thumb.webp`);
-      const mediumPath = path.join(uploadsDir, `${baseName}_medium.webp`);
-
-      // Skip if variants already exist
-      if (fs.existsSync(thumbPath) && fs.existsSync(mediumPath)) {
-        skipped++;
-        continue;
-      }
-
-      try {
-        const filePath = path.join(uploadsDir, file);
-        await sharp(filePath).resize(400).webp({ quality: 80 }).toFile(thumbPath);
-        await sharp(filePath).resize(800).webp({ quality: 85 }).toFile(mediumPath);
-        generated++;
-      } catch (e) {
-        console.error(`Failed to generate variants for ${file}:`, e.message);
-        errors++;
-      }
-    }
-
-    res.json({ success: true, total: files.length, generated, skipped, errors });
-  } catch (e) {
-    res.status(500).json({ error: '批量生成失败: ' + e.message });
   }
 });
 
