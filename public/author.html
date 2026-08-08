@@ -337,7 +337,7 @@
               <input type="date" class="form-input" id="batchReleaseDate">
             </div>
             <div class="form-group">
-              <label>标签（逗号分隔，留空不修改）</label>
+              <label>标签（英文逗号分隔，留空不修改）</label>
               <input class="form-input" id="batchTags" placeholder="标签1, 标签2">
             </div>
             <div class="form-group">
@@ -1113,7 +1113,7 @@
       overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:420px;width:100%;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">批量创建作品</h3><button onclick="document.getElementById(\'batchCreateConfigOverlay\').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">×</button></div>' +
         '<p style="font-size:0.85rem;color:var(--haze);margin-bottom:1rem;">将根据已选的 '+count+' 张图片创建 '+count+' 个作品。</p>' +
-        '<div class="form-group"><label>标题前缀 <span style="color:var(--accent)">*</span></label><input class="form-input" id="batchCreatePrefix" placeholder="例如: 手办" value="作品"><p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">作品标题将自动生成为: '+ '"手办 1"、"手办 2"...</p></div>' +
+        '<div class="form-group"><label>标题前缀 <span style="color:var(--accent)">*</span></label><input class="form-input" id="batchCreatePrefix" placeholder="例如: 手办" value="作品"><p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">作品标题将自动生成为: '+ '"标题 1"、"标题 2"...</p></div>' +
         '<div class="form-group"><label>分类</label><select class="form-input" id="batchCreateCategory">'+catOptions+'</select></div>' +
         '<div class="form-group"><label>状态</label><select class="form-input" id="batchCreateStatus">'+statusOptions+'</select></div>' +
         '<button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" id="batchCreateSubmitBtn" onclick="submitBatchCreate()">确认创建 '+count+' 个作品</button></div>';
@@ -1736,7 +1736,7 @@
           <label>约稿作者</label>
           <input class="form-input" id="wfCommissionedBy" value="${escapeHtml(w.commissionedBy || '')}" placeholder="请输入约稿作者名字">
         </div>
-        <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="wfTags" value="${(w.tags||[]).join(', ')}" placeholder="手办, 东方"></div>
+        <div class="form-group"><label>标签（英文逗号分隔）</label><input class="form-input" id="wfTags" value="${(w.tags||[]).join(', ')}" placeholder="角色名字,作品形式"></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="wfDesc" style="min-height:80px;">${w.description || ''}</textarea></div>
         <div class="form-row">
           <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup && !w.socialLinks?.wechat && !w.socialLinks?.weibo && !w.socialLinks?.bilibili && !w.socialLinks?.custom ? 'selected' : ''}>无</option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${w.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${w.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${w.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${w.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
@@ -2380,7 +2380,7 @@
           <div class="form-group"><label>状态</label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && projectData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div>
         </div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;">${isEdit ? escapeHtml(projectData.description || '') : ''}</textarea></div>
-        <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="myProjectTags" value="${isEdit ? (projectData.tags || []).join(', ') : ''}" placeholder="标签1, 标签2"></div>
+        <div class="form-group"><label>标签（英文逗号分隔）</label><input class="form-input" id="myProjectTags" value="${isEdit ? (projectData.tags || []).join(', ') : ''}" placeholder="标签1, 标签2"></div>
         <div class="form-row">
           <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="" ${!isEdit || (!projectData.socialLinks?.qq && !projectData.socialLinks?.qqGroup && !projectData.socialLinks?.wechat && !projectData.socialLinks?.weibo && !projectData.socialLinks?.bilibili && !projectData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && projectData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && projectData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && projectData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && projectData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
           <div class="form-group"><label>联系方式</label><input class="form-input" id="myProjectContactValue" value="${isEdit ? (projectData.socialLinks?.qq || projectData.socialLinks?.qqGroup || projectData.socialLinks?.wechat || projectData.socialLinks?.weibo || projectData.socialLinks?.bilibili || projectData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div>
