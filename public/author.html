@@ -292,9 +292,9 @@
         <div style="display:flex;gap:0.8rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
           <input type="text" class="form-input" id="authorWorksSearch" placeholder="搜索标题、标签、描述..." oninput="filterAuthorWorks()" style="flex:1;min-width:180px;font-size:0.85rem;padding:0.35rem 0.6rem;">
           <select class="form-input" id="authorWorksSort" onchange="sortAuthorWorks()" style="width:auto;font-size:0.85rem;padding:0.35rem 0.6rem;min-width:120px;">
-            <option value="default">默认排序</option>
-            <option value="date-desc">发售时间 ↓</option>
+            <option value="date-desc" selected>最新上传</option>
             <option value="date-asc">发售时间 ↑</option>
+            <option value="default">自定义排序</option>
             <option value="likes-desc">喜爱数 ↓</option>
             <option value="likes-asc">喜爱数 ↑</option>
             <option value="wants-desc">想要数 ↓</option>

@@ -508,6 +508,7 @@ app.post('/api/author/refresh-token', authorAuthMiddleware, (req, res) => {
 app.get('/api/author/works', authorAuthMiddleware, (req, res) => {
   const works = readJSON('works.json');
   const circleWorks = works.filter(w => (w.circles || []).includes(req.author.circleId));
+  circleWorks.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   // 支持分页
   const page = parseInt(req.query.page) || 0;
@@ -2689,7 +2690,7 @@ app.delete('/api/admin/contacts/:id', authMiddleware, async (req, res) => {
 app.get('/api/admin/works', authMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   if (ensureOrder(works)) await writeJSON('works.json', works);
-  works.sort((a, b) => a.order - b.order);
+  works.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   // Pagination (only if page/limit params provided)
   if (req.query.page || req.query.limit) {
@@ -3082,7 +3083,7 @@ app.post('/api/admin/updates/:id/reject', authMiddleware, async (req, res) => {
 app.get('/api/admin/circles', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   if (ensureOrder(circles)) await writeJSON('circles.json', circles);
-  circles.sort((a, b) => a.order - b.order);
+  circles.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   // Pagination (only if page/limit params provided)
   if (req.query.page || req.query.limit) {
