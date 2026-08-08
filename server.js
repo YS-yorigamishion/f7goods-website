@@ -3605,7 +3605,7 @@ app.get('/api/admin/images', authMiddleware, (req, res) => {
   try { meta = readJSON('uploads-meta.json'); } catch {}
   try {
     const files = fs.readdirSync(uploadsDir)
-      .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f))
+      .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f) && !/_thumb\.webp$|_medium\.webp$/i.test(f))
       .map(f => ({
         name: f,
         url: '/uploads/' + f,
