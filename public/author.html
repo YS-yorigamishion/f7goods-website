@@ -1154,64 +1154,64 @@
       const btn = document.getElementById('batchCreateSubmitBtn');
       btn.disabled = true;
       btn.textContent = '创建中...';
-      let created = 0;
-      let failed = 0;
-      const createdWorkIds = [];
-      for (let i = 0; i < _batchCreateSelectedImages.length; i++) {
-        try {
-          const body = {
-            title: prefix + ' ' + (i + 1),
-            images: [_batchCreateSelectedImages[i]],
-            category: category,
-            status: status
-          };
-          if (_useFormatTemplateFields) {
-            for (const [k, v] of Object.entries(_useFormatTemplateFields)) {
-              if (k === 'title' || k === 'category' || k === 'status') continue;
-              if (v !== undefined && v !== null) body[k] = v;
-            }
+
+      // 构建所有作品数据
+      const worksToCreate = _batchCreateSelectedImages.map((imgUrl, i) => {
+        const body = {
+          title: prefix + ' ' + (i + 1),
+          images: [imgUrl],
+          category: category,
+          status: status
+        };
+        // 合并模板字段 (跳过表单已有的 title/category/status)
+        if (_useFormatTemplateFields) {
+          for (const [k, v] of Object.entries(_useFormatTemplateFields)) {
+            if (k === 'title' || k === 'category' || k === 'status') continue;
+            if (v !== undefined && v !== null) body[k] = v;
           }
-          const result = await authorAPI('POST', '/api/author/works', body);
-          if (result && result.id) createdWorkIds.push(result.id);
-          created++;
-        } catch (e) {
-          console.error('Failed to create work ' + (i + 1) + ':', e);
-          failed++;
         }
-      }
+        return body;
+      });
 
-      if (_useFormatTemplateEvents && createdWorkIds.length > 0) {
-        try {
-          const allEvents = await authorAPI('GET', '/api/author/events');
-          if (allEvents) {
-            const eventsToToggle = allEvents.filter(evt => {
-              const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
-              const shouldBeRelated = _useFormatTemplateEvents.includes(evt.id);
-              return isRelated !== shouldBeRelated;
-            }).map(evt => evt.id);
-            if (eventsToToggle.length > 0) {
-              await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToToggle });
+      try {
+        // 单次请求批量创建所有作品
+        const result = await authorAPI('POST', '/api/author/works/batch-create', { works: worksToCreate });
+        const createdWorkIds = (result?.works || []).map(w => w.id);
+
+        // 同步活动关联
+        if (_useFormatTemplateEvents && createdWorkIds.length > 0) {
+          try {
+            const allEvents = await authorAPI('GET', '/api/author/events');
+            if (allEvents) {
+              const eventsToToggle = allEvents.filter(evt => {
+                const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
+                const shouldBeRelated = _useFormatTemplateEvents.includes(evt.id);
+                return isRelated !== shouldBeRelated;
+              }).map(evt => evt.id);
+              if (eventsToToggle.length > 0) {
+                await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToToggle });
+              }
             }
-          }
-        } catch (e) { console.error('Failed to sync events:', e); }
-      }
+          } catch (e) { console.error('Failed to sync events:', e); }
+        }
 
-      if (_useFormatTemplateProjects && createdWorkIds.length > 0) {
-        try {
-          await authorAPI('PUT', '/api/author/works/batch', { ids: createdWorkIds, data: { relatedProjects: _useFormatTemplateProjects } });
-        } catch (e) { console.error('Failed to sync projects:', e); }
+        // 同步企划关联
+        if (_useFormatTemplateProjects && createdWorkIds.length > 0) {
+          try {
+            await authorAPI('PUT', '/api/author/works/batch', { ids: createdWorkIds, data: { relatedProjects: _useFormatTemplateProjects } });
+          } catch (e) { console.error('Failed to sync projects:', e); }
+        }
+
+        document.getElementById('batchCreateConfigOverlay').remove();
+        showToast('成功创建 ' + (result?.created || 0) + ' 个作品', 'success');
+      } catch (e) {
+        document.getElementById('batchCreateConfigOverlay').remove();
+        showToast('批量创建失败: ' + e.message, 'error');
       }
 
       _useFormatTemplateFields = null;
       _useFormatTemplateEvents = null;
       _useFormatTemplateProjects = null;
-
-      document.getElementById('batchCreateConfigOverlay').remove();
-      if (failed > 0) {
-        showToast('创建完成: '+created+' 个成功, '+failed+' 个失败', 'error');
-      } else {
-        showToast('成功创建 '+created+' 个作品', 'success');
-      }
       loadAuthorWorks();
     }
 

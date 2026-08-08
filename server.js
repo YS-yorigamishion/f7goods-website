@@ -825,6 +825,62 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   res.json(works[index]);
 });
 
+// Author: batch create works
+app.post('/api/author/works/batch-create', authorAuthMiddleware, async (req, res) => {
+  const { works: worksInput } = req.body;
+  if (!Array.isArray(worksInput) || worksInput.length === 0) return res.status(400).json({ error: '请提供要创建的作品列表' });
+
+  const circleId = req.author.circleId;
+  let works = readJSON('works.json');
+  let maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
+
+  let settings = {};
+  try { settings = readJSON('settings.json'); } catch {}
+  const circles = readJSON('circles.json');
+  const authorCircle = circles.find(c => c.id === circleId);
+  const authorRequireApproval = authorCircle?.requireApproval !== false;
+  const globalRequireApproval = settings.site?.requireWorkApproval !== false;
+  const requireApproval = authorRequireApproval && globalRequireApproval;
+
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const created = [];
+  const now = new Date().toISOString();
+
+  for (const input of worksInput) {
+    const workData = {};
+    allowedFields.forEach(field => {
+      if (input[field] !== undefined) workData[field] = input[field];
+    });
+    maxOrder++;
+    const work = {
+      id: 'w' + Date.now() + Math.random().toString(36).substr(2, 5),
+      circles: [circleId],
+      images: [],
+      moreImages: [],
+      tags: [],
+      likes: 0,
+      wants: 0,
+      order: maxOrder,
+      createdAt: now,
+      approvalStatus: requireApproval ? 'pending' : 'approved',
+      submittedBy: circleId,
+      ...workData
+    };
+    works.push(work);
+    created.push(work);
+    // Small delay to ensure unique IDs
+    await new Promise(r => setTimeout(r, 1));
+  }
+
+  await writeJSON('works.json', works);
+
+  const logCircles = readJSON('circles.json');
+  const circle = logCircles.find(c => c.id === circleId);
+  logEdit(circle?.name || '作者', '批量创建作品', `${created.length} 个作品`, '');
+
+  res.json({ success: true, created: created.length, works: created });
+});
+
 // Author: create new work
 app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
   let works = readJSON('works.json');
