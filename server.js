@@ -826,6 +826,41 @@ app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
 });
 
 // Author: delete own work
+// Author: batch delete works
+app.delete('/api/author/works', authorAuthMiddleware, async (req, res) => {
+  const ids = req.body.ids;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: '请提供要删除的作品ID列表' });
+
+  let works = readJSON('works.json');
+  const circleId = req.author.circleId;
+  const idSet = new Set(ids);
+  const deleted = [];
+  const kept = [];
+
+  for (const w of works) {
+    if (idSet.has(w.id) && (w.circles || []).includes(circleId)) {
+      deleted.push(w);
+    } else {
+      kept.push(w);
+    }
+  }
+
+  if (deleted.length === 0) return res.status(404).json({ error: '未找到可删除的作品' });
+
+  await writeJSON('works.json', kept);
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === circleId);
+  const authorName = circle?.name || '作者';
+  if (deleted.length <= 5) {
+    deleted.forEach(w => logEdit(authorName, '删除作品', w.title || w.id, ''));
+  } else {
+    logEdit(authorName, '批量删除作品', `${deleted.length} 个作品`, deleted.map(w => w.title || w.id).join('、'));
+  }
+
+  res.json({ success: true, deleted: deleted.length });
+});
+
 app.delete('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);

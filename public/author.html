@@ -1583,9 +1583,12 @@
 
       showLoading('删除中...');
       try {
-        const results = await Promise.all(workIds.map(id => authorAPI('DELETE', '/api/author/works/' + id)));
-        const success = results.filter(r => r && r.success).length;
-        showToast(`已删除 ${success} 个作品`, 'success');
+        const result = await authorAPI('DELETE', '/api/author/works', { ids: workIds });
+        if (result && result.success) {
+          showToast(`已删除 ${result.deleted} 个作品`, 'success');
+        } else {
+          showToast('删除失败: ' + (result?.error || '未知错误'), 'error');
+        }
         loadAuthorWorks();
       } finally {
         hideLoading();
