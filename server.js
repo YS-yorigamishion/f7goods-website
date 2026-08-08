@@ -1613,6 +1613,7 @@ async function saveWants() {
 // ===== Follow System (关注) =====
 let followsCache = {};
 try { followsCache = readJSON('follows.json'); } catch {}
+if (Array.isArray(followsCache)) followsCache = {};
 
 async function saveFollows() {
   await writeJSON('follows.json', followsCache);
