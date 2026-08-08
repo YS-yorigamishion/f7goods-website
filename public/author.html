@@ -1184,20 +1184,21 @@
         try {
           const allEvents = await authorAPI('GET', '/api/author/events');
           if (allEvents) {
-            await Promise.all(allEvents.map(evt => {
+            const eventsToToggle = allEvents.filter(evt => {
               const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
               const shouldBeRelated = _useFormatTemplateEvents.includes(evt.id);
-              if (isRelated !== shouldBeRelated) {
-                return authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
-              }
-            }));
+              return isRelated !== shouldBeRelated;
+            }).map(evt => evt.id);
+            if (eventsToToggle.length > 0) {
+              await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToToggle });
+            }
           }
         } catch (e) { console.error('Failed to sync events:', e); }
       }
 
       if (_useFormatTemplateProjects && createdWorkIds.length > 0) {
         try {
-          await Promise.all(createdWorkIds.map(id => authorAPI('PUT', '/api/author/works/' + id, { relatedProjects: _useFormatTemplateProjects })));
+          await authorAPI('PUT', '/api/author/works/batch', { ids: createdWorkIds, data: { relatedProjects: _useFormatTemplateProjects } });
         } catch (e) { console.error('Failed to sync projects:', e); }
       }
 
@@ -1738,28 +1739,31 @@
 
       showLoading('应用格式中...');
       try {
-        if (hasBasicChanges) {
-          await Promise.all(workIds.map(id => authorAPI('PUT', '/api/author/works/' + id, updateData)));
+        // 批量更新作品基本字段 + 企划关联 (单次请求)
+        if (hasBasicChanges || hasProjectSync) {
+          const batchData = { ...updateData };
+          if (hasProjectSync) {
+            batchData.relatedProjects = templateWork._relatedProjects || [];
+          }
+          await authorAPI('PUT', '/api/author/works/batch', { ids: workIds, data: batchData });
         }
 
+        // 批量切换活动关联 (单次请求)
         if (hasEventSync) {
           const allEvents = await authorAPI('GET', '/api/author/events');
           if (allEvents) {
             const templateCircleId = templateWork.circles?.[0];
             const templateEventIds = allEvents.filter(e => (e.relatedCircles || []).includes(templateCircleId)).map(e => e.id);
-            await Promise.all(allEvents.map(evt => {
+            // 只toggle需要改变的活动
+            const eventsToToggle = allEvents.filter(evt => {
               const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
               const shouldBeRelated = templateEventIds.includes(evt.id);
-              if (isRelated !== shouldBeRelated) {
-                return authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
-              }
-            }));
+              return isRelated !== shouldBeRelated;
+            }).map(evt => evt.id);
+            if (eventsToToggle.length > 0) {
+              await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToToggle });
+            }
           }
-        }
-
-        if (hasProjectSync) {
-          const templateProjectIds = templateWork._relatedProjects || [];
-          await Promise.all(workIds.map(id => authorAPI('PUT', '/api/author/works/' + id, { relatedProjects: templateProjectIds })));
         }
 
         showToast(`已将格式应用到 ${workIds.length} 个作品`, 'success');
@@ -1931,31 +1935,19 @@
 
       showLoading('保存中...');
       try {
-        // 并行更新作品
-        const updatePromises = workIds.map(id => {
-          const tasks = [];
-          if (hasBasicChanges) tasks.push(authorAPI('PUT', '/api/author/works/' + id, data));
-          if (hasProjectChanges) tasks.push(authorAPI('PUT', '/api/author/works/' + id, { relatedProjects: selectedProjectIds }));
-          return Promise.all(tasks);
-        });
-        await Promise.all(updatePromises);
-
-        // 更新活动关联
-        if (hasEventChanges) {
-          const allEvents = await authorAPI('GET', '/api/author/events');
-          const togglePromises = (allEvents || []).map(evt => {
-            const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
-            const shouldBeRelated = selectedEventIds.includes(evt.id);
-            if (isRelated !== shouldBeRelated) {
-              return authorAPI('PUT', '/api/author/events/' + evt.id + '/toggle');
-            }
-            return Promise.resolve();
-          });
-          await Promise.all(togglePromises);
+        // 批量更新作品 (单次请求)
+        if (hasBasicChanges || hasProjectChanges) {
+          const batchData = { ...data };
+          if (hasProjectChanges) batchData.relatedProjects = selectedProjectIds;
+          await authorAPI('PUT', '/api/author/works/batch', { ids: workIds, data: batchData });
         }
 
-        const success = hasBasicChanges ? workIds.length : workIds.length;
-        showToast(`已更新 ${success} 个作品`, 'success');
+        // 批量切换活动关联 (单次请求)
+        if (hasEventChanges) {
+          await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: selectedEventIds });
+        }
+
+        showToast(`已更新 ${workIds.length} 个作品`, 'success');
         closeBatchEdit();
         loadAuthorWorks();
       } finally {

@@ -713,6 +713,61 @@ app.put('/api/author/notifications/:id/read', authorAuthMiddleware, async (req, 
   res.json({ success: true });
 });
 
+// Author: batch update works
+app.put('/api/author/works/batch', authorAuthMiddleware, async (req, res) => {
+  const { ids, data } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: '请提供要更新的作品ID列表' });
+  if (!data || typeof data !== 'object') return res.status(400).json({ error: '请提供更新数据' });
+
+  const circleId = req.author.circleId;
+  const idSet = new Set(ids);
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
+  const updates = {};
+  allowed.forEach(field => {
+    if (data[field] !== undefined) updates[field] = data[field];
+  });
+
+  let works = readJSON('works.json');
+  let updated = 0;
+
+  for (const w of works) {
+    if (idSet.has(w.id) && (w.circles || []).includes(circleId)) {
+      Object.assign(w, updates);
+      updated++;
+    }
+  }
+
+  if (updated === 0) return res.status(404).json({ error: '未找到可更新的作品' });
+
+  await writeJSON('works.json', works);
+
+  // Handle project associations if provided
+  if (data.relatedProjects !== undefined) {
+    let projects = readJSON('projects.json');
+    const newProjectIds = data.relatedProjects || [];
+    for (const proj of projects) {
+      const matchingWorkIds = works.filter(w => idSet.has(w.id) && (w.circles || []).includes(circleId)).map(w => w.id);
+      for (const wid of matchingWorkIds) {
+        const hasWork = (proj.works || []).includes(wid);
+        const shouldHave = newProjectIds.includes(proj.id);
+        if (hasWork && !shouldHave) {
+          proj.works = proj.works.filter(id => id !== wid);
+        } else if (!hasWork && shouldHave) {
+          if (!proj.works) proj.works = [];
+          proj.works.push(wid);
+        }
+      }
+    }
+    await writeJSON('projects.json', projects);
+  }
+
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === circleId);
+  logEdit(circle?.name || '作者', '批量编辑作品', `${updated} 个作品`, '');
+
+  res.json({ success: true, updated });
+});
+
 // Author: update own work
 app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   let works = readJSON('works.json');
@@ -1012,6 +1067,33 @@ app.get('/api/author/projects', authorAuthMiddleware, (req, res) => {
 app.get('/api/author/events', authorAuthMiddleware, (req, res) => {
   const events = readJSON('events.json');
   res.json(events);
+});
+
+// Author: batch toggle event associations
+app.put('/api/author/events/batch-toggle', authorAuthMiddleware, async (req, res) => {
+  const { eventIds } = req.body;
+  if (!Array.isArray(eventIds)) return res.status(400).json({ error: '请提供活动ID列表' });
+
+  const circleId = req.author.circleId;
+  const idSet = new Set(eventIds);
+  let events = readJSON('events.json');
+  let toggled = 0;
+
+  for (const evt of events) {
+    if (idSet.has(evt.id)) {
+      if (!evt.relatedCircles) evt.relatedCircles = [];
+      const idx = evt.relatedCircles.indexOf(circleId);
+      if (idx === -1) {
+        evt.relatedCircles.push(circleId);
+      } else {
+        evt.relatedCircles.splice(idx, 1);
+      }
+      toggled++;
+    }
+  }
+
+  if (toggled > 0) await writeJSON('events.json', events);
+  res.json({ success: true, toggled });
 });
 
 // Author: toggle event association
