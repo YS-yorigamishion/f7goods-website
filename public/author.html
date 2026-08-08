@@ -277,6 +277,7 @@
           <div style="display:flex;gap:0.5rem;">
             <button id="authorBatchEditBtn" class="btn" style="background:var(--accent-alt);color:white;display:none;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openAuthorBatchEdit()">批量编辑</button>
             <button id="authorBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="batchDeleteWorks()">批量删除</button>
+            <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openBatchCreateFromImages()">🖼️ 批量创建</button>
             <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="exportWorksToExcel()">📥 导出</button>
             <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importWorksFromExcel(this)"></label>
             <button class="btn btn-primary" onclick="openAuthorWorkForm()">+ 新增作品</button>
@@ -1061,6 +1062,94 @@
       } catch (e) {
         showToast('导出失败: ' + e.message, 'error');
       }
+    }
+
+    // Batch create works from images
+    let _batchCreateSelectedImages = [];
+    async function openBatchCreateFromImages() {
+      const images = await authorAPI('GET', '/api/author/images');
+      if (!images || images.length === 0) { showToast('图片库为空，请先在图片管理中上传图片', 'error'); return; }
+      _batchCreateSelectedImages = [];
+      const overlay = document.createElement('div');
+      overlay.id = 'batchCreateImgLibOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">选择图片批量创建作品</h3><button onclick="document.getElementById(\'batchCreateImgLibOverlay\').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">×</button></div>' +
+        '<p id="batchCreateImgHint" style="font-size:0.85rem;color:var(--haze);margin-bottom:0.8rem;">点击图片选中，每张图片将创建一个作品。已选: 0 张</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.5rem;" id="batchCreateImgGrid">' +
+        images.map(img => {
+          const sizeMB = img.size ? (img.size / 1024 / 1024).toFixed(2) : '?';
+          return '<div class="bcimg-pick" data-url="'+img.url+'" onclick="toggleBatchCreateImg(this)" style="border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;">' +
+            '<img src="'+img.url+'" style="width:100%;height:80px;object-fit:cover;display:block;">' +
+            '<div style="padding:0.2rem 0.3rem;"><div style="font-size:0.6rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+img.name+'">'+img.name+'</div></div></div>';
+        }).join('') +
+        '</div>' +
+        '<button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmBatchCreateImgSelect()">下一步: 设置作品信息</button></div>';
+      document.body.appendChild(overlay);
+    }
+
+    function toggleBatchCreateImg(el) {
+      el.classList.toggle('selected');
+      el.style.outline = el.classList.contains('selected') ? '3px solid var(--accent)' : 'none';
+      const count = document.querySelectorAll('.bcimg-pick.selected').length;
+      document.getElementById('batchCreateImgHint').textContent = '点击图片选中，每张图片将创建一个作品。已选: ' + count + ' 张';
+    }
+
+    function confirmBatchCreateImgSelect() {
+      const selected = [...document.querySelectorAll('.bcimg-pick.selected')].map(el => el.dataset.url);
+      if (selected.length === 0) { showToast('请至少选择一张图片', 'error'); return; }
+      _batchCreateSelectedImages = selected;
+      document.getElementById('batchCreateImgLibOverlay').remove();
+      openBatchCreateConfigModal();
+    }
+
+    function openBatchCreateConfigModal() {
+      const count = _batchCreateSelectedImages.length;
+      const catOptions = Object.entries(CATEGORIES).map(([k,v]) => '<option value="'+k+'">'+v+'</option>').join('');
+      const statusOptions = Object.entries(STATUS_LABELS).map(([k,v]) => '<option value="'+k+'">'+v+'</option>').join('');
+      const overlay = document.createElement('div');
+      overlay.id = 'batchCreateConfigOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:420px;width:100%;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">批量创建作品</h3><button onclick="document.getElementById(\'batchCreateConfigOverlay\').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">×</button></div>' +
+        '<p style="font-size:0.85rem;color:var(--haze);margin-bottom:1rem;">将根据已选的 '+count+' 张图片创建 '+count+' 个作品。</p>' +
+        '<div class="form-group"><label>标题前缀 <span style="color:var(--accent)">*</span></label><input class="form-input" id="batchCreatePrefix" placeholder="例如: 手办" value="作品"><p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">作品标题将自动生成为: '+ '"手办 1"、"手办 2"...</p></div>' +
+        '<div class="form-group"><label>分类</label><select class="form-input" id="batchCreateCategory">'+catOptions+'</select></div>' +
+        '<div class="form-group"><label>状态</label><select class="form-input" id="batchCreateStatus">'+statusOptions+'</select></div>' +
+        '<button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" id="batchCreateSubmitBtn" onclick="submitBatchCreate()">确认创建 '+count+' 个作品</button></div>';
+      document.body.appendChild(overlay);
+    }
+
+    async function submitBatchCreate() {
+      const prefix = document.getElementById('batchCreatePrefix').value.trim() || '作品';
+      const category = document.getElementById('batchCreateCategory').value;
+      const status = document.getElementById('batchCreateStatus').value;
+      const btn = document.getElementById('batchCreateSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = '创建中...';
+      let created = 0;
+      let failed = 0;
+      for (let i = 0; i < _batchCreateSelectedImages.length; i++) {
+        try {
+          await authorAPI('POST', '/api/author/works', {
+            title: prefix + ' ' + (i + 1),
+            images: [_batchCreateSelectedImages[i]],
+            category: category,
+            status: status
+          });
+          created++;
+        } catch (e) {
+          console.error('Failed to create work ' + (i + 1) + ':', e);
+          failed++;
+        }
+      }
+      document.getElementById('batchCreateConfigOverlay').remove();
+      if (failed > 0) {
+        showToast('创建完成: '+created+' 个成功, '+failed+' 个失败', 'error');
+      } else {
+        showToast('成功创建 '+created+' 个作品', 'success');
+      }
+      loadAuthorWorks();
     }
 
     // Import works from Excel
