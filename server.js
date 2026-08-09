@@ -138,6 +138,13 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
 app.use(express.json({ limit: '10mb' }));
+// HTML 不缓存，其他静态资源缓存 1 天
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/') {
+    res.set('Cache-Control', 'no-cache');
+  }
+  next();
+});
 app.use(express.static('public', { maxAge: '1d', etag: true }));
 app.use('/admin', express.static('admin', { maxAge: '1d', etag: true }));
 app.use('/uploads', express.static('uploads', { maxAge: '7d', etag: true }));
