@@ -62,6 +62,7 @@
       <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ <span data-i18n="common.follow">关注</span></button>
       <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')">❤️ <span data-i18n="common.like">喜爱</span></button>
       <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')">🔖 <span data-i18n="common.want">想要</span></button>
+      <button class="filter-btn" onclick="toggleDeadlineFilter()" id="deadlineFilterBtn">⏰ <span>即将截止</span></button>
       <button class="filter-btn" id="wishlistToggleBtn" onclick="activateWishlist()" style="margin-left:auto;">🛒 心愿单</button>
     </div>
 
@@ -124,6 +125,7 @@
     let currentStatus = 'all';
     let currentUserFilter = 'none'; // 'none', 'liked', 'wanted'
     let currentFollowFilter = false;
+    let currentDeadlineFilter = false;
     let wishlistMode = false;
     let wishlistItems = {}; // { workId: quantity }
 
@@ -273,12 +275,19 @@
       renderWorks();
     }
 
+    function toggleDeadlineFilter() {
+      currentDeadlineFilter = !currentDeadlineFilter;
+      document.getElementById('deadlineFilterBtn').classList.toggle('active', currentDeadlineFilter);
+      renderWorks();
+    }
+
     function checkUserFilters() {
       const liked = JSON.parse(localStorage.getItem('f7liked') || '[]');
       const wanted = JSON.parse(localStorage.getItem('f7wanted') || '[]');
       const followed = getFollowedCircles();
+      const hasDeadlines = allWorks.some(w => isDeadlineSoon(w.endDate));
       const container = document.getElementById('userFilters');
-      if (container && (liked.length > 0 || wanted.length > 0 || followed.length > 0)) {
+      if (container && (liked.length > 0 || wanted.length > 0 || followed.length > 0 || hasDeadlines)) {
         container.style.display = 'flex';
       }
     }
@@ -412,6 +421,11 @@
       if (currentFollowFilter) {
         const followedList = getFollowedCircles();
         filtered = filtered.filter(w => (w.circles || []).some(cid => followedList.includes(cid)));
+      }
+
+      // Deadline filter
+      if (currentDeadlineFilter) {
+        filtered = filtered.filter(w => isDeadlineSoon(w.endDate));
       }
 
       const search = document.getElementById('searchInput').value.toLowerCase();

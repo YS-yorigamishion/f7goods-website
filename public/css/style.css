@@ -1875,7 +1875,7 @@ textarea.form-input {
   }
 
   .card-date {
-    font-size: 0.7rem;
+    display: none;
   }
 
   .detail-header h1 {
