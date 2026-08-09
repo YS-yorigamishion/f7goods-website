@@ -505,11 +505,11 @@ function buildFooter() {
 // Init page structure
 async function initPage(activePage, itemId) {
   try {
-    // Load language first (only loadLang is unique to initPage)
+    // Load language first
     await loadLang(_lang, true);
 
-    // Settings and categories are loaded by loadWorks() — don't duplicate here.
-    // applyFavicon handles null siteSettings gracefully.
+    // Load settings (needed by buildNavbar, buildFooter, applyFavicon)
+    await loadSettingsFromAPI();
     applyFavicon();
 
     const navbar = document.getElementById('navbar');
