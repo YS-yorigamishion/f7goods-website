@@ -16,9 +16,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.2rem 0.5rem; color:var(--accent); transition:transform 0.15s; }
+    .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
+    .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
     .wishlist-add-btn:active { transform:scale(1.3); }
-    .wishlist-badge { position:absolute; top:-6px; right:-8px; background:var(--accent); color:white; font-size:0.6rem; border-radius:8px; padding:0 4px; min-width:14px; text-align:center; line-height:16px; font-weight:700; }
+    .wishlist-badge { font-size:0.75rem; font-weight:700; min-width:16px; text-align:center; color:var(--accent); }
     #wishlistBar { position:fixed; bottom:0; left:0; right:0; background:var(--card-bg); border-top:2px solid var(--accent); padding:0.8rem 1.2rem; z-index:999; box-shadow:0 -2px 12px rgba(0,0,0,0.15); }
   </style>
 </head>
@@ -141,6 +142,16 @@
       e.stopPropagation();
       if (!wishlistItems[workId]) wishlistItems[workId] = 0;
       wishlistItems[workId]++;
+      updateWishlistBadge(workId);
+      updateWishlistBar();
+    }
+
+    function decreaseWishlistItem(workId, e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!wishlistItems[workId] || wishlistItems[workId] <= 0) return;
+      wishlistItems[workId]--;
+      if (wishlistItems[workId] <= 0) delete wishlistItems[workId];
       updateWishlistBadge(workId);
       updateWishlistBar();
     }
@@ -443,7 +454,7 @@
               ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">${t('common.wants')} ${work.wants}</span>` : ''}
               <span class="card-date">${formatDate(work.releaseDate)}</span>
               ${renderLikeButton(work.id, work.likes)}
-              ${wishlistMode ? '<button class="wishlist-add-btn" onclick="toggleWishlistItem(\'' + work.id + '\',event)">＋<span class="wishlist-badge" data-wid="' + work.id + '" style="' + ((wishlistItems[work.id] || 0) > 0 ? '' : 'display:none;') + '">' + ((wishlistItems[work.id] || 0) > 0 ? '×' + wishlistItems[work.id] : '') + '</span></button>' : ''}
+              ${wishlistMode ? '<span class="wishlist-qty-group"><button class="wishlist-add-btn" onclick="decreaseWishlistItem(\'' + work.id + '\',event)">−</button><span class="wishlist-badge" data-wid="' + work.id + '" style="' + ((wishlistItems[work.id] || 0) > 0 ? '' : 'display:none;') + '">' + ((wishlistItems[work.id] || 0) > 0 ? wishlistItems[work.id] : '') + '</span><button class="wishlist-add-btn" onclick="toggleWishlistItem(\'' + work.id + '\',event)">＋</button></span>' : ''}
             </div>
           </div>
         </div>
