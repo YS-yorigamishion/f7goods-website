@@ -338,6 +338,10 @@
               <input type="date" class="form-input" id="batchReleaseDate">
             </div>
             <div class="form-group">
+              <label>截止日期</label>
+              <input type="date" class="form-input" id="batchEndDate">
+            </div>
+            <div class="form-group">
               <label>标签（英文逗号分隔，留空不修改）</label>
               <input class="form-input" id="batchTags" placeholder="标签1, 标签2">
             </div>
@@ -1077,6 +1081,7 @@
       { key: 'status', label: '状态', getValue: w => STATUS_LABELS[w.status] || w.status || '' },
       { key: 'price', label: '价格', getValue: w => w.price || '' },
       { key: 'releaseDate', label: '发售日', getValue: w => w.releaseDate || '' },
+      { key: 'endDate', label: '截止日', getValue: w => w.endDate || '' },
       { key: 'tags', label: '标签', getValue: w => (w.tags || []).join(', ') },
       { key: 'description', label: '描述', getValue: w => { const d = w.description || ''; return d.length > 60 ? d.substring(0, 60) + '...' : d; } },
       { key: 'commissioned', label: '约稿作品 + 约稿作者', getValue: w => w.isCommissioned ? '是 (' + (w.commissionedBy || '未填') + ')' : '否' },
@@ -1723,6 +1728,7 @@
           case 'status': updateData.status = templateWork.status; break;
           case 'price': updateData.price = templateWork.price; break;
           case 'releaseDate': updateData.releaseDate = templateWork.releaseDate; break;
+          case 'endDate': updateData.endDate = templateWork.endDate; break;
           case 'tags': updateData.tags = templateWork.tags; break;
           case 'description': updateData.description = templateWork.description; break;
           case 'commissioned':
@@ -1787,6 +1793,7 @@
           case 'status': _useFormatTemplateFields.status = templateWork.status; break;
           case 'price': _useFormatTemplateFields.price = templateWork.price; break;
           case 'releaseDate': _useFormatTemplateFields.releaseDate = templateWork.releaseDate; break;
+          case 'endDate': _useFormatTemplateFields.endDate = templateWork.endDate; break;
           case 'tags': _useFormatTemplateFields.tags = templateWork.tags; break;
           case 'description': _useFormatTemplateFields.description = templateWork.description; break;
           case 'commissioned':
@@ -1861,6 +1868,7 @@
 
       document.getElementById('batchPrice').value = '';
       document.getElementById('batchReleaseDate').value = '';
+      document.getElementById('batchEndDate').value = '';
 
       // Load events and projects
       const [allEvents, allProjects] = await Promise.all([
@@ -1897,6 +1905,7 @@
       const status = document.getElementById('batchStatus').value;
       const price = document.getElementById('batchPrice').value;
       const releaseDate = document.getElementById('batchReleaseDate').value;
+      const endDate = document.getElementById('batchEndDate').value;
       const tags = document.getElementById('batchTags').value;
       const description = document.getElementById('batchDescription').value;
       const contactType = document.getElementById('batchContactType').value;
@@ -1908,6 +1917,7 @@
       if (status) data.status = status;
       if (price) data.price = price;
       if (releaseDate) data.releaseDate = releaseDate;
+      if (endDate) data.endDate = endDate;
       if (tags) data.tags = tags.split(',').map(t => t.trim()).filter(Boolean);
       if (description) data.description = description;
 
@@ -2026,6 +2036,7 @@
         <div class="form-row">
           <div class="form-group"><label>价格</label><input class="form-input" id="wfPrice" value="${escapeHtml(w.price || '')}" placeholder="¥0"></div>
           <div class="form-group"><label>发售日</label><input type="date" class="form-input" id="wfReleaseDate" value="${w.releaseDate || ''}"></div>
+          <div class="form-group"><label>截止日</label><input type="date" class="form-input" id="wfEndDate" value="${w.endDate || ''}"></div>
         </div>
         <div class="form-group">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
@@ -2139,6 +2150,7 @@
         status: document.getElementById('wfStatus').value,
         price: document.getElementById('wfPrice').value,
         releaseDate: document.getElementById('wfReleaseDate').value,
+        endDate: document.getElementById('wfEndDate').value,
         tags: document.getElementById('wfTags').value.split(',').map(t => t.trim()).filter(Boolean),
         description: document.getElementById('wfDesc').value,
         images: [...document.querySelectorAll('#wfImagesPreview img')].map(img => img.src),

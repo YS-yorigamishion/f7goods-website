@@ -564,6 +564,7 @@ app.get('/api/author/works/export', authorAuthMiddleware, (req, res) => {
     '状态': statusMap[w.status] || w.status || '',
     '价格': w.price || '',
     '发售日期': w.releaseDate || '',
+    '截止日期': w.endDate || '',
     '标签': (w.tags || []).join(', '),
     '作品描述': w.description || '',
     '约稿作品': w.isCommissioned ? '是' : '否',
@@ -634,6 +635,7 @@ app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file')
         status: STATUS_MAP[row['状态']] || 'on_sale',
         price: row['价格'] || '',
         releaseDate: row['发售日期'] || '',
+        endDate: row['截止日期'] || '',
         tags: (row['标签'] || '').split(',').map(t => t.trim()).filter(Boolean),
         description: row['作品描述'] || row['描述'] || '',
         isCommissioned,
@@ -729,7 +731,7 @@ app.put('/api/author/works/batch', authorAuthMiddleware, async (req, res) => {
 
   const circleId = req.author.circleId;
   const idSet = new Set(ids);
-  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
   const updates = {};
   allowed.forEach(field => {
     if (data[field] !== undefined) updates[field] = data[field];
@@ -792,7 +794,7 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   const oldMoreImages = works[index].moreImages || [];
 
   // Only allow updating specific fields
-  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -850,7 +852,7 @@ app.post('/api/author/works/batch-create', authorAuthMiddleware, async (req, res
   const globalRequireApproval = settings.site?.requireWorkApproval !== false;
   const requireApproval = authorRequireApproval && globalRequireApproval;
 
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
   const created = [];
   const now = new Date().toISOString();
 
@@ -902,7 +904,7 @@ app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
   const globalRequireApproval = settings.site?.requireWorkApproval !== false;
   const requireApproval = authorRequireApproval && globalRequireApproval;
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
   const workData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) workData[field] = req.body[field];
@@ -2718,7 +2720,7 @@ app.post('/api/admin/works', authMiddleware, async (req, res) => {
   const works = readJSON('works.json');
   const maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
   // Whitelist allowed fields
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'isCommissioned', 'commissionedBy', 'socialLinks'];
   const workData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) workData[field] = req.body[field];
@@ -2779,6 +2781,7 @@ app.post('/api/admin/works/import', authMiddleware, upload.single('file'), async
         status: STATUS_MAP[row['状态']] || 'on_sale',
         price: row['价格'] || '',
         releaseDate: row['发售日期'] || '',
+        endDate: row['截止日期'] || '',
         tags: (row['标签'] || '').split(',').map(t => t.trim()).filter(Boolean),
         description: row['描述'] || ''
       };
@@ -2851,7 +2854,7 @@ app.put('/api/admin/works/:id', authMiddleware, async (req, res) => {
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
   const oldTitle = works[index].title;
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'likes', 'wants', 'order', 'isCommissioned', 'commissionedBy', 'socialLinks', 'approvalStatus', 'rejectReason', 'submittedBy'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'likes', 'wants', 'order', 'isCommissioned', 'commissionedBy', 'socialLinks', 'approvalStatus', 'rejectReason', 'submittedBy'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -3283,6 +3286,7 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
         price: row['价格'] || '',
         status: STATUS_MAP[row['状态']] || 'on_sale',
         releaseDate: row['发售日期'] || row['发售日'] || '',
+        endDate: row['截止日期'] || row['截止日'] || '',
         tags: (row['标签'] || '').split(',').map(t => t.trim()).filter(Boolean),
         description: row['作品描述'] || row['描述'] || '',
         images: (row['图片'] || '').split(',').map(f => f.trim()).filter(Boolean).map(f => f.startsWith('/uploads/') ? f : '/uploads/' + f),

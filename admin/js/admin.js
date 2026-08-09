@@ -1999,6 +1999,10 @@ function openWorkModal(work = null, returnToCircleId = null) {
         <label>发售日</label>
         <input type="date" class="form-input" id="wReleaseDate" value="${work?.releaseDate || ''}">
       </div>
+      <div class="form-group">
+        <label>截止日</label>
+        <input type="date" class="form-input" id="wEndDate" value="${work?.endDate || ''}">
+      </div>
     </div>
     ${isEdit ? `<div class="form-row">
       <div class="form-group">
@@ -2106,6 +2110,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
       status: document.getElementById('wStatus').value,
       price: document.getElementById('wPrice').value,
       releaseDate: document.getElementById('wReleaseDate').value,
+      endDate: document.getElementById('wEndDate').value,
       circles: [...document.querySelectorAll('#wCirclesTags .circle-tag')].map(el => el.dataset.cid),
       tags: document.getElementById('wTags').value.split(',').map(t => t.trim()).filter(Boolean),
       description: document.getElementById('wDesc').value,
@@ -2294,6 +2299,7 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
   const priceVal = getFieldValue(selectedWorks, 'price');
   const circleVal = getFieldValue(selectedWorks, 'circles');
   const releaseDateVal = getFieldValue(selectedWorks, 'releaseDate');
+  const endDateVal = getFieldValue(selectedWorks, 'endDate');
   const descVal = getFieldValue(selectedWorks, 'description');
   const tagsVal = getFieldValue(selectedWorks, 'tags', t => (t || []).join(', '));
 
@@ -2333,6 +2339,10 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
         <label>发售日</label>
         <input type="date" class="form-input" id="batch_releaseDate" value="${releaseDateVal || ''}" placeholder="${releaseDateVal === null ? mixed : ''}">
       </div>
+      <div class="form-group">
+        <label>截止日</label>
+        <input type="date" class="form-input" id="batch_endDate" value="${endDateVal || ''}" placeholder="${endDateVal === null ? mixed : ''}">
+      </div>
     </div>
 
     <div class="form-row">
@@ -2368,6 +2378,7 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
     const price = document.getElementById('batch_price').value;
     const batchCircles = [...document.querySelectorAll('#batchCirclesTags .circle-tag')].map(el => el.dataset.cid);
     const releaseDate = document.getElementById('batch_releaseDate').value;
+    const endDate = document.getElementById('batch_endDate').value;
     const tags = document.getElementById('batch_tags').value;
     const desc = document.getElementById('batch_desc').value;
 
@@ -2376,6 +2387,7 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
     if (price) updates.price = price;
     if (batchCircles.length > 0) updates.circles = batchCircles;
     if (releaseDate) updates.releaseDate = releaseDate;
+    if (endDate) updates.endDate = endDate;
     if (tags) updates.tags = tags.split(',').map(t => t.trim()).filter(Boolean);
     if (desc) updates.description = desc;
 
@@ -5595,6 +5607,7 @@ async function viewApprovalDetail(type, id) {
       <div style="margin-bottom:1rem;"><strong>价格：</strong>${escapeHtml(item.price || '未设置')}</div>
       <div style="margin-bottom:1rem;"><strong>状态：</strong>${STATUS_LABELS[item.status] || item.status || '未设置'}</div>
       <div style="margin-bottom:1rem;"><strong>发售日期：</strong>${item.releaseDate || '未设置'}</div>
+      <div style="margin-bottom:1rem;"><strong>截止日期：</strong>${item.endDate || '未设置'}</div>
       ${item.tags && item.tags.length ? `<div style="margin-bottom:1rem;"><strong>标签：</strong>${item.tags.map(t => `<span style="background:var(--paper);padding:2px 8px;border-radius:4px;font-size:0.8rem;margin-right:4px;">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
       ${item.description ? `<div style="margin-bottom:1rem;"><strong>描述：</strong><div style="background:var(--paper);padding:1rem;border-radius:8px;margin-top:0.5rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escapeHtml(item.description)}</div></div>` : ''}
       ${allImages.length ? `<div style="margin-bottom:1rem;"><strong>图片：</strong><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:0.5rem;">${allImages.map(img => `<img src="${img}" style="max-width:150px;max-height:150px;object-fit:contain;border-radius:6px;cursor:pointer;" onclick="window.open('${img}','_blank')">`).join('')}</div></div>` : ''}
