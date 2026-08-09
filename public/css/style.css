@@ -375,7 +375,7 @@ body {
 .deadline-badge {
   position: absolute;
   top: 8px;
-  left: 8px;
+  right: 8px;
   background: #e74c3c;
   color: white;
   padding: 0.1rem 0.4rem;
