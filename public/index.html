@@ -129,7 +129,14 @@
         renderWorks();
         return;
       }
-      if (!await showConfirm('f7goods 不会提供任何直接交易的功能。\n本功能仅做购物模拟，以方便快速得知价格以及作者设定的购买方式。\n\n确认开启心愿单？')) return;
+      let confirmed;
+      try {
+        confirmed = await showConfirm('f7goods 不会提供任何直接交易的功能。\n本功能仅做购物模拟，以方便快速得知价格以及作者设定的购买方式。\n\n确认开启心愿单？');
+      } catch (e) {
+        console.error('[activateWishlist] showConfirm failed:', e);
+        confirmed = confirm('确认开启心愿单？');
+      }
+      if (!confirmed) return;
       wishlistMode = true;
       wishlistItems = {};
       document.getElementById('wishlistToggleBtn').classList.add('active');
@@ -263,12 +270,16 @@
 
     async function loadWorks() {
       try {
+        console.log('[loadWorks] start, _i18n loaded:', Object.keys(_i18n).length > 0);
         await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
+        console.log('[loadWorks] categories/settings loaded, CATEGORIES_ORDERED:', CATEGORIES_ORDERED.length, 'STATUS_ORDERED:', STATUS_ORDERED.length);
+        console.log('[loadWorks] fetching works/circles/events...');
         const [works, circles, events] = await Promise.all([
           F7API.getWorks(),
           F7API.getCircles(),
           F7API.getEvents()
         ]);
+        console.log('[loadWorks] data received: works=' + (works?.length || 0) + ', circles=' + (circles?.length || 0) + ', events=' + (events?.length || 0));
         allWorks = works;
         allEvents = events;
         circles.forEach(c => circlesMap[c.id] = c.name);
@@ -286,7 +297,7 @@
         // Restore visibility if hidden during language switch
         document.querySelectorAll('.hero, .page-header').forEach(el => el.style.visibility = '');
         // Generate filter buttons dynamically
-        buildFilterButtons();
+        try { buildFilterButtons(); } catch (e) { console.error('[loadWorks] buildFilterButtons failed:', e); }
         renderWorks();
         checkUserFilters();
 
@@ -294,8 +305,15 @@
         const annBtn = document.getElementById('announcementBtn');
         if (annBtn) annBtn.innerHTML = renderAnnouncementButton();
       } catch (e) {
-        document.getElementById('worksGrid').innerHTML =
-          `<div class="empty-state"><div class="icon">!</div><p>${t('common.loadFailed')}</p><button class="btn" style="margin-top:1rem;" onclick="loadWorks()">${t('common.retry')}</button></div>`;
+        console.error('[loadWorks] failed:', e);
+        try {
+          document.getElementById('worksGrid').innerHTML =
+            `<div class="empty-state"><div class="icon">!</div><p>${t('common.loadFailed')}</p><button class="btn" style="margin-top:1rem;" onclick="loadWorks()">${t('common.retry')}</button></div>`;
+        } catch (e2) {
+          console.error('[loadWorks] catch block also failed:', e2);
+          document.getElementById('worksGrid').innerHTML =
+            '<div class="empty-state"><div class="icon">!</div><p>加载失败，请刷新页面重试</p><button class="btn" style="margin-top:1rem;" onclick="location.reload()">刷新</button></div>';
+        }
       }
     }
 
@@ -312,6 +330,10 @@
     }
 
     function buildFilterButtons() {
+      if (!Array.isArray(STATUS_ORDERED) || STATUS_ORDERED.length === 0 || !Array.isArray(CATEGORIES_ORDERED) || CATEGORIES_ORDERED.length === 0) {
+        console.warn('[buildFilterButtons] skipped: STATUS_ORDERED or CATEGORIES_ORDERED not ready');
+        return;
+      }
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
       statusContainer.innerHTML = `<button class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
