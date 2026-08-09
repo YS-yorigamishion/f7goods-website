@@ -2088,6 +2088,37 @@ function cleanupOldPageviews() {
 // Run cleanup on server start
 cleanupOldPageviews();
 
+// Auto-change work status to 'yishoukong' when endDate passes
+async function checkExpiredWorks() {
+  try {
+    const works = readJSON('works.json');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let modified = false;
+
+    for (const work of works) {
+      if (work.endDate && work.status !== 'yishoukong') {
+        const endDate = new Date(work.endDate + 'T23:59:59');
+        if (today > endDate) {
+          work.status = 'yishoukong';
+          modified = true;
+          console.log(`[Expiry] Work "${work.title}" (${work.id}) status changed to yishoukong (endDate: ${work.endDate})`);
+        }
+      }
+    }
+
+    if (modified) {
+      await writeJSON('works.json', works);
+      console.log('[Expiry] Expired works updated');
+    }
+  } catch (e) {
+    console.error('[Expiry] Error checking expired works:', e.message);
+  }
+}
+
+// Run expiry check on server start
+checkExpiredWorks();
+
 // Schedule cleanup to run daily at Chinese midnight (00:05 AM UTC+8)
 function scheduleDailyCleanup() {
   const now = new Date();
@@ -2114,8 +2145,12 @@ function scheduleDailyCleanup() {
 
   setTimeout(() => {
     cleanupOldPageviews();
+    checkExpiredWorks();
     // Then run every 24 hours
-    setInterval(cleanupOldPageviews, 24 * 60 * 60 * 1000);
+    setInterval(() => {
+      cleanupOldPageviews();
+      checkExpiredWorks();
+    }, 24 * 60 * 60 * 1000);
   }, msUntilChineseMidnight);
 }
 scheduleDailyCleanup();

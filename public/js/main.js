@@ -604,6 +604,15 @@ function formatDate(dateStr) {
   return d.toLocaleDateString(({zh:'zh-CN',en:'en-US',ja:'ja-JP',ko:'ko-KR'}[_lang]||'zh-CN'), { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+// Check if endDate is within 15 days (deadline approaching)
+function isDeadlineSoon(endDate) {
+  if (!endDate) return false;
+  const end = new Date(endDate + 'T23:59:59');
+  const now = new Date();
+  const diff = end - now;
+  return diff > 0 && diff <= 15 * 24 * 60 * 60 * 1000;
+}
+
 // Escape HTML entities
 function escapeHtml(str) {
   if (!str) return '';

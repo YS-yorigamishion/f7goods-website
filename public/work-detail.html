@@ -97,7 +97,7 @@
           </div>
           <div class="detail-header">
             <div style="display:flex;align-items:flex-start;gap:1rem;">
-              <h1 style="flex:1;">${escapeHtml(work.title)}</h1>
+              <h1 style="flex:1;">${escapeHtml(work.title)}${isDeadlineSoon(work.endDate) ? ' <span class="deadline-badge" style="position:static;font-size:0.75rem;vertical-align:middle;">即将截止</span>' : ''}</h1>
               <div class="detail-header-actions" style="flex-shrink:0;padding-top:0.3rem;text-align:right;">
                 <div>${renderLikeButton(work.id, work.likes)}</div>
                 <div>${renderWantButton(work.id, work.wants)}</div>

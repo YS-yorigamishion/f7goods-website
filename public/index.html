@@ -442,6 +442,7 @@
             ${work.images && work.images.length > 0
               ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}" loading="lazy">`
               : '<span class="placeholder-icon">🎨</span>'}
+            ${isDeadlineSoon(work.endDate) ? '<span class="deadline-badge">即将截止</span>' : ''}
           </div>
           <div class="card-body">
             <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
@@ -488,6 +489,7 @@
               ${work.images && work.images.length > 0
                 ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}" loading="lazy">`
                 : '<span class="placeholder-icon">🎨</span>'}
+              ${isDeadlineSoon(work.endDate) ? '<span class="deadline-badge">即将截止</span>' : ''}
             </div>
             <div class="card-body">
               <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>

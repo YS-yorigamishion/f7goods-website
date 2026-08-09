@@ -2144,11 +2144,13 @@
       const selectedProjectIds = [...document.querySelectorAll('.wf-project-cb:checked')].map(cb => cb.value);
 
       const isCommissioned = document.getElementById('wfIsCommissioned').checked;
+      const priceRaw = document.getElementById('wfPrice').value.trim();
+      const priceFormatted = (!priceRaw || priceRaw === '无料' || priceRaw === '免费') ? priceRaw : (/^[¥￥]/.test(priceRaw) ? priceRaw : (/^\d/.test(priceRaw) ? '¥' + priceRaw : priceRaw));
       const data = {
         title: document.getElementById('wfTitle').value,
         category: document.getElementById('wfCategory').value,
         status: document.getElementById('wfStatus').value,
-        price: (function() { const p = document.getElementById('wfPrice').value.trim(); if (!p || p === '无料' || p === '免费') return p || ''; if (/^[¥￥]/.test(p)) return p; if (/^\d/.test(p)) return '¥' + p; return p; })(),
+        price: priceFormatted,
         releaseDate: document.getElementById('wfReleaseDate').value,
         endDate: document.getElementById('wfEndDate').value,
         tags: document.getElementById('wfTags').value.split(',').map(t => t.trim()).filter(Boolean),

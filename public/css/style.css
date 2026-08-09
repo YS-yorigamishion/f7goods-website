@@ -372,6 +372,21 @@ body {
   opacity: 0.4;
 }
 
+.deadline-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+  z-index: 2;
+  line-height: 1.6;
+  pointer-events: none;
+}
+
 .card-body {
   padding: 1.2rem;
 }
