@@ -7,7 +7,8 @@ let _i18n = {};
 async function loadLang(lang, isInit = false) {
   try {
     const oldLang = _lang;
-    const res = await fetch('/lang/' + lang + '.json');
+    const _fetchL = typeof fetchWithTimeout === 'function' ? fetchWithTimeout : fetch;
+    const res = await _fetchL('/lang/' + lang + '.json');
     _i18n = await res.json();
     _lang = lang;
     localStorage.setItem('f7lang', lang);
@@ -169,7 +170,8 @@ function tCat(cat) {
 // Load categories from API
 async function loadCategoriesFromAPI() {
   try {
-    const res = await fetch('/api/categories');
+    const _fetch = typeof fetchWithTimeout === 'function' ? fetchWithTimeout : fetch;
+    const res = await _fetch('/api/categories');
     if (!res.ok) return;
     const cats = await res.json();
     if (cats.works) {
@@ -229,17 +231,18 @@ async function loadCategoriesFromAPI() {
 let siteSettings = null;
 async function loadSettingsFromAPI() {
   try {
-    const res = await fetch('/api/settings?t=' + Date.now());
+    const _fetch = typeof fetchWithTimeout === 'function' ? fetchWithTimeout : fetch;
+    const res = await _fetch('/api/settings?t=' + Date.now());
     if (!res.ok) return;
     siteSettings = await res.json();
     if (!siteSettings.pages) siteSettings.pages = {};
   } catch (e) {
-    // Use defaults
+    console.warn('[loadSettingsFromAPI] failed:', e.message || e);
   } finally {
-    // Ensure settings-pending elements are always revealed
+    // Ensure settings-pending elements are always revealed (2s safety)
     setTimeout(() => {
       document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
-    }, 5000);
+    }, 2000);
   }
 }
 
@@ -501,55 +504,55 @@ function buildFooter() {
 // Theme toggle (dark mode)
 // Init page structure
 async function initPage(activePage, itemId) {
+  try {
+    // Load language first (only loadLang is unique to initPage)
+    await loadLang(_lang, true);
 
-  // Load language first
-  await loadLang(_lang, true);
+    // Settings and categories are loaded by loadWorks() — don't duplicate here.
+    // applyFavicon handles null siteSettings gracefully.
+    applyFavicon();
 
-  // Load settings
-  await loadSettingsFromAPI();
-  applyFavicon();
+    const navbar = document.getElementById('navbar');
+    if (navbar) {
+      navbar.dataset.activePage = activePage;
+      navbar.innerHTML = buildNavbar(activePage);
+      // Close lang dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        const dropdown = document.querySelector('.lang-dropdown');
+        const switcher = document.querySelector('.lang-switcher-nav');
+        if (dropdown && switcher && !switcher.contains(e.target)) {
+          dropdown.classList.remove('open');
+        }
+      });
+    }
 
-  const navbar = document.getElementById('navbar');
-  if (navbar) {
-    navbar.dataset.activePage = activePage;
-    navbar.innerHTML = buildNavbar(activePage);
-    // Close lang dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      const dropdown = document.querySelector('.lang-dropdown');
-      const switcher = document.querySelector('.lang-switcher-nav');
-      if (dropdown && switcher && !switcher.contains(e.target)) {
-        dropdown.classList.remove('open');
-      }
+    const footer = document.getElementById('footer');
+    if (footer) footer.innerHTML = buildFooter();
+
+    initCardAccessibility();
+
+    // Navbar scroll effect + back to top button
+    window.addEventListener('scroll', () => {
+      const nb = document.getElementById('navbar');
+      if (nb) nb.classList.toggle('scrolled', window.scrollY > 10);
+      const btn = document.getElementById('backToTop');
+      if (btn) btn.classList.toggle('show', window.scrollY > 300);
     });
+
+    // Page view tracking (fire and forget)
+    const pvBody = { page: activePage };
+    if (itemId) pvBody.itemId = itemId;
+    fetch('/api/pageview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pvBody)
+    }).catch(() => {});
+
+    // Check for popup announcements
+    checkPopupAnnouncements();
+  } catch (e) {
+    console.error('[initPage] failed:', e);
   }
-
-  const footer = document.getElementById('footer');
-  if (footer) footer.innerHTML = buildFooter();
-
-  initCardAccessibility();
-
-  // Navbar scroll effect + back to top button
-  window.addEventListener('scroll', () => {
-    const nb = document.getElementById('navbar');
-    if (nb) nb.classList.toggle('scrolled', window.scrollY > 10);
-    const btn = document.getElementById('backToTop');
-    if (btn) btn.classList.toggle('show', window.scrollY > 300);
-  });
-
-  // Load categories from API (non-blocking)
-  loadCategoriesFromAPI();
-
-  // Page view tracking (fire and forget)
-  const pvBody = { page: activePage };
-  if (itemId) pvBody.itemId = itemId;
-  fetch('/api/pageview', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(pvBody)
-  }).catch(() => {});
-
-  // Check for popup announcements
-  checkPopupAnnouncements();
 }
 
 // Back to top

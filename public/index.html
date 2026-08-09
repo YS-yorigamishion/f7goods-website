@@ -98,8 +98,23 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260809"></script>
+  <script src="/js/main.js?v=20260810"></script>
   <script>
+    // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
+    setTimeout(() => {
+      const sk = document.getElementById('worksSkeleton');
+      if (sk) { console.warn('[safety] skeleton timeout, removing'); sk.remove(); }
+      document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+    }, 8000);
+
+    // fetch 超时封装（默认10秒）
+    function fetchWithTimeout(url, timeout) {
+      timeout = timeout || 10000;
+      const controller = new AbortController();
+      const timer = setTimeout(function() { controller.abort(); }, timeout);
+      return fetch(url, { signal: controller.signal }).finally(function() { clearTimeout(timer); });
+    }
+
     initPage('works');
 
     let allWorks = [];
