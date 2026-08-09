@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -60,8 +60,8 @@
       .mgmt-content { padding:1rem; }
       .mgmt-header { padding:0 1rem; }
       .mgmt-header h2 { font-size:0.95rem; }
-      .mgmt-tabs { overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch; }
-      .mgmt-tab { padding:0.5rem 0.8rem;font-size:0.8rem;white-space:nowrap; }
+      .mgmt-tabs { flex-wrap:wrap; }
+      .mgmt-tab { padding:0.5rem 0.4rem;font-size:0.8rem;width:25%;box-sizing:border-box;text-align:center; }
       .works-grid { grid-template-columns:repeat(2,1fr) !important;gap:0.6rem; }
       .work-modal-overlay { padding:0.5rem; }
       .work-modal { padding:1rem; }
@@ -86,8 +86,8 @@
     @media (max-width:480px) {
       .works-grid { grid-template-columns:repeat(2,1fr) !important; }
       .stats-overview { grid-template-columns:repeat(2,1fr) !important; }
-      .mgmt-tabs { gap:0.2rem; }
-      .mgmt-tab { padding:0.4rem 0.6rem;font-size:0.75rem; }
+      .mgmt-tabs { gap:0; }
+      .mgmt-tab { padding:0.4rem 0.2rem;font-size:0.7rem; }
     }
   </style>
 </head>
