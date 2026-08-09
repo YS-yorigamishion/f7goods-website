@@ -2148,7 +2148,7 @@
         title: document.getElementById('wfTitle').value,
         category: document.getElementById('wfCategory').value,
         status: document.getElementById('wfStatus').value,
-        price: document.getElementById('wfPrice').value,
+        price: (function() { const p = document.getElementById('wfPrice').value.trim(); if (!p || p === '无料' || p === '免费') return p || ''; if (/^[¥￥]/.test(p)) return p; if (/^\d/.test(p)) return '¥' + p; return p; })(),
         releaseDate: document.getElementById('wfReleaseDate').value,
         endDate: document.getElementById('wfEndDate').value,
         tags: document.getElementById('wfTags').value.split(',').map(t => t.trim()).filter(Boolean),
