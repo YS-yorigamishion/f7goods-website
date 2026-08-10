@@ -1173,16 +1173,27 @@ app.put('/api/author/events/batch-toggle', authorAuthMiddleware, async (req, res
   const circleId = req.author.circleId;
   const idSet = new Set(eventIds);
   let events = readJSON('events.json');
+  let works = readJSON('works.json');
   let toggled = 0;
+
+  const authorWorkIds = works.filter(w => (w.circles || []).includes(circleId)).map(w => w.id);
 
   for (const evt of events) {
     if (idSet.has(evt.id)) {
       if (!evt.relatedCircles) evt.relatedCircles = [];
+      if (!evt.relatedWorks) evt.relatedWorks = [];
+
       const idx = evt.relatedCircles.indexOf(circleId);
       if (idx === -1) {
         evt.relatedCircles.push(circleId);
+        for (const wid of authorWorkIds) {
+          if (!evt.relatedWorks.includes(wid)) {
+            evt.relatedWorks.push(wid);
+          }
+        }
       } else {
         evt.relatedCircles.splice(idx, 1);
+        evt.relatedWorks = evt.relatedWorks.filter(wid => !authorWorkIds.includes(wid));
       }
       toggled++;
     }
@@ -1195,17 +1206,27 @@ app.put('/api/author/events/batch-toggle', authorAuthMiddleware, async (req, res
 // Author: toggle event association
 app.put('/api/author/events/:id/toggle', authorAuthMiddleware, async (req, res) => {
   let events = readJSON('events.json');
+  let works = readJSON('works.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
 
   const circleId = req.author.circleId;
   if (!events[index].relatedCircles) events[index].relatedCircles = [];
+  if (!events[index].relatedWorks) events[index].relatedWorks = [];
 
   const idx = events[index].relatedCircles.indexOf(circleId);
+  const authorWorkIds = works.filter(w => (w.circles || []).includes(circleId)).map(w => w.id);
+
   if (idx === -1) {
     events[index].relatedCircles.push(circleId);
+    for (const wid of authorWorkIds) {
+      if (!events[index].relatedWorks.includes(wid)) {
+        events[index].relatedWorks.push(wid);
+      }
+    }
   } else {
     events[index].relatedCircles.splice(idx, 1);
+    events[index].relatedWorks = events[index].relatedWorks.filter(wid => !authorWorkIds.includes(wid));
   }
 
   await writeJSON('events.json', events);
