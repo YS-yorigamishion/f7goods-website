@@ -248,6 +248,10 @@ async function adminAPI(method, path, body) {
     location.reload();
     return;
   }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `API error: ${res.status}`);
+  }
   return res.json();
 }
 

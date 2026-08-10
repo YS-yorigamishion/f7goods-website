@@ -3819,13 +3819,13 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
       try {
         const stats = fs.statSync(filePath);
         if (stats.size > 500 * 1024) {
-          const image = sharp(filePath);
-          const targetMax = 600 * 1024; // 600KB max
+          const targetMax = 600 * 1024;
           let quality = 90;
           let compressed = false;
 
           while (quality >= 70) {
-            await image.jpeg({ quality }).toFile(filePath + '.tmp');
+            const img = sharp(filePath);
+            await img.jpeg({ quality }).toFile(filePath + '.tmp');
             const resultSize = fs.statSync(filePath + '.tmp').size;
             if (resultSize <= targetMax) {
               fs.renameSync(filePath + '.tmp', filePath);
@@ -3833,12 +3833,13 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
               console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024).toFixed(0)}KB -> ${(resultSize / 1024).toFixed(0)}KB (quality: ${quality})`);
               break;
             }
+            try { fs.unlinkSync(filePath + '.tmp'); } catch {}
             quality -= 5;
           }
 
           if (!compressed) {
-            // Use quality 70 as fallback
-            await image.jpeg({ quality: 70 }).toFile(filePath + '.tmp');
+            const img = sharp(filePath);
+            await img.jpeg({ quality: 70 }).toFile(filePath + '.tmp');
             fs.renameSync(filePath + '.tmp', filePath);
             const finalSize = fs.statSync(filePath).size;
             console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024).toFixed(0)}KB -> ${(finalSize / 1024).toFixed(0)}KB (quality: 70)`);
