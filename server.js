@@ -1199,7 +1199,10 @@ app.put('/api/author/events/batch-toggle', authorAuthMiddleware, async (req, res
     }
   }
 
-  if (toggled > 0) await writeJSON('events.json', events);
+  if (toggled > 0) {
+    await writeJSON('events.json', events);
+    if (apiCache) apiCache.flushAll();
+  }
   res.json({ success: true, toggled });
 });
 
@@ -1230,6 +1233,7 @@ app.put('/api/author/events/:id/toggle', authorAuthMiddleware, async (req, res) 
   }
 
   await writeJSON('events.json', events);
+  if (apiCache) apiCache.flushAll();
   res.json(events[index]);
 });
 
