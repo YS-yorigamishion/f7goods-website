@@ -1086,7 +1086,7 @@
       { key: 'description', label: '描述', getValue: w => { const d = w.description || ''; return d.length > 60 ? d.substring(0, 60) + '...' : d; } },
       { key: 'commissioned', label: '约稿作品 + 约稿作者', getValue: w => w.isCommissioned ? '是 (' + (w.commissionedBy || '未填') + ')' : '否' },
       { key: 'socialLinks', label: '联系方式', getValue: w => { const sl = w.socialLinks || {}; const keys = Object.keys(sl).filter(k => sl[k]); return keys.length ? keys.map(k => k + ': ' + sl[k]).join(', ') : '(无)'; } },
-      { key: 'relatedEvents', label: '关联活动', getValue: (w, events) => { if (!events || events.length === 0) return '(无活动)'; const related = events.filter(e => (e.relatedCircles || []).includes(w.circles?.[0])); return related.length ? related.map(e => e.title).join(', ') : '(无)'; } },
+      { key: 'relatedEvents', label: '关联活动', getValue: (w, events) => { if (!events || events.length === 0) return '(无活动)'; const related = events.filter(e => (e.relatedCircles || []).includes(authorCircleId)); return related.length ? related.map(e => e.title).join(', ') : '(无)'; } },
       { key: 'relatedProjects', label: '关联企划', getValue: (w, events, projects) => { if (!projects || projects.length === 0) return '(无企划)'; const ids = w._relatedProjects || []; const related = projects.filter(p => ids.includes(p.id)); return related.length ? related.map(p => p.title).join(', ') : '(无)'; } }
     ];
     async function openBatchCreateFromImages() {
