@@ -1950,10 +1950,25 @@
       const selectedProjectIds = [...document.querySelectorAll('.batch-project-cb:checked')].map(cb => cb.value);
 
       const hasBasicChanges = Object.keys(data).length > 0;
-      const hasEventChanges = selectedEventIds.length > 0;
       const hasProjectChanges = selectedProjectIds.length > 0;
 
-      if (!hasBasicChanges && !hasEventChanges && !hasProjectChanges) { alert('请至少修改一个字段'); return; }
+      // 获取当前作者关联的活动
+      const allEvents = await authorAPI('GET', '/api/author/events');
+      const currentEventIds = allEvents
+        ? allEvents.filter(e => (e.relatedCircles || []).includes(authorCircleId)).map(e => e.id)
+        : [];
+
+      // 需要添加关联的活动：用户勾选但当前未关联
+      const eventsToAdd = selectedEventIds.filter(id => !currentEventIds.includes(id));
+      // 需要移除关联的活动：当前已关联但用户未勾选
+      const eventsToRemove = currentEventIds.filter(id => !selectedEventIds.includes(id));
+      // 合并需要 toggle 的活动
+      const eventsToToggle = [...new Set([...eventsToAdd, ...eventsToRemove])];
+
+      if (!hasBasicChanges && !hasProjectChanges && eventsToToggle.length === 0) {
+        alert('请至少修改一个字段');
+        return;
+      }
 
       showLoading('保存中...');
       try {
@@ -1965,8 +1980,8 @@
         }
 
         // 批量切换活动关联 (单次请求)
-        if (hasEventChanges) {
-          await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: selectedEventIds });
+        if (eventsToToggle.length > 0) {
+          await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToToggle });
         }
 
         showToast(`已更新 ${workIds.length} 个作品`, 'success');
