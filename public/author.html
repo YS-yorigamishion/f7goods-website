@@ -1758,16 +1758,20 @@
         if (hasEventSync) {
           const allEvents = await authorAPI('GET', '/api/author/events');
           if (allEvents) {
-            const templateCircleId = templateWork.circles?.[0];
-            const templateEventIds = allEvents.filter(e => (e.relatedCircles || []).includes(templateCircleId)).map(e => e.id);
-            // 只toggle需要改变的活动
-            const eventsToToggle = allEvents.filter(evt => {
-              const isRelated = (evt.relatedCircles || []).includes(authorCircleId);
-              const shouldBeRelated = templateEventIds.includes(evt.id);
-              return isRelated !== shouldBeRelated;
-            }).map(evt => evt.id);
-            if (eventsToToggle.length > 0) {
-              await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToToggle });
+            // 获取模板作品关联的所有活动（通过所有圈子）
+            const templateCircleIds = new Set(templateWork.circles || []);
+            const templateEventIds = allEvents.filter(e =>
+              (e.relatedCircles || []).some(cid => templateCircleIds.has(cid))
+            ).map(e => e.id);
+
+            // 只添加关联，不移除已有关联
+            const eventsToAdd = templateEventIds.filter(eventId => {
+              const evt = allEvents.find(e => e.id === eventId);
+              return evt && !(evt.relatedCircles || []).includes(authorCircleId);
+            });
+
+            if (eventsToAdd.length > 0) {
+              await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToAdd });
             }
           }
         }
