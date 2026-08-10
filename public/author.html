@@ -1764,14 +1764,22 @@
               (e.relatedCircles || []).some(cid => templateCircleIds.has(cid))
             ).map(e => e.id);
 
-            // 只添加关联，不移除已有关联
+            // 需要添加关联的活动：模板关联但当前作者未关联
             const eventsToAdd = templateEventIds.filter(eventId => {
               const evt = allEvents.find(e => e.id === eventId);
               return evt && !(evt.relatedCircles || []).includes(authorCircleId);
             });
 
-            if (eventsToAdd.length > 0) {
-              await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToAdd });
+            // 需要移除关联的活动：模板未关联但当前作者已关联
+            const eventsToRemove = allEvents
+              .filter(evt => !templateEventIds.includes(evt.id) && (evt.relatedCircles || []).includes(authorCircleId))
+              .map(e => e.id);
+
+            // 合并需要 toggle 的活动
+            const eventsToToggle = [...new Set([...eventsToAdd, ...eventsToRemove])];
+
+            if (eventsToToggle.length > 0) {
+              await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToToggle });
             }
           }
         }
