@@ -5939,6 +5939,62 @@ function filterUpdates() {
 }
 
 // ===== Edit History =====
+async function searchEditLogByDate(page = 1) {
+  const dateFrom = document.getElementById('editLogDateFrom')?.value || '';
+  const dateTo = document.getElementById('editLogDateTo')?.value || '';
+  if (!dateFrom && !dateTo) { showToast('请选择日期范围', 'error'); return; }
+
+  let url = `/api/admin/edit-log?page=${page}&limit=50`;
+  if (dateFrom) url += `&dateFrom=${dateFrom}`;
+  if (dateTo) url += `&dateTo=${dateTo}`;
+
+  try {
+    const result = await adminAPI('GET', url);
+    const container = document.getElementById('editLogContainer');
+
+    let log, total, totalPages;
+    if (result && result.items) {
+      log = result.items;
+      total = result.total;
+      totalPages = result.totalPages;
+      pagination.editlog = { page: result.page, total, totalPages };
+    } else {
+      log = result || [];
+      total = log.length;
+      totalPages = 1;
+      pagination.editlog = { page: 1, total, totalPages };
+    }
+
+    if (!log || log.length === 0) {
+      container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">该日期范围内暂无编辑记录</p>';
+      document.getElementById('editLogPagination').innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = log.map(entry => {
+      const time = new Date(entry.time).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      let actionColor = 'var(--ink)';
+      if (entry.action.includes('上传')) actionColor = '#2ecc71';
+      else if (entry.action.includes('删除')) actionColor = 'var(--accent)';
+      else if (entry.action.includes('创建')) actionColor = '#3498db';
+      else if (entry.action.includes('编辑')) actionColor = '#f39c12';
+      const imgThumb = entry.imageUrl ? `<img src="${entry.imageUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex-shrink:0;">` : '';
+      return `<div style="display:flex;gap:0.8rem;padding:0.7rem 0;border-bottom:1px solid var(--border);font-size:0.85rem;align-items:center;">
+        <span style="color:var(--haze);white-space:nowrap;min-width:130px;">${time}</span>
+        <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
+        <span style="color:${actionColor};font-weight:500;min-width:70px;">${escapeHtml(entry.action)}</span>
+        ${imgThumb}
+        <span style="flex:1;color:var(--ink);min-width:0;">${escapeHtml(entry.target)}${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
+      </div>`;
+    }).join('');
+
+    const paginationEl = document.getElementById('editLogPagination');
+    if (paginationEl) paginationEl.innerHTML = renderPagination('editlog', 'searchEditLogByDate');
+  } catch (e) {
+    document.getElementById('editLogContainer').innerHTML = '<p style="color:var(--accent);text-align:center;padding:2rem;">加载失败</p>';
+  }
+}
+
 async function loadEditLog(page = 1) {
   try {
     const result = await adminAPI('GET', `/api/admin/edit-log?page=${page}&limit=50`);

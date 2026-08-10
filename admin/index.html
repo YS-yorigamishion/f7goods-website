@@ -560,7 +560,8 @@
               </select>
               <input type="date" class="form-input" id="editLogDateFrom" onchange="filterEditLog()" style="width:140px;font-size:0.85rem;" title="开始日期">
               <span style="color:var(--haze);">至</span>
-              <input type="date" class="form-input" id="editLogDateTo" onchange="filterEditLog()" style="width:140px;font-size:0.85rem;" title="结束日期">
+              <input type="date" class="form-input" id="editLogDateTo" style="width:140px;font-size:0.85rem;" title="结束日期">
+              <button class="btn btn-primary" onclick="searchEditLogByDate()" style="font-size:0.85rem;padding:0.4rem 0.8rem;">搜索</button>
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportEditLog()">📥 导出</button>
               <button class="btn btn-primary" onclick="loadEditLog()">刷新</button>
             </div>

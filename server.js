@@ -2361,8 +2361,21 @@ app.get('/api/admin/edit-log', authMiddleware, (req, res) => {
 
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 50;
-  const total = log.length;
-  const reversed = log.reverse();
+  const { dateFrom, dateTo } = req.query;
+
+  let filtered = log;
+  if (dateFrom || dateTo) {
+    filtered = log.filter(entry => {
+      if (!entry.time) return false;
+      const d = entry.time.slice(0, 10);
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo && d > dateTo) return false;
+      return true;
+    });
+  }
+
+  const total = filtered.length;
+  const reversed = filtered.reverse();
   const items = reversed.slice((page - 1) * limit, page * limit);
 
   res.json({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
