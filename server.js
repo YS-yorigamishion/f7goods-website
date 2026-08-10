@@ -1596,13 +1596,8 @@ app.get('/api/works', cacheMiddleware(60), (req, res) => {
   if (eventId) {
     const events = readJSON('events.json');
     const event = events.find(e => e.id === eventId);
-    if (event) {
-      const relatedWorkIds = new Set(event.relatedWorks || []);
-      const relatedCircleIds = new Set(event.relatedCircles || []);
-      works = works.filter(w =>
-        relatedWorkIds.has(w.id) ||
-        (w.circles || []).some(cid => relatedCircleIds.has(cid))
-      );
+    if (event && event.relatedWorks) {
+      works = works.filter(w => event.relatedWorks.includes(w.id));
     } else {
       works = [];
     }
