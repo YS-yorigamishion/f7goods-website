@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -2159,6 +2159,7 @@
         moreImages: [...document.querySelectorAll('#wfMoreImagesPreview img')].map(img => img.src),
         socialLinks,
         relatedProjects: selectedProjectIds,
+        relatedEvents: selectedEventIds,
         isCommissioned,
         commissionedBy: isCommissioned ? document.getElementById('wfCommissionedBy').value : ''
       };

@@ -820,6 +820,23 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
     await writeJSON('projects.json', projects);
   }
 
+  // Handle event associations if provided
+  if (req.body.relatedEvents !== undefined) {
+    let events = readJSON('events.json');
+    const newEventIds = req.body.relatedEvents || [];
+    events.forEach(evt => {
+      const hasWork = (evt.relatedWorks || []).includes(req.params.id);
+      const shouldHave = newEventIds.includes(evt.id);
+      if (hasWork && !shouldHave) {
+        evt.relatedWorks = evt.relatedWorks.filter(id => id !== req.params.id);
+      } else if (!hasWork && shouldHave) {
+        if (!evt.relatedWorks) evt.relatedWorks = [];
+        evt.relatedWorks.push(req.params.id);
+      }
+    });
+    await writeJSON('events.json', events);
+  }
+
   // Log changes
   const newImages = works[index].images || [];
   const newMoreImages = works[index].moreImages || [];
@@ -937,6 +954,19 @@ app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
       }
     });
     await writeJSON('projects.json', projects);
+  }
+
+  // Handle event associations
+  if (req.body.relatedEvents && req.body.relatedEvents.length > 0) {
+    let events = readJSON('events.json');
+    req.body.relatedEvents.forEach(eid => {
+      const evt = events.find(e => e.id === eid);
+      if (evt) {
+        if (!evt.relatedWorks) evt.relatedWorks = [];
+        evt.relatedWorks.push(work.id);
+      }
+    });
+    await writeJSON('events.json', events);
   }
 
   const logCircles = readJSON('circles.json');
