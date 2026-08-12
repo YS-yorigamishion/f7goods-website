@@ -130,7 +130,8 @@
     "location": "Location",
     "relatedProjects": "Related Projects",
     "relatedAuthors": "Related Authors",
-    "relatedUpdates": "Related Updates"
+    "relatedUpdates": "Related Updates",
+    "contactInfo": "Contact"
   },
   "projects": {
     "title": "Projects",

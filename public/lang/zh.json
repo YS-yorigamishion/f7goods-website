@@ -130,7 +130,8 @@
     "location": "地点",
     "relatedProjects": "关联企划",
     "relatedAuthors": "关联作者",
-    "relatedUpdates": "相关动态"
+    "relatedUpdates": "相关动态",
+    "contactInfo": "联系方式"
   },
   "projects": {
     "title": "同人企划",

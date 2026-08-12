@@ -130,7 +130,8 @@
     "location": "場所",
     "relatedProjects": "関連プロジェクト",
     "relatedAuthors": "関連作者",
-    "relatedUpdates": "関連ニュース"
+    "relatedUpdates": "関連ニュース",
+    "contactInfo": "連絡先"
   },
   "projects": {
     "title": "プロジェクト",
