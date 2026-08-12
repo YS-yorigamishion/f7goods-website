@@ -148,11 +148,14 @@ body {
   margin-left: 0.5rem;
   white-space: nowrap;
   flex-shrink: 0;
-  text-decoration: none;
+  text-decoration: none !important;
 }
 .nav-author-btn:hover {
   background: var(--accent-alt) !important;
   color: white !important;
+}
+.nav-author-mobile {
+  display: none;
 }
 .nav-links a.active::after {
   content: '';
@@ -1619,6 +1622,14 @@ textarea.form-input {
   }
 
   .nav-toggle {
+    display: block;
+  }
+
+  .nav-author-btn {
+    display: none !important;
+  }
+
+  .nav-author-mobile {
     display: block;
   }
 
