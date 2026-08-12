@@ -441,7 +441,6 @@ function buildNavbar(activePage) {
         <li><a href="/projects.html" class="${activePage === 'projects' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.projects')}</a></li>
         <li><a href="/updates.html" class="${activePage === 'updates' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.updates')}</a></li>
         <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.contact')}</a></li>
-        <li class="nav-author-mobile"><a href="/author.html" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('common.authorLogin')}</a></li>
       </ul>
       <a href="/author.html" class="nav-author-btn">${t('common.authorLogin')}</a>
     </div>

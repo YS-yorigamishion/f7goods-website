@@ -154,9 +154,6 @@ body {
   background: var(--accent-alt) !important;
   color: white !important;
 }
-.nav-author-mobile {
-  display: none;
-}
 .nav-links a.active::after {
   content: '';
   position: absolute;
@@ -1626,11 +1623,8 @@ textarea.form-input {
   }
 
   .nav-author-btn {
-    display: none !important;
-  }
-
-  .nav-author-mobile {
-    display: block;
+    padding: 0.3rem 0.7rem !important;
+    font-size: 0.75rem !important;
   }
 
   .hero {
