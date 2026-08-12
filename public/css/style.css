@@ -139,6 +139,19 @@ body {
   background: rgba(233, 69, 96, 0.06);
 }
 
+.nav-author-btn {
+  background: var(--accent) !important;
+  color: white !important;
+  border-radius: 100px !important;
+  padding: 0.4rem 1rem !important;
+  font-size: 0.85rem !important;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+.nav-author-btn:hover {
+  background: var(--accent-alt) !important;
+  color: white !important;
+}
 .nav-links a.active::after {
   content: '';
   position: absolute;
