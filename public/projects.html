@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods �� ͬ����</title>
-  <meta name="description" content="�������ڽ��е�ͬ���󻮣����봴���Ŷӡ������ļ�С������к�����ɵ��󻮡�">
-  <meta property="og:title" content="f7goods �� ͬ����">
-  <meta property="og:description" content="�������ڽ��е�ͬ���󻮣����봴���Ŷӡ�">
+  <title>f7goods — 同人企划</title>
+  <meta name="description" content="发现正在进行的同人企划，加入创作团队。浏览招募中、进行中和已完成的企划。">
+  <meta property="og:title" content="f7goods — 同人企划">
+  <meta property="og:description" content="发现正在进行的同人企划，加入创作团队。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
@@ -19,32 +19,32 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending" data-i18n="projects.heroTitle">ͬ����</h1>
-    <p id="heroSubtitle" class="settings-pending" data-i18n="projects.heroSubtitle">�������ڽ��е�ͬ���󻮣����봴���Ŷ�</p>
+    <h1 id="heroTitle" class="settings-pending" data-i18n="projects.heroTitle">同人企划</h1>
+    <p id="heroSubtitle" class="settings-pending" data-i18n="projects.heroSubtitle">发现正在进行的同人企划，加入创作团队</p>
   </section>
 
   <main class="main-content">
     <div class="page-header">
-      <h2 id="pageTitle" class="settings-pending" data-i18n="projects.listTitle">���б�</h2>
-      <p id="pageSubtitle" class="settings-pending" data-i18n="projects.listSubtitle">���ڽ��л���ļ�е�ͬ������Ŀ</p>
+      <h2 id="pageTitle" class="settings-pending" data-i18n="projects.listTitle">企划列表</h2>
+      <p id="pageSubtitle" class="settings-pending" data-i18n="projects.listSubtitle">正在进行或招募中的同人企划项目</p>
     </div>
 
     <div class="filter-bar" id="statusFilters">
-      <button class="filter-btn active" data-status="all" data-i18n="common.allStatus">ȫ��״̬</button>
+      <button class="filter-btn active" data-status="all" data-i18n="common.allStatus">全部状态</button>
     </div>
     <div class="filter-bar" id="categoryFilters">
-      <button class="filter-btn active" data-cat="all" data-i18n="common.allCategories">ȫ������</button>
+      <button class="filter-btn active" data-cat="all" data-i18n="common.allCategories">全部分类</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
-          <option value="date-desc" data-i18n="common.dateDesc">�������� �� �¡���</option>
-          <option value="date-asc" data-i18n="common.dateAsc">�������� �� �ɡ���</option>
-          <option value="name-asc" data-i18n="common.nameAsc">���� A��Z</option>
+          <option value="date-desc" data-i18n="common.dateDesc">创建日期 ↓ 新→旧</option>
+          <option value="date-asc" data-i18n="common.dateAsc">创建日期 ↑ 旧→新</option>
+          <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
         </select>
-        <input type="text" class="search-input" placeholder="������..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+        <input type="text" class="search-input" placeholder="搜索企划..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
       </div>
     </div>
     <div class="filter-bar">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn" data-i18n="common.follow">? ��ע</button>
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn" data-i18n="common.follow">⭐ 关注</button>
     </div>
 
     <div class="cards-grid" id="projectsGrid">
@@ -98,7 +98,7 @@
         renderProjects();
       } catch (e) {
         document.getElementById('projectsGrid').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>����ʧ�ܣ����Ժ�����</p></div>';
+          '<div class="empty-state"><div class="icon">!</div><p>加载失败，请稍后重试</p></div>';
       }
     }
 
@@ -139,7 +139,7 @@
       }
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">??</div><p>���޷�����������</p></div>';
+        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的企划</p></div>';
         return;
       }
 
@@ -150,7 +150,7 @@
               ? `<img src="${project.coverImage}" alt="${escapeHtml(project.title)}" loading="lazy">`
               : (project.images && project.images.length > 0
                 ? `<img src="${project.images[0]}" alt="${escapeHtml(project.title)}" loading="lazy">`
-                : '<span class="placeholder-icon" style="color:white;">??</span>')}
+                : '<span class="placeholder-icon" style="color:white;">📋</span>')}
           </div>
           <div class="card-body">
             <span class="card-tag ${project.status}">${PROJECT_STATUS_LABELS[project.status] || escapeHtml(project.status)}</span>

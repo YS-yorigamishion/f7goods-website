@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods ¡ª ×÷Æ·ÏêÇé</title>
-  <meta name="description" content="²é¿´Í¬ÈË×÷Æ·ÏêÇé£¬°üÀ¨Í¼Æ¬¡¢¼Û¸ñ¡¢×÷ÕßĞÅÏ¢µÈ¡£">
+  <title>f7goods â€” ä½œå“è¯¦æƒ…</title>
+  <meta name="description" content="æŸ¥çœ‹åŒäººä½œå“è¯¦æƒ…ï¼ŒåŒ…æ‹¬å›¾ç‰‡ã€ä»·æ ¼ã€ä½œè€…ä¿¡æ¯ç­‰ã€‚">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:title" content="">
@@ -66,7 +66,7 @@
         const workCircles = (work.circles || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
         const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(work.id));
         const relatedProjects = allProjects.filter(p => (p.works || []).includes(work.id));
-        document.title = `${work.title} ¡ª f7goods`;
+        document.title = `${work.title} â€” f7goods`;
         document.querySelector('meta[property="og:title"]').content = work.title;
         document.querySelector('meta[property="og:description"]').content = (work.description || '').substring(0, 160);
         if (work.images && work.images[0]) document.querySelector('meta[property="og:image"]').content = work.images[0];
@@ -92,12 +92,12 @@
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/">${t('nav.works')}</a>
-            <span>?</span>
+            <span>â€º</span>
             <span>${escapeHtml(work.title)}</span>
           </div>
           <div class="detail-header">
             <div style="display:flex;align-items:flex-start;gap:1rem;">
-              <h1 style="flex:1;">${escapeHtml(work.title)}${isDeadlineSoon(work.endDate) ? ' <span class="deadline-badge" style="position:static;font-size:0.75rem;vertical-align:middle;">¼´½«½ØÖ¹</span>' : ''}</h1>
+              <h1 style="flex:1;">${escapeHtml(work.title)}${isDeadlineSoon(work.endDate) ? ' <span class="deadline-badge" style="position:static;font-size:0.75rem;vertical-align:middle;">å³å°†æˆªæ­¢</span>' : ''}</h1>
               <div class="detail-header-actions" style="flex-shrink:0;padding-top:0.3rem;text-align:right;">
                 <div>${renderLikeButton(work.id, work.likes)}</div>
                 <div>${renderWantButton(work.id, work.wants)}</div>
@@ -185,7 +185,7 @@
                 ${relatedEvents.map(e => `
                   <a href="/event-detail.html?id=${e.id}" class="detail-link" style="display:block;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);">
                     <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(e.title)}</div>
-                    <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' ¡¤ ' + escapeHtml(e.location) : ''}</div>
+                    <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' Â· ' + escapeHtml(e.location) : ''}</div>
                   </a>
                 `).join('')}
               </div>
@@ -197,7 +197,7 @@
                   <a href="/project-detail.html?id=${p.id}" class="detail-link" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);">
                     ${p.coverImage
                       ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${p.coverImage}" alt="${escapeHtml(p.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">??</div>`}
+                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">ğŸ“‹</div>`}
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
                       <span class="card-tag ${p.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-top:0.2rem;display:inline-block;">${PROJECT_STATUS_LABELS[p.status] || p.status}</span>

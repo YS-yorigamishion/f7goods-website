@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods ¡ª ¹«¸æ</title>
-  <meta name="description" content="ÁË½â f7goods µÄ×îĞÂ¹«¸æºÍÖØÒªÍ¨Öª£¬ÕÆÎÕÍ¬ÈË»î¶¯×ÊÑ¶¡£">
-  <meta property="og:title" content="f7goods ¡ª ¹«¸æ">
-  <meta property="og:description" content="ÁË½â f7goods µÄ×îĞÂ¹«¸æºÍÖØÒªÍ¨Öª£¬ÕÆÎÕÍ¬ÈË»î¶¯×ÊÑ¶¡£">
+  <title>f7goods â€” å…¬å‘Š</title>
+  <meta name="description" content="äº†è§£ f7goods çš„æœ€æ–°å…¬å‘Šå’Œé‡è¦é€šçŸ¥ï¼ŒæŒæ¡åŒäººæ´»åŠ¨èµ„è®¯ã€‚">
+  <meta property="og:title" content="f7goods â€” å…¬å‘Š">
+  <meta property="og:description" content="äº†è§£ f7goods çš„æœ€æ–°å…¬å‘Šå’Œé‡è¦é€šçŸ¥ï¼ŒæŒæ¡åŒäººæ´»åŠ¨èµ„è®¯ã€‚">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
@@ -86,18 +86,18 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" data-i18n="announcements.heroTitle">?? ¹«¸æ</h1>
-    <p id="heroSubtitle" data-i18n="announcements.heroSubtitle">ÁË½â f7goods µÄ×îĞÂ¶¯Ì¬ºÍÖØÒªÍ¨Öª</p>
+    <h1 id="heroTitle" data-i18n="announcements.heroTitle">ğŸ“¢ å…¬å‘Š</h1>
+    <p id="heroSubtitle" data-i18n="announcements.heroSubtitle">äº†è§£ f7goods çš„æœ€æ–°åŠ¨æ€å’Œé‡è¦é€šçŸ¥</p>
   </section>
 
   <main class="main-content">
     <div class="page-header">
-      <h2 id="pageTitle" data-i18n="announcements.listTitle">¹«¸æÁĞ±í</h2>
-      <p id="pageSubtitle" data-i18n="announcements.listSubtitle">°´·¢²¼Ê±¼äµ¹ĞòÅÅÁĞ</p>
+      <h2 id="pageTitle" data-i18n="announcements.listTitle">å…¬å‘Šåˆ—è¡¨</h2>
+      <p id="pageSubtitle" data-i18n="announcements.listSubtitle">æŒ‰å‘å¸ƒæ—¶é—´å€’åºæ’åˆ—</p>
     </div>
 
     <div id="announcementsContainer">
-      <div class="loading"><div class="spinner"></div><p>¼ÓÔØÖĞ...</p></div>
+      <div class="loading"><div class="spinner"></div><p>åŠ è½½ä¸­...</p></div>
     </div>
   </main>
 
@@ -115,7 +115,7 @@
       overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
       overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;flex:1;">${a.pinned ? '?? ' : ''}${escapeHtml(a.title)}</h3>
+          <h3 style="margin:0;flex:1;">${a.pinned ? 'ğŸ“Œ ' : ''}${escapeHtml(a.title)}</h3>
           <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
         </div>
         <div style="font-size:0.8rem;color:var(--haze);margin-bottom:1rem;">${formatDate(a.publishDate)}</div>
@@ -143,7 +143,7 @@
         const container = document.getElementById('announcementsContainer');
 
         if (!announcements || announcements.length === 0) {
-          container.innerHTML = '<div class="empty-state"><div class="icon">??</div><p data-i18n="announcements.noAnnouncements">ÔİÎŞ¹«¸æ</p></div>';
+          container.innerHTML = '<div class="empty-state"><div class="icon">ğŸ“¢</div><p data-i18n="announcements.noAnnouncements">æš‚æ— å…¬å‘Š</p></div>';
           return;
         }
 
@@ -155,16 +155,16 @@
           return `
           <div class="announcement-card" ${a.pinned ? 'style="border-left:3px solid var(--accent);"' : ''} onclick="showAnnouncement(${i})">
             <div class="announcement-header">
-              <h3 class="announcement-title">${a.pinned ? '?? ' : ''}${escapeHtml(a.title)}</h3>
+              <h3 class="announcement-title">${a.pinned ? 'ğŸ“Œ ' : ''}${escapeHtml(a.title)}</h3>
               <span class="announcement-date">${formatDate(a.publishDate)}</span>
             </div>
             <div class="announcement-preview">${escapeHtml(preview)}</div>
-            <div class="announcement-expand-hint">µã»÷²é¿´ÏêÇé ?</div>
+            <div class="announcement-expand-hint">ç‚¹å‡»æŸ¥çœ‹è¯¦æƒ… â€º</div>
           </div>`;
         }).join('');
       } catch (e) {
         document.getElementById('announcementsContainer').innerHTML =
-          '<div class="empty-state"><div class="icon">??</div><p>¼ÓÔØÊ§°Ü£¬ÇëÉÔºóÖØÊÔ</p></div>';
+          '<div class="empty-state"><div class="icon">âš ï¸</div><p>åŠ è½½å¤±è´¥ï¼Œè¯·ç¨åé‡è¯•</p></div>';
       }
     }
 

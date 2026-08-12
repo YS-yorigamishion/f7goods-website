@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods °™ ∆ÛªÆœÍ«È</title>
-  <meta name="description" content="≤Èø¥Õ¨»À∆ÛªÆœÍ«È£¨∞¸¿®◊¥Ã¨°¢≤Œ”Î’ﬂ°¢œ‡πÿ◊˜∆∑µ»°£">
+  <title>f7goods ‚Äî ‰ºÅÂàíËØ¶ÊÉÖ</title>
+  <meta name="description" content="Êü•ÁúãÂêå‰∫∫‰ºÅÂàíËØ¶ÊÉÖÔºåÂåÖÊã¨Áä∂ÊÄÅ„ÄÅÂèÇ‰∏éËÄÖ„ÄÅÁõ∏ÂÖ≥‰ΩúÂìÅÁ≠â„ÄÇ">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
@@ -69,7 +69,7 @@
         const relatedWorks = allWorks.filter(w => (project.works || []).includes(w.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedProjects || []).includes(project.id));
 
-        document.title = `${project.title} °™ f7goods`;
+        document.title = `${project.title} ‚Äî f7goods`;
         document.querySelector('meta[property="og:title"]').content = project.title;
         document.querySelector('meta[property="og:description"]').content = (project.description || '').substring(0, 160);
         if (project.coverImage) document.querySelector('meta[property="og:image"]').content = project.coverImage;
@@ -79,7 +79,7 @@
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/projects.html">${t('nav.projects')}</a>
-            <span>?</span>
+            <span>‚Ä∫</span>
             <span>${escapeHtml(project.title)}</span>
           </div>
           <div class="detail-header">
@@ -118,7 +118,7 @@
                       <div class="card-image">
                         ${work.images && work.images.length > 0
                           ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}">`
-                          : '<span class="placeholder-icon">??</span>'}
+                          : '<span class="placeholder-icon">üé®</span>'}
                       </div>
                       <div class="card-body">
                         <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
@@ -177,10 +177,10 @@
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
                     ${e.coverImage
                       ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${e.coverImage}" alt="${escapeHtml(e.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">??</div>`}
+                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">üìÖ</div>`}
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(e.title)}</div>
-                      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' °§ ' + escapeHtml(e.location) : ''}</div>
+                      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' ¬∑ ' + escapeHtml(e.location) : ''}</div>
                     </div>
                   </a>
                 `).join('')}
@@ -192,7 +192,7 @@
                 ${relatedUpdates.map(u => `
                   <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    <div style="font-weight:600;font-size:0.9rem;">?? ${escapeHtml(u.title)}</div>
+                    <div style="font-weight:600;font-size:0.9rem;">üì∞ ${escapeHtml(u.title)}</div>
                     <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(u.publishDate)}</div>
                   </a>
                 `).join('')}

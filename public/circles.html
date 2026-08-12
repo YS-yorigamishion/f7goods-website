@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods ¡ª Í¬ÈË×÷Õß</title>
-  <meta name="description" content="·¢ÏÖÓÅÐãµÄÍ¬ÈË´´×÷ÕßÓë×÷Õß£¬Ö§³Ö¶ÀÁ¢´´×÷¡£ä¯ÀÀ×÷ÕßµÄ×÷Æ·¡¢»î¶¯ºÍÁªÏµ·½Ê½¡£">
-  <meta property="og:title" content="f7goods ¡ª Í¬ÈË×÷Õß">
-  <meta property="og:description" content="·¢ÏÖÓÅÐãµÄÍ¬ÈË´´×÷ÕßÓë×÷Õß£¬Ö§³Ö¶ÀÁ¢´´×÷¡£">
+  <title>f7goods â€” åŒäººä½œè€…</title>
+  <meta name="description" content="å‘çŽ°ä¼˜ç§€çš„åŒäººåˆ›ä½œè€…ä¸Žä½œè€…ï¼Œæ”¯æŒç‹¬ç«‹åˆ›ä½œã€‚æµè§ˆä½œè€…çš„ä½œå“ã€æ´»åŠ¨å’Œè”ç³»æ–¹å¼ã€‚">
+  <meta property="og:title" content="f7goods â€” åŒäººä½œè€…">
+  <meta property="og:description" content="å‘çŽ°ä¼˜ç§€çš„åŒäººåˆ›ä½œè€…ä¸Žä½œè€…ï¼Œæ”¯æŒç‹¬ç«‹åˆ›ä½œã€‚">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
@@ -19,29 +19,29 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending" data-i18n="circles.heroTitle">Í¬ÈË×÷Õß</h1>
-    <p id="heroSubtitle" class="settings-pending" data-i18n="circles.heroSubtitle">·¢ÏÖÓÅÐãµÄÍ¬ÈË´´×÷ÕßÓë×÷Õß£¬Ö§³Ö¶ÀÁ¢´´×÷</p>
+    <h1 id="heroTitle" class="settings-pending" data-i18n="circles.heroTitle">åŒäººä½œè€…</h1>
+    <p id="heroSubtitle" class="settings-pending" data-i18n="circles.heroSubtitle">å‘çŽ°ä¼˜ç§€çš„åŒäººåˆ›ä½œè€…ä¸Žä½œè€…ï¼Œæ”¯æŒç‹¬ç«‹åˆ›ä½œ</p>
   </section>
 
   <main class="main-content">
     <div class="page-header">
-      <h2 id="pageTitle" class="settings-pending" data-i18n="circles.listTitle">Èë×¤×÷Õß</h2>
-      <p id="pageSubtitle" class="settings-pending" data-i18n="circles.subtitle">ÔÚ f7goods Õ¹Ê¾×÷Æ·µÄÍ¬ÈË×÷Õß</p>
+      <h2 id="pageTitle" class="settings-pending" data-i18n="circles.listTitle">å…¥é©»ä½œè€…</h2>
+      <p id="pageSubtitle" class="settings-pending" data-i18n="circles.subtitle">åœ¨ f7goods å±•ç¤ºä½œå“çš„åŒäººä½œè€…</p>
     </div>
 
     <div class="filter-bar" id="categoryFilters"></div>
     <div class="filter-bar" style="display:flex;gap:0.5rem;align-items:center;">
-      <button class="filter-btn" onclick="randomAuthor()" style="white-space:nowrap;" data-i18n="common.randomAuthor">?? Ëæ»ú×÷Õß</button>
+      <button class="filter-btn" onclick="randomAuthor()" style="white-space:nowrap;" data-i18n="common.randomAuthor">ðŸŽ² éšæœºä½œè€…</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:120px;">
-          <option value="order" data-i18n="common.sortDefault">Ä¬ÈÏÅÅÐò</option>
-          <option value="name-asc" data-i18n="common.nameAsc">Ãû³Æ A¡úZ</option>
+          <option value="order" data-i18n="common.sortDefault">é»˜è®¤æŽ’åº</option>
+          <option value="name-asc" data-i18n="common.nameAsc">åç§° Aâ†’Z</option>
         </select>
-        <input type="text" class="search-input" placeholder="ËÑË÷×÷Õß..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+        <input type="text" class="search-input" placeholder="æœç´¢ä½œè€…..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
       </div>
     </div>
     <div class="filter-bar" id="circleUserFilters" style="display:none;">
-      <button class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">? ¹Ø×¢</button>
+      <button class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">â­ å…³æ³¨</button>
     </div>
 
     <div class="cards-grid" id="circlesGrid">
@@ -134,7 +134,7 @@
         renderCircles();
       } catch (e) {
         document.getElementById('circlesGrid').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>¼ÓÔØÊ§°Ü£¬ÇëÉÔºóÖØÊÔ</p></div>';
+          '<div class="empty-state"><div class="icon">!</div><p>åŠ è½½å¤±è´¥ï¼Œè¯·ç¨åŽé‡è¯•</p></div>';
       }
     }
 
@@ -171,7 +171,7 @@
       }
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">??</div><p>ÔÝÎÞ·ûºÏÌõ¼þµÄ×÷Õß</p></div>';
+        grid.innerHTML = '<div class="empty-state"><div class="icon">ðŸ”</div><p>æš‚æ— ç¬¦åˆæ¡ä»¶çš„ä½œè€…</p></div>';
         return;
       }
 

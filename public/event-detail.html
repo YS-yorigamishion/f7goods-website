@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods ¡ª »î¶¯ÏêÇé</title>
-  <meta name="description" content="²é¿´Í¬ÈË»î¶¯ÏêÇé£¬°üÀ¨Ê±¼ä¡¢µØµã¡¢Ïà¹Ø×÷Æ·µÈ¡£">
+  <title>f7goods â€” æ´»åŠ¨è¯¦æƒ…</title>
+  <meta name="description" content="æŸ¥çœ‹åŒäººæ´»åŠ¨è¯¦æƒ…ï¼ŒåŒ…æ‹¬æ—¶é—´ã€åœ°ç‚¹ã€ç›¸å…³ä½œå“ç­‰ã€‚">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
@@ -78,13 +78,13 @@
         return;
       }
       grid.innerHTML = filtered.map(work => {
-        const authorNames = (work.circles || []).map(cid => eventCirclesMap[cid]).filter(Boolean).join('¡¢');
+        const authorNames = (work.circles || []).map(cid => eventCirclesMap[cid]).filter(Boolean).join('ã€');
         return `
         <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
           <div class="card-image" style="height:160px;">
             ${work.images && work.images.length > 0
               ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}">`
-              : '<span class="placeholder-icon">??</span>'}
+              : '<span class="placeholder-icon">ğŸ¨</span>'}
           </div>
           <div class="card-body" style="padding:0.8rem;">
             <span class="card-tag ${work.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${STATUS_LABELS[work.status] || work.status}</span>
@@ -107,10 +107,10 @@
         el._clickTimer = setTimeout(() => {
           el._clickTimer = null;
           if (el.classList.contains('collapsed')) {
-            // ÕÛµş×´Ì¬ ¡ú Õ¹¿ª
+            // æŠ˜å çŠ¶æ€ â†’ å±•å¼€
             el.classList.remove('collapsed');
           } else {
-            // ÒÑÕ¹¿ª ¡ú ´ò¿ªlightbox
+            // å·²å±•å¼€ â†’ æ‰“å¼€lightbox
             const images = JSON.parse(el.dataset.images || '[]');
             const index = parseInt(el.dataset.index || '0');
             openLightbox(images, index);
@@ -144,7 +144,7 @@
         ])];
         const relatedCircles = allCircles.filter(c => relatedCircleIds.includes(c.id));
 
-        document.title = `${event.title} ¡ª f7goods`;
+        document.title = `${event.title} â€” f7goods`;
         document.querySelector('meta[property="og:title"]').content = event.title;
         document.querySelector('meta[property="og:description"]').content = (event.description || '').substring(0, 160);
         if (event.coverImage) document.querySelector('meta[property="og:image"]').content = event.coverImage;
@@ -170,7 +170,7 @@
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/events.html">${t('nav.events')}</a>
-            <span>?</span>
+            <span>â€º</span>
             <span>${escapeHtml(event.title)}</span>
           </div>
           <div class="detail-header">
@@ -182,7 +182,7 @@
             </div>
             <div class="detail-meta">
               ${event.status ? `<span class="card-tag ${event.status}" style="margin-right:0.5rem;">${EVENT_STATUS_LABELS[event.status] || event.status}</span>` : ''}
-              <span style="display:flex;align-items:center;gap:0.4rem;">?? ${escapeHtml(event.location)}</span>
+              <span style="display:flex;align-items:center;gap:0.4rem;">ğŸ“ ${escapeHtml(event.location)}</span>
             </div>
           </div>
           <div class="detail-content">
@@ -268,7 +268,7 @@
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
                     ${p.coverImage
                       ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${p.coverImage}" alt="${escapeHtml(p.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">??</div>`}
+                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">ğŸ“‹</div>`}
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
                       <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${PROJECT_STATUS_LABELS[p.status] || p.status}</div>
@@ -299,7 +299,7 @@
                 ${relatedUpdates.map(u => `
                   <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    <div style="font-weight:600;font-size:0.9rem;">?? ${escapeHtml(u.title)}</div>
+                    <div style="font-weight:600;font-size:0.9rem;">ğŸ“° ${escapeHtml(u.title)}</div>
                     <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(u.publishDate)}</div>
                   </a>
                 `).join('')}
