@@ -497,6 +497,7 @@ function buildFooter() {
     </div>
     <div class="footer-bottom">
       <p><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" style="color:var(--haze);text-decoration:none;">苏ICP备2026054886号-1</a></p>
+      <p><a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32040002010754" target="_blank" rel="noopener noreferrer" style="color:var(--haze);text-decoration:none;">苏公网安备32040002010754号</a></p>
     </div>
   `;
 }
