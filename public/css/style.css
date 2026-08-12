@@ -1620,11 +1620,13 @@ textarea.form-input {
 
   .nav-toggle {
     display: block;
+    order: 4;
   }
 
   .nav-author-btn {
     padding: 0.3rem 0.7rem !important;
     font-size: 0.75rem !important;
+    order: 3;
   }
 
   .hero {
