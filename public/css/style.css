@@ -147,6 +147,8 @@ body {
   font-size: 0.85rem !important;
   margin-left: 0.5rem;
   white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
 }
 .nav-author-btn:hover {
   background: var(--accent-alt) !important;

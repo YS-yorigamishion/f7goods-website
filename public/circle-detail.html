@@ -1,10 +1,10 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods â€” ä½œè€…è¯¦æƒ…</title>
-  <meta name="description" content="æŸ¥çœ‹åŒäººä½œè€…è¯¦æƒ…ï¼ŒåŒ…æ‹¬ä½œå“åˆ—è¡¨ã€æ´»åŠ¨ã€è”ç³»æ–¹å¼ç­‰ã€‚">
+  <title>f7goods ¡ª ×÷ÕßÏêÇé</title>
+  <meta name="description" content="²é¿´Í¬ÈË×÷ÕßÏêÇé£¬°üÀ¨×÷Æ·ÁÐ±í¡¢»î¶¯¡¢ÁªÏµ·½Ê½µÈ¡£">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.jpg">
@@ -46,7 +46,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260810c"></script>
+  <script src="/js/main.js?v=20260812"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -92,7 +92,7 @@
           <div class="card-image" style="height:160px;">
             ${work.images && work.images.length > 0
               ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}">`
-              : '<span class="placeholder-icon">ðŸŽ¨</span>'}
+              : '<span class="placeholder-icon">??</span>'}
           </div>
           <div class="card-body" style="padding:0.8rem;">
             <span class="card-tag ${work.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${STATUS_LABELS[work.status] || work.status}</span>
@@ -129,7 +129,7 @@
         const relatedProjects = (allProjects || []).filter(p => (p.circles || []).includes(circle.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedCircles || []).includes(circle.id));
 
-        document.title = `${circle.name} â€” f7goods`;
+        document.title = `${circle.name} ¡ª f7goods`;
         document.querySelector('meta[property="og:title"]').content = circle.name;
         document.querySelector('meta[property="og:description"]').content = (circle.description || '').substring(0, 160);
         if (circle.logo) document.querySelector('meta[property="og:image"]').content = circle.logo;
@@ -139,7 +139,7 @@
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/circles.html">${t('nav.circles')}</a>
-            <span>â€º</span>
+            <span>?</span>
             <span>${escapeHtml(circle.name)}</span>
           </div>
           <div class="detail-header">
@@ -208,11 +208,11 @@
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
                     ${e.coverImage
                       ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${e.coverImage}" alt="${escapeHtml(e.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">ðŸ“…</div>`}
+                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">??</div>`}
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(e.title)}</div>
                       ${e.status ? `<span class="card-tag ${e.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-top:0.2rem;display:inline-block;">${EVENT_STATUS_LABELS[e.status] || e.status}</span>` : ''}
-                      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' Â· ' + escapeHtml(e.location) : ''}</div>
+                      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' ¡¤ ' + escapeHtml(e.location) : ''}</div>
                     </div>
                   </a>
                 `).join('')}
@@ -226,7 +226,7 @@
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
                     ${p.coverImage
                       ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${p.coverImage}" alt="${escapeHtml(p.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">ðŸ“‹</div>`}
+                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">??</div>`}
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
                       <span class="card-tag ${p.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-top:0.2rem;display:inline-block;">${PROJECT_STATUS_LABELS[p.status] || p.status}</span>
@@ -241,7 +241,7 @@
                 ${relatedUpdates.map(u => `
                   <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    <div style="font-weight:600;font-size:0.9rem;">ðŸ“° ${escapeHtml(u.title)}</div>
+                    <div style="font-weight:600;font-size:0.9rem;">?? ${escapeHtml(u.title)}</div>
                     <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(u.publishDate)}</div>
                   </a>
                 `).join('')}
