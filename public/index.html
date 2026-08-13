@@ -371,7 +371,7 @@
       const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">${t('common.sortDefault')}</option><option value="date-asc">${t('common.sortDateAsc')}</option><option value="date-desc">${t('common.sortDateDesc')}</option><option value="likes-desc">${t('common.sortLikesDesc')}</option><option value="likes-asc">${t('common.sortLikesAsc')}</option><option value="wants-desc">${t('common.sortWantsDesc')}</option><option value="wants-asc">${t('common.sortWantsAsc')}</option></select>`;
       catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.all')}</button>` +
         CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${tCat(c)}</button>`).join('') +
-        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;"><button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">🎲 ${t('common.randomAuthor')}</button>${sortHtml}${searchHtml}</div>`;
+        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;"><button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">🎲 ${t('common.randomWorks')}</button>${sortHtml}${searchHtml}</div>`;
 
       // Re-bind events
       document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
