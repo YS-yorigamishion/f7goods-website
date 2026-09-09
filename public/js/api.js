@@ -44,6 +44,11 @@ const F7API = {
     return apiGet(`/api/projects${qs ? '?' + qs : ''}`);
   },
   getProject: (id) => apiGet(`/api/projects/${id}`),
+  getUpdates: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiGet(`/api/updates${qs ? '?' + qs : ''}`);
+  },
+  getUpdate: (id) => apiGet(`/api/updates/${id}`),
   getCategories: () => apiGet('/api/categories'),
   submitContact: (data) => apiPost('/api/contact', data),
 };

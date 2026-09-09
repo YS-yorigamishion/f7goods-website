@@ -406,49 +406,74 @@ function closeAnnouncementPopup(id) {
   }
 }
 
-// Build navbar HTML
+// Build app shell (rail + topbar + mobile tabbar)
 function buildNavbar(activePage) {
   const site = getSiteSettings();
   const logoText = site.logoText || '';
   const brandName = site.brandName || 'f7goods';
   const favicon = site.favicon;
   const logoContent = favicon
-    ? `<img src="${favicon}" alt="${brandName}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">`
+    ? `<img src="${favicon}" alt="${brandName}" style="width:36px;height:36px;border-radius:10px;object-fit:cover;">`
     : logoText
-      ? `<div class="logo-icon">${logoText}</div>`
-      : `<div class="logo-icon">F7</div>`;
+      ? `<div class="rail-logo">${logoText}</div>`
+      : `<div class="rail-logo">F7</div>`;
   const langOptions = ['zh', 'ko', 'en', 'ja'].map(code =>
     `<button class="lang-btn ${_lang === code ? 'active' : ''}" data-lang="${code}" onclick="loadLang('${code}');document.querySelector('.lang-dropdown').classList.remove('open')">${getLangName(code)}</button>`
   ).join('');
   const currentLangName = getLangName(_lang);
+  const items = [
+    { key: 'works', href: '/', label: t('nav.works'), icon: 'grid' },
+    { key: 'events', href: '/events.html', label: t('nav.events'), icon: 'cal' },
+    { key: 'circles', href: '/circles.html', label: t('nav.circles'), icon: 'user' },
+    { key: 'projects', href: '/projects.html', label: t('nav.projects'), icon: 'list' },
+    { key: 'updates', href: '/updates.html', label: t('nav.updates'), icon: 'news' },
+    { key: 'contact', href: '/contact.html', label: t('nav.contact'), icon: 'info' }
+  ];
+  const icons = {
+    grid: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+    user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>',
+    list: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h14"/></svg>',
+    news: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="M8 10h8M8 14h5"/></svg>',
+    info: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>'
+  };
+  const railBtns = items.map(it =>
+    `<a href="${it.href}" class="rail-btn ${activePage === it.key ? 'active' : ''}" aria-label="${it.label}">${icons[it.icon]}<span>${it.label}</span></a>`
+  ).join('');
+  const tabBtns = items.slice(0, 5).map(it =>
+    `<a href="${it.href}" class="tab-btn ${activePage === it.key ? 'active' : ''}">${icons[it.icon]}<span>${it.label}</span></a>`
+  ).join('');
+  const pageTitleMap = {
+    works: t('nav.works'),
+    events: t('nav.events'),
+    circles: t('nav.circles'),
+    projects: t('nav.projects'),
+    updates: t('nav.updates'),
+    contact: t('nav.contact'),
+    author: t('common.authorLogin')
+  };
+  const pageTitle = pageTitleMap[activePage] || brandName;
   return `
-    <div class="brand-bar"></div>
-    <div class="nav-inner">
-      <a href="/" class="logo" aria-label="${t('nav.home')}">
-        ${logoContent}
-        <span>${brandName}</span>
-      </a>
-      <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="${t('common.menu')}" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-      <ul class="nav-links" role="menubar">
-        <li><a href="/" class="${activePage === 'works' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.works')}</a></li>
-        <li><a href="/events.html" class="${activePage === 'events' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.events')}</a></li>
-        <li><a href="/circles.html" class="${activePage === 'circles' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.circles')}</a></li>
-        <li><a href="/projects.html" class="${activePage === 'projects' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.projects')}</a></li>
-        <li><a href="/updates.html" class="${activePage === 'updates' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.updates')}</a></li>
-        <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.contact')}</a></li>
-      </ul>
-      <div class="lang-switcher-nav">
-        <button class="lang-current" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Language">
-          ${currentLangName}
-        </button>
-        <div class="lang-dropdown">
-          ${langOptions}
-        </div>
+    <aside class="app-rail" aria-label="主导航">
+      <a href="/" class="rail-home" aria-label="${brandName}">${logoContent}</a>
+      ${railBtns}
+      <div class="rail-spacer"></div>
+    </aside>
+    <header class="app-topbar">
+      <h1 class="app-title" id="appPageTitle">${pageTitle}</h1>
+      <div class="app-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+        <input type="search" id="appGlobalSearch" placeholder="${t('common.searchPlaceholder')}" autocomplete="off" />
       </div>
-      <a href="/author.html" class="nav-author-btn">${t('common.authorLogin')}</a>
-    </div>
+      <div class="app-topbar-right">
+        <div class="lang-switcher-nav">
+          <button class="lang-current" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Language">${currentLangName}</button>
+          <div class="lang-dropdown">${langOptions}</div>
+        </div>
+        <a href="/author.html" class="nav-author-btn">${t('common.authorLogin')}</a>
+      </div>
+    </header>
+    <nav class="app-tabbar" aria-label="底部导航">${tabBtns}</nav>
   `;
 }
 
@@ -512,6 +537,8 @@ function buildFooter() {
 // Init page structure
 async function initPage(activePage, itemId) {
   try {
+    document.body.classList.add('app-mode');
+
     // Load language first
     await loadLang(_lang, true);
 
@@ -522,6 +549,7 @@ async function initPage(activePage, itemId) {
     const navbar = document.getElementById('navbar');
     if (navbar) {
       navbar.dataset.activePage = activePage;
+      navbar.className = 'app-shell';
       navbar.innerHTML = buildNavbar(activePage);
       // Close lang dropdown when clicking outside
       document.addEventListener('click', (e) => {
@@ -531,6 +559,26 @@ async function initPage(activePage, itemId) {
           dropdown.classList.remove('open');
         }
       });
+      // Global search routes to works list
+      const gs = document.getElementById('appGlobalSearch');
+      if (gs) {
+        gs.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter') return;
+          const q = (e.target.value || '').trim();
+          if (activePage === 'works' && typeof renderWorks === 'function') {
+            const input = document.getElementById('searchInput');
+            if (input) {
+              input.value = q;
+              if (typeof setHomeView === 'function') setHomeView('catalog');
+              else renderWorks();
+            }
+          } else if (q) {
+            location.href = '/?q=' + encodeURIComponent(q);
+          } else {
+            location.href = '/';
+          }
+        });
+      }
     }
 
     const footer = document.getElementById('footer');
@@ -540,8 +588,6 @@ async function initPage(activePage, itemId) {
 
     // Navbar scroll effect + back to top button
     window.addEventListener('scroll', () => {
-      const nb = document.getElementById('navbar');
-      if (nb) nb.classList.toggle('scrolled', window.scrollY > 10);
       const btn = document.getElementById('backToTop');
       if (btn) btn.classList.toggle('show', window.scrollY > 300);
     });

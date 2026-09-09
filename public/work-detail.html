@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260813f">
+  <link rel="stylesheet" href="/css/style.css?v=20260813g">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -47,7 +47,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260813d"></script>
+  <script src="/js/main.js?v=20260813g"></script>
   <script>
     async function loadWork() {
       const params = new URLSearchParams(location.search);
@@ -89,46 +89,35 @@
 
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('workDetail');
+        const mainImg = (work.images && work.images[0]) || '';
+        const galleryImages = (work.images || []).concat(work.moreImages || []);
         container.innerHTML = `
           <div class="detail-breadcrumb">
-            <a href="/">${t('nav.works')}</a>
+            <a href="/">← ${t('nav.works')}</a>
             <span>›</span>
             <span>${escapeHtml(work.title)}</span>
           </div>
-          <div class="detail-header">
-            <div style="display:flex;align-items:flex-start;gap:1rem;">
-              <h1 style="flex:1;">${escapeHtml(work.title)}${isDeadlineSoon(work.endDate) ? ' <span class="deadline-badge" style="position:static;font-size:0.75rem;vertical-align:middle;">即将截止</span>' : ''}</h1>
-              <div class="detail-header-actions" style="flex-shrink:0;padding-top:0.3rem;text-align:right;">
-                <div>${renderLikeButton(work.id, work.likes)}</div>
-                <div>${renderWantButton(work.id, work.wants)}</div>
-                <div style="margin-top:0.3rem;">${renderShareButton(work.title, location.href)}</div>
+          <div class="detail-app">
+            <div class="detail-gallery">
+              <div class="detail-gallery-main" id="detailMainImg" onclick="${galleryImages.length ? `openLightbox(${JSON.stringify(galleryImages).replace(/"/g, '&quot;')}, 0)` : ''}">
+                ${mainImg
+                  ? `<img src="${mainImg}" alt="${escapeHtml(work.title)}" id="detailMainImgEl">`
+                  : '<span class="placeholder-icon">🎨</span>'}
+              </div>
+              ${galleryImages.length > 1 ? `
+                <div class="detail-gallery-thumbs" id="detailThumbs">
+                  ${galleryImages.map((img, i) => `<img src="${img}" class="${i === 0 ? 'on' : ''}" alt="" data-idx="${i}" onclick="switchDetailImage(${i})">`).join('')}
+                </div>
+              ` : ''}
+              <div style="padding:14px 16px 16px;border-top:1px solid var(--line);">
+                <h3 style="margin:0 0 0.6rem;font-size:0.95rem;">${t('works.description')}</h3>
+                <p style="line-height:1.8;color:#4A453F;font-size:0.92rem;">${nl2br(work.description)}</p>
               </div>
             </div>
-            <div class="detail-meta">
-              <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
-              <span>${CATEGORIES[work.category] || work.category}</span>
-            </div>
-          </div>
-          <div class="detail-content">
-            <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('works.description')}</h3>
-              <p style="line-height:1.8;color:var(--ink);">${nl2br(work.description)}</p>
-              ${work.images && work.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('works.gallery')}</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
-                  ${work.images.map((img, i) => `<img src="${img}" alt="${escapeHtml(work.title)}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(work.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
-                </div>
-              ` : ''}
-              ${work.moreImages && work.moreImages.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('works.moreImages')}</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
-                  ${work.moreImages.map((img, i) => `<img src="${img}" alt="${escapeHtml(work.title)}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(work.moreImages).replace(/"/g, '&quot;')}, ${i})">`).join('')}
-                </div>
-              ` : ''}
-            </div>
-            <div class="detail-sidebar">
-              <div class="sidebar-card">
-                <h3>${t('works.productInfo')}</h3>
+            <div class="detail-side-stack">
+              <div class="detail-info-card">
+                <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
+                <h1>${escapeHtml(work.title)}${isDeadlineSoon(work.endDate) ? ' <span class="deadline-badge" style="position:static;font-size:0.7rem;vertical-align:middle;">即将截止</span>' : ''}</h1>
                 <div class="info-row">
                   <span class="info-label">${t('works.price')}</span>
                   <span class="info-value" style="color:var(--accent);font-weight:700;">${escapeHtml(work.price)}</span>
@@ -138,52 +127,48 @@
                   <span class="info-value">${formatDate(work.releaseDate)}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">${t('works.status')}</span>
-                  <span class="info-value">${STATUS_LABELS[work.status] || work.status}</span>
+                  <span class="info-label">${t('common.category')}</span>
+                  <span class="info-value">${CATEGORIES[work.category] || work.category}</span>
                 </div>
+                ${workCircles.length > 0 ? `
+                <div class="info-row">
+                  <span class="info-label">${t('works.author')}</span>
+                  <span class="info-value">${workCircles.map(c => `<a href="/circle-detail.html?id=${c.id}" class="detail-link" style="color:var(--ink);text-decoration:none;">${escapeHtml(c.name)}</a>`).join('、')}</span>
+                </div>
+                ` : ''}
                 ${work.isCommissioned && work.commissionedBy ? `
                 <div class="info-row">
                   <span class="info-label">${t('works.commissionedBy')}</span>
                   <span class="info-value">${escapeHtml(work.commissionedBy)}</span>
                 </div>
                 ` : ''}
+                <div class="detail-sticky-cta">
+                  ${renderWantButton(work.id, work.wants)}
+                  ${renderLikeButton(work.id, work.likes)}
+                  ${renderShareButton(work.title, location.href)}
+                </div>
               </div>
-              ${workCircles.length > 0 ? `
-              <div class="sidebar-card">
-                <h3>${t('works.author')}</h3>
-                ${workCircles.map(c => `
-                  <a href="/circle-detail.html?id=${c.id}" class="detail-link" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);">
-                    ${c.logo
-                      ? `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${c.logo}" alt="${escapeHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">${escapeHtml(c.name.charAt(0))}</div>`}
-                    <div>
-                      <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(c.name)}</div>
-                    </div>
-                  </a>
-                `).join('')}
-              </div>
-              ` : ''}
               ${work.socialLinks && Object.keys(work.socialLinks).filter(k => work.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
-                <div class="sidebar-card">
-                  <h3>${t('works.contactInfo')}</h3>
+                <div class="detail-info-card">
+                  <h3 style="font-size:0.95rem;font-weight:700;margin:0 0 0.75rem;">${t('works.contactInfo')}</h3>
                   ${Object.entries(work.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
                     const isUrl = url.startsWith('http');
                     const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
                     const label = key === 'website' ? (work.socialLinks.websiteLabel || defaultLabel) : (work.socialLinks.contactLabel || defaultLabel);
                     return isUrl
                       ? `<a href="${url}" target="_blank" class="detail-social-link" style="display:inline-block;padding:0.3rem 0.8rem;color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;">${escapeHtml(label)}</a>`
-                      : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;">
-                           <span style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(15,52,96,0.06);color:var(--accent-alt);border-radius:100px;font-weight:500;">${escapeHtml(label)}</span>
+                      : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;flex-wrap:wrap;">
+                           <span style="display:inline-block;padding:0.3rem 0.8rem;background:var(--paper);border:1px solid var(--line);color:var(--ink);border-radius:100px;font-weight:500;">${escapeHtml(label)}</span>
                            <span style="color:var(--accent);font-weight:500;">${escapeHtml(url)}</span>
                          </div>`;
                   }).join('')}
                 </div>
               ` : ''}
               ${relatedEvents.length > 0 ? `
-              <div class="sidebar-card">
-                <h3>${t('works.relatedEvents')}</h3>
+              <div class="detail-info-card">
+                <h3 style="font-size:0.95rem;font-weight:700;margin:0 0 0.5rem;">${t('works.relatedEvents')}</h3>
                 ${relatedEvents.map(e => `
-                  <a href="/event-detail.html?id=${e.id}" class="detail-link" style="display:block;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);">
+                  <a href="/event-detail.html?id=${e.id}" class="detail-link" style="display:block;padding:0.55rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--line);">
                     <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(e.title)}</div>
                     <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' · ' + escapeHtml(e.location) : ''}</div>
                   </a>
@@ -191,13 +176,10 @@
               </div>
               ` : ''}
               ${relatedProjects.length > 0 ? `
-              <div class="sidebar-card">
-                <h3>${t('works.relatedProjects')}</h3>
+              <div class="detail-info-card">
+                <h3 style="font-size:0.95rem;font-weight:700;margin:0 0 0.5rem;">${t('works.relatedProjects')}</h3>
                 ${relatedProjects.map(p => `
-                  <a href="/project-detail.html?id=${p.id}" class="detail-link" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);">
-                    ${p.coverImage
-                      ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${p.coverImage}" alt="${escapeHtml(p.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">📋</div>`}
+                  <a href="/project-detail.html?id=${p.id}" class="detail-link" style="display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--line);">
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
                       <span class="card-tag ${p.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-top:0.2rem;display:inline-block;">${PROJECT_STATUS_LABELS[p.status] || p.status}</span>
@@ -206,15 +188,30 @@
                 `).join('')}
               </div>
               ` : ''}
-              <div class="sidebar-card">
-                <h3>${t('works.tags')}</h3>
+              ${work.tags && work.tags.length ? `
+              <div class="detail-info-card">
+                <h3 style="font-size:0.95rem;font-weight:700;margin:0 0 0.5rem;">${t('works.tags')}</h3>
                 <div class="tag-list">
-                  ${work.tags.map(tag => `<a href="/?tag=${encodeURIComponent(tag)}" class="tag" style="text-decoration:none;">${escapeHtml(tag)}</a>`).join('')}
+                  ${work.tags.map(tag => `<a href="/?q=${encodeURIComponent(tag)}" class="tag" style="text-decoration:none;">${escapeHtml(tag)}</a>`).join('')}
                 </div>
               </div>
+              ` : ''}
             </div>
           </div>
         `;
+        window._detailGallery = galleryImages;
+        window.switchDetailImage = function(i) {
+          const imgs = window._detailGallery || [];
+          if (!imgs[i]) return;
+          const el = document.getElementById('detailMainImgEl');
+          const wrap = document.getElementById('detailMainImg');
+          if (el) { el.src = imgs[i]; }
+          else if (wrap) {
+            wrap.innerHTML = '<img src="' + imgs[i] + '" alt="" id="detailMainImgEl">';
+          }
+          document.querySelectorAll('#detailThumbs img').forEach((t, idx) => t.classList.toggle('on', idx === i));
+          if (wrap) wrap.onclick = function() { openLightbox(imgs, i); };
+        };
       } catch (e) {
         document.getElementById('workDetail').innerHTML =
           `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;

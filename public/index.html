@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260813f">
+  <link rel="stylesheet" href="/css/style.css?v=20260813g">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -24,58 +24,105 @@
   </style>
 </head>
 <body>
-  <nav class="navbar" id="navbar"></nav>
-
-  <section class="hero">
-    <h1 id="heroTitle" class="settings-pending" data-i18n="works.heroTitle">同人周边概览</h1>
-    <p id="heroSubtitle" class="settings-pending" data-i18n="works.heroSubtitle">浏览并发现优质同人创作者的手办、周边、同人志、音乐CD等商品</p>
-  </section>
+  <nav class="navbar app-shell" id="navbar"></nav>
 
   <main class="main-content">
-    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
-      <div>
-        <h2 id="pageTitle" class="settings-pending" data-i18n="works.listTitle">周边列表</h2>
-        <p id="pageSubtitle" class="settings-pending" data-i18n="works.listSubtitle">按默认排序显示</p>
-      </div>
-      <div id="announcementBtn"></div>
-    </div>
-
-    <div class="filter-bar" id="statusFilters">
-      <button class="filter-btn active" data-status="all" data-i18n="common.allStatus">全部状态</button>
-    </div>
-    <div class="filter-bar" id="categoryFilters">
-      <button class="filter-btn active" data-cat="all" data-i18n="common.all">全部</button>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
-        <select id="sortSelect" class="form-input sort-select" style="padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:100px;min-width:130px;min-height:32px;">
-          <option value="default" data-i18n="common.sortDefault">默认排序</option>
-          <option value="date-asc" data-i18n="common.sortDateAsc">发售时间 ↑</option>
-          <option value="date-desc" data-i18n="common.sortDateDesc">发售时间 ↓</option>
-          <option value="likes-desc" data-i18n="common.sortLikesDesc">喜爱数 ↓</option>
-          <option value="likes-asc" data-i18n="common.sortLikesAsc">喜爱数 ↑</option>
-          <option value="wants-desc" data-i18n="common.sortWantsDesc">想要数 ↓</option>
-          <option value="wants-asc" data-i18n="common.sortWantsAsc">想要数 ↑</option>
-        </select>
-        <input type="text" class="search-input" data-i18n-placeholder="common.searchPlaceholder" placeholder="搜索作品..." id="searchInput">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+        <div class="home-view-toggle" id="homeViewToggle">
+          <button type="button" data-view="board" class="active" onclick="setHomeView('board')">看板</button>
+          <button type="button" data-view="catalog" onclick="setHomeView('catalog')">全部周边</button>
+        </div>
+        <div id="announcementBtn"></div>
       </div>
     </div>
-    <div class="filter-bar" id="userFilters">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn"><span data-i18n="common.follow">关注</span></button>
-      <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')"><span data-i18n="common.like">喜爱</span></button>
-      <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')"><span data-i18n="common.want">想要</span></button>
-      <button class="filter-btn" onclick="toggleDeadlineFilter()" id="deadlineFilterBtn"><span>即将截止</span></button>
-      <button class="filter-btn" id="wishlistToggleBtn" onclick="activateWishlist()" style="margin-left:auto;">心愿单</button>
+
+    <!-- BOARD VIEW -->
+    <div class="home-board" id="homeBoard">
+      <div class="board-section-head">
+        <h2 data-i18n="works.boardFeatured">本周主推</h2>
+        <span data-i18n="works.boardFeaturedSub">截止提醒与发售中</span>
+      </div>
+      <div class="board-grid" id="boardFeatureRow">
+        <div class="board-panel board-span-8 board-feature" id="boardFeature" style="display:none;"></div>
+        <div class="board-panel board-span-4">
+          <div class="board-section-head" style="margin-bottom:8px;">
+            <h2 data-i18n="works.boardDeadline">即将截止</h2>
+            <button type="button" class="linkish" onclick="setHomeView('catalog');toggleDeadlineFilter()"></button>
+          </div>
+          <div id="boardDeadlineList"></div>
+        </div>
+      </div>
+
+      <div class="board-section-head">
+        <h2 data-i18n="works.boardOnSale">发售中</h2>
+        <span data-i18n="works.boardOnSaleSub">可关注购买意向</span>
+        <button type="button" class="linkish" onclick="setHomeView('catalog')"></button>
+      </div>
+      <div class="board-strip" id="boardSaleStrip"></div>
+
+      <div class="board-section-head" style="margin-top:1.35rem;">
+        <h2 data-i18n="works.boardCats">按分类速览</h2>
+      </div>
+      <div class="board-cats" id="boardCats"></div>
+
+      <div class="board-grid" style="margin-top:1.35rem;">
+        <div class="board-panel board-span-6">
+          <div class="board-section-head" style="margin-bottom:8px;">
+            <h2 data-i18n="nav.events">近期活动</h2>
+            <a href="/events.html"></a>
+          </div>
+          <div id="boardEventsList"></div>
+        </div>
+        <div class="board-panel board-span-6">
+          <div class="board-section-head" style="margin-bottom:8px;">
+            <h2 data-i18n="nav.updates">最新动态</h2>
+            <a href="/updates.html"></a>
+          </div>
+          <div id="boardUpdatesList"></div>
+        </div>
+      </div>
     </div>
 
-    <div class="cards-grid" id="worksGrid">
-      <div class="skeleton-grid" id="worksSkeleton">
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+    <!-- CATALOG VIEW -->
+    <div class="home-catalog hidden" id="homeCatalog">
+      <div class="filter-bar" id="statusFilters">
+        <button class="filter-btn active" data-status="all" data-i18n="common.allStatus">全部状态</button>
+      </div>
+      <div class="filter-bar" id="categoryFilters">
+        <button class="filter-btn active" data-cat="all" data-i18n="common.all">全部</button>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
+          <select id="sortSelect" class="form-input sort-select" style="padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:100px;min-width:130px;min-height:32px;">
+            <option value="default" data-i18n="common.sortDefault">默认排序</option>
+            <option value="date-asc" data-i18n="common.sortDateAsc">发售时间 ↑</option>
+            <option value="date-desc" data-i18n="common.sortDateDesc">发售时间 ↓</option>
+            <option value="likes-desc" data-i18n="common.sortLikesDesc">喜爱数 ↓</option>
+            <option value="likes-asc" data-i18n="common.sortLikesAsc">喜爱数 ↑</option>
+            <option value="wants-desc" data-i18n="common.sortWantsDesc">想要数 ↓</option>
+            <option value="wants-asc" data-i18n="common.sortWantsAsc">想要数 ↑</option>
+          </select>
+          <input type="text" class="search-input" data-i18n-placeholder="common.searchPlaceholder" placeholder="搜索作品..." id="searchInput">
+        </div>
+      </div>
+      <div class="filter-bar" id="userFilters">
+        <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn"><span data-i18n="common.follow">关注</span></button>
+        <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')"><span data-i18n="common.like">喜爱</span></button>
+        <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')"><span data-i18n="common.want">想要</span></button>
+        <button class="filter-btn" onclick="toggleDeadlineFilter()" id="deadlineFilterBtn"><span>即将截止</span></button>
+        <button class="filter-btn" id="wishlistToggleBtn" onclick="activateWishlist()" style="margin-left:auto;">心愿单</button>
+      </div>
+
+      <div class="cards-grid" id="worksGrid">
+        <div class="skeleton-grid" id="worksSkeleton">
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        </div>
       </div>
     </div>
 
@@ -99,7 +146,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260813d"></script>
+  <script src="/js/main.js?v=20260813g"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -120,6 +167,7 @@
 
     let allWorks = [];
     let allEvents = [];
+    let allUpdates = [];
     let circlesMap = {};
     let currentCategory = 'all';
     let currentStatus = 'all';
@@ -128,6 +176,143 @@
     let currentDeadlineFilter = false;
     let wishlistMode = false;
     let wishlistItems = {}; // { workId: quantity }
+    let homeView = 'board';
+
+    function setHomeView(view) {
+      homeView = view;
+      const board = document.getElementById('homeBoard');
+      const catalog = document.getElementById('homeCatalog');
+      if (board) board.classList.toggle('hidden', view !== 'board');
+      if (catalog) catalog.classList.toggle('hidden', view !== 'catalog');
+      document.querySelectorAll('#homeViewToggle button').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === view);
+      });
+      if (view === 'catalog' && allWorks.length) renderWorks();
+    }
+
+    function boardThumb(work) {
+      const img = (work.images && work.images[0]) || '';
+      return img
+        ? `<div class="board-thumb"><img src="${img}" alt="" loading="lazy"></div>`
+        : `<div class="board-thumb">🎨</div>`;
+    }
+
+    function renderBoard() {
+      const deadlineWorks = allWorks
+        .filter(w => isDeadlineSoon(w.endDate))
+        .sort((a, b) => String(a.endDate || 'z').localeCompare(String(b.endDate || 'z')))
+        .slice(0, 5);
+
+      const saleWorks = allWorks
+        .filter(w => w.status === 'on_sale' || w.status === 'pre_order')
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, 10);
+
+      // Feature: first deadline soon, else first sale
+      const feature = deadlineWorks[0] || saleWorks[0] || allWorks[0];
+      const featEl = document.getElementById('boardFeature');
+      if (featEl && feature) {
+        const authors = (feature.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join(' · ');
+        featEl.style.display = '';
+        featEl.innerHTML = `
+          <span class="board-feature-tag">${isDeadlineSoon(feature.endDate) ? '即将截止' : (STATUS_LABELS[feature.status] || feature.status || '')}</span>
+          <h2>${escapeHtml(feature.title)}</h2>
+          <p>${escapeHtml(authors)}${authors ? ' · ' : ''}${escapeHtml(CATEGORIES[feature.category] || feature.category || '')}</p>
+          <div class="board-feature-meta">
+            <span class="pill price">${escapeHtml(feature.price || '')}</span>
+            <span class="pill">${formatDate(feature.releaseDate)}</span>
+            ${(feature.wants || 0) > 0 ? `<span class="pill">想要 ${feature.wants}</span>` : ''}
+          </div>`;
+        featEl.onclick = () => { location.href = '/work-detail.html?id=' + feature.id; };
+      } else if (featEl) {
+        featEl.style.display = 'none';
+      }
+
+      const dl = document.getElementById('boardDeadlineList');
+      if (dl) {
+        if (deadlineWorks.length === 0) {
+          dl.innerHTML = `<div style="padding:1rem 0;color:var(--haze);font-size:12px;">暂无即将截止的周边</div>`;
+        } else {
+          dl.innerHTML = deadlineWorks.map(w => {
+            const days = w.endDate ? Math.max(0, Math.ceil((new Date(w.endDate) - new Date()) / 86400000)) : null;
+            const authors = (w.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join(' · ');
+            return `<a class="board-list-row" href="/work-detail.html?id=${w.id}">
+              ${boardThumb(w)}
+              <div class="t"><b>${escapeHtml(w.title)}</b><small>${escapeHtml(authors)}</small></div>
+              <span class="badge-urgent">${days !== null ? days + ' 天' : '截止'}</span>
+            </a>`;
+          }).join('');
+        }
+      }
+
+      const strip = document.getElementById('boardSaleStrip');
+      if (strip) {
+        if (!saleWorks.length) {
+          strip.innerHTML = `<div style="padding:1rem 0;color:var(--haze);font-size:12px;">暂无发售中周边</div>`;
+        } else {
+          strip.innerHTML = saleWorks.map(w => `
+            <div class="card" onclick="location.href='/work-detail.html?id=${w.id}'">
+              <div class="card-image">
+                ${w.images && w.images[0] ? `<img src="${w.images[0]}" alt="${escapeHtml(w.title)}" loading="lazy">` : '<span class="placeholder-icon">🎨</span>'}
+              </div>
+              <div class="card-body">
+                <span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || w.status || ''}</span>
+                <h3 class="card-title">${escapeHtml(w.title)}</h3>
+              </div>
+              <div class="card-footer">
+                <span class="card-price">${escapeHtml(w.price || '')}</span>
+                <span class="card-date">${formatDate(w.releaseDate)}</span>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      const catsEl = document.getElementById('boardCats');
+      if (catsEl && Array.isArray(CATEGORIES_ORDERED)) {
+        catsEl.innerHTML = CATEGORIES_ORDERED.map(c => {
+          const n = allWorks.filter(w => w.category === c.id).length;
+          const ics = { figure:'🗿', goods:'🎁', doujin:'📚', cd:'💿', apparel:'👕', other:'✨' };
+          return `<button type="button" class="board-cat" onclick="currentCategory='${c.id}';setHomeView('catalog');document.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.toggle('active',b.dataset.cat==='${c.id}'));renderWorks();">
+            <div class="ic">${ics[c.id] || '✨'}</div>
+            <b>${tCat(c)}</b>
+            <small>${n}</small>
+          </button>`;
+        }).join('');
+      }
+
+      const evEl = document.getElementById('boardEventsList');
+      if (evEl) {
+        const evs = [...allEvents].sort((a, b) => String(a.date || a.startDate || 'z').localeCompare(String(b.date || b.startDate || 'z'))).slice(0, 4);
+        if (!evs.length) {
+          evEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">暂无活动</div>`;
+        } else {
+          evEl.innerHTML = evs.map(e => `
+            <a class="board-list-row" href="/event-detail.html?id=${e.id}">
+              <div class="board-thumb">📅</div>
+              <div class="t"><b>${escapeHtml(e.title)}</b><small>${escapeHtml(e.location || '')}</small></div>
+              <span class="badge-urgent" style="background:rgba(74,123,167,0.12);color:var(--info);font-weight:500;">${formatDate(e.date || e.startDate)}</span>
+            </a>
+          `).join('');
+        }
+      }
+
+      const upEl = document.getElementById('boardUpdatesList');
+      if (upEl) {
+        const ups = [...allUpdates].slice(0, 4);
+        if (!ups.length) {
+          upEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">暂无动态</div>`;
+        } else {
+          upEl.innerHTML = ups.map(u => {
+            const name = (u.circles || []).map(cid => circlesMap[cid]).filter(Boolean)[0] || u.authorName || '';
+            return `<a class="board-feed-item" href="/update-detail.html?id=${u.id}">
+              <div class="board-avatar">${escapeHtml((name || '·').charAt(0))}</div>
+              <div class="c"><b>${escapeHtml(name || u.title)}</b> ${escapeHtml((u.title || '').slice(0, 40))}<br><time>${formatDate(u.date || u.createdAt)}</time></div>
+            </a>`;
+          }).join('');
+        }
+      }
+    }
 
     function parsePrice(priceStr) {
       if (!priceStr) return 0;
@@ -298,22 +483,24 @@
         await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
         console.log('[loadWorks] categories/settings loaded, CATEGORIES_ORDERED:', CATEGORIES_ORDERED.length, 'STATUS_ORDERED:', STATUS_ORDERED.length);
         console.log('[loadWorks] fetching works/circles/events...');
-        const [works, circles, events] = await Promise.all([
+        const [works, circles, events, updates] = await Promise.all([
           F7API.getWorks(),
           F7API.getCircles(),
-          F7API.getEvents()
+          F7API.getEvents(),
+          F7API.getUpdates ? F7API.getUpdates().catch(() => []) : Promise.resolve([])
         ]);
         console.log('[loadWorks] data received: works=' + (works?.length || 0) + ', circles=' + (circles?.length || 0) + ', events=' + (events?.length || 0));
         allWorks = works;
         allEvents = events;
+        allUpdates = updates || [];
         circles.forEach(c => circlesMap[c.id] = c.name);
 
-        // Apply settings
+        // Apply settings (hero removed in app shell)
         const ps = getPageSettings('works');
-        if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
-        if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
-        if (ps.pageTitle) document.getElementById('pageTitle').textContent = ps.pageTitle;
-        if (ps.pageSubtitle) document.getElementById('pageSubtitle').textContent = ps.pageSubtitle;
+        if (ps.pageTitle) {
+          const tEl = document.getElementById('appPageTitle');
+          if (tEl) tEl.textContent = ps.pageTitle;
+        }
         applyHeroBg('works');
 
         // Reveal elements after settings are loaded
@@ -322,6 +509,14 @@
         document.querySelectorAll('.hero, .page-header').forEach(el => el.style.visibility = '');
         // Generate filter buttons dynamically
         try { buildFilterButtons(); } catch (e) { console.error('[loadWorks] buildFilterButtons failed:', e); }
+        renderBoard();
+        // Honor ?q= from global search
+        const qParam = new URLSearchParams(location.search).get('q');
+        if (qParam) {
+          const input = document.getElementById('searchInput');
+          if (input) input.value = qParam;
+          setHomeView('catalog');
+        }
         renderWorks();
         checkUserFilters();
 
