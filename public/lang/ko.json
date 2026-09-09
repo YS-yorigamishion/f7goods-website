@@ -95,7 +95,7 @@
   "works": {
     "title": "굿즈 목록",
     "subtitle": "모든 동인지 굿즈 둘러보기",
-    "heroTitle": "🎨 동인지 굿즈 목록",
+    "heroTitle": "동인지 굿즈 목록",
     "heroSubtitle": "피규어, 굿즈, 동인지, 음악CD 등 우수한 동인지 작품 발견",
     "listTitle": "굿즈 목록",
     "listSubtitle": "기본 정렬 순으로 표시",
@@ -116,7 +116,7 @@
   "events": {
     "title": "이벤트",
     "subtitle": "동인지 이벤트 및 전시회 정보",
-    "heroTitle": "📅 이벤트",
+    "heroTitle": "이벤트",
     "heroSubtitle": "예정된 동인지 이벤트, 전시회, 오프모임 확인",
     "listTitle": "이벤트 목록",
     "listSubtitle": "날짜 내림차순 정렬",
@@ -136,7 +136,7 @@
   "projects": {
     "title": "프로젝트",
     "subtitle": "진행 중인 동인지 창작 프로젝트",
-    "heroTitle": "📋 프로젝트",
+    "heroTitle": "프로젝트",
     "heroSubtitle": "진행 중인 동인지 창작 프로젝트 확인, 투고 및 협력 참여",
     "listTitle": "프로젝트 목록",
     "listSubtitle": "생성일 내림차순 정렬",
@@ -170,7 +170,7 @@
   "circles": {
     "title": "작가",
     "subtitle": "모든 동인지 작가 및 서클 둘러보기",
-    "heroTitle": "👤 작가",
+    "heroTitle": "작가",
     "heroSubtitle": "모든 동인지 작가 및 서클 둘러보기, 우수한 작가 발견",
     "listTitle": "작가 목록",
     "description": "소개",
@@ -189,7 +189,7 @@
   "announcements": {
     "title": "공지사항",
     "subtitle": "f7goods의 최신 공지 및 중요 안내",
-    "heroTitle": "📢 공지사항",
+    "heroTitle": "공지사항",
     "heroSubtitle": "최신 공지 및 중요 안내",
     "listTitle": "공지사항 목록",
     "listSubtitle": "작성일 내림차순 정렬",

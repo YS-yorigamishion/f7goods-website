@@ -95,7 +95,7 @@
   "works": {
     "title": "Works",
     "subtitle": "Browse all fan-made goods",
-    "heroTitle": "🎨 Fan-Made Works",
+    "heroTitle": "Fan-Made Works",
     "heroSubtitle": "Browse and discover quality fan-made figures, goods, doujinshi, music CDs and more",
     "listTitle": "Works List",
     "listSubtitle": "Sorted by default order",
@@ -116,7 +116,7 @@
   "events": {
     "title": "Events",
     "subtitle": "View fan events and exhibitions",
-    "heroTitle": "📅 Events",
+    "heroTitle": "Events",
     "heroSubtitle": "View upcoming fan events, exhibitions and meetups",
     "listTitle": "Events List",
     "listSubtitle": "Sorted by date descending",
@@ -136,7 +136,7 @@
   "projects": {
     "title": "Projects",
     "subtitle": "View ongoing fan creation projects",
-    "heroTitle": "📋 Projects",
+    "heroTitle": "Projects",
     "heroSubtitle": "View ongoing fan creation projects, join submissions or collaboration",
     "listTitle": "Projects List",
     "listSubtitle": "Sorted by creation date descending",
@@ -170,7 +170,7 @@
   "circles": {
     "title": "Authors",
     "subtitle": "Browse all fan creators and groups",
-    "heroTitle": "👤 Authors",
+    "heroTitle": "Authors",
     "heroSubtitle": "Browse all fan creators and groups, discover quality authors",
     "listTitle": "Authors List",
     "description": "About",
@@ -189,7 +189,7 @@
   "announcements": {
     "title": "Announcements",
     "subtitle": "Latest announcements and important notices from f7goods",
-    "heroTitle": "📢 Announcements",
+    "heroTitle": "Announcements",
     "heroSubtitle": "Latest announcements and important notices",
     "listTitle": "Announcements",
     "listSubtitle": "Sorted by publish date descending",

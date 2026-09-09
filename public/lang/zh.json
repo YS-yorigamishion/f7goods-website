@@ -95,7 +95,7 @@
   "works": {
     "title": "周边概览",
     "subtitle": "浏览所有同人周边商品",
-    "heroTitle": "🎨 同人周边概览",
+    "heroTitle": "同人周边概览",
     "heroSubtitle": "浏览并发现优质同人创作者的手办、周边、同人志、音乐CD等商品",
     "listTitle": "周边列表",
     "listSubtitle": "按默认排序显示",
@@ -116,7 +116,7 @@
   "events": {
     "title": "近期活动",
     "subtitle": "查看同人活动和展会信息",
-    "heroTitle": "📅 近期活动",
+    "heroTitle": "近期活动",
     "heroSubtitle": "查看即将举行的同人活动、展会和线下聚会",
     "listTitle": "活动列表",
     "listSubtitle": "按日期倒序排列",
@@ -136,7 +136,7 @@
   "projects": {
     "title": "同人企划",
     "subtitle": "查看正在进行的同人创作企划",
-    "heroTitle": "📋 同人企划",
+    "heroTitle": "同人企划",
     "heroSubtitle": "查看正在进行的同人创作企划，参与投稿或合作",
     "listTitle": "企划列表",
     "listSubtitle": "按创建日期倒序排列",
@@ -170,7 +170,7 @@
   "circles": {
     "title": "同人作者",
     "subtitle": "浏览所有同人创作者和社团",
-    "heroTitle": "👤 同人作者",
+    "heroTitle": "同人作者",
     "heroSubtitle": "浏览所有同人创作者和社团，发现优质作者",
     "listTitle": "作者列表",
     "description": "作者简介",
@@ -189,7 +189,7 @@
   "announcements": {
     "title": "公告",
     "subtitle": "了解 f7goods 的最新公告和重要通知",
-    "heroTitle": "📢 公告",
+    "heroTitle": "公告",
     "heroSubtitle": "了解 f7goods 的最新动态和重要通知",
     "listTitle": "公告列表",
     "listSubtitle": "按发布时间倒序排列",

@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260812b">
+  <link rel="stylesheet" href="/css/style.css?v=20260813f">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -27,7 +27,7 @@
   <nav class="navbar" id="navbar"></nav>
 
   <section class="hero">
-    <h1 id="heroTitle" class="settings-pending" data-i18n="works.heroTitle">🎨 同人周边概览</h1>
+    <h1 id="heroTitle" class="settings-pending" data-i18n="works.heroTitle">同人周边概览</h1>
     <p id="heroSubtitle" class="settings-pending" data-i18n="works.heroSubtitle">浏览并发现优质同人创作者的手办、周边、同人志、音乐CD等商品</p>
   </section>
 
@@ -46,24 +46,24 @@
     <div class="filter-bar" id="categoryFilters">
       <button class="filter-btn active" data-cat="all" data-i18n="common.all">全部</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
-        <select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
+        <select id="sortSelect" class="form-input sort-select" style="padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:100px;min-width:130px;min-height:32px;">
           <option value="default" data-i18n="common.sortDefault">默认排序</option>
-          <option value="date-asc" data-i18n="common.sortDateAsc">发售时间 ↑ 早→晚</option>
-          <option value="date-desc" data-i18n="common.sortDateDesc">发售时间 ↓ 晚→早</option>
-          <option value="likes-desc" data-i18n="common.sortLikesDesc">喜爱数 ↓ 高→低</option>
-          <option value="likes-asc" data-i18n="common.sortLikesAsc">喜爱数 ↑ 低→高</option>
-          <option value="wants-desc" data-i18n="common.sortWantsDesc">想要数 ↓ 高→低</option>
-          <option value="wants-asc" data-i18n="common.sortWantsAsc">想要数 ↑ 低→高</option>
+          <option value="date-asc" data-i18n="common.sortDateAsc">发售时间 ↑</option>
+          <option value="date-desc" data-i18n="common.sortDateDesc">发售时间 ↓</option>
+          <option value="likes-desc" data-i18n="common.sortLikesDesc">喜爱数 ↓</option>
+          <option value="likes-asc" data-i18n="common.sortLikesAsc">喜爱数 ↑</option>
+          <option value="wants-desc" data-i18n="common.sortWantsDesc">想要数 ↓</option>
+          <option value="wants-asc" data-i18n="common.sortWantsAsc">想要数 ↑</option>
         </select>
         <input type="text" class="search-input" data-i18n-placeholder="common.searchPlaceholder" placeholder="搜索作品..." id="searchInput">
       </div>
     </div>
     <div class="filter-bar" id="userFilters">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn">⭐ <span data-i18n="common.follow">关注</span></button>
-      <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')">❤️ <span data-i18n="common.like">喜爱</span></button>
-      <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')">🔖 <span data-i18n="common.want">想要</span></button>
-      <button class="filter-btn" onclick="toggleDeadlineFilter()" id="deadlineFilterBtn">⏰ <span>即将截止</span></button>
-      <button class="filter-btn" id="wishlistToggleBtn" onclick="activateWishlist()" style="margin-left:auto;">🛒 心愿单</button>
+      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn"><span data-i18n="common.follow">关注</span></button>
+      <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')"><span data-i18n="common.like">喜爱</span></button>
+      <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')"><span data-i18n="common.want">想要</span></button>
+      <button class="filter-btn" onclick="toggleDeadlineFilter()" id="deadlineFilterBtn"><span>即将截止</span></button>
+      <button class="filter-btn" id="wishlistToggleBtn" onclick="activateWishlist()" style="margin-left:auto;">心愿单</button>
     </div>
 
     <div class="cards-grid" id="worksGrid">
@@ -83,9 +83,9 @@
     <div class="random-modal-overlay" id="randomModalOverlay" onclick="if(event.target===this)closeRandomModal()">
       <div class="random-modal">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;">🎲 <span data-i18n="common.randomWorks">随机周边</span></h3>
+          <h3 style="margin:0;"><span data-i18n="common.randomWorks">随机周边</span></h3>
           <div style="display:flex;gap:0.5rem;align-items:center;">
-            <button class="btn btn-primary" onclick="renderRandomWorks()">🎲 <span data-i18n="common.refreshRandom">换一批</span></button>
+            <button class="btn btn-primary" onclick="renderRandomWorks()"><span data-i18n="common.refreshRandom">换一批</span></button>
             <button onclick="closeRandomModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
           </div>
         </div>
@@ -99,7 +99,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260812"></script>
+  <script src="/js/main.js?v=20260813d"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -368,10 +368,10 @@
       const searchInput = document.getElementById('searchInput');
       const sortSelect = document.getElementById('sortSelect');
       const searchHtml = searchInput ? searchInput.outerHTML : `<input type="text" class="search-input" placeholder="${t('common.searchPlaceholder')}" id="searchInput">`;
-      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;"><option value="default">${t('common.sortDefault')}</option><option value="date-asc">${t('common.sortDateAsc')}</option><option value="date-desc">${t('common.sortDateDesc')}</option><option value="likes-desc">${t('common.sortLikesDesc')}</option><option value="likes-asc">${t('common.sortLikesAsc')}</option><option value="wants-desc">${t('common.sortWantsDesc')}</option><option value="wants-asc">${t('common.sortWantsAsc')}</option></select>`;
+      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input sort-select" style="padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:100px;min-width:130px;min-height:32px;"><option value="default">${t('common.sortDefault')}</option><option value="date-asc">${t('common.sortDateAsc')}</option><option value="date-desc">${t('common.sortDateDesc')}</option><option value="likes-desc">${t('common.sortLikesDesc')}</option><option value="likes-asc">${t('common.sortLikesAsc')}</option><option value="wants-desc">${t('common.sortWantsDesc')}</option><option value="wants-asc">${t('common.sortWantsAsc')}</option></select>`;
       catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.all')}</button>` +
         CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${tCat(c)}</button>`).join('') +
-        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;"><button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">🎲 ${t('common.randomWorks')}</button>${sortHtml}${searchHtml}</div>`;
+        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;"><button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">${t('common.randomWorks')}</button>${sortHtml}${searchHtml}</div>`;
 
       // Re-bind events
       document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
@@ -503,7 +503,7 @@
           <div class="card-footer">
             <span class="card-price">${escapeHtml(work.price)}</span>
             <div style="display:flex;align-items:center;gap:0.5rem;">
-              ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">${t('common.wants')} ${work.wants}</span>` : ''}
+              ${(work.wants || 0) > 0 ? `<span style="font-size:0.72rem;color:var(--info);">${t('common.wants')} ${work.wants}</span>` : ''}
               <span class="card-date">${formatDate(work.releaseDate)}</span>
               ${renderLikeButton(work.id, work.likes)}
               ${wishlistMode ? '<span class="wishlist-qty-group"><button class="wishlist-add-btn" onclick="decreaseWishlistItem(\'' + work.id + '\',event)">−</button><span class="wishlist-badge" data-wid="' + work.id + '" style="' + ((wishlistItems[work.id] || 0) > 0 ? '' : 'display:none;') + '">' + ((wishlistItems[work.id] || 0) > 0 ? wishlistItems[work.id] : '') + '</span><button class="wishlist-add-btn" onclick="toggleWishlistItem(\'' + work.id + '\',event)">＋</button></span>' : ''}
@@ -550,7 +550,7 @@
             <div class="card-footer">
               <span class="card-price">${escapeHtml(work.price)}</span>
               <div style="display:flex;align-items:center;gap:0.5rem;">
-                ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">${t('common.wants')} ${work.wants}</span>` : ''}
+                ${(work.wants || 0) > 0 ? `<span style="font-size:0.72rem;color:var(--info);">${t('common.wants')} ${work.wants}</span>` : ''}
                 <span class="card-date">${formatDate(work.releaseDate)}</span>
                 ${renderLikeButton(work.id, work.likes)}
               </div>

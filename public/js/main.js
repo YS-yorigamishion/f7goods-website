@@ -270,8 +270,13 @@ function getSiteSettings() {
 function applyHeroBg(pageKey) {
   const ps = getPageSettings(pageKey);
   const hero = document.querySelector('.hero');
-  if (hero && ps.heroBg) {
-    hero.style.background = `linear-gradient(rgba(26,26,46,0.55), rgba(26,26,46,0.7)), url('${ps.heroBg}') center/cover no-repeat`;
+  if (!hero) return;
+  if (ps.heroBg) {
+    hero.style.background = `linear-gradient(rgba(34,32,30,0.55), rgba(34,32,30,0.65)), url('${ps.heroBg}') center/cover no-repeat`;
+    hero.style.color = '#FFFCF7';
+    hero.querySelectorAll('h1, p').forEach(el => {
+      el.style.color = el.tagName === 'P' ? 'rgba(255,252,247,0.82)' : '#FFFCF7';
+    });
   }
 }
 
@@ -291,7 +296,7 @@ function applyFavicon() {
 
 // Render announcement button for page headers
 function renderAnnouncementButton() {
-  return '<a href="/announcements.html" class="announcement-btn" title="' + t('common.viewAnnouncement') + '">📢 ' + t('common.announcement') + '</a>';
+  return '<a href="/announcements.html" class="announcement-btn" title="' + t('common.viewAnnouncement') + '">' + t('common.announcement') + '</a>';
 }
 
 // Popup announcement system
@@ -423,14 +428,6 @@ function buildNavbar(activePage) {
         ${logoContent}
         <span>${brandName}</span>
       </a>
-      <div class="lang-switcher-nav">
-        <button class="lang-current" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Language">
-          🌐 ${currentLangName}
-        </button>
-        <div class="lang-dropdown">
-          ${langOptions}
-        </div>
-      </div>
       <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="${t('common.menu')}" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -442,6 +439,14 @@ function buildNavbar(activePage) {
         <li><a href="/updates.html" class="${activePage === 'updates' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.updates')}</a></li>
         <li><a href="/contact.html" class="${activePage === 'contact' ? 'active' : ''}" onclick="document.querySelector('.nav-links').classList.remove('open')">${t('nav.contact')}</a></li>
       </ul>
+      <div class="lang-switcher-nav">
+        <button class="lang-current" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Language">
+          ${currentLangName}
+        </button>
+        <div class="lang-dropdown">
+          ${langOptions}
+        </div>
+      </div>
       <a href="/author.html" class="nav-author-btn">${t('common.authorLogin')}</a>
     </div>
   `;
@@ -497,8 +502,8 @@ function buildFooter() {
       </div>
     </div>
     <div class="footer-bottom">
-      <p><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" style="color:var(--haze);text-decoration:none;">苏ICP备2026054886号-1</a></p>
-      <p><a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32040002010754" target="_blank" rel="noopener noreferrer" style="color:var(--haze);text-decoration:none;">苏公网安备32040002010754号</a></p>
+      <p><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">苏ICP备2026054886号-1</a></p>
+      <p><a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32040002010754" target="_blank" rel="noopener noreferrer">苏公网安备32040002010754号</a></p>
     </div>
   `;
 }

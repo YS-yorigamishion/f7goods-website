@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260812b">
+  <link rel="stylesheet" href="/css/style.css?v=20260813f">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -46,7 +46,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260812"></script>
+  <script src="/js/main.js?v=20260813d"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -101,7 +101,7 @@
           <div class="card-footer" style="padding:0.5rem 0.8rem;">
             <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${escapeHtml(work.price)}</span>
             <div style="display:flex;align-items:center;gap:0.5rem;">
-              ${(work.wants || 0) > 0 ? `<span style="font-size:0.75rem;color:#3498db;">${t('common.wants')} ${work.wants}</span>` : ''}
+              ${(work.wants || 0) > 0 ? `<span style="font-size:0.72rem;color:var(--info);">${t('common.wants')} ${work.wants}</span>` : ''}
               ${renderLikeButton(work.id, work.likes)}
             </div>
           </div>

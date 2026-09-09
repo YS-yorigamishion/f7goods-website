@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260812b">
+  <link rel="stylesheet" href="/css/style.css?v=20260813f">
   <style>
     .auth-page { min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:linear-gradient(135deg,var(--ink),var(--accent-alt)); }
     .auth-card { background:var(--card-bg);border-radius:var(--radius);padding:2.5rem;width:100%;max-width:420px;box-shadow:var(--shadow-lg); }
@@ -248,7 +248,7 @@
             <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">总喜爱数</div>
           </div>
           <div class="mgmt-card" style="padding:1rem;text-align:center;">
-            <div style="font-size:1.5rem;font-weight:700;color:#3498db;" id="statTotalWants">0</div>
+            <div style="font-size:1.5rem;font-weight:700;color:var(--info);" id="statTotalWants">0</div>
             <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">总想要数</div>
           </div>
           <div class="mgmt-card" style="padding:1rem;text-align:center;cursor:pointer;" onclick="window.open('/circle-detail.html?id='+authorCircleId,'_blank')">
@@ -558,7 +558,7 @@
   </div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260812"></script>
+  <script src="/js/main.js?v=20260813d"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -1380,13 +1380,13 @@
         container.innerHTML = announcements.map(a => {
           const time = new Date(a.sentAt).toLocaleString('zh-CN');
           return `<div style="display:flex;gap:0.8rem;padding:0.8rem 0;border-bottom:1px solid var(--border);${!a.read ? 'background:rgba(52,152,219,0.05);' : ''}" onclick="markAaRead('${a.id}', this)">
-            <div style="width:24px;height:24px;border-radius:50%;background:${a.read ? 'var(--border)' : '#3498db'};color:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;">📢</div>
+            <div style="width:24px;height:24px;border-radius:50%;background:${a.read ? 'var(--border)' : 'var(--info)'};color:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;">📢</div>
             <div style="flex:1;">
               <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.2rem;">
                 ${a.pinned ? '<span style="font-size:0.7rem;background:var(--accent);color:white;padding:0.1rem 0.3rem;border-radius:3px;margin-right:0.3rem;">置顶</span>' : ''}
                 ${escapeHtml(a.title)}
               </div>
-              <div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.3rem;white-space:pre-wrap;${a.read ? '' : 'cursor:pointer;'}" onclick="event.stopPropagation();openAaPopup('${escapeHtml(a.title).replace(/'/g, "\\'")}', \`${escapeHtml(a.content).replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">${escapeHtml(a.content).substring(0, 80)}${a.content.length > 80 ? '... <span style="color:#3498db;">点击展开</span>' : ''}</div>
+              <div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.3rem;white-space:pre-wrap;${a.read ? '' : 'cursor:pointer;'}" onclick="event.stopPropagation();openAaPopup('${escapeHtml(a.title).replace(/'/g, "\\'")}', \`${escapeHtml(a.content).replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">${escapeHtml(a.content).substring(0, 80)}${a.content.length > 80 ? '... <span style="color:var(--info);">点击展开</span>' : ''}</div>
               <div style="font-size:0.75rem;color:var(--haze);">${time}</div>
             </div>
           </div>`;

@@ -95,7 +95,7 @@
   "works": {
     "title": "グッズ一覧",
     "subtitle": "すべての同人グッズを閲覧",
-    "heroTitle": "🎨 同人グッズ一覧",
+    "heroTitle": "同人グッズ一覧",
     "heroSubtitle": "フィギュア、グッズ、同人誌、音楽CDなど良質な同人作品を発見",
     "listTitle": "グッズ一覧",
     "listSubtitle": "デフォルト順に表示",
@@ -116,7 +116,7 @@
   "events": {
     "title": "イベント",
     "subtitle": "同人イベントや展示会情報",
-    "heroTitle": "📅 イベント",
+    "heroTitle": "イベント",
     "heroSubtitle": "近日開催の同人イベント、展示会、オフ会を確認",
     "listTitle": "イベント一覧",
     "listSubtitle": "日付降順に並べ替え",
@@ -136,7 +136,7 @@
   "projects": {
     "title": "プロジェクト",
     "subtitle": "進行中の同人創作プロジェクト",
-    "heroTitle": "📋 プロジェクト",
+    "heroTitle": "プロジェクト",
     "heroSubtitle": "進行中の同人創作プロジェクトを確認、投稿や協力に参加",
     "listTitle": "プロジェクト一覧",
     "listSubtitle": "作成日降順に並べ替え",
@@ -170,7 +170,7 @@
   "circles": {
     "title": "作者",
     "subtitle": "すべての同人作者とサークルを閲覧",
-    "heroTitle": "👤 作者",
+    "heroTitle": "作者",
     "heroSubtitle": "すべての同人作者とサークルを閲覧、良質な作者を発見",
     "listTitle": "作者一覧",
     "description": "紹介",
@@ -189,7 +189,7 @@
   "announcements": {
     "title": "お知らせ",
     "subtitle": "f7goodsからのお知らせと重要情報",
-    "heroTitle": "📢 お知らせ",
+    "heroTitle": "お知らせ",
     "heroSubtitle": "最新のお知らせと重要情報",
     "listTitle": "お知らせ一覧",
     "listSubtitle": "投稿日降順に並べ替え",
