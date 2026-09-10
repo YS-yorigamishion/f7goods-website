@@ -2409,13 +2409,10 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   margin-bottom: 1rem;
 }
 .ev-only-banner b {
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 600;
   display: block;
-}
-.ev-only-banner p {
-  margin: 2px 0 0;
-  font-size: 11px;
-  color: var(--muted);
+  line-height: 1.4;
 }
 .ev-only-banner > div { flex: 1; min-width: 0; }
 .ev-only-banner a {

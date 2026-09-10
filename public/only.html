@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910r">
+  <link rel="stylesheet" href="/css/style.css?v=20260911a">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -122,6 +122,13 @@
       padding: 10px 14px; display: flex; align-items: center; gap: 12px;
       box-shadow: 0 -4px 16px rgba(0,0,0,.06);
     }
+    body.has-only-cart { padding-bottom: 72px; }
+    /* Sit above mobile tab bar (58px + safe area) */
+    @media (max-width: 768px) {
+      .only-cartbar { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+      body.app-mode.has-only-cart { padding-bottom: calc(58px + 64px + env(safe-area-inset-bottom, 0px)); }
+      body.has-only-cart { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+    }
     .only-cartbar .l { flex: 1; min-width: 0; font-size: 12.5px; text-align: center; }
     .only-cartbar .l b { color: var(--accent); }
     .only-cartbar .hintline { font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -156,6 +163,10 @@
     .only-ci {
       display: flex; gap: 10px; align-items: center; padding: 10px 0;
       border-bottom: 1px solid var(--line); font-size: 13px;
+    }
+    .only-ci .thumb {
+      width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;
+      background: linear-gradient(160deg,#EDE6DA,#E2D9CB);
     }
     .only-ci .n { flex: 1; min-width: 0; text-align: left; }
     .only-ci .n small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
@@ -240,7 +251,7 @@
   <div id="onlyShotCanvasWrap"></div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260910r"></script>
+  <script src="/js/main.js?v=20260911a"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -411,6 +422,7 @@
       renderOnlyBooths('all');
       renderOnlyCartUI();
       document.getElementById('onlyCartBar').style.display = 'flex';
+      document.body.classList.add('has-only-cart');
     }
 
     function onlyGoodsIndex() {
@@ -511,6 +523,7 @@
             title: g.title,
             price: parsePrice(g.price),
             priceLabel: g.price,
+            img: (g.images && g.images[0]) || '',
             qty: next,
             isGift: false
           };
@@ -541,6 +554,7 @@
           title: pack.work.title,
           price: parsePrice(pack.work.price),
           priceLabel: pack.work.price,
+          img: (pack.work.images && pack.work.images[0]) || '',
           qty: next,
           isGift: false
         };
@@ -582,6 +596,7 @@
           title: giftWork.title,
           price: 0,
           priceLabel: '赠品',
+          img: (giftWork.images && giftWork.images[0]) || '',
           qty: 1,
           isGift: true
         };
@@ -653,8 +668,19 @@
         sum.innerHTML = '';
         return;
       }
-      list.innerHTML = entries.map(e => `
+      list.innerHTML = entries.map(e => {
+        // Fallback lookup for carts saved before img was stored
+        let img = e.img || '';
+        if (!img && !e.isGift) {
+          const pack = onlyGoodsIndex()[e.id];
+          img = (pack?.work?.images && pack.work.images[0]) || '';
+        } else if (!img && e.isGift) {
+          const giftWork = (window._only?.relatedWorks || []).find(w => e.title === w.title || e.id === ('gift:' + w.id));
+          img = (giftWork?.images && giftWork.images[0]) || '';
+        }
+        return `
         <div class="only-ci">
+          ${img ? `<img class="thumb" src="${esc(img)}" alt="">` : '<div class="thumb"></div>'}
           <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : esc(formatPriceLabel(e.priceLabel != null && e.priceLabel !== '' ? e.priceLabel : e.price))}</small></div>
           <div class="only-qty">
             <button type="button" data-q="${esc(e.id)}" data-d="-1">−</button>
@@ -663,7 +689,8 @@
           </div>
           <div style="width:52px;text-align:right;font-weight:600;">${e.price === 0 ? '—' : money(e.price * e.qty)}</div>
         </div>
-      `).join('');
+      `;
+      }).join('');
       const { total, gifts } = onlyCartStats();
       sum.innerHTML = `
         <div class="only-sumrow"><span style="color:var(--muted);">合计（不含赠品）</span><span>${money(total)}</span></div>

@@ -723,14 +723,8 @@ function nl2br(str) {
   return escapeHtml(str).replace(/\n/g, '<br>');
 }
 
-// Share functionality
+// Share = pure copy link
 async function sharePage(title, url) {
-  if (navigator.share) {
-    try {
-      await navigator.share({ title, url });
-      return;
-    } catch (e) {}
-  }
   try {
     await navigator.clipboard.writeText(url);
     showToast(t('common.copied'), 'success');
