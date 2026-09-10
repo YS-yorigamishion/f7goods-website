@@ -60,15 +60,17 @@ app.use((req, res, next) => {
   }
   next();
 });
-// CSP: allow self + Google Fonts + same-origin uploads/data URIs for images
+// CSP: allow self + Google Fonts + inline scripts (legacy pages use inline <script>/onclick)
+// Nginx also sets a CSP; Helmet must not be stricter or browsers block inline handlers.
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
-      fontSrc: ["'self'", 'fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'blob:'],
+      fontSrc: ["'self'", 'fonts.gstatic.com', 'fonts.googleapis.com'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
       connectSrc: ["'self'"],
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],
@@ -77,7 +79,7 @@ app.use(helmet({
     }
   },
   crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: { policy: 'same-origin' }
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 const PORT = process.env.PORT || 3000;
 const IS_PROD = process.env.NODE_ENV === 'production';
