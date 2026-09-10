@@ -9,7 +9,8 @@
   <meta property="og:description" content="关注最新的同人展会与活动信息，不错过每一场精彩。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
-  <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:image" content="/uploads/og-image.svg">
+  <link rel="alternate" type="application/rss+xml" title="f7goods RSS" href="/rss.xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
@@ -31,9 +32,9 @@
       </div>
       <div style="display:flex;gap:0.5rem;align-items:center;">
         <div class="view-toggle">
-          <button class="view-btn active" data-view="timeline">时间轴</button>
-          <button class="view-btn" data-view="calendar">日历</button>
-          <button class="view-btn" data-view="grid">多格</button>
+          <button class="view-btn active" data-view="timeline" data-i18n="events.timeline">时间轴</button>
+          <button class="view-btn" data-view="calendar" data-i18n="events.calendar">日历</button>
+          <button class="view-btn" data-view="grid" data-i18n="events.gridView">多格</button>
         </div>
       </div>
     </div>
@@ -104,7 +105,7 @@
         renderEvents();
       } catch (e) {
         document.getElementById('eventsContainer').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>加载失败，请稍后重试</p></div>';
+          `<div class="empty-state"><div class="icon">!</div><p>${t('common.loadFailed')}</p></div>`;
       }
     }
 
@@ -136,7 +137,7 @@
       document.getElementById('eventsSkeleton')?.remove();
       const events = getFilteredEvents();
       if (events.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的活动</p></div>';
+        container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${t('common.noMatchingEvents')}</p></div>`;
         return;
       }
       if (currentView === 'timeline') renderTimeline(container, events);
@@ -147,7 +148,7 @@
     // ===== Timeline View =====
     function renderTimeline(container, events) {
       container.innerHTML = `<div class="events-timeline">${events.map(event => `
-        <div class="event-card" style="cursor:pointer;display:flex;gap:1.5rem;" onclick="location.href='/event-detail.html?id=${event.id}'">
+        <a class="event-card" style="cursor:pointer;display:flex;gap:1.5rem;text-decoration:none;color:inherit;" href="/event-detail.html?id=${event.id}">
           <div style="flex:1;">
             <span class="event-date">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
             <h3 class="event-title">${escapeHtml(event.title)}</h3>
@@ -156,7 +157,7 @@
             ${event.booth ? `<div class="event-booth">展位: ${escapeHtml(event.booth)}</div>` : ''}
           </div>
           ${event.coverImage ? `<div style="flex-shrink:0;width:160px;height:110px;border-radius:8px;overflow:hidden;"><img src="${event.coverImage}" alt="${escapeHtml(event.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
-        </div>
+        </a>
       `).join('')}</div>`;
     }
 
@@ -232,7 +233,7 @@
     // ===== Grid View =====
     function renderGrid(container, events) {
       container.innerHTML = `<div class="events-grid">${events.map(event => `
-        <div class="event-grid-card" onclick="location.href='/event-detail.html?id=${event.id}'">
+        <a class="event-grid-card" style="text-decoration:none;color:inherit;" href="/event-detail.html?id=${event.id}">
           ${event.coverImage
             ? `<div style="height:180px;overflow:hidden;"><img src="${event.coverImage}" alt="${escapeHtml(event.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
             : `<div class="event-grid-card-header">
@@ -250,7 +251,7 @@
             <div class="event-location">${escapeHtml(event.location || '')}</div>
             ${event.booth ? `<div class="event-booth" style="margin-top:0.8rem;">展位: ${escapeHtml(event.booth)}</div>` : ''}
           </div>
-        </div>
+        </a>
       `).join('')}</div>`;
     }
 

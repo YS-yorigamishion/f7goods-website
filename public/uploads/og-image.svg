@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#1a1a2e"/>
+  <rect x="0" y="0" width="1200" height="8" fill="#e94560"/>
+  <text x="600" y="280" text-anchor="middle" font-family="system-ui,sans-serif" font-size="96" font-weight="700" fill="#ffffff">f7goods</text>
+  <text x="600" y="380" text-anchor="middle" font-family="system-ui,sans-serif" font-size="36" fill="#a0a0b8">同人周边展示平台</text>
+  <text x="600" y="450" text-anchor="middle" font-family="system-ui,sans-serif" font-size="24" fill="#6c6c80">Fan-made Goods Showcase</text>
+</svg>

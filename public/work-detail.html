@@ -9,7 +9,7 @@
   <meta property="og:site_name" content="f7goods">
   <meta property="og:title" content="">
   <meta property="og:description" content="">
-  <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:image" content="/uploads/og-image.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
@@ -156,7 +156,7 @@
                     const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
                     const label = key === 'website' ? (work.socialLinks.websiteLabel || defaultLabel) : (work.socialLinks.contactLabel || defaultLabel);
                     return isUrl
-                      ? `<a href="${url}" target="_blank" class="detail-social-link" style="display:inline-block;padding:0.3rem 0.8rem;color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;">${escapeHtml(label)}</a>`
+                      ? `<a href="${url}" target="_blank" rel="noopener noreferrer" class="detail-social-link" style="display:inline-block;padding:0.3rem 0.8rem;color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;">${escapeHtml(label)}</a>`
                       : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;flex-wrap:wrap;">
                            <span style="display:inline-block;padding:0.3rem 0.8rem;background:var(--paper);border:1px solid var(--line);color:var(--ink);border-radius:100px;font-weight:500;">${escapeHtml(label)}</span>
                            <span style="color:var(--accent);font-weight:500;">${escapeHtml(url)}</span>

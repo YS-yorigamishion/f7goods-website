@@ -7,9 +7,10 @@ module.exports = {
     env: {
       NODE_ENV: 'production',
       PORT: 3000,
-      JWT_SECRET: 'CHANGE_ME_TO_A_RANDOM_SECRET',
-      ADMIN_PASSWORD: 'CHANGE_ME_TO_A_STRONG_PASSWORD',
-      ALLOWED_ORIGIN: ''
+      // Required — set these via server env / pm2 secret, never commit real values
+      // JWT_SECRET: '<32+ random hex>',
+      // ADMIN_PASSWORD: '<strong password>',
+      // ALLOWED_ORIGIN: 'https://f7goods.com'
     },
     env_development: {
       NODE_ENV: 'development',

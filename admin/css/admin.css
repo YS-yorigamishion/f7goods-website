@@ -10,7 +10,8 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: linear-gradient(135deg, var(--ink), var(--accent-alt));
+  background: #F6F2EB;
+  border-top: 2px solid var(--accent);
 }
 
 .login-card {

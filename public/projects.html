@@ -9,7 +9,8 @@
   <meta property="og:description" content="发现正在进行的同人企划，加入创作团队。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
-  <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:image" content="/uploads/og-image.svg">
+  <link rel="alternate" type="application/rss+xml" title="f7goods RSS" href="/rss.xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
@@ -98,7 +99,7 @@
         renderProjects();
       } catch (e) {
         document.getElementById('projectsGrid').innerHTML =
-          '<div class="empty-state"><div class="icon">!</div><p>加载失败，请稍后重试</p></div>';
+          `<div class="empty-state"><div class="icon">!</div><p>${t('common.loadFailed')}</p></div>`;
       }
     }
 
@@ -139,12 +140,12 @@
       }
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>暂无符合条件的企划</p></div>';
+        grid.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${t('common.noMatchingProjects')}</p></div>`;
         return;
       }
 
       grid.innerHTML = filtered.map(project => `
-        <div class="card" onclick="location.href='/project-detail.html?id=${project.id}'">
+        <a class="card" href="/project-detail.html?id=${project.id}" style="text-decoration:none;color:inherit;">
           <div class="card-image" style="${(project.coverImage || (project.images && project.images.length > 0)) ? '' : 'background:linear-gradient(135deg,var(--accent-alt),var(--ink));'}">
             ${project.coverImage
               ? `<img src="${project.coverImage}" alt="${escapeHtml(project.title)}" loading="lazy">`
@@ -159,11 +160,11 @@
           </div>
           <div class="card-footer">
             <div class="tag-list" style="flex:1;">
-              ${(project.tags || []).slice(0, 3).map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${escapeHtml(t)}</a>`).join('')}
+              ${(project.tags || []).slice(0, 3).map(t => `<span class="tag" style="text-decoration:none;cursor:pointer;" onclick="event.preventDefault();event.stopPropagation();location.href='/?tag=${encodeURIComponent(t)}'">${escapeHtml(t)}</span>`).join('')}
             </div>
             <span class="card-date">${formatDate(project.startDate)}</span>
           </div>
-        </div>
+        </a>
       `).join('');
     }
 

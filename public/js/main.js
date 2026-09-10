@@ -12,6 +12,7 @@ async function loadLang(lang, isInit = false) {
     _i18n = await res.json();
     _lang = lang;
     localStorage.setItem('f7lang', lang);
+    document.documentElement.lang = _lang;
     // Reload categories with new language
     await loadCategoriesFromAPI();
     // Re-apply page settings with new language
@@ -76,7 +77,10 @@ function applyTranslations() {
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     const key = el.getAttribute('data-i18n-title');
     const text = t(key);
-    if (text !== key) el.title = text;
+    if (text !== key) {
+      el.title = text;
+      if (el.hasAttribute('aria-label')) el.setAttribute('aria-label', text);
+    }
   });
 }
 
@@ -538,6 +542,7 @@ function buildFooter() {
 async function initPage(activePage, itemId) {
   try {
     document.body.classList.add('app-mode');
+    document.documentElement.lang = _lang;
 
     // Load language first
     await loadLang(_lang, true);
@@ -672,7 +677,7 @@ function isDeadlineSoon(endDate) {
 // Escape HTML entities
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // Make cards keyboard-accessible

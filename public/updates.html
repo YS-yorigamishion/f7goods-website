@@ -9,7 +9,8 @@
   <meta property="og:description" content="了解同人圈的最新动态和重要更新。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
-  <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:image" content="/uploads/og-image.svg">
+  <link rel="alternate" type="application/rss+xml" title="f7goods RSS" href="/rss.xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
@@ -138,7 +139,7 @@
         document.getElementById('sortSelect').addEventListener('change', renderUpdates);
       } catch (e) {
         document.getElementById('updatesGrid').innerHTML =
-          '<div class="empty-state"><div class="icon">⚠️</div><p>加载失败，请稍后重试</p></div>';
+          `<div class="empty-state"><div class="icon">⚠️</div><p>${t('common.loadFailed')}</p></div>`;
       }
     }
 
@@ -179,7 +180,7 @@
       }
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">📰</div><p>暂无动态</p></div>';
+        grid.innerHTML = `<div class="empty-state"><div class="icon">📰</div><p>${t('common.noUpdates')}</p></div>`;
         return;
       }
 
@@ -187,7 +188,7 @@
         const preview = u.content.length > 60 ? u.content.substring(0, 60) + '...' : u.content;
         const authorNames = (u.relatedCircles || []).map(cid => circlesMap[cid]).filter(Boolean).join('、');
         return `
-        <div class="card" onclick="location.href='/update-detail.html?id=${u.id}'">
+        <a class="card" href="/update-detail.html?id=${u.id}" style="text-decoration:none;color:inherit;">
           <div class="card-image" style="${(u.coverImage || (u.images && u.images.length > 0)) ? '' : 'background:linear-gradient(135deg,#9b59b6,#8e44ad);'}">
             ${u.coverImage
               ? `<img src="${u.coverImage}" alt="${escapeHtml(u.title)}" loading="lazy">`
@@ -196,7 +197,7 @@
                 : '<span class="placeholder-icon" style="color:white;">📰</span>')}
           </div>
           <div class="card-body">
-            ${u.pinned ? '<span class="card-tag" style="background:var(--accent);color:white;">置顶</span>' : ''}
+            ${u.pinned ? `<span class="card-tag" style="background:var(--accent);color:white;">${t('updates.pinned')}</span>` : ''}
             <h3 class="card-title">${escapeHtml(u.title)}</h3>
             ${authorNames ? `<p style="font-size:0.75rem;color:var(--accent);margin-top:0.2rem;">${escapeHtml(authorNames)}</p>` : ''}
             <p class="card-subtitle" style="color:var(--haze);font-size:0.8rem;">${escapeHtml(preview)}</p>
@@ -204,7 +205,7 @@
           <div class="card-footer">
             <span class="card-date">${formatDate(u.publishDate)}</span>
           </div>
-        </div>`;
+        </a>`;
       }).join('');
     }
 

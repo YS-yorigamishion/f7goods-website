@@ -1,45 +1,49 @@
 #!/bin/bash
-# f7goods 服务器部署脚本
-# 用法: bash deploy.sh
-# 在服务器的 f7goods 项目目录下运行
+# f7goods server deploy script
+# Run on the server in the project directory: bash deploy.sh
 
-set -e
+set -euo pipefail
 cd "$(dirname "$0")"
+
+LOCK="/tmp/f7goods-deploy.lock"
+exec 9>"$LOCK"
+if ! flock -n 9; then
+  echo "Another deploy is running. Aborting."
+  exit 1
+fi
 
 echo "=== f7goods deploy ==="
 
-# 1. 备份数据
-echo "[1/5] 备份 data/ ..."
-cp -r data data.bak 2>/dev/null || true
+STAMP=$(date +%Y%m%d-%H%M%S)
+BACKUP_DIR="data.bak.$STAMP"
 
-# 2. 暂存本地代码改动（排除 data 目录）
-git stash --include-untracked -- ':(exclude)data' 2>/dev/null || true
+echo "[1/6] Backup data/ -> $BACKUP_DIR"
+cp -a data "$BACKUP_DIR"
 
-# 3. 拉取最新代码（这会删除 data/ 中的文件，因为它们不再被 git 跟踪）
-echo "[2/5] git pull ..."
-git pull --rebase || git pull
-
-# 4. 恢复数据文件
-echo "[3/5] 恢复 data/ ..."
-if [ -d "data.bak" ]; then
-  for f in data.bak/*.json; do
-    [ -f "$f" ] && cp "$f" "data/$(basename $f)"
-  done
-  rm -rf data.bak
+echo "[2/6] Pull code"
+if ! git pull --rebase; then
+  echo "git pull failed — aborting (data left at $BACKUP_DIR)"
+  exit 1
 fi
 
-# 5. 初始化缺失的数据文件
-echo "[4/5] 检查数据文件 ..."
-mkdir -p data
+echo "[3/6] Install dependencies"
+if command -v npm &> /dev/null; then
+  npm ci --omit=dev
+else
+  echo "npm not found; skipping install"
+fi
+
+echo "[4/6] Init missing data files"
+mkdir -p data tmp-uploads uploads logs
 node init-data.js
 
-# 6. 重启服务
-echo "[5/5] 重启服务 ..."
+echo "[5/6] Restart service"
 if command -v pm2 &> /dev/null; then
   pm2 restart f7goods 2>/dev/null || pm2 start ecosystem.config.js
-  echo "PM2 服务已重启"
+  echo "PM2 restarted"
 else
-  echo "请手动重启服务 (pm2 restart f7goods)"
+  echo "pm2 not found — restart manually"
 fi
 
-echo "=== 部署完成 ==="
+echo "[6/6] Done. Backup kept at $BACKUP_DIR"
+echo "=== deploy complete ==="

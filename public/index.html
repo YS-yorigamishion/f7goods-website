@@ -9,7 +9,7 @@
   <meta property="og:description" content="汇集优质同人作者的周边商品，从手办到音乐，从同人志到服饰。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
-  <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:image" content="/uploads/og-image.svg">
   <link rel="alternate" type="application/rss+xml" title="f7goods RSS" href="/rss.xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,8 +30,8 @@
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
       <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
         <div class="home-view-toggle" id="homeViewToggle">
-          <button type="button" data-view="board" class="active" onclick="setHomeView('board')">看板</button>
-          <button type="button" data-view="catalog" onclick="setHomeView('catalog')">全部周边</button>
+          <button type="button" data-view="board" class="active" onclick="setHomeView('board')" data-i18n="home.board">看板</button>
+          <button type="button" data-view="catalog" onclick="setHomeView('catalog')" data-i18n="home.catalog">全部周边</button>
         </div>
       </div>
       <div id="announcementBtn"></div>
@@ -40,28 +40,28 @@
     <!-- BOARD VIEW -->
     <div class="home-board" id="homeBoard">
       <div class="board-section-head">
-        <h2>本周主推</h2>
-        <span>企划 · 活动轮播</span>
-        <a href="/projects.html">全部企划 →</a>
+        <h2 data-i18n="home.thisWeek">本周主推</h2>
+        <span data-i18n="home.featureCarousel">企划 · 活动轮播</span>
+        <a href="/projects.html" data-i18n="home.allProjects">全部企划 →</a>
       </div>
       <div class="board-grid" id="boardFeatureRow">
         <div class="board-feature board-span-8" id="boardFeature" style="display:none;">
           <div class="board-feature-track" id="boardFeatureTrack"></div>
           <div class="board-feature-ctrl" id="boardFeatureCtrl">
-            <button type="button" class="board-feat-nav" id="boardFeatPrev" aria-label="上一张">‹</button>
+            <button type="button" class="board-feat-nav" id="boardFeatPrev" aria-label="上一张" data-i18n-title="home.prevSlide">‹</button>
             <div class="board-feat-dots" id="boardFeatDots"></div>
-            <button type="button" class="board-feat-nav" id="boardFeatNext" aria-label="下一张">›</button>
+            <button type="button" class="board-feat-nav" id="boardFeatNext" aria-label="下一张" data-i18n-title="home.nextSlide">›</button>
           </div>
         </div>
         <div class="board-panel board-span-4">
           <div class="board-section-head" style="margin-bottom:8px;">
-            <h2>进行中企划</h2>
-            <a href="/projects.html">更多</a>
+            <h2 data-i18n="home.activeProjects">进行中企划</h2>
+            <a href="/projects.html" data-i18n="common.more">更多</a>
           </div>
           <div id="boardProjectList"></div>
           <div class="board-section-head" style="margin:12px 0 8px;">
-            <h2>进行中活动</h2>
-            <a href="/events.html">更多</a>
+            <h2 data-i18n="home.activeEvents">进行中活动</h2>
+            <a href="/events.html" data-i18n="common.more">更多</a>
           </div>
           <div id="boardActiveEventsList"></div>
         </div>
@@ -70,16 +70,16 @@
       <div class="board-grid">
         <div class="board-panel board-span-8">
           <div class="board-section-head" style="margin-bottom:8px;">
-            <h2>最新上传</h2>
-            <span>最近上架的周边</span>
-            <button type="button" class="linkish" onclick="setHomeView('catalog')">查看全部 →</button>
+            <h2 data-i18n="home.latestUploads">最新上传</h2>
+            <span data-i18n="home.recentGoods">最近上架的周边</span>
+            <button type="button" class="linkish" onclick="setHomeView('catalog')" data-i18n="home.viewAll">查看全部 →</button>
           </div>
           <div class="board-strip" id="boardSaleStrip"></div>
         </div>
         <div class="board-panel board-span-4">
           <div class="board-section-head" style="margin-bottom:8px;">
-            <h2>周边截止</h2>
-            <button type="button" class="linkish" onclick="setHomeView('catalog');toggleDeadlineFilter()">更多</button>
+            <h2 data-i18n="home.deadline">周边截止</h2>
+            <button type="button" class="linkish" onclick="setHomeView('catalog');toggleDeadlineFilter()" data-i18n="common.more">更多</button>
           </div>
           <div id="boardDeadlineList"></div>
         </div>
@@ -88,15 +88,15 @@
       <div class="board-grid" style="margin-top:0.35rem;">
         <div class="board-panel board-span-6">
           <div class="board-section-head" style="margin-bottom:8px;">
-            <h2>近期活动</h2>
-            <a href="/events.html">日历</a>
+            <h2 data-i18n="home.upcomingEvents">近期活动</h2>
+            <a href="/events.html" data-i18n="home.calendar">日历</a>
           </div>
           <div id="boardEventsList"></div>
         </div>
         <div class="board-panel board-span-6">
           <div class="board-section-head" style="margin-bottom:8px;">
-            <h2>最新动态</h2>
-            <a href="/updates.html">更多</a>
+            <h2 data-i18n="home.latestUpdates">最新动态</h2>
+            <a href="/updates.html" data-i18n="common.more">更多</a>
           </div>
           <div id="boardUpdatesList"></div>
         </div>
@@ -127,8 +127,8 @@
         <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn"><span data-i18n="common.follow">关注</span></button>
         <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')"><span data-i18n="common.like">喜爱</span></button>
         <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')"><span data-i18n="common.want">想要</span></button>
-        <button class="filter-btn" onclick="toggleDeadlineFilter()" id="deadlineFilterBtn"><span>即将截止</span></button>
-        <button class="filter-btn" id="wishlistToggleBtn" onclick="activateWishlist()" style="margin-left:auto;">心愿单</button>
+        <button class="filter-btn" onclick="toggleDeadlineFilter()" id="deadlineFilterBtn"><span data-i18n="common.deadlineSoon">即将截止</span></button>
+        <button class="filter-btn" id="wishlistToggleBtn" onclick="activateWishlist()" style="margin-left:auto;" data-i18n="home.wishlist">心愿单</button>
       </div>
 
       <div class="cards-grid" id="worksGrid">
@@ -174,13 +174,7 @@
       document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
     }, 8000);
 
-    // fetch 超时封装（默认10秒）
-    function fetchWithTimeout(url, timeout) {
-      timeout = timeout || 10000;
-      const controller = new AbortController();
-      const timer = setTimeout(function() { controller.abort(); }, timeout);
-      return fetch(url, { signal: controller.signal }).finally(function() { clearTimeout(timer); });
-    }
+    // fetchWithTimeout is provided by /js/api.js
 
     initPage('works');
 
@@ -312,6 +306,9 @@
     function startBoardFeatureTimer() {
       stopBoardFeatureTimer();
       if (boardFeatureSlides.length < 2) return;
+      // Respect prefers-reduced-motion: no auto-advance carousel
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) return;
       boardFeatTimer = setInterval(() => {
         if (!boardFeatPaused) goBoardFeature(boardFeatIndex + 1);
       }, 4000);
@@ -361,7 +358,7 @@
       const projEl = document.getElementById('boardProjectList');
       if (projEl) {
         if (!recruitingProjects.length) {
-          projEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">暂无招募中企划</div>`;
+          projEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">${t('home.noRecruitingProjects')}</div>`;
         } else {
           projEl.innerHTML = recruitingProjects.slice(0, 5).map(p => {
             // 与详情页「关联作者」同序：allCircles 过滤后的第一位
@@ -387,7 +384,7 @@
       const aeEl = document.getElementById('boardActiveEventsList');
       if (aeEl) {
         if (!activeEvents.length) {
-          aeEl.innerHTML = `<div style="padding:0.5rem 0;color:var(--haze);font-size:12px;">暂无进行中活动</div>`;
+          aeEl.innerHTML = `<div style="padding:0.5rem 0;color:var(--haze);font-size:12px;">${t('home.noActiveEvents')}</div>`;
         } else {
           aeEl.innerHTML = activeEvents.map(e => {
             const cover = e.coverImage || (e.images && e.images[0]) || '';
@@ -414,7 +411,7 @@
       const dl = document.getElementById('boardDeadlineList');
       if (dl) {
         if (deadlineWorks.length === 0) {
-          dl.innerHTML = `<div style="padding:0.5rem 0;color:var(--haze);font-size:12px;">暂无即将截止的周边</div>`;
+          dl.innerHTML = `<div style="padding:0.5rem 0;color:var(--haze);font-size:12px;">${t('home.noDeadlineGoods')}</div>`;
         } else {
           dl.innerHTML = deadlineWorks.map(w => {
             const days = w.endDate ? Math.max(0, Math.ceil((new Date(w.endDate) - new Date()) / 86400000)) : null;
@@ -422,7 +419,7 @@
             return `<a class="board-list-row" href="/work-detail.html?id=${w.id}">
               ${boardThumb(w)}
               <div class="t"><b>${escapeHtml(w.title)}</b><small>${escapeHtml(authors)}</small></div>
-              <span class="badge-urgent">${days !== null ? days + ' 天' : '截止'}</span>
+              <span class="badge-urgent">${days !== null ? t('home.deadlineDays').replace('{n}', days) : t('home.deadlineLabel')}</span>
             </a>`;
           }).join('');
         }
@@ -431,10 +428,10 @@
       const strip = document.getElementById('boardSaleStrip');
       if (strip) {
         if (!latestWorks.length) {
-          strip.innerHTML = `<div style="padding:1rem 0;color:var(--haze);font-size:12px;">暂无周边</div>`;
+          strip.innerHTML = `<div style="padding:1rem 0;color:var(--haze);font-size:12px;">${t('home.noGoods')}</div>`;
         } else {
           strip.innerHTML = latestWorks.map(w => `
-            <div class="card" onclick="location.href='/work-detail.html?id=${w.id}'">
+            <a class="card" href="/work-detail.html?id=${w.id}" style="text-decoration:none;color:inherit;">
               <div class="card-image">
                 ${w.images && w.images[0] ? `<img src="${w.images[0]}" alt="${escapeHtml(w.title)}" loading="lazy">` : '<span class="placeholder-icon">🎨</span>'}
               </div>
@@ -446,7 +443,7 @@
                 <span class="card-price">${escapeHtml(w.price || '')}</span>
                 <span class="card-date">${formatDate(w.releaseDate)}</span>
               </div>
-            </div>
+            </a>
           `).join('');
         }
       }
@@ -455,7 +452,7 @@
       if (evEl) {
         const evs = [...allEvents].sort((a, b) => String(a.date || a.startDate || 'z').localeCompare(String(b.date || b.startDate || 'z'))).slice(0, 4);
         if (!evs.length) {
-          evEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">暂无活动</div>`;
+          evEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">${t('home.noEvents')}</div>`;
         } else {
           evEl.innerHTML = evs.map(e => {
             const cover = e.coverImage || (e.images && e.images[0]) || '';
@@ -474,7 +471,7 @@
       if (upEl) {
         const ups = [...allUpdates].slice(0, 4);
         if (!ups.length) {
-          upEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">暂无动态</div>`;
+          upEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">${t('home.noUpdates')}</div>`;
         } else {
           upEl.innerHTML = ups.map(u => {
             const cidList = u.relatedCircles || u.circles || [];
@@ -659,10 +656,7 @@
 
     async function loadWorks() {
       try {
-        console.log('[loadWorks] start, _i18n loaded:', Object.keys(_i18n).length > 0);
         await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
-        console.log('[loadWorks] categories/settings loaded, CATEGORIES_ORDERED:', CATEGORIES_ORDERED.length, 'STATUS_ORDERED:', STATUS_ORDERED.length);
-        console.log('[loadWorks] fetching works/circles/events...');
         const [works, circles, events, updates, projects] = await Promise.all([
           F7API.getWorks(),
           F7API.getCircles(),
@@ -670,7 +664,6 @@
           F7API.getUpdates ? F7API.getUpdates().catch(() => []) : Promise.resolve([]),
           F7API.getProjects ? F7API.getProjects().catch(() => []) : Promise.resolve([])
         ]);
-        console.log('[loadWorks] data received: works=' + (works?.length || 0) + ', circles=' + (circles?.length || 0) + ', events=' + (events?.length || 0) + ', projects=' + (projects?.length || 0));
         allWorks = works;
         allEvents = events;
         allUpdates = updates || [];
@@ -714,7 +707,7 @@
         } catch (e2) {
           console.error('[loadWorks] catch block also failed:', e2);
           document.getElementById('worksGrid').innerHTML =
-            '<div class="empty-state"><div class="icon">!</div><p>加载失败，请刷新页面重试</p><button class="btn" style="margin-top:1rem;" onclick="location.reload()">刷新</button></div>';
+            `<div class="empty-state"><div class="icon">!</div><p>${t('home.loadFailedReload')}</p><button class="btn" style="margin-top:1rem;" onclick="location.reload()">${t('home.refresh')}</button></div>`;
         }
       }
     }
@@ -866,12 +859,12 @@
       const pageWorks = filtered.slice(0, currentPage * pageSize);
 
       grid.innerHTML = pageWorks.map(work => `
-        <div class="card" onclick="location.href='/work-detail.html?id=${work.id}'">
+        <a class="card" href="/work-detail.html?id=${work.id}" style="text-decoration:none;color:inherit;">
           <div class="card-image">
             ${work.images && work.images.length > 0
               ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}" loading="lazy">`
               : '<span class="placeholder-icon">🎨</span>'}
-            ${isDeadlineSoon(work.endDate) ? '<span class="deadline-badge">即将截止</span>' : ''}
+            ${isDeadlineSoon(work.endDate) ? `<span class="deadline-badge">${t('common.deadlineSoon')}</span>` : ''}
           </div>
           <div class="card-body">
             <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
@@ -884,10 +877,10 @@
               ${(work.wants || 0) > 0 ? `<span style="font-size:0.72rem;color:var(--info);">${t('common.wants')} ${work.wants}</span>` : ''}
               <span class="card-date">${formatDate(work.releaseDate)}</span>
               ${renderLikeButton(work.id, work.likes)}
-              ${wishlistMode ? '<span class="wishlist-qty-group"><button class="wishlist-add-btn" onclick="decreaseWishlistItem(\'' + work.id + '\',event)">−</button><span class="wishlist-badge" data-wid="' + work.id + '" style="' + ((wishlistItems[work.id] || 0) > 0 ? '' : 'display:none;') + '">' + ((wishlistItems[work.id] || 0) > 0 ? wishlistItems[work.id] : '') + '</span><button class="wishlist-add-btn" onclick="toggleWishlistItem(\'' + work.id + '\',event)">＋</button></span>' : ''}
+              ${wishlistMode ? '<span class="wishlist-qty-group"><button class="wishlist-add-btn" type="button" onclick="event.preventDefault();event.stopPropagation();decreaseWishlistItem(\'' + work.id + '\',event)">−</button><span class="wishlist-badge" data-wid="' + work.id + '" style="' + ((wishlistItems[work.id] || 0) > 0 ? '' : 'display:none;') + '">' + ((wishlistItems[work.id] || 0) > 0 ? wishlistItems[work.id] : '') + '</span><button class="wishlist-add-btn" type="button" onclick="event.preventDefault();event.stopPropagation();toggleWishlistItem(\'' + work.id + '\',event)">＋</button></span>' : ''}
             </div>
           </div>
-        </div>
+        </a>
       `).join('') + (currentPage < totalPages ? `<div id="loadMoreTrigger" style="grid-column:1/-1;text-align:center;padding:1rem;"><button class="btn" onclick="loadMoreWorks()">${t('common.loadMore')}</button></div>` : '');
     }
 
@@ -918,7 +911,7 @@
               ${work.images && work.images.length > 0
                 ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}" loading="lazy">`
                 : '<span class="placeholder-icon">🎨</span>'}
-              ${isDeadlineSoon(work.endDate) ? '<span class="deadline-badge">即将截止</span>' : ''}
+              ${isDeadlineSoon(work.endDate) ? `<span class="deadline-badge">${t('common.deadlineSoon')}</span>` : ''}
             </div>
             <div class="card-body">
               <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>

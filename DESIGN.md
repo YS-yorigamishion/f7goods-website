@@ -91,3 +91,12 @@
 - 页面入场 0.28s opacity + 6px 上移
 - 卡片/按钮 transition 0.2s ease
 - 尊重 `prefers-reduced-motion`
+
+## App Shell（现行布局）
+
+首页/列表页使用左侧固定 rail（72px）+ 内容区。rail **必须**是纸色 `--card` + 1px `--line`，不可近黑。轮播/主推块为暖白卡片 + 顶 2px 朱线；有封面图时才允许深色遮罩保证白字可读。
+
+## 暗色模式
+
+跟随系统 `prefers-color-scheme: dark`，token 在 `style.css` 末段覆盖：paper 深暖灰、card 略亮、accent 提亮朱色。禁止另起冷蓝主题。
+

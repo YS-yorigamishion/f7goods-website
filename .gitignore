@@ -1,34 +1,48 @@
 # Dependencies
 node_modules/
 
-# Uploads
+# Uploads (runtime media, volume-mounted)
 uploads/*
 !uploads/.gitkeep
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-
-# Logs
-*.log
-npm-debug.log*
-
-# Environment
-.env
-.env.local
-.env.production
+public/uploads/*
+!public/uploads/og-image.svg
+!public/uploads/.gitkeep
 
 # Data files (runtime, managed by admin panel)
 data/*.json
 !data/.gitkeep
 
-# Sensitive data
-data/admin.json
-data/likes.json
-data/wants.json
-data/contact.json
-data/pageviews.json
+# Runtime / temp
+logs/
+tmp-uploads/
+data.bak/
+data.bak.*/
+data/*.tmp
+output/
+*.log
+tmp-server-out.txt
+tmp-server-err.txt
+
+# Secrets / local
+.env
+.env.*
+settings_server.json
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# One-off debug scripts
+_check.cjs
+_check_async.cjs
+_check_async2.cjs
+_check_foreach.cjs
+_final_check.cjs
+_find_missing_async.cjs
+_fix_async2.cjs
+_fix_async3.mjs
+_fix_broken_async.cjs
+_fix_writejson.mjs
+test-api.js

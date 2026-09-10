@@ -32,10 +32,15 @@ function apiRequest(method, path, body, token) {
 }
 
 async function main() {
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password) {
+    console.error('Set ADMIN_PASSWORD env var to run tests');
+    process.exit(1);
+  }
   // Login
   const loginResult = await apiRequest('POST', '/api/admin/login', {
     username: 'admin',
-    password: 'f7goods2026'
+    password
   });
   console.log('Login result:', loginResult);
   const token = loginResult.token;

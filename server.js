@@ -49,6 +49,8 @@ function clearApiCache(type) {
   }
 }
 
+const crypto = require('crypto');
+
 const app = express();
 app.set('trust proxy', 1);
 // Redirect www to non-www
@@ -58,17 +60,37 @@ app.use((req, res, next) => {
   }
   next();
 });
+// CSP: allow self + Google Fonts + same-origin uploads/data URIs for images
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+      fontSrc: ["'self'", 'fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      connectSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"]
+    }
+  },
   crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: false
+  crossOriginResourcePolicy: { policy: 'same-origin' }
 }));
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'f7goods_secret_2026';
-if (!process.env.JWT_SECRET) {
-  console.warn('WARNING: JWT_SECRET not set, using default. Set JWT_SECRET env var in production!');
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+const JWT_SECRET = process.env.JWT_SECRET || (IS_PROD ? null : crypto.randomBytes(32).toString('hex'));
+if (IS_PROD && !process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is required in production.');
+  process.exit(1);
 }
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'f7goods2026';
+if (!IS_PROD && !process.env.JWT_SECRET) {
+  console.warn('Dev mode: using ephemeral JWT_SECRET (tokens reset on restart). Set JWT_SECRET for stable tokens.');
+}
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 // Rate limiting for login endpoints
 const loginAttempts = new Map();
@@ -134,9 +156,12 @@ setInterval(() => {
 // Middleware
 app.use(compression());
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || '*',
+  origin: process.env.ALLOWED_ORIGIN || (IS_PROD ? false : true),
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
+if (IS_PROD && !process.env.ALLOWED_ORIGIN) {
+  console.warn('WARNING: ALLOWED_ORIGIN not set in production — CORS is locked down. Set ALLOWED_ORIGIN for browser clients on another origin.');
+}
 app.use(express.json({ limit: '10mb' }));
 // HTML 不缓存，其他静态资源缓存 1 天
 app.use((req, res, next) => {
@@ -159,20 +184,15 @@ if (process.env.NODE_ENV === 'production') {
   app.use(morgan('dev'));
 }
 
-// Multer config for file uploads
+// Multer config for file uploads (private tmp — not statically served)
+const TMP_UPLOAD_DIR = path.join(__dirname, 'tmp-uploads');
+fs.mkdirSync(TMP_UPLOAD_DIR, { recursive: true });
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
+  destination: (req, file, cb) => cb(null, TMP_UPLOAD_DIR),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9\u4e00-\u9fff\-_]/g, '_').substring(0, 60);
-    const name = baseName + ext;
-    // If file exists, add timestamp to avoid conflict
-    const filePath = path.join(__dirname, 'uploads', name);
-    if (fs.existsSync(filePath)) {
-      cb(null, Date.now() + '-' + baseName + ext);
-    } else {
-      cb(null, name);
-    }
+    const ext = path.extname(file.originalname).toLowerCase();
+    const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9一-鿿\-_]/g, '_').substring(0, 60);
+    cb(null, `${Date.now()}-${baseName}${ext}`);
   }
 });
 const fileFilter = (req, file, cb) => {
@@ -183,31 +203,120 @@ const fileFilter = (req, file, cb) => {
   if ((allowedImages.includes(ext) || allowedExcel.includes(ext)) && allowedMimes.includes(file.mimetype)) cb(null, true);
   else cb(new Error('只允许上传图片或Excel文件'), false);
 };
-const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
+const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
+
+async function publishUploadedImage(tmpPath) {
+  const name = path.basename(tmpPath);
+  const dest = path.join(__dirname, 'uploads', name);
+  await fs.promises.copyFile(tmpPath, dest);
+  await fs.promises.unlink(tmpPath).catch(() => {});
+  return `/uploads/${name}`;
+}
+
+function sanitizeSheetRows(rows) {
+  if (!Array.isArray(rows)) return [];
+  const banned = new Set(['__proto__', 'constructor', 'prototype']);
+  return rows.map(row => {
+    if (!row || typeof row !== 'object') return {};
+    const out = {};
+    for (const [k, v] of Object.entries(row)) {
+      if (banned.has(k)) continue;
+      out[k] = v;
+    }
+    return out;
+  });
+}
+
+function readExcelRows(filePath) {
+  const wb = XLSX.readFile(filePath, { dense: true });
+  const sheetName = wb.SheetNames[0];
+  if (!sheetName) return [];
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '' });
+  return sanitizeSheetRows(rows);
+}
+
+// Per-file write mutex to prevent concurrent read-modify-write races
+const fileLocks = new Map();
+function withFileLock(file, fn) {
+  const prev = fileLocks.get(file) || Promise.resolve();
+  const next = prev.then(() => fn()).catch((e) => {
+    // keep chain alive after errors
+    throw e;
+  });
+  // swallow for chain continuation
+  next.catch(() => {});
+  fileLocks.set(file, next.catch(() => {}));
+  return next;
+}
 
 // Helper: read/write JSON files
+// Missing file → empty structure. Parse/IO error → throw (never silently wipe data).
 function readJSON(file) {
   const filePath = path.join(__dirname, 'data', file);
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  } catch (e) {
-    console.error(`Failed to read ${file}:`, e.message);
+  if (!fs.existsSync(filePath)) {
     return file.endsWith('s.json') ? [] : {};
+  }
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  if (!raw.trim()) {
+    return file.endsWith('s.json') ? [] : {};
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    const err = new Error(`Corrupt JSON data file: ${file}`);
+    err.cause = e;
+    err.code = 'DATA_CORRUPT';
+    throw err;
   }
 }
 
 async function writeJSON(file, data) {
-  const filePath = path.join(__dirname, 'data', file);
-  const tmpPath = filePath + '.tmp';
-  await fs.promises.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
-  await fs.promises.rename(tmpPath, filePath);
-  // Clear related API cache when data changes
-  const type = file.replace('.json', '');
-  clearApiCache(type);
-  // Invalidate auth cache when circles change
-  if (file === 'circles.json') {
-    circlesAuthCache = { data: null, ts: 0 };
-  }
+  return withFileLock(file, async () => {
+    const filePath = path.join(__dirname, 'data', file);
+    const tmpPath = filePath + '.tmp';
+    const payload = JSON.stringify(data, null, 2);
+    await fs.promises.writeFile(tmpPath, payload, 'utf-8');
+    await fs.promises.rename(tmpPath, filePath);
+    // Clear related API cache when data changes
+    const type = file.replace('.json', '');
+    clearApiCache(type);
+    // Invalidate auth cache when circles change
+    if (file === 'circles.json') {
+      circlesAuthCache = { data: null, ts: 0 };
+    }
+  });
+}
+
+// Mutate a JSON file under the per-file lock (read-modify-write safe)
+async function mutateJSON(file, mutator) {
+  return withFileLock(file, async () => {
+    const filePath = path.join(__dirname, 'data', file);
+    let current;
+    if (!fs.existsSync(filePath)) {
+      current = file.endsWith('s.json') ? [] : {};
+    } else {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      if (!raw.trim()) current = file.endsWith('s.json') ? [] : {};
+      else {
+        try { current = JSON.parse(raw); }
+        catch (e) {
+          const err = new Error(`Corrupt JSON data file: ${file}`);
+          err.cause = e;
+          err.code = 'DATA_CORRUPT';
+          throw err;
+        }
+      }
+    }
+    const next = await mutator(current);
+    const result = next === undefined ? current : next;
+    const tmpPath = filePath + '.tmp';
+    await fs.promises.writeFile(tmpPath, JSON.stringify(result, null, 2), 'utf-8');
+    await fs.promises.rename(tmpPath, filePath);
+    const type = file.replace('.json', '');
+    clearApiCache(type);
+    if (file === 'circles.json') circlesAuthCache = { data: null, ts: 0 };
+    return result;
+  });
 }
 
 // Edit log system
@@ -270,11 +379,25 @@ async function addAuthorNotification(circleId, type, title, message, rejectReaso
 async function initAdmin() {
   const admin = readJSON('admin.json');
   if (admin.passwordHash === '$2a$10$placeholder') {
-    admin.passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
+    if (!ADMIN_PASSWORD) {
+      if (IS_PROD) {
+        console.error('FATAL: admin.json has placeholder hash and ADMIN_PASSWORD is not set.');
+        process.exit(1);
+      }
+      console.warn('Dev: admin password placeholder remains. Set ADMIN_PASSWORD and run init-admin.js.');
+      return;
+    }
+    admin.passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
     await writeJSON('admin.json', admin);
   }
 }
-initAdmin();
+initAdmin().catch(e => { console.error('initAdmin failed:', e.message); process.exit(1); });
+
+function isPasswordAcceptable(password) {
+  if (typeof password !== 'string' || password.length < 8) return false;
+  if (password.length > 128) return false;
+  return true;
+}
 
 // JWT Auth middleware (admin only)
 function authMiddleware(req, res, next) {
@@ -291,13 +414,16 @@ function authMiddleware(req, res, next) {
 }
 
 // ===== Admin Auth =====
-app.post('/api/admin/login', rateLimitMiddleware, (req, res) => {
+app.post('/api/admin/login', rateLimitMiddleware, async (req, res) => {
   const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: '请填写完整信息' });
   const admin = readJSON('admin.json');
-  if (username !== admin.username || !bcrypt.compareSync(password, admin.passwordHash)) {
+  const okUser = username === admin.username;
+  const okPass = admin.passwordHash && await bcrypt.compare(password, admin.passwordHash);
+  if (!okUser || !okPass) {
     return res.status(401).json({ error: '用户名或密码错误' });
   }
-  const token = jwt.sign({ username, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+  const token = jwt.sign({ username, role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
   res.json({ token });
 });
 
@@ -353,7 +479,10 @@ function authorAuthMiddleware(req, res, next) {
 app.post('/api/author/register', rateLimitMiddleware, async (req, res) => {
   const { authorName, username, password } = req.body;
   if (!authorName || !username || !password) return res.status(400).json({ error: '请填写完整信息' });
-  if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
+  if (!isPasswordAcceptable(password)) return res.status(400).json({ error: '密码至少8位' });
+  if (!/^[a-zA-Z0-9_]{3,32}$/.test(username)) {
+    return res.status(400).json({ error: '用户名需为 3-32 位字母、数字或下划线' });
+  }
 
   const circles = readJSON('circles.json');
 
@@ -365,6 +494,7 @@ app.post('/api/author/register', rateLimitMiddleware, async (req, res) => {
     return res.status(400).json({ error: '用户名已存在' });
   }
 
+  const passwordHash = await bcrypt.hash(password, 10);
   const newCircle = {
     id: 'c' + Date.now() + Math.random().toString(36).substr(2, 5),
     name: authorName.trim(),
@@ -376,31 +506,34 @@ app.post('/api/author/register', rateLimitMiddleware, async (req, res) => {
     category: 'geren',
     follows: 0,
     username: username,
-    passwordHash: bcrypt.hashSync(password, 10),
-    authorStatus: 'active',
+    passwordHash,
+    authorStatus: 'pending',
     requireApproval: true,
     createdAt: new Date().toISOString()
   };
   circles.push(newCircle);
   await writeJSON('circles.json', circles);
-  res.json({ success: true, message: '注册成功，请登录' });
+  res.json({ success: true, message: '注册成功，请等待管理员审核后登录' });
 });
 
-app.post('/api/author/login', rateLimitMiddleware, (req, res) => {
+app.post('/api/author/login', rateLimitMiddleware, async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: '请填写完整信息' });
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.username === username);
-  if (!circle) return res.status(401).json({ error: '用户名或密码错误' });
-  if (!bcrypt.compareSync(password, circle.passwordHash)) {
+  if (!circle || !circle.passwordHash) return res.status(401).json({ error: '用户名或密码错误' });
+  if (!(await bcrypt.compare(password, circle.passwordHash))) {
     return res.status(401).json({ error: '用户名或密码错误' });
+  }
+  if (circle.authorStatus === 'pending') {
+    return res.status(403).json({ error: '账号审核中，请等待管理员通过' });
   }
   if (circle.authorStatus !== 'approved' && circle.authorStatus !== 'active') {
     return res.status(403).json({ error: '账号已被禁用，请联系管理员' });
   }
 
-  const token = jwt.sign({ circleId: circle.id, role: 'author' }, JWT_SECRET, { expiresIn: '24h' });
+  const token = jwt.sign({ circleId: circle.id, role: 'author' }, JWT_SECRET, { expiresIn: '12h' });
   res.json({ token, circleId: circle.id, circleName: circle.name });
 });
 
@@ -483,20 +616,20 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
 });
 
 // Author: change password
-app.post('/api/author/change-password', authorAuthMiddleware, async (req, res) => {
+app.post('/api/author/change-password', authorAuthMiddleware, rateLimitMiddleware, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   if (!oldPassword || !newPassword) return res.status(400).json({ error: '请填写完整信息' });
-  if (newPassword.length < 6) return res.status(400).json({ error: '新密码至少6位' });
+  if (!isPasswordAcceptable(newPassword)) return res.status(400).json({ error: '新密码至少8位' });
 
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.author.circleId);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
 
-  if (!bcrypt.compareSync(oldPassword, circles[index].passwordHash)) {
+  if (!(await bcrypt.compare(oldPassword, circles[index].passwordHash || ''))) {
     return res.status(401).json({ error: '旧密码错误' });
   }
 
-  circles[index].passwordHash = bcrypt.hashSync(newPassword, 10);
+  circles[index].passwordHash = await bcrypt.hash(newPassword, 10);
   await writeJSON('circles.json', circles);
   res.json({ success: true });
 });
@@ -506,7 +639,7 @@ app.post('/api/author/refresh-token', authorAuthMiddleware, (req, res) => {
   const newToken = jwt.sign(
     { circleId: req.author.circleId, role: 'author' },
     JWT_SECRET,
-    { expiresIn: '24h' }
+    { expiresIn: '12h' }
   );
   res.json({ token: newToken });
 });
@@ -596,9 +729,7 @@ app.post('/api/author/works/import', authorAuthMiddleware, upload.single('file')
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
 
   try {
-    const wb = XLSX.readFile(req.file.path);
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws);
+    const rows = readExcelRows(req.file.path);
 
     let works = readJSON('works.json');
     let categories = { works: [], workStatus: [] };
@@ -1556,15 +1687,15 @@ app.post('/api/admin/circles/:id/set-editors', authMiddleware, async (req, res) 
 });
 
 // Admin: reset author password
-app.post('/api/admin/circles/:id/reset-password', authMiddleware, async (req, res) => {
+app.post('/api/admin/circles/:id/reset-password', authMiddleware, rateLimitMiddleware, async (req, res) => {
   const { newPassword } = req.body;
-  if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: '密码至少6位' });
+  if (!isPasswordAcceptable(newPassword)) return res.status(400).json({ error: '密码至少8位' });
 
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
 
-  circles[index].passwordHash = bcrypt.hashSync(newPassword, 10);
+  circles[index].passwordHash = await bcrypt.hash(newPassword, 10);
   await writeJSON('circles.json', circles);
   res.json({ success: true });
 });
@@ -1638,7 +1769,7 @@ app.get('/api/works', cacheMiddleware(60), (req, res) => {
   works.sort((a, b) => a.order - b.order);
   // Optional pagination: ?page=1&limit=20
   const page = parseInt(req.query.page);
-  const limit = parseInt(req.query.limit);
+  const limit = Math.min(parseInt(req.query.limit) || 0, 100);
   if (page > 0 && limit > 0) {
     const total = works.length;
     const items = works.slice((page - 1) * limit, page * limit);
@@ -1708,22 +1839,29 @@ app.post('/api/works/:id/like', likeWantRateLimit, async (req, res) => {
   const ip = req.ip;
 
   if (!likesCache[workId]) likesCache[workId] = [];
-
-  const works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-
   if (likesCache[workId].includes(ip)) {
-    return res.json({ likes: works[index].likes || 0, alreadyLiked: true });
+    const works = readJSON('works.json');
+    const work = works.find(w => w.id === workId);
+    return res.json({ likes: work?.likes || 0, alreadyLiked: true });
   }
 
-  likesCache[workId].push(ip);
-  saveLikes();
-
-  // Increment count based on current value in works.json
-  works[index].likes = (works[index].likes || 0) + 1;
-  await writeJSON('works.json', works);
-  res.json({ likes: works[index].likes });
+  try {
+    const result = await mutateJSON('works.json', (works) => {
+      const index = works.findIndex(w => w.id === workId);
+      if (index === -1) return null;
+      if (!likesCache[workId].includes(ip)) {
+        likesCache[workId].push(ip);
+        saveLikes();
+      }
+      works[index].likes = (works[index].likes || 0) + 1;
+      return { likes: works[index].likes };
+    });
+    if (!result) return res.status(404).json({ error: '作品未找到' });
+    res.json(result);
+  } catch (e) {
+    console.error('like failed:', e.message);
+    res.status(500).json({ error: '操作失败' });
+  }
 });
 
 app.post('/api/works/:id/unlike', likeWantRateLimit, async (req, res) => {
@@ -1731,24 +1869,28 @@ app.post('/api/works/:id/unlike', likeWantRateLimit, async (req, res) => {
   const ip = req.ip;
 
   if (!likesCache[workId]) likesCache[workId] = [];
-
-  const works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-
-  const idx = likesCache[workId].indexOf(ip);
-  if (idx === -1) {
-    // Not in cache — this uid never liked the work, ignore the request
-    return res.json({ likes: works[index].likes || 0 });
+  if (!likesCache[workId].includes(ip)) {
+    const works = readJSON('works.json');
+    const work = works.find(w => w.id === workId);
+    return res.json({ likes: work?.likes || 0 });
   }
 
-  likesCache[workId].splice(idx, 1);
-  saveLikes();
-
-  // Decrement count based on current value in works.json
-  works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
-  await writeJSON('works.json', works);
-  res.json({ likes: works[index].likes });
+  try {
+    const result = await mutateJSON('works.json', (works) => {
+      const index = works.findIndex(w => w.id === workId);
+      if (index === -1) return null;
+      const idx = likesCache[workId].indexOf(ip);
+      if (idx !== -1) likesCache[workId].splice(idx, 1);
+      saveLikes();
+      works[index].likes = Math.max(0, (works[index].likes || 0) - 1);
+      return { likes: works[index].likes };
+    });
+    if (!result) return res.status(404).json({ error: '作品未找到' });
+    res.json(result);
+  } catch (e) {
+    console.error('unlike failed:', e.message);
+    res.status(500).json({ error: '操作失败' });
+  }
 });
 
 app.post('/api/works/:id/want', likeWantRateLimit, async (req, res) => {
@@ -1756,22 +1898,29 @@ app.post('/api/works/:id/want', likeWantRateLimit, async (req, res) => {
   const ip = req.ip;
 
   if (!wantsCache[workId]) wantsCache[workId] = [];
-
-  const works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-
   if (wantsCache[workId].includes(ip)) {
-    return res.json({ wants: works[index].wants || 0, alreadyWanted: true });
+    const works = readJSON('works.json');
+    const work = works.find(w => w.id === workId);
+    return res.json({ wants: work?.wants || 0, alreadyWanted: true });
   }
 
-  wantsCache[workId].push(ip);
-  saveWants();
-
-  // Increment count based on current value in works.json
-  works[index].wants = (works[index].wants || 0) + 1;
-  await writeJSON('works.json', works);
-  res.json({ wants: works[index].wants });
+  try {
+    const result = await mutateJSON('works.json', (works) => {
+      const index = works.findIndex(w => w.id === workId);
+      if (index === -1) return null;
+      if (!wantsCache[workId].includes(ip)) {
+        wantsCache[workId].push(ip);
+        saveWants();
+      }
+      works[index].wants = (works[index].wants || 0) + 1;
+      return { wants: works[index].wants };
+    });
+    if (!result) return res.status(404).json({ error: '作品未找到' });
+    res.json(result);
+  } catch (e) {
+    console.error('want failed:', e.message);
+    res.status(500).json({ error: '操作失败' });
+  }
 });
 
 app.get('/api/works/:id/want-status', (req, res) => {
@@ -1786,31 +1935,38 @@ app.post('/api/works/:id/unwant', likeWantRateLimit, async (req, res) => {
   const ip = req.ip;
 
   if (!wantsCache[workId]) wantsCache[workId] = [];
-
-  const works = readJSON('works.json');
-  const index = works.findIndex(w => w.id === workId);
-  if (index === -1) return res.status(404).json({ error: '作品未找到' });
-
-  const idx = wantsCache[workId].indexOf(ip);
-  if (idx === -1) {
-    // Not in cache — this uid never wanted the work, ignore the request
-    return res.json({ wants: works[index].wants || 0 });
+  if (!wantsCache[workId].includes(ip)) {
+    const works = readJSON('works.json');
+    const work = works.find(w => w.id === workId);
+    return res.json({ wants: work?.wants || 0 });
   }
 
-  wantsCache[workId].splice(idx, 1);
-  saveWants();
-
-  // Decrement count based on current value in works.json
-  works[index].wants = Math.max(0, (works[index].wants || 0) - 1);
-  await writeJSON('works.json', works);
-  res.json({ wants: works[index].wants });
+  try {
+    const result = await mutateJSON('works.json', (works) => {
+      const index = works.findIndex(w => w.id === workId);
+      if (index === -1) return null;
+      const idx = wantsCache[workId].indexOf(ip);
+      if (idx !== -1) wantsCache[workId].splice(idx, 1);
+      saveWants();
+      works[index].wants = Math.max(0, (works[index].wants || 0) - 1);
+      return { wants: works[index].wants };
+    });
+    if (!result) return res.status(404).json({ error: '作品未找到' });
+    res.json(result);
+  } catch (e) {
+    console.error('unwant failed:', e.message);
+    res.status(500).json({ error: '操作失败' });
+  }
 });
 
 // ===== Follow/Unfollow Circle =====
+const UID_RE = /^[a-zA-Z0-9_\-]{8,64}$/;
 app.post('/api/circles/:id/follow', likeWantRateLimit, async (req, res) => {
   const circleId = req.params.id;
   const uid = req.body.uid;
-  if (!uid) return res.status(400).json({ error: 'missing uid' });
+  if (!uid || !UID_RE.test(String(uid))) {
+    return res.status(400).json({ error: 'missing uid' });
+  }
 
   if (!followsCache[circleId]) followsCache[circleId] = [];
 
@@ -2046,16 +2202,22 @@ function contactRateLimit(req, res, next) {
 
 app.post('/api/contact', contactRateLimit, async (req, res) => {
   const { name, email, subject, message } = req.body;
-  if (!message) {
-    return res.status(400).json({ error: '请填写消息内容' });
+  if (!message || String(message).trim().length < 2 || String(message).length > 5000) {
+    return res.status(400).json({ error: '请填写消息内容（2-5000 字）' });
   }
+  if (name && String(name).length > 100) return res.status(400).json({ error: '名称过长' });
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: '邮箱格式不正确' });
+  if (subject && String(subject).length > 200) return res.status(400).json({ error: '主题过长' });
   // Save to contact.json
   let contacts = [];
   try { contacts = readJSON('contact.json'); } catch {}
   if (!Array.isArray(contacts)) contacts = [];
   contacts.push({
     id: 'ct' + Date.now(),
-    name, email, subject, message,
+    name: name ? String(name).slice(0, 100) : '',
+    email: email ? String(email).slice(0, 200) : '',
+    subject: subject ? String(subject).slice(0, 200) : '',
+    message: String(message).slice(0, 5000),
     createdAt: new Date().toISOString()
   });
   await writeJSON('contact.json', contacts);
@@ -2074,20 +2236,25 @@ async function savePageviews() {
   await writeJSON('pageviews.json', pageviews);
 }
 
-// Helper: get current date in Chinese time (UTC+8)
+// Helper: get current date in China time (Asia/Shanghai)
 function getChinaDate() {
-  const now = new Date();
-  // China is UTC+8, so add 8 hours
-  const chinaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return chinaTime.toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
 }
 
-// Helper: get date string N days ago in Chinese time
+// Helper: get date string N days ago in China time
 function getChinaDateDaysAgo(days) {
-  const now = new Date();
-  const target = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-  const chinaTime = new Date(target.getTime() + 8 * 60 * 60 * 1000);
-  return chinaTime.toISOString().slice(0, 10);
+  const target = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(target);
 }
 
 // Auto-cleanup: remove data older than 365 days (Chinese time)
@@ -2249,8 +2416,9 @@ app.post('/api/pageview', pageviewRateLimit, (req, res) => {
     pageviews.items[page][itemId][today] = (pageviews.items[page][itemId][today] || 0) + 1;
   }
 
-  // Track unique visitors by IP
-  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  // Track unique visitors by hashed IP (privacy-safe, not reversible)
+  const rawIp = req.ip || (req.connection && req.connection.remoteAddress) || 'unknown';
+  const ip = crypto.createHash('sha256').update(String(rawIp) + today).digest('hex').slice(0, 16);
   if (!pageviews.visitors[today]) pageviews.visitors[today] = [];
   if (!pageviews.visitors[today].includes(ip)) {
     pageviews.visitors[today].push(ip);
@@ -2847,9 +3015,7 @@ app.post('/api/admin/works/import', authMiddleware, upload.single('file'), async
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
 
   try {
-    const wb = XLSX.readFile(req.file.path);
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws);
+    const rows = readExcelRows(req.file.path);
 
     let works = readJSON('works.json');
     let categories = { works: [], workStatus: [] };
@@ -3038,9 +3204,7 @@ app.post('/api/admin/events', authMiddleware, async (req, res) => {
 app.post('/api/admin/events/import', authMiddleware, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
   try {
-    const wb = XLSX.readFile(req.file.path);
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws);
+    const rows = readExcelRows(req.file.path);
     let events = readJSON('events.json');
     let added = 0, updated = 0;
     rows.forEach(row => {
@@ -3194,15 +3358,21 @@ app.post('/api/admin/updates/:id/reject', authMiddleware, async (req, res) => {
 });
 
 // --- Circles ---
+function sanitizeCircleForAdmin(c) {
+  const { passwordHash, ...safe } = c;
+  return { ...safe, hasPassword: Boolean(c.username && c.passwordHash) };
+}
+
 app.get('/api/admin/circles', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   if (ensureOrder(circles)) await writeJSON('circles.json', circles);
   circles.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  circles = circles.map(sanitizeCircleForAdmin);
 
   // Pagination (only if page/limit params provided)
   if (req.query.page || req.query.limit) {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
     const total = circles.length;
     const totalPages = Math.ceil(total / limit);
     const start = (page - 1) * limit;
@@ -3356,9 +3526,7 @@ app.post('/api/admin/circles/:id/import', authMiddleware, upload.single('file'),
   categories.workStatus.forEach(c => { STATUS_MAP[c.name] = c.id; STATUS_MAP[c.id] = c.id; });
 
   try {
-    const wb = XLSX.readFile(req.file.path);
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws);
+    const rows = readExcelRows(req.file.path);
 
     let works = readJSON('works.json');
     let events = readJSON('events.json');
@@ -3529,9 +3697,7 @@ app.post('/api/admin/projects', authMiddleware, async (req, res) => {
 app.post('/api/admin/projects/import', authMiddleware, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
   try {
-    const wb = XLSX.readFile(req.file.path);
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws);
+    const rows = readExcelRows(req.file.path);
     let projects = readJSON('projects.json');
     let added = 0, updated = 0;
     rows.forEach(row => {
@@ -3681,9 +3847,7 @@ app.post('/api/admin/updates', authMiddleware, async (req, res) => {
 app.post('/api/admin/updates/import', authMiddleware, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
   try {
-    const wb = XLSX.readFile(req.file.path);
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws);
+    const rows = readExcelRows(req.file.path);
     let updates = [];
     try { updates = readJSON('updates.json'); } catch {}
     let added = 0, updated = 0;
@@ -3778,11 +3942,19 @@ async function saveUploadMeta(filename, uploader) {
   await writeJSON('uploads-meta.json', meta);
 }
 
-app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res) => {
+app.post('/api/admin/upload', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择文件' });
-  saveUploadMeta(req.file.filename, '管理员');
-  logEdit('管理员', '上传图片', req.file.filename, '', '/uploads/' + req.file.filename);
-  res.json({ url: '/uploads/' + req.file.filename });
+  try {
+    const url = await publishUploadedImage(req.file.path);
+    const filename = path.basename(url);
+    await saveUploadMeta(filename, '管理员');
+    logEdit('管理员', '上传图片', filename, '', url);
+    res.json({ url });
+  } catch (e) {
+    console.error('admin upload publish failed:', e.message);
+    fs.unlink(req.file.path, () => {});
+    res.status(500).json({ error: '上传失败' });
+  }
 });
 
 // Author upload
@@ -3792,84 +3964,73 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
   const circle = circles.find(c => c.id === req.author.circleId);
   const authorName = circle?.name || '未知作者';
 
-  // Add watermark if requested
-  const addWatermark = req.body.addWatermark === 'true';
-  if (addWatermark && sharp) {
-    const filePath = path.join(__dirname, 'uploads', req.file.filename);
-    const ext = path.extname(req.file.filename).toLowerCase();
-    if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
-      try {
-        const image = sharp(filePath);
-        const metadata = await image.metadata();
-        const { width, height } = metadata;
-        const fontSize = Math.round(width / 20);
-        const smallFontSize = Math.round(width / 40);
-        const padding = Math.round(width / 50);
-        const watermarkText = `@${authorName}`;
-        const xmlEscapedText = watermarkText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const svgWatermark = `<svg width="${width}" height="${height}">
-          <style>
-            .wm-center { font-size: ${fontSize}px; fill: rgba(255,255,255,1); font-family: sans-serif; }
-            .wm-corner { font-size: ${smallFontSize}px; fill: rgba(255,255,255,1); font-family: sans-serif; }
-          </style>
-          <text class="wm-center" x="${width/2}" y="${height/2}" text-anchor="middle" dominant-baseline="middle">${xmlEscapedText}</text>
-          <text class="wm-corner" x="${width - padding}" y="${height - padding}" text-anchor="end" dominant-baseline="auto">${xmlEscapedText}</text>
-          <text class="wm-corner" x="${padding}" y="${padding + smallFontSize}" text-anchor="start" dominant-baseline="auto">f7goods.com</text>
-        </svg>`;
-        await image.composite([{ input: Buffer.from(svgWatermark) }]).toFile(filePath + '.tmp');
-        fs.renameSync(filePath + '.tmp', filePath);
-      } catch (e) {
-        console.error('Watermark failed:', e.message);
-      }
-    }
-  }
+  const filePath = req.file.path;
+  const filename = req.file.filename;
+  const ext = path.extname(filename).toLowerCase();
+  const isImage = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
 
-  // Compress image: target 400-600KB range
-  if (sharp) {
-    const filePath = path.join(__dirname, 'uploads', req.file.filename);
-    const ext = path.extname(req.file.filename).toLowerCase();
-    if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
-      try {
-        const stats = fs.statSync(filePath);
-        if (stats.size > 500 * 1024) {
+  try {
+    if (sharp && isImage) {
+      // Watermark
+      if (req.body.addWatermark === 'true' && ext !== '.gif') {
+        try {
+          const image = sharp(filePath);
+          const metadata = await image.metadata();
+          const { width, height } = metadata;
+          const fontSize = Math.round(width / 20);
+          const smallFontSize = Math.round(width / 40);
+          const padding = Math.round(width / 50);
+          const watermarkText = `@${authorName}`;
+          const xmlEscapedText = watermarkText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const svgWatermark = `<svg width="${width}" height="${height}">
+            <style>
+              .wm-center { font-size: ${fontSize}px; fill: rgba(255,255,255,1); font-family: sans-serif; }
+              .wm-corner { font-size: ${smallFontSize}px; fill: rgba(255,255,255,1); font-family: sans-serif; }
+            </style>
+            <text class="wm-center" x="${width/2}" y="${height/2}" text-anchor="middle" dominant-baseline="middle">${xmlEscapedText}</text>
+            <text class="wm-corner" x="${width - padding}" y="${height - padding}" text-anchor="end" dominant-baseline="auto">${xmlEscapedText}</text>
+            <text class="wm-corner" x="${padding}" y="${padding + smallFontSize}" text-anchor="start" dominant-baseline="auto">f7goods.com</text>
+          </svg>`;
+          await image.composite([{ input: Buffer.from(svgWatermark) }]).toFile(filePath + '.tmp');
+          fs.renameSync(filePath + '.tmp', filePath);
+        } catch (e) {
+          console.error('Watermark failed:', e.message);
+        }
+      }
+
+      // Compress if large
+      const stats = fs.statSync(filePath);
+      if (stats.size > 500 * 1024 && ext !== '.gif') {
+        try {
           const targetMax = 600 * 1024;
           let quality = 90;
-          let compressed = false;
-
           while (quality >= 70) {
-            const img = sharp(filePath);
-            await img.jpeg({ quality }).toFile(filePath + '.tmp');
+            await sharp(filePath).jpeg({ quality }).toFile(filePath + '.tmp');
             const resultSize = fs.statSync(filePath + '.tmp').size;
             if (resultSize <= targetMax) {
               fs.renameSync(filePath + '.tmp', filePath);
-              compressed = true;
-              console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024).toFixed(0)}KB -> ${(resultSize / 1024).toFixed(0)}KB (quality: ${quality})`);
               break;
             }
             try { fs.unlinkSync(filePath + '.tmp'); } catch {}
             quality -= 5;
           }
-
-          if (!compressed) {
-            const img = sharp(filePath);
-            await img.jpeg({ quality: 70 }).toFile(filePath + '.tmp');
-            fs.renameSync(filePath + '.tmp', filePath);
-            const finalSize = fs.statSync(filePath).size;
-            console.log(`Compressed ${req.file.filename}: ${(stats.size / 1024).toFixed(0)}KB -> ${(finalSize / 1024).toFixed(0)}KB (quality: 70)`);
-          }
+        } catch (e) {
+          console.error('Compression failed:', e.message);
         }
-      } catch (e) {
-        console.error('Compression failed:', e.message);
       }
     }
+
+    const url = await publishUploadedImage(filePath);
+    const publishedName = path.basename(url);
+    await saveUploadMeta(publishedName, authorName);
+    logEdit(authorName, '上传图片', publishedName, '', url);
+    res.json({ url });
+  } catch (e) {
+    console.error('author upload failed:', e.message);
+    fs.unlink(req.file.path, () => {});
+    res.status(500).json({ error: '上传失败' });
   }
-
-  saveUploadMeta(req.file.filename, authorName);
-  logEdit(authorName, '上传图片', req.file.filename, '', '/uploads/' + req.file.filename);
-
-  res.json({ url: '/uploads/' + req.file.filename });
 });
-
 // List all uploaded images
 app.get('/api/admin/images', authMiddleware, (req, res) => {
   const uploadsDir = path.join(__dirname, 'uploads');
@@ -4014,33 +4175,37 @@ app.post('/api/admin/images/cleanup', authMiddleware, (req, res) => {
 });
 
 // --- Change password ---
-app.post('/api/admin/change-password', authMiddleware, async (req, res) => {
+app.post('/api/admin/change-password', authMiddleware, rateLimitMiddleware, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  if (!newPassword || newPassword.length < 6) {
-    return res.status(400).json({ error: '新密码至少6个字符' });
+  if (!oldPassword || !isPasswordAcceptable(newPassword)) {
+    return res.status(400).json({ error: '新密码至少8个字符' });
   }
   const admin = readJSON('admin.json');
-  if (!bcrypt.compareSync(oldPassword, admin.passwordHash)) {
+  if (!(await bcrypt.compare(oldPassword, admin.passwordHash || ''))) {
     return res.status(400).json({ error: '原密码错误' });
   }
-  admin.passwordHash = bcrypt.hashSync(newPassword, 10);
+  admin.passwordHash = await bcrypt.hash(newPassword, 10);
   await writeJSON('admin.json', admin);
   res.json({ success: true, message: '密码修改成功' });
 });
 
 // SPA fallback for admin
-app.get('/admin/*', (req, res) => {
+app.get('/admin/*', (req, res, next) => {
   if (!req.path.includes('.')) {
-    res.sendFile(path.join(__dirname, 'admin', 'index.html'));
+    return res.sendFile(path.join(__dirname, 'admin', 'index.html'));
   }
+  next();
 });
 
 // Error handling
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    return res.status(400).json({ error: err.message });
+    return res.status(400).json({ error: '上传失败: ' + err.message });
   }
-  if (err) return res.status(500).json({ error: err.message });
+  if (err) {
+    console.error('Unhandled error:', err);
+    return res.status(500).json({ error: '服务器内部错误' });
+  }
   next();
 });
 
@@ -4056,10 +4221,8 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`\n  f7goods server running at http://localhost:${PORT}`);
   console.log(`  Admin panel: http://localhost:${PORT}/admin`);
-  if (process.env.ADMIN_PASSWORD) {
-    console.log('  Admin credentials configured via ADMIN_PASSWORD env var.');
-  } else {
-    console.log('  WARNING: Using default admin password. Set ADMIN_PASSWORD env var for production.');
+  if (IS_PROD && !ADMIN_PASSWORD) {
+    console.warn('WARNING: ADMIN_PASSWORD not set. Initial password setup requires env or init-admin.js.');
   }
   console.log('');
 });

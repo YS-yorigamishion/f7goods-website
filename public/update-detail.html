@@ -7,7 +7,7 @@
   <meta name="description" content="查看同人动态详情，了解最新资讯。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
-  <meta property="og:image" content="/uploads/og-image.jpg">
+  <meta property="og:image" content="/uploads/og-image.svg">
   <meta property="og:title" content="">
   <meta property="og:description" content="">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -127,7 +127,7 @@
                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
                     ${c.logo
                       ? `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${c.logo}" alt="${escapeHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-alt));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">${escapeHtml(c.name.charAt(0))}</div>`}
+                      : `<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">${escapeHtml(c.name.charAt(0))}</div>`}
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(c.name)}</div>
                     </div>
