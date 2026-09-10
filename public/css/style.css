@@ -956,10 +956,10 @@ body.app-mode {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
-  background: var(--card);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  border: none;
   flex-shrink: 0;
 }
 
@@ -1262,19 +1262,22 @@ body.app-mode .back-to-top {
 .board-announce {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   height: 40px;
   margin: 0 0 14px;
-  padding: 0 12px;
+  padding: 0 12px 0 10px;
   background: var(--card);
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   border-radius: 10px;
   min-width: 0;
+  position: relative;
 }
 .board-announce.hidden { display: none; }
 .board-announce-badge {
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1290,8 +1293,9 @@ body.app-mode .back-to-top {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 12px), transparent);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  padding-left: 6px;
+  mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 12px), transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 12px), transparent);
 }
 .board-announce-track {
   display: inline-flex;
@@ -1301,6 +1305,7 @@ body.app-mode .back-to-top {
   color: var(--ink);
   line-height: 1.4;
   will-change: transform;
+  padding-left: 8px;
 }
 .board-announce-track.is-scrolling {
   animation: board-announce-scroll linear infinite;
