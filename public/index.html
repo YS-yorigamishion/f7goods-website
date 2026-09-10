@@ -20,7 +20,8 @@
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
     .wishlist-add-btn:active { transform:scale(1.3); }
     .wishlist-badge { font-size:0.75rem; font-weight:700; min-width:16px; text-align:center; color:var(--accent); }
-    #wishlistBar { position:fixed; bottom:0; left:0; right:0; background:var(--card-bg); border-top:2px solid var(--accent); padding:0.8rem 1.2rem; z-index:999; box-shadow:0 -2px 12px rgba(0,0,0,0.15); }
+    #wishlistBar { position:fixed; bottom:0; left:0; right:0; background:var(--card-bg); border-top:2px solid var(--accent); padding:0.8rem 1.2rem; z-index:999; box-shadow:0 -2px 12px rgba(0,0,0,0.15); transition:bottom 0.15s ease; }
+    body.has-wishlist-bar { padding-bottom: 72px; }
   </style>
 </head>
 <body>
@@ -508,7 +509,8 @@
 
       const evEl = document.getElementById('boardEventsList');
       if (evEl) {
-        const evs = [...allEvents].sort((a, b) => String(a.date || a.startDate || 'z').localeCompare(String(b.date || b.startDate || 'z'))).slice(0, 4);
+        // 近期活动：最新 → 最旧
+        const evs = [...allEvents].sort((a, b) => String(b.date || b.startDate || '').localeCompare(String(a.date || a.startDate || ''))).slice(0, 4);
         if (!evs.length) {
           evEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">${t('home.noEvents')}</div>`;
         } else {
@@ -563,6 +565,7 @@
         wishlistItems = {};
         document.getElementById('wishlistToggleBtn').classList.remove('active');
         document.getElementById('wishlistBar')?.remove();
+        document.body.classList.remove('has-wishlist-bar');
         renderWorks();
         return;
       }
@@ -608,10 +611,25 @@
       });
     }
 
+    function updateWishlistBarPosition() {
+      const bar = document.getElementById('wishlistBar');
+      if (!bar) return;
+      const footer = document.getElementById('footer');
+      if (!footer) {
+        bar.style.bottom = '0px';
+        return;
+      }
+      // Sit on top of the footer when footer is visible; otherwise stick to viewport bottom
+      const rect = footer.getBoundingClientRect();
+      const visibleFooterH = Math.max(0, Math.min(footer.offsetHeight, window.innerHeight - rect.top));
+      bar.style.bottom = visibleFooterH + 'px';
+    }
+
     function updateWishlistBar() {
       const entries = Object.entries(wishlistItems).filter(([, q]) => q > 0);
       if (entries.length === 0) {
         document.getElementById('wishlistBar')?.remove();
+        document.body.classList.remove('has-wishlist-bar');
         return;
       }
       let totalCount = 0;
@@ -626,11 +644,15 @@
         bar = document.createElement('div');
         bar.id = 'wishlistBar';
         document.body.appendChild(bar);
+        document.body.classList.add('has-wishlist-bar');
+        window.addEventListener('scroll', updateWishlistBarPosition, { passive: true });
+        window.addEventListener('resize', updateWishlistBarPosition);
       }
       bar.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;">' +
         '<span style="font-size:0.9rem;">已选 <strong>' + totalCount + '</strong> 件 · 总价 <strong>¥' + totalPrice.toFixed(2) + '</strong></span>' +
         '<button class="btn btn-primary" style="padding:0.4rem 1.2rem;font-size:0.85rem;" onclick="showWishlistSummary()">确认</button>' +
         '</div>';
+      updateWishlistBarPosition();
     }
 
     function showWishlistSummary() {
