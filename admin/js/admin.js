@@ -6764,8 +6764,10 @@ function renderBoothsList() {
               </div>
               <div style="font-size:0.78rem;color:var(--haze);margin-top:0.15rem;">
                 赠品档：${b.tiers.length ? b.tiers.map(t => {
-                  const gift = works.find(w => w.id === t.giftWorkId);
-                  return `满${t.minAmount||0}→${escapeHtml(gift?.title || t.text || '赠品')}`;
+                  const ids = tierGiftIds(t);
+                  const names = ids.map(id => works.find(w => w.id === id)?.title).filter(Boolean);
+                  const label = names.length ? names.join('、') : (t.text || '赠品');
+                  return `满${t.minAmount||0}→${escapeHtml(label)}`;
               }).join('；') : '无'}
               </div>
             </div>
@@ -6782,6 +6784,15 @@ function renderBoothsList() {
   `;
 }
 
+function tierGiftIds(t) {
+  if (!t) return [];
+  if (Array.isArray(t.giftWorkIds)) {
+    const ids = t.giftWorkIds.filter(Boolean);
+    if (ids.length) return ids;
+  }
+  return t.giftWorkId ? [t.giftWorkId] : [];
+}
+
 function normalizeBooths(booths) {
   return (booths || []).map((b, i) => ({
     id: b.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
@@ -6791,8 +6802,13 @@ function normalizeBooths(booths) {
     order: b.order ?? i,
     circleIds: b.circleIds || [],
     promoTiers: Array.isArray(b.promoTiers)
-      ? b.promoTiers.filter(t => t && (t.minAmount != null || t.giftWorkId))
-      : (b.promo ? [{ minAmount: b.promo.minAmount || 0, giftWorkId: '', text: b.promo.text || '' }] : [])
+      ? b.promoTiers
+          .filter(t => t && (t.minAmount != null || tierGiftIds(t).length || t.text))
+          .map(t => {
+            const ids = tierGiftIds(t);
+            return { minAmount: t.minAmount || 0, giftWorkId: ids[0] || '', giftWorkIds: ids, text: t.text || '' };
+          })
+      : (b.promo ? [{ minAmount: b.promo.minAmount || 0, giftWorkId: '', giftWorkIds: [], text: b.promo.text || '' }] : [])
   }));
 }
 
@@ -6812,7 +6828,7 @@ function openBoothModal(boothId = null) {
   const works = window._boothCache?.works || [];
   const relatedWorks = works.filter(w => (event.relatedWorks || []).includes(w.id));
   const selectedOwners = new Set(booth?.circleIds || []);
-  const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: 50, giftWorkId: '', text: '' }];
+  const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: 50, giftWorkId: '', giftWorkIds: [], text: '' }];
 
   document.getElementById('modalTitle').textContent = booth ? '编辑摊位' : '新增摊位';
   document.getElementById('modalBody').innerHTML = `
@@ -6852,12 +6868,12 @@ function openBoothModal(boothId = null) {
       <div id="boothOwnerEmpty" style="display:none;font-size:0.8rem;color:var(--haze);padding:0.4rem;">无匹配作者</div>
     </div>
     <div class="form-group">
-      <label>满额赠品档（可多档）· 前提是作品已关联本活动</label>
+      <label>满额赠品档（可多档 · 一档可送多个作品）· 前提是作品已关联本活动</label>
       <div id="boothTierList" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.5rem;">
         ${tiers.map((t, i) => renderBoothTierRow(t, relatedWorks, i)).join('')}
       </div>
       <button type="button" class="btn-sm" onclick="addBoothTierRow()">+ 添加一档</button>
-      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.35rem;">到额后现场清单会自动加入赠品作品（×1，金额 0）。</div>
+      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.35rem;">到额后现场清单会自动加入该档勾选的全部赠品作品（各 ×1，金额 0）。</div>
     </div>
   `;
   document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
@@ -6868,10 +6884,11 @@ function openBoothModal(boothId = null) {
     const circleIds = [...document.querySelectorAll('#modalBody .booth-circle:checked')].map(i => i.value);
     const promoTiers = [...document.querySelectorAll('#boothTierList .booth-tier-row')].map(row => {
       const minAmount = Number(row.querySelector('.tier-min')?.value) || 0;
-      const giftWorkId = row.querySelector('.tier-gift')?.value || '';
+      const giftWorkIds = [...row.querySelectorAll('.tier-gift:checked')].map(i => i.value);
+      const giftWorkId = giftWorkIds[0] || '';
       const text = row.querySelector('.tier-text')?.value.trim() || '';
-      if (!giftWorkId && !text) return null;
-      return { minAmount, giftWorkId, text };
+      if (!giftWorkIds.length && !text) return null;
+      return { minAmount, giftWorkId, giftWorkIds, text };
     }).filter(Boolean);
     const next = normalizeBooths(booths);
     const payload = { id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)), code, title, logo, circleIds, promoTiers };
@@ -6894,14 +6911,22 @@ function openBoothModal(boothId = null) {
 }
 
 function renderBoothTierRow(t, relatedWorks, i) {
-  return `<div class="booth-tier-row" data-i="${i}" style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
-    <input class="form-input tier-min" type="number" min="0" style="width:100px;" placeholder="满额" value="${t.minAmount ?? ''}">
-    <select class="form-input tier-gift" style="flex:1;min-width:160px;">
-      <option value="">不关联作品</option>
-      ${relatedWorks.map(w => `<option value="${w.id}" ${t.giftWorkId === w.id ? 'selected' : ''}>${escapeHtml(w.title)}</option>`).join('')}
-    </select>
-    <input class="form-input tier-text" style="flex:1;min-width:120px;" placeholder="备注文案" value="${escapeHtml(t.text || '')}">
-    <button type="button" class="btn-sm btn-delete" onclick="this.closest('.booth-tier-row').remove()">删</button>
+  const selected = new Set(tierGiftIds(t));
+  return `<div class="booth-tier-row" data-i="${i}" style="display:flex;flex-direction:column;gap:0.4rem;border:1px solid var(--line);border-radius:8px;padding:0.55rem 0.65rem;">
+    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
+      <input class="form-input tier-min" type="number" min="0" style="width:100px;" placeholder="满额" value="${t.minAmount ?? ''}">
+      <input class="form-input tier-text" style="flex:1;min-width:120px;" placeholder="备注文案" value="${escapeHtml(t.text || '')}">
+      <button type="button" class="btn-sm btn-delete" onclick="this.closest('.booth-tier-row').remove()">删</button>
+    </div>
+    <div style="font-size:0.75rem;color:var(--haze);">赠品作品（可多选）</div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.3rem;max-height:120px;overflow:auto;">
+      ${relatedWorks.length ? relatedWorks.map(w => `
+        <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.25rem;border:1px solid var(--line);border-radius:999px;padding:0.2rem 0.55rem;cursor:pointer;background:var(--card);">
+          <input type="checkbox" class="tier-gift" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''}>
+          ${escapeHtml(w.title)}
+        </label>
+      `).join('') : '<span style="font-size:0.78rem;color:var(--haze);">暂无可选关联作品</span>'}
+    </div>
   </div>`;
 }
 
@@ -6911,7 +6936,7 @@ function addBoothTierRow() {
   const relatedWorks = works.filter(w => (event?.relatedWorks || []).includes(w.id));
   const list = document.getElementById('boothTierList');
   if (!list) return;
-  list.insertAdjacentHTML('beforeend', renderBoothTierRow({ minAmount: '', giftWorkId: '', text: '' }, relatedWorks, Date.now()));
+  list.insertAdjacentHTML('beforeend', renderBoothTierRow({ minAmount: '', giftWorkId: '', giftWorkIds: [], text: '' }, relatedWorks, Date.now()));
 }
 
 async function uploadBoothLogo() {

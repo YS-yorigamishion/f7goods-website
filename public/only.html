@@ -313,6 +313,23 @@
       return b.title ? `${b.code || ''} · ${b.title}` : (b.code || b.name || '摊位');
     }
 
+    function tierGiftIds(t) {
+      if (!t) return [];
+      if (Array.isArray(t.giftWorkIds)) {
+        const ids = t.giftWorkIds.filter(Boolean);
+        if (ids.length) return ids;
+      }
+      return t.giftWorkId ? [t.giftWorkId] : [];
+    }
+    function tierHasGift(t) {
+      return tierGiftIds(t).length > 0;
+    }
+    function tierGiftLabel(t) {
+      const works = window._only?.relatedWorks || [];
+      const names = tierGiftIds(t).map(id => works.find(w => w.id === id)?.title).filter(Boolean);
+      return names.length ? names.join('、') : (t.text || '赠品');
+    }
+
     function renderOnlyPage(event, works, circles) {
       const rootEl = document.getElementById('onlyRoot');
       const circleMap = {};
@@ -328,7 +345,7 @@
         const owners = (raw.circleIds || []).map(cid => circleMap[cid]).filter(Boolean);
         const ownerIds = new Set(owners.map(c => c.id));
         const goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
-        const promoTiers = Array.isArray(raw.promoTiers) ? raw.promoTiers.filter(t => t && (t.giftWorkId || t.text)) : [];
+        const promoTiers = Array.isArray(raw.promoTiers) ? raw.promoTiers.filter(t => t && (tierGiftIds(t).length || t.text)) : [];
         const logo = raw.logo || owners.find(o => o.logo)?.logo || '';
         return {
           id: raw.id,
@@ -493,9 +510,7 @@
               }).join('') : `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;">该摊位暂无关联本活动的周边</div>`}
             </div>
             ${tiers.length ? `<div class="only-promo-box">${tiers.map(t => {
-              const gift = t.giftWorkId ? (window._only?.relatedWorks || []).find(w => w.id === t.giftWorkId) : null;
-              const giftName = gift ? gift.title : (t.text || '赠品');
-              return `满 <b>${money(t.minAmount || 0)}</b> 送「${esc(giftName)}」`;
+              return `满 <b>${money(t.minAmount || 0)}</b> 送「${esc(tierGiftLabel(t))}」`;
             }).join('<br>')}</div>` : ''}
           </div>
         `;
@@ -592,22 +607,26 @@
         const tiers = (b.promoTiers || []).slice().sort((a, z) => (a.minAmount || 0) - (z.minAmount || 0));
         const spend = byBooth[b.id] || 0;
         const hit = tiers.filter(t => spend >= (t.minAmount || 0)).slice(-1)[0];
-        if (!hit || !hit.giftWorkId) return;
-        const giftWork = (window._only?.relatedWorks || []).find(w => w.id === hit.giftWorkId);
-        if (!giftWork) return;
-        // Use dedicated key so gift never collides with a normal cart line
-        const giftKey = 'gift:' + hit.giftWorkId;
-        cart[giftKey] = {
-          id: giftKey,
-          boothId: b.id,
-          boothName: boothLabel(b),
-          title: giftWork.title,
-          price: 0,
-          priceLabel: '赠品',
-          img: (giftWork.images && giftWork.images[0]) || '',
-          qty: 1,
-          isGift: true
-        };
+        if (!hit) return;
+        const giftIds = tierGiftIds(hit);
+        if (!giftIds.length) return;
+        // One hit tier can unlock multiple gifts
+        giftIds.forEach(giftWorkId => {
+          const giftWork = (window._only?.relatedWorks || []).find(w => w.id === giftWorkId);
+          if (!giftWork) return;
+          const giftKey = 'gift:' + giftWorkId;
+          cart[giftKey] = {
+            id: giftKey,
+            boothId: b.id,
+            boothName: boothLabel(b),
+            title: giftWork.title,
+            price: 0,
+            priceLabel: '赠品',
+            img: (giftWork.images && giftWork.images[0]) || '',
+            qty: 1,
+            isGift: true
+          };
+        });
       });
     }
 
@@ -642,17 +661,16 @@
         } else {
           const stats = onlyCartStats();
           const next = (window._only?.boothModels || []).find(b => {
-            const tiers = (b.promoTiers || []).filter(t => t.giftWorkId);
+            const tiers = (b.promoTiers || []).filter(t => tierHasGift(t));
             if (!tiers.length) return false;
             const need = tiers.find(t => (stats.byBooth[b.id] || 0) < (t.minAmount || 0));
             return !!need;
           });
           if (next) {
-            const tiers = next.promoTiers.filter(t => t.giftWorkId).sort((a,z)=>(a.minAmount||0)-(z.minAmount||0));
+            const tiers = next.promoTiers.filter(t => tierHasGift(t)).sort((a,z)=>(a.minAmount||0)-(z.minAmount||0));
             const need = tiers.find(t => (stats.byBooth[next.id] || 0) < (t.minAmount || 0));
             if (need) {
-              const giftWork = (window._only?.relatedWorks || []).find(w => w.id === need.giftWorkId);
-              hint.textContent = `「${boothLabel(next)}」再买 ${money((need.minAmount||0) - (stats.byBooth[next.id]||0))} 可得赠品「${giftWork ? giftWork.title : '赠品'}」`;
+              hint.textContent = `「${boothLabel(next)}」再买 ${money((need.minAmount||0) - (stats.byBooth[next.id]||0))} 可得赠品「${tierGiftLabel(need)}」`;
             } else {
               hint.textContent = '继续挑选';
             }
