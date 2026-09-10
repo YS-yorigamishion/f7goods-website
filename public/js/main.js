@@ -537,7 +537,6 @@ function buildFooter() {
   `;
 }
 
-// Theme toggle (dark mode)
 // Init page structure
 async function initPage(activePage, itemId) {
   try {
