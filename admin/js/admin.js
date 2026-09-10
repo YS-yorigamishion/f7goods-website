@@ -6744,18 +6744,25 @@ function renderBoothsList() {
     ${booths.length ? booths.map(b => `
       <div class="admin-card" style="padding:0.85rem;margin-bottom:0.6rem;">
         <div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;align-items:flex-start;">
-          <div>
-            <div style="font-weight:700;font-size:0.95rem;">
-              ${escapeHtml(b.code || '摊位')}${b.title ? ` <span style="font-weight:500;color:var(--muted);">· ${escapeHtml(b.title)}</span>` : ''}
+          <div style="display:flex;gap:0.65rem;align-items:flex-start;">
+            <div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0;background:linear-gradient(145deg,#EDE6DA,#D9D0C2);display:flex;align-items:center;justify-content:center;font-weight:700;">
+              ${(b.logo || b.owners.find(o => o.logo)?.logo)
+                ? `<img src="${escapeHtml(b.logo || b.owners.find(o => o.logo)?.logo)}" alt="" style="width:100%;height:100%;object-fit:cover;">`
+                : escapeHtml((b.code || '?').slice(0,1))}
             </div>
-            <div style="font-size:0.78rem;color:var(--haze);margin-top:0.2rem;">
-              摊主：${b.owners.length ? b.owners.map(c => escapeHtml(c.name)).join('、') : '未挂接'} · 关联周边 ${b.goodsCount} 件
-            </div>
-            <div style="font-size:0.78rem;color:var(--haze);margin-top:0.15rem;">
-              赠品档：${b.tiers.length ? b.tiers.map(t => {
-                const gift = works.find(w => w.id === t.giftWorkId);
-                return `满${t.minAmount||0}→${escapeHtml(gift?.title || t.text || '赠品')}`;
+            <div>
+              <div style="font-weight:700;font-size:0.95rem;">
+                ${escapeHtml(b.code || '摊位')}${b.title ? ` <span style="font-weight:500;color:var(--muted);">· ${escapeHtml(b.title)}</span>` : ''}
+              </div>
+              <div style="font-size:0.78rem;color:var(--haze);margin-top:0.2rem;">
+                摊主：${b.owners.length ? b.owners.map(c => escapeHtml(c.name)).join('、') : '未挂接'} · 关联周边 ${b.goodsCount} 件
+              </div>
+              <div style="font-size:0.78rem;color:var(--haze);margin-top:0.15rem;">
+                赠品档：${b.tiers.length ? b.tiers.map(t => {
+                  const gift = works.find(w => w.id === t.giftWorkId);
+                  return `满${t.minAmount||0}→${escapeHtml(gift?.title || t.text || '赠品')}`;
               }).join('；') : '无'}
+              </div>
             </div>
           </div>
           <div style="display:flex;gap:0.4rem;">
@@ -6773,6 +6780,7 @@ function normalizeBooths(booths) {
     id: b.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
     code: b.code || b.name || '',
     title: b.title || '',
+    logo: b.logo || '',
     circleIds: b.circleIds || [],
     promoTiers: Array.isArray(b.promoTiers)
       ? b.promoTiers.filter(t => t && (t.minAmount != null || t.giftWorkId))
@@ -6811,6 +6819,17 @@ function openBoothModal(boothId = null) {
       </div>
     </div>
     <div class="form-group">
+      <label>摊位头像（可选，不填则用第一位摊主头像）</label>
+      <div id="boothLogoPreview" style="margin-bottom:0.4rem;">
+        ${booth?.logo ? `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(booth.logo)}" style="width:48px;height:48px;object-fit:cover;border-radius:10px;"></div>` : ''}
+      </div>
+      <input type="file" id="boothLogoInput" accept="image/*" style="font-size:0.85rem;">
+      <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+        <button type="button" class="btn-sm btn-edit" onclick="uploadBoothLogo()">上传头像</button>
+        ${booth?.logo ? `<button type="button" class="btn-sm" onclick="clearBoothLogo()">清除自定义头像</button>` : ''}
+      </div>
+    </div>
+    <div class="form-group">
       <label>挂接摊主（可多选）</label>
       <div style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:0.5rem;">
         ${circles.map(c => `
@@ -6834,6 +6853,7 @@ function openBoothModal(boothId = null) {
     const code = document.getElementById('boothCode').value.trim();
     if (!code) { showToast('请填写摊位号', 'error'); return; }
     const title = document.getElementById('boothTitle').value.trim();
+    const logo = document.querySelector('#boothLogoPreview img')?.src || '';
     const circleIds = [...document.querySelectorAll('#modalBody .booth-circle:checked')].map(i => i.value);
     const promoTiers = [...document.querySelectorAll('#boothTierList .booth-tier-row')].map(row => {
       const minAmount = Number(row.querySelector('.tier-min')?.value) || 0;
@@ -6843,7 +6863,7 @@ function openBoothModal(boothId = null) {
       return { minAmount, giftWorkId, text };
     }).filter(Boolean);
     const next = normalizeBooths(booths);
-    const payload = { id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)), code, title, circleIds, promoTiers };
+    const payload = { id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)), code, title, logo, circleIds, promoTiers };
     if (booth) {
       const idx = next.findIndex(b => b.id === booth.id);
       if (idx >= 0) next[idx] = payload; else next.push(payload);
@@ -6877,6 +6897,32 @@ function addBoothTierRow() {
   const list = document.getElementById('boothTierList');
   if (!list) return;
   list.insertAdjacentHTML('beforeend', renderBoothTierRow({ minAmount: '', giftWorkId: '', text: '' }, relatedWorks, Date.now()));
+}
+
+async function uploadBoothLogo() {
+  const input = document.getElementById('boothLogoInput');
+  if (!input || !input.files || !input.files[0]) { showToast('请选择图片', 'error'); return; }
+  const fd = new FormData();
+  fd.append('image', input.files[0]);
+  try {
+    const res = await fetch('/api/admin/upload', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: fd
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) throw new Error(data.error || '上传失败');
+    document.getElementById('boothLogoPreview').innerHTML =
+      `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(data.url)}" style="width:48px;height:48px;object-fit:cover;border-radius:10px;"></div>`;
+    showToast('头像已上传，保存摊位后生效');
+  } catch (e) {
+    console.error(e);
+    showToast(e.message || '上传失败', 'error');
+  }
+}
+
+function clearBoothLogo() {
+  document.getElementById('boothLogoPreview').innerHTML = '';
 }
 
 async function deleteBooth(boothId) {

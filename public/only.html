@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910m">
+  <link rel="stylesheet" href="/css/style.css?v=20260910n">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -223,14 +223,14 @@
       <div class="actions">
         <button type="button" class="go" id="ocShot">导出图片清单</button>
         <button type="button" class="go alt" id="ocCopy">复制文本清单</button>
+        <button type="button" class="go alt" id="ocClear">一键清空</button>
       </div>
     </div>
   </div>
   <div id="onlyShotCanvasWrap"></div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260910m"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="/js/main.js?v=20260910n"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -292,10 +292,12 @@
         const ownerIds = new Set(owners.map(c => c.id));
         const goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
         const promoTiers = Array.isArray(raw.promoTiers) ? raw.promoTiers.filter(t => t && (t.giftWorkId || t.text)) : [];
+        const logo = raw.logo || owners.find(o => o.logo)?.logo || '';
         return {
           id: raw.id,
           code,
           title,
+          logo,
           circleIds: raw.circleIds || [],
           owners,
           goods,
@@ -367,16 +369,6 @@
               <div class="row"><span class="k">关联周边</span><span>${allGoodsN}</span></div>
             </div>
           </div>
-          <div class="only-ov">
-            <h4>满额赠品（按摊主，可多档）</h4>
-            ${boothModels.filter(b => b.promoTiers.length).map(b =>
-              `<div style="margin-bottom:4px;"><b>${esc(boothLabel(b))}</b>${b.promoTiers.map(t => {
-                const gift = t.giftWorkId ? relatedWorks.find(w => w.id === t.giftWorkId) : null;
-                const giftName = gift ? gift.title : (t.text || '赠品');
-                return ` · 满 ${money(t.minAmount || 0)} 送「${esc(giftName)}」`;
-              }).join('')}</div>`
-            ).join('') || '<div style="color:var(--muted);font-size:12px;">暂无赠品规则</div>'}
-          </div>
         </div>
       `;
 
@@ -433,7 +425,7 @@
         return `
           <div class="only-booth">
             <div class="only-booth-head">
-              <div class="only-avatar">${esc((b.code || ownerNames || '?').slice(0,1))}</div>
+              <div class="only-avatar">${b.logo ? `<img src="${esc(b.logo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : esc((b.code || ownerNames || '?').slice(0,1))}</div>
               <div class="info">
                 <h3>${esc(boothLabel(b))}</h3>
                 <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件关联周边</div>
@@ -670,37 +662,117 @@
       }
     });
 
-    document.getElementById('ocShot').addEventListener('click', async () => {
+    document.getElementById('ocClear').addEventListener('click', () => {
+      if (!window._only) return;
+      if (!confirm('确定清空现场购物清单？')) return;
+      window._onlyCart = {};
+      saveOnlyCart(window._only.event.id, {});
+      const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
+      renderOnlyBooths(tab);
+      renderOnlyCartUI();
+      showToast('已清空清单');
+    });
+
+    // Canvas PNG export — no html2canvas, no CDN
+    function drawOnlyListPng() {
       const { count, total, gifts } = onlyCartStats();
-      if (!count) { showToast('清单是空的', 'error'); return; }
       const event = window._only.event;
-      const wrap = document.getElementById('onlyShotCanvasWrap');
       const entries = Object.values(window._onlyCart || {});
-      wrap.innerHTML = `<div class="only-screenshot" id="onlyShotEl">
-        <h2>${esc(event.title)}</h2>
-        <div class="sh-meta">ONLY 现场购物清单 · ${formatDate(event.date)}${event.location ? ' · ' + esc(event.location) : ''}</div>
-        ${entries.map(e => `<div class="sh-line"><span>${esc(e.boothName)} · ${esc(e.title)}${e.isGift ? ' [赠品]' : ''} ×${e.qty}</span><span>${e.isGift || e.price === 0 ? '—' : money(e.price * e.qty)}</span></div>`).join('')}
-        <div class="sh-total"><span>合计 ${count} 件</span><span>${money(total)}</span></div>
-        ${gifts.map(g => `<div class="sh-gift">赠品[${esc(g.boothName)}] ${esc(g.title)}</div>`).join('')}
-        <div class="sh-foot">f7goods.com · 仅供现场对单，非支付凭证</div>
-      </div>`;
-      const el = document.getElementById('onlyShotEl');
+      const W = 720;
+      const padX = 36;
+      const lineH = 28;
+      const headerH = 110;
+      const footerH = 56;
+      const H = headerH + entries.length * lineH + 90 + gifts.length * 22 + footerH;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = Math.max(280, H);
+      const ctx = canvas.getContext('2d');
+      // paper bg
+      ctx.fillStyle = '#F6F2EB';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // accent top bar
+      ctx.fillStyle = '#D94F5C';
+      ctx.fillRect(0, 0, canvas.width, 4);
+      // title
+      ctx.fillStyle = '#22201E';
+      ctx.font = '600 22px "Noto Serif SC", Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(event.title, W / 2, 48);
+      ctx.font = '12px "Noto Sans SC", sans-serif';
+      ctx.fillStyle = '#8A8078';
+      const meta = `ONLY 现场购物清单 · ${formatDate(event.date)}${event.location ? ' · ' + event.location : ''}`;
+      ctx.fillText(meta, W / 2, 72);
+      // lines
+      ctx.textAlign = 'left';
+      let y = headerH;
+      ctx.strokeStyle = '#E5DDD1';
+      entries.forEach(e => {
+        ctx.strokeStyle = '#E5DDD1';
+        ctx.beginPath();
+        ctx.moveTo(padX, y + 8);
+        ctx.lineTo(W - padX, y + 8);
+        ctx.stroke();
+        ctx.fillStyle = '#22201E';
+        ctx.font = '13px "Noto Sans SC", sans-serif';
+        const left = `${e.boothName} · ${e.title}${e.isGift ? ' [赠品]' : ''} ×${e.qty}`;
+        const right = (e.isGift || e.price === 0) ? '—' : money(e.price * e.qty);
+        ctx.fillText(left, padX, y);
+        ctx.textAlign = 'right';
+        ctx.fillText(right, W - padX, y);
+        ctx.textAlign = 'left';
+        y += lineH;
+      });
+      // total
+      y += 8;
+      ctx.strokeStyle = '#E5DDD1';
+      ctx.beginPath();
+      ctx.moveTo(padX, y - 18);
+      ctx.lineTo(W - padX, y - 18);
+      ctx.stroke();
+      ctx.font = '700 15px "Noto Sans SC", sans-serif';
+      ctx.fillStyle = '#22201E';
+      ctx.fillText(`合计 ${count} 件`, padX, y);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#D94F5C';
+      ctx.fillText(money(total), W - padX, y);
+      ctx.textAlign = 'left';
+      y += 28;
+      gifts.forEach(g => {
+        ctx.fillStyle = '#3D8B6E';
+        ctx.font = '12px "Noto Sans SC", sans-serif';
+        ctx.fillText(`赠品[${g.boothName}] ${g.title}`, padX, y);
+        y += 22;
+      });
+      // footer
+      ctx.fillStyle = '#8A8078';
+      ctx.font = '11px "Noto Sans SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('f7goods.com · 仅供现场对单，非支付凭证', W / 2, canvas.height - 20);
+      return canvas;
+    }
+
+    document.getElementById('ocShot').addEventListener('click', () => {
+      const { count } = onlyCartStats();
+      if (!count) { showToast('清单是空的', 'error'); return; }
       try {
-        if (typeof html2canvas !== 'function') throw new Error('html2canvas missing');
-        const canvas = await html2canvas(el, { backgroundColor: '#F6F2EB', scale: 2 });
+        const canvas = drawOnlyListPng();
+        const event = window._only.event;
         canvas.toBlob(blob => {
           if (!blob) { showToast('导出失败', 'error'); return; }
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = `only-list-${event.id}.png`;
+          document.body.appendChild(a);
           a.click();
+          a.remove();
           setTimeout(() => URL.revokeObjectURL(a.href), 3000);
           showToast('已导出图片清单');
         }, 'image/png');
       } catch (e) {
         console.error(e);
         showToast('导出失败，已改为复制文本', 'error');
-        try { await navigator.clipboard.writeText(onlyListText()); } catch {}
+        try { navigator.clipboard.writeText(onlyListText()); } catch {}
       }
     });
   </script>
