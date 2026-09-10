@@ -722,7 +722,7 @@ async function sharePage(title, url) {
 function renderShareButton(title, url) {
   const safeTitle = encodeURIComponent(title);
   const safeUrl = encodeURIComponent(url);
-  return `<button class="want-btn act-share" style="font-size:0.85rem;padding:0.45rem 1.2rem;margin-left:auto;" data-share-title="${safeTitle}" data-share-url="${safeUrl}" onclick="sharePage(decodeURIComponent(this.dataset.shareTitle), decodeURIComponent(this.dataset.shareUrl))">${t('common.share')}</button>`;
+  return `<button class="want-btn act-share" data-share-title="${safeTitle}" data-share-url="${safeUrl}" onclick="sharePage(decodeURIComponent(this.dataset.shareTitle), decodeURIComponent(this.dataset.shareUrl))">${t('common.share')}</button>`;
 }
 
 // Like functionality

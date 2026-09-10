@@ -1779,8 +1779,9 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   background: var(--line);
   flex-shrink: 0;
 }
-.exhibit-actions .act-share {
-  margin-left: auto;
+.exhibit-actions .act-share,
+.exhibit-actions .want-btn.act-share {
+  margin-left: auto !important;
 }
 .exhibit-actions svg {
   width: 14px;
@@ -2274,19 +2275,21 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--ink);
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.72);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: inherit;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 .board-feat-nav:hover {
-  background: rgba(0,0,0,0.6);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
 }
 #boardFeatureRow { align-items: stretch; }
 
