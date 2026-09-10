@@ -1633,9 +1633,14 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   overflow: hidden;
   min-height: 180px;
   border: 1px solid #3A2C2A;
-  background: #2A2420;
+  background: transparent;
   padding: 0;
   display: block;
+  align-self: start;
+}
+.board-feature-track {
+  height: 100%;
+  min-height: 180px;
 }
 .board-feature.has-cover {
   background-image: none;
@@ -1643,6 +1648,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 }
 .board-feature-track {
   position: relative;
+  height: 100%;
   min-height: 180px;
 }
 .board-feature-slide {
@@ -1739,3 +1745,4 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 .board-feat-nav:hover {
   background: rgba(0,0,0,0.6);
 }
+#boardFeatureRow { align-items: start; }
