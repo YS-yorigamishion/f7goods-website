@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260813m">
+  <link rel="stylesheet" href="/css/style.css?v=20260813n">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -158,7 +158,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260813m"></script>
+  <script src="/js/main.js?v=20260813n"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -313,13 +313,16 @@
         if (!activeEvents.length) {
           aeEl.innerHTML = `<div style="padding:0.5rem 0;color:var(--haze);font-size:12px;">暂无进行中活动</div>`;
         } else {
-          aeEl.innerHTML = activeEvents.map(e => `
-            <a class="board-list-row" href="/event-detail.html?id=${e.id}">
-              <div class="board-thumb">📅</div>
+          aeEl.innerHTML = activeEvents.map(e => {
+            const cover = e.coverImage || (e.images && e.images[0]) || '';
+            return `<a class="board-list-row" href="/event-detail.html?id=${e.id}">
+              ${cover
+                ? `<div class="board-thumb"><img src="${cover}" alt="" loading="lazy"></div>`
+                : `<div class="board-thumb">📅</div>`}
               <div class="t"><b>${escapeHtml(e.title)}</b><small>${escapeHtml(e.location || '')}</small></div>
               <span class="card-tag in_progress" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml((typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || e.status || '')}</span>
-            </a>
-          `).join('');
+            </a>`;
+          }).join('');
         }
       }
 
@@ -378,13 +381,16 @@
         if (!evs.length) {
           evEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">暂无活动</div>`;
         } else {
-          evEl.innerHTML = evs.map(e => `
-            <a class="board-list-row" href="/event-detail.html?id=${e.id}">
-              <div class="board-thumb">📅</div>
+          evEl.innerHTML = evs.map(e => {
+            const cover = e.coverImage || (e.images && e.images[0]) || '';
+            return `<a class="board-list-row" href="/event-detail.html?id=${e.id}">
+              ${cover
+                ? `<div class="board-thumb"><img src="${cover}" alt="" loading="lazy"></div>`
+                : `<div class="board-thumb">📅</div>`}
               <div class="t"><b>${escapeHtml(e.title)}</b><small>${escapeHtml(e.location || '')}</small></div>
               <span class="badge-urgent" style="background:rgba(74,123,167,0.12);color:var(--info);font-weight:500;">${formatDate(e.date || e.startDate)}</span>
-            </a>
-          `).join('');
+            </a>`;
+          }).join('');
         }
       }
 
@@ -397,9 +403,10 @@
           upEl.innerHTML = ups.map(u => {
             const name = (u.circles || []).map(cid => circlesMap[cid]).filter(Boolean)[0] || u.authorName || '';
             const title = u.title || '';
-            return `<a class="board-feed-item" href="/update-detail.html?id=${u.id}">
+            return `<a class="board-list-row" href="/update-detail.html?id=${u.id}">
               <div class="board-avatar">${escapeHtml((name || '·').charAt(0))}</div>
-              <div class="c"><b>${escapeHtml(title)}</b>${name ? ' · ' + escapeHtml(name) : ''}<br><time>${formatDate(u.date || u.createdAt)}</time></div>
+              <div class="t" style="flex:1;min-width:0;"><b>${escapeHtml(title)}</b></div>
+              ${name ? `<span style="font-size:11px;color:var(--muted);flex-shrink:0;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>` : ''}
             </a>`;
           }).join('');
         }
