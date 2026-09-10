@@ -952,6 +952,17 @@ body.app-mode {
   font-family: 'Noto Sans SC', system-ui, sans-serif;
 }
 
+.rail-logo-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+
 .rail-btn {
   width: 56px;
   height: 48px;

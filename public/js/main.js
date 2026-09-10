@@ -419,8 +419,10 @@ function buildNavbar(activePage) {
   const logoText = site.logoText || '';
   const brandName = site.brandName || 'f7goods';
   const favicon = site.favicon;
-  // Rail always shows a reliable text mark; browser tab uses settings favicon separately
-  const logoContent = `<div class="rail-logo">${escapeHtml(logoText || 'F7')}</div>`;
+  const logoTextEsc = escapeHtml(logoText || 'F7');
+  const logoContent = favicon
+    ? `<img class="rail-logo-img" src="${escapeHtml(favicon)}" alt="${escapeHtml(brandName)}" width="36" height="36" data-fb="${logoTextEsc}" onerror="this.onerror=null;var d=document.createElement('div');d.className='rail-logo';d.textContent=this.getAttribute('data-fb')||'F7';if(this.parentNode)this.parentNode.replaceChild(d,this);">`
+    : `<div class="rail-logo">${logoTextEsc}</div>`;
   const langOptions = ['zh', 'ko', 'en', 'ja'].map(code =>
     `<button class="lang-btn ${_lang === code ? 'active' : ''}" data-lang="${code}" onclick="loadLang('${code}');document.querySelector('.lang-dropdown').classList.remove('open')">${getLangName(code)}</button>`
   ).join('');
