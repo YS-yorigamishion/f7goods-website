@@ -1625,3 +1625,117 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 .board-list-row:visited {
   color: inherit;
 }
+
+/* Board feature carousel */
+.board-feature {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 180px;
+  border: 1px solid #3A2C2A;
+  background: #2A2420;
+  padding: 0;
+  display: block;
+}
+.board-feature.has-cover {
+  background-image: none;
+  background-size: auto;
+}
+.board-feature-track {
+  position: relative;
+  min-height: 180px;
+}
+.board-feature-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 18px 20px 44px;
+  color: #F5EFE6;
+  background: linear-gradient(135deg, #2A2420 0%, #3D2A28 55%, #5A2E32 100%);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+}
+.board-feature-slide.has-cover {
+  /* image set inline */
+}
+.board-feature-slide.on {
+  opacity: 1;
+  pointer-events: auto;
+}
+.board-feature-slide h2 {
+  font-family: 'Noto Serif SC', Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+  position: relative;
+  color: #F5EFE6;
+  line-height: 1.3;
+}
+.board-feature-slide::after {
+  content: "";
+  position: absolute;
+  right: -30px;
+  top: -30px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217,79,92,0.35), transparent 70%);
+  pointer-events: none;
+}
+.board-feature-ctrl {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+.board-feat-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.35);
+}
+.board-feat-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  cursor: pointer;
+  display: block;
+  transition: 0.2s ease;
+  font-style: normal;
+}
+.board-feat-dots i.on {
+  background: #fff;
+  width: 16px;
+  border-radius: 4px;
+}
+.board-feat-nav {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+.board-feat-nav:hover {
+  background: rgba(0,0,0,0.6);
+}

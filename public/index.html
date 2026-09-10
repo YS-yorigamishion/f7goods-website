@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260813o">
+  <link rel="stylesheet" href="/css/style.css?v=20260813p">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -27,25 +27,32 @@
   <nav class="navbar app-shell" id="navbar"></nav>
 
   <main class="main-content">
-    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
       <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
         <div class="home-view-toggle" id="homeViewToggle">
           <button type="button" data-view="board" class="active" onclick="setHomeView('board')">看板</button>
           <button type="button" data-view="catalog" onclick="setHomeView('catalog')">全部周边</button>
         </div>
-        <div id="announcementBtn"></div>
       </div>
+      <div id="announcementBtn"></div>
     </div>
 
     <!-- BOARD VIEW -->
     <div class="home-board" id="homeBoard">
       <div class="board-section-head">
         <h2>本周主推</h2>
-        <span>同人企划</span>
+        <span>企划 · 活动轮播</span>
         <a href="/projects.html">全部企划 →</a>
       </div>
       <div class="board-grid" id="boardFeatureRow">
-        <div class="board-panel board-span-8 board-feature" id="boardFeature" style="display:none;"></div>
+        <div class="board-feature board-span-8" id="boardFeature" style="display:none;">
+          <div class="board-feature-track" id="boardFeatureTrack"></div>
+          <div class="board-feature-ctrl" id="boardFeatureCtrl">
+            <button type="button" class="board-feat-nav" id="boardFeatPrev" aria-label="上一张">‹</button>
+            <div class="board-feat-dots" id="boardFeatDots"></div>
+            <button type="button" class="board-feat-nav" id="boardFeatNext" aria-label="下一张">›</button>
+          </div>
+        </div>
         <div class="board-panel board-span-4">
           <div class="board-section-head" style="margin-bottom:8px;">
             <h2>进行中企划</h2>
@@ -158,7 +165,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260813o"></script>
+  <script src="/js/main.js?v=20260813p"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -240,45 +247,110 @@
 
     function setFeaturedProject(id) {
       featuredProjectId = id;
-      renderBoardFeature();
+      const i = boardFeatureSlides.findIndex(s => s.key === 'p:' + id);
+      if (i >= 0) goBoardFeature(i);
+    }
+
+    let boardFeatureSlides = [];
+    let boardFeatIndex = 0;
+    let boardFeatTimer = null;
+    let boardFeatPaused = false;
+
+    function buildBoardFeatureSlides() {
+      const slides = [];
+      const recruiting = allProjects.filter(isProjectRecruiting);
+      recruiting.slice(0, 5).forEach(p => {
+        const catLabel = (typeof PROJECT_CATEGORIES !== 'undefined' && PROJECT_CATEGORIES[p.category]) || p.category || '';
+        const start = p.startDate ? formatDate(p.startDate) : '';
+        const end = p.endDate ? formatDate(p.endDate) : '';
+        const period = start && end ? `${start} → ${end}` : (start || end || '');
+        slides.push({
+          key: 'p:' + p.id,
+          href: '/project-detail.html?id=' + encodeURIComponent(p.id),
+          tag: projectStatusLabel(p.status),
+          tagClass: projectStatusClass(p.status) || 'recruiting',
+          title: p.title || '',
+          cover: p.coverImage || (p.images && p.images[0]) || '',
+          pills: [catLabel ? { cls: 'price', text: catLabel } : null, period ? { cls: '', text: period } : null].filter(Boolean)
+        });
+      });
+      const activeEvents = allEvents
+        .filter(isEventOngoing)
+        .sort((a, b) => String(a.date || a.startDate || 'z').localeCompare(String(b.date || b.startDate || 'z')));
+      activeEvents.slice(0, 5).forEach(e => {
+        const stLabel = (typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || e.status || '';
+        const loc = e.location || '';
+        slides.push({
+          key: 'e:' + e.id,
+          href: '/event-detail.html?id=' + encodeURIComponent(e.id),
+          tag: stLabel,
+          tagClass: String(e.status) === 'jijiangkaiqi' || String(e.status) === 'upcoming' ? 'in_progress' : 'recruiting',
+          title: e.title || '',
+          cover: e.coverImage || (e.images && e.images[0]) || '',
+          pills: [{ cls: 'price', text: '活动' }, e.date || e.startDate ? { cls: '', text: formatDate(e.date || e.startDate) } : null, loc ? { cls: '', text: loc } : null].filter(Boolean)
+        });
+      });
+      return slides;
+    }
+
+    function goBoardFeature(n) {
+      if (!boardFeatureSlides.length) return;
+      boardFeatIndex = ((n % boardFeatureSlides.length) + boardFeatureSlides.length) % boardFeatureSlides.length;
+      document.querySelectorAll('#boardFeatureTrack .board-feature-slide').forEach((el, i) => {
+        el.classList.toggle('on', i === boardFeatIndex);
+      });
+      document.querySelectorAll('#boardFeatDots i').forEach((el, i) => {
+        el.classList.toggle('on', i === boardFeatIndex);
+      });
+    }
+
+    function stopBoardFeatureTimer() {
+      if (boardFeatTimer) { clearInterval(boardFeatTimer); boardFeatTimer = null; }
+    }
+
+    function startBoardFeatureTimer() {
+      stopBoardFeatureTimer();
+      if (boardFeatureSlides.length < 2) return;
+      boardFeatTimer = setInterval(() => {
+        if (!boardFeatPaused) goBoardFeature(boardFeatIndex + 1);
+      }, 4000);
     }
 
     function renderBoardFeature() {
       const featEl = document.getElementById('boardFeature');
       if (!featEl) return;
-      const recruitingProjects = allProjects.filter(isProjectRecruiting);
-      const feature = recruitingProjects.find(p => p.id === featuredProjectId)
-        || recruitingProjects[0]
-        || allProjects[0];
-      if (!feature) {
+      boardFeatureSlides = buildBoardFeatureSlides();
+      stopBoardFeatureTimer();
+      if (!boardFeatureSlides.length) {
         featEl.style.display = 'none';
         return;
       }
-      featuredProjectId = feature.id;
-      const catLabel = (typeof PROJECT_CATEGORIES !== 'undefined' && PROJECT_CATEGORIES[feature.category])
-        || feature.category || '';
-      const start = feature.startDate ? formatDate(feature.startDate) : '';
-      const end = feature.endDate ? formatDate(feature.endDate) : '';
-      const period = start && end ? `${start} → ${end}` : (start || end || '');
-      const cover = feature.coverImage || (feature.images && feature.images[0]) || '';
       featEl.style.display = '';
-      if (cover) {
-        featEl.style.backgroundImage = `url('${cover}')`;
-        featEl.classList.add('has-cover');
-      } else {
-        featEl.style.backgroundImage = '';
-        featEl.classList.remove('has-cover');
-      }
-      const stClass = projectStatusClass(feature.status);
-      featEl.innerHTML = `
-        <div class="board-feature-shade"></div>
-        <span class="board-feature-tag ${stClass}">${escapeHtml(projectStatusLabel(feature.status))}</span>
-        <h2>${escapeHtml(feature.title)}</h2>
-        <div class="board-feature-meta">
-          ${catLabel ? `<span class="pill price">${escapeHtml(catLabel)}</span>` : ''}
-          ${period ? `<span class="pill">${escapeHtml(period)}</span>` : ''}
-        </div>`;
-      featEl.onclick = () => { location.href = '/project-detail.html?id=' + feature.id; };
+      const track = document.getElementById('boardFeatureTrack');
+      const dots = document.getElementById('boardFeatDots');
+      track.innerHTML = boardFeatureSlides.map((s, i) => `
+        <div class="board-feature-slide ${i === 0 ? 'on' : ''} ${s.cover ? 'has-cover' : ''}"
+             style="${s.cover ? `background-image:url('${escapeHtml(s.cover)}')` : ''}"
+             onclick="location.href='${s.href}'">
+          <div class="board-feature-shade"></div>
+          <span class="board-feature-tag ${s.tagClass}">${escapeHtml(s.tag)}</span>
+          <h2>${escapeHtml(s.title)}</h2>
+          <div class="board-feature-meta">
+            ${s.pills.map(p => `<span class="pill ${p.cls}">${escapeHtml(p.text)}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+      dots.innerHTML = boardFeatureSlides.map((_, i) =>
+        `<i class="${i === 0 ? 'on' : ''}" data-i="${i}" onclick="goBoardFeature(${i});startBoardFeatureTimer()"></i>`
+      ).join('');
+      boardFeatIndex = 0;
+      const prev = document.getElementById('boardFeatPrev');
+      const next = document.getElementById('boardFeatNext');
+      if (prev) prev.onclick = (e) => { e.stopPropagation(); goBoardFeature(boardFeatIndex - 1); startBoardFeatureTimer(); };
+      if (next) next.onclick = (e) => { e.stopPropagation(); goBoardFeature(boardFeatIndex + 1); startBoardFeatureTimer(); };
+      featEl.onmouseenter = () => { boardFeatPaused = true; };
+      featEl.onmouseleave = () => { boardFeatPaused = false; };
+      startBoardFeatureTimer();
     }
 
     function renderBoard() {
