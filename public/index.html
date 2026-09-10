@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260813i">
+  <link rel="stylesheet" href="/css/style.css?v=20260813k">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -53,6 +53,24 @@
           </div>
           <div id="boardProjectList"></div>
           <div class="board-section-head" style="margin:12px 0 8px;">
+            <h2>进行中活动</h2>
+            <a href="/events.html">更多</a>
+          </div>
+          <div id="boardActiveEventsList"></div>
+        </div>
+      </div>
+
+      <div class="board-grid">
+        <div class="board-span-8">
+          <div class="board-section-head">
+            <h2>发售中周边</h2>
+            <span>可关注购买意向</span>
+            <button type="button" class="linkish" onclick="setHomeView('catalog')">查看全部 →</button>
+          </div>
+          <div class="board-strip" id="boardSaleStrip"></div>
+        </div>
+        <div class="board-panel board-span-4">
+          <div class="board-section-head" style="margin-bottom:8px;">
             <h2>周边截止</h2>
             <button type="button" class="linkish" onclick="setHomeView('catalog');toggleDeadlineFilter()">更多</button>
           </div>
@@ -60,14 +78,7 @@
         </div>
       </div>
 
-      <div class="board-section-head">
-        <h2>发售中周边</h2>
-        <span>可关注购买意向</span>
-        <button type="button" class="linkish" onclick="setHomeView('catalog')">查看全部 →</button>
-      </div>
-      <div class="board-strip" id="boardSaleStrip"></div>
-
-      <div class="board-grid" style="margin-top:1.35rem;">
+      <div class="board-grid" style="margin-top:0.35rem;">
         <div class="board-panel board-span-6">
           <div class="board-section-head" style="margin-bottom:8px;">
             <h2>近期活动</h2>
@@ -147,7 +158,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260813i"></script>
+  <script src="/js/main.js?v=20260813k"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -214,6 +225,18 @@
       return '';
     }
 
+    function isProjectRecruiting(p) {
+      const s = String(p.status || '');
+      return s === 'zhaomuzhong' || s === 'recruiting' || s === '招募中';
+    }
+
+    function isEventOngoing(e) {
+      const s = String(e.status || '');
+      return s === 'jinxingzhong' || s === 'jijiangkaiqi'
+        || s === 'in_progress' || s === 'upcoming'
+        || s === '进行中' || s === '即将开启';
+    }
+
     function setFeaturedProject(id) {
       featuredProjectId = id;
       renderBoardFeature();
@@ -222,11 +245,9 @@
     function renderBoardFeature() {
       const featEl = document.getElementById('boardFeature');
       if (!featEl) return;
-      const activeProjects = allProjects.filter(p =>
-        !['completed', 'cancelled', 'yiwancheng', 'yiquxiao'].includes(String(p.status || ''))
-      );
-      const feature = activeProjects.find(p => p.id === featuredProjectId)
-        || activeProjects[0]
+      const recruitingProjects = allProjects.filter(isProjectRecruiting);
+      const feature = recruitingProjects.find(p => p.id === featuredProjectId)
+        || recruitingProjects[0]
         || allProjects[0];
       if (!feature) {
         featEl.style.display = 'none';
@@ -262,15 +283,13 @@
     function renderBoard() {
       renderBoardFeature();
 
-      const activeProjects = allProjects.filter(p =>
-        !['completed', 'cancelled', 'yiwancheng', 'yiquxiao'].includes(String(p.status || ''))
-      );
+      const recruitingProjects = allProjects.filter(isProjectRecruiting);
       const projEl = document.getElementById('boardProjectList');
       if (projEl) {
-        if (!activeProjects.length) {
-          projEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">暂无进行中企划</div>`;
+        if (!recruitingProjects.length) {
+          projEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">暂无招募中企划</div>`;
         } else {
-          projEl.innerHTML = activeProjects.slice(0, 5).map(p => {
+          projEl.innerHTML = recruitingProjects.slice(0, 5).map(p => {
             const name = (p.circles || []).map(cid => circlesMap[cid]).filter(Boolean)[0] || '';
             const cover = p.coverImage || (p.images && p.images[0]) || '';
             const stClass = projectStatusClass(p.status);
@@ -282,6 +301,25 @@
               <span class="card-tag ${stClass}" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml(projectStatusLabel(p.status))}</span>
             </div>`;
           }).join('');
+        }
+      }
+
+      const activeEvents = allEvents
+        .filter(isEventOngoing)
+        .sort((a, b) => String(a.date || a.startDate || 'z').localeCompare(String(b.date || b.startDate || 'z')))
+        .slice(0, 5);
+      const aeEl = document.getElementById('boardActiveEventsList');
+      if (aeEl) {
+        if (!activeEvents.length) {
+          aeEl.innerHTML = `<div style="padding:0.5rem 0;color:var(--haze);font-size:12px;">暂无进行中活动</div>`;
+        } else {
+          aeEl.innerHTML = activeEvents.map(e => `
+            <a class="board-list-row" href="/event-detail.html?id=${e.id}">
+              <div class="board-thumb">📅</div>
+              <div class="t"><b>${escapeHtml(e.title)}</b><small>${escapeHtml(e.location || '')}</small></div>
+              <span class="card-tag in_progress" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml((typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || e.status || '')}</span>
+            </a>
+          `).join('');
         }
       }
 
