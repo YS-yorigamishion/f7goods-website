@@ -112,6 +112,11 @@
               <div style="padding:14px 16px 16px;border-top:1px solid var(--line);">
                 <h3 style="margin:0 0 0.6rem;font-size:0.95rem;">${t('works.description')}</h3>
                 <p style="line-height:1.8;color:#4A453F;font-size:0.92rem;">${nl2br(work.description)}</p>
+                <div class="detail-sticky-cta" style="position:static;margin-top:1rem;box-shadow:none;">
+                  ${renderWantButton(work.id, work.wants)}
+                  ${renderLikeButton(work.id, work.likes)}
+                  ${renderShareButton(work.title, location.href)}
+                </div>
               </div>
             </div>
             <div class="detail-side-stack">
@@ -142,11 +147,6 @@
                   <span class="info-value">${escapeHtml(work.commissionedBy)}</span>
                 </div>
                 ` : ''}
-                <div class="detail-sticky-cta">
-                  ${renderWantButton(work.id, work.wants)}
-                  ${renderLikeButton(work.id, work.likes)}
-                  ${renderShareButton(work.title, location.href)}
-                </div>
               </div>
               ${work.socialLinks && Object.keys(work.socialLinks).filter(k => work.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
                 <div class="detail-info-card">
