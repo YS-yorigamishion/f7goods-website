@@ -210,13 +210,14 @@ function navigateTo(page) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${page}`)?.classList.add('active');
 
-  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计' };
+  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
   // Load data for the page
   if (page === 'dashboard') loadDashboard();
   else if (page === 'works') { loadWorks(); syncWorkApprovalToggle(); }
   else if (page === 'events') loadEvents();
+  else if (page === 'booths') loadBoothsPage();
   else if (page === 'circles') loadCircles();
   else if (page === 'projects') loadProjects();
   else if (page === 'categories') loadCategories();
@@ -2688,56 +2689,9 @@ function toggleOnlyBoothsUI() {
   if (wrap) wrap.style.display = t === 'only' ? 'block' : 'none';
 }
 
-function addEventBoothRow(booth = null) {
-  const list = document.getElementById('eBoothList');
-  if (!list) return;
-  const id = 'btmp' + Date.now() + Math.random().toString(36).slice(2, 6);
-  const circles = window._adminCirclesCache || [];
-  const selected = new Set(booth?.circleIds || []);
-  const row = document.createElement('div');
-  row.className = 'event-booth-row';
-  row.dataset.bid = booth?.id || id;
-  row.style.cssText = 'border:1px solid var(--line);border-radius:8px;padding:0.6rem;';
-  row.innerHTML = `
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;flex-wrap:wrap;">
-      <input class="form-input booth-name" style="flex:1;min-width:80px;" placeholder="摊位号 如 A1" value="${booth?.name || ''}">
-      <input class="form-input booth-promo-min" style="width:90px;" type="number" min="0" placeholder="满额" value="${booth?.promo?.minAmount ?? ''}">
-      <input class="form-input booth-promo-text" style="flex:2;min-width:140px;" placeholder="优惠文案（可空）" value="${booth?.promo?.text || ''}">
-      <button type="button" class="btn-sm btn-delete" onclick="this.closest('.event-booth-row').remove()">删</button>
-    </div>
-    <div style="font-size:0.75rem;color:var(--haze);margin-bottom:0.3rem;">关联作者（可多选）</div>
-    <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
-      ${circles.map(c => `
-        <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--line);border-radius:999px;padding:0.15rem 0.5rem;cursor:pointer;">
-          <input type="checkbox" class="booth-circle" value="${c.id}" ${selected.has(c.id) ? 'checked' : ''}>
-          ${c.name}
-        </label>
-      `).join('')}
-    </div>
-  `;
-  list.appendChild(row);
-}
-
-function collectEventBooths() {
-  return [...document.querySelectorAll('#eBoothList .event-booth-row')].map(row => {
-    const name = row.querySelector('.booth-name')?.value.trim();
-    if (!name) return null;
-    const minRaw = row.querySelector('.booth-promo-min')?.value;
-    const promoText = row.querySelector('.booth-promo-text')?.value.trim() || '';
-    const circleIds = [...row.querySelectorAll('.booth-circle:checked')].map(i => i.value);
-    return {
-      id: row.dataset.bid || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
-      name,
-      circleIds,
-      promo: promoText ? { minAmount: Number(minRaw) || 0, text: promoText } : null
-    };
-  }).filter(Boolean);
-}
-
 function openEventModal(event = null) {
   const isEdit = !!event;
   document.getElementById('modalTitle').textContent = isEdit ? '编辑活动' : '新增活动';
-  window._eventBoothDraft = JSON.parse(JSON.stringify(event?.booths || []));
   document.getElementById('modalBody').innerHTML = `
     <div class="form-group">
       <label>活动名称 <span style="color:var(--accent)">*</span></label>
@@ -2759,10 +2713,12 @@ function openEventModal(event = null) {
       </select>
     </div>
     <div class="form-group" id="eOnlyBoothsWrap" style="display:${event?.type === 'only' ? 'block' : 'none'};">
-      <label>摊位列表（ONLY）· 摊位号 + 挂接作者 + 优惠</label>
-      <div id="eBoothList" style="display:flex;flex-direction:column;gap:0.6rem;margin-bottom:0.5rem;"></div>
-      <button type="button" class="btn-sm" onclick="addEventBoothRow()">+ 添加摊位</button>
-      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.4rem;">优惠满额为 0 表示关注/到摊即送。作者可多选。</div>
+      <label>ONLY 摊位</label>
+      <p style="font-size:0.8rem;color:var(--haze);margin:0 0 0.4rem;">
+        摊位与满额赠品请在左侧「<b>摊位管理</b>」中配置。
+        ${event?.type === 'only' && event?.id ? `<a href="#" onclick="closeModal();navigateTo('booths');document.getElementById('boothEventSelect').value='${event.id}';loadBoothsPage();return false;">去摊位管理 →</a>` : ''}
+      </p>
+      <div id="eBoothListPreview" style="font-size:0.8rem;color:var(--muted);"></div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -2865,7 +2821,7 @@ function openEventModal(event = null) {
       relatedCircles: event?.relatedCircles || [],
       relatedProjects: event?.relatedProjects || [],
       type: document.getElementById('eType').value || 'normal',
-      booths: document.getElementById('eType').value === 'only' ? collectEventBooths() : (event?.type === 'only' ? collectEventBooths() : [])
+      booths: event?.booths || []
     };
 
     if (!data.title) { showToast('请填写活动名称', 'error'); return; }
@@ -2880,16 +2836,15 @@ function openEventModal(event = null) {
   });
 
   openModal();
-  // render ONLY booths after modal is in DOM
-  if (!window._adminCirclesCache) {
-    adminAPI('GET', '/api/admin/circles').then(list => {
-      window._adminCirclesCache = list || [];
-      (window._eventBoothDraft || []).forEach(b => addEventBoothRow(b));
-    }).catch(() => {
-      (window._eventBoothDraft || []).forEach(b => addEventBoothRow(b));
-    });
-  } else {
-    (window._eventBoothDraft || []).forEach(b => addEventBoothRow(b));
+  // show booth preview for only events
+  if (event?.type === 'only') {
+    const prev = document.getElementById('eBoothListPreview');
+    if (prev) {
+      const booths = event.booths || [];
+      prev.innerHTML = booths.length
+        ? booths.map(b => `${escapeHtml(b.code || b.name || '')}${b.title ? ' · ' + escapeHtml(b.title) : ''}（${(b.circleIds||[]).length} 摊主）`).join('<br>')
+        : '尚未配置摊位';
+    }
   }
 }
 
@@ -6727,3 +6682,210 @@ document.getElementById('modalOverlay').addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeModal();
 });
+
+// ===== Booth Management (ONLY) =====
+async function loadBoothsPage() {
+  const sel = document.getElementById('boothEventSelect');
+  const list = document.getElementById('boothsList');
+  if (!sel || !list) return;
+  list.innerHTML = '<div style="color:var(--haze);font-size:0.85rem;">加载中…</div>';
+  try {
+    const [events, circles, works] = await Promise.all([
+      adminAPI('GET', '/api/admin/events'),
+      adminAPI('GET', '/api/admin/circles'),
+      adminAPI('GET', '/api/admin/works')
+    ]);
+    window._boothCache = { events: events || [], circles: circles || [], works: works || [] };
+    const onlyEvents = (events || []).filter(e => e.type === 'only');
+    const prev = sel.value;
+    sel.innerHTML = onlyEvents.length
+      ? onlyEvents.map(e => `<option value="${e.id}">${escapeHtml(e.title)}</option>`).join('')
+      : `<option value="">暂无 ONLY 活动，请先在活动管理将类型设为 ONLY</option>`;
+    if (prev && onlyEvents.some(e => e.id === prev)) sel.value = prev;
+    renderBoothsList();
+  } catch (e) {
+    console.error(e);
+    list.innerHTML = '<div style="color:var(--accent);font-size:0.85rem;">加载失败</div>';
+  }
+}
+
+function getSelectedBoothEvent() {
+  const id = document.getElementById('boothEventSelect')?.value;
+  if (!id) return null;
+  return (window._boothCache?.events || []).find(e => e.id === id) || null;
+}
+
+function renderBoothsList() {
+  const list = document.getElementById('boothsList');
+  const event = getSelectedBoothEvent();
+  if (!list) return;
+  if (!event) {
+    list.innerHTML = '<div style="color:var(--haze);font-size:0.85rem;">请选择 ONLY 活动</div>';
+    return;
+  }
+  const circles = window._boothCache?.circles || [];
+  const works = window._boothCache?.works || [];
+  const relatedIds = new Set(event.relatedWorks || []);
+  const relatedWorks = works.filter(w => relatedIds.has(w.id));
+  const booths = (event.booths || []).map(b => {
+    const code = b.code || b.name || '';
+    const title = b.title || '';
+    const owners = (b.circleIds || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
+    const ownerIds = new Set(owners.map(c => c.id));
+    const goodsCount = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid))).length;
+    const tiers = Array.isArray(b.promoTiers) ? b.promoTiers : [];
+    return { ...b, code, title, owners, goodsCount, tiers };
+  });
+
+  list.innerHTML = `
+    <div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.75rem;">
+      当前活动：${escapeHtml(event.title)} · 关联周边 ${relatedWorks.length} 件 · 摊位 ${booths.length} 个
+    </div>
+    ${booths.length ? booths.map(b => `
+      <div class="admin-card" style="padding:0.85rem;margin-bottom:0.6rem;">
+        <div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <div style="font-weight:700;font-size:0.95rem;">
+              ${escapeHtml(b.code || '摊位')}${b.title ? ` <span style="font-weight:500;color:var(--muted);">· ${escapeHtml(b.title)}</span>` : ''}
+            </div>
+            <div style="font-size:0.78rem;color:var(--haze);margin-top:0.2rem;">
+              摊主：${b.owners.length ? b.owners.map(c => escapeHtml(c.name)).join('、') : '未挂接'} · 关联周边 ${b.goodsCount} 件
+            </div>
+            <div style="font-size:0.78rem;color:var(--haze);margin-top:0.15rem;">
+              赠品档：${b.tiers.length ? b.tiers.map(t => {
+                const gift = works.find(w => w.id === t.giftWorkId);
+                return `满${t.minAmount||0}→${escapeHtml(gift?.title || t.text || '赠品')}`;
+              }).join('；') : '无'}
+            </div>
+          </div>
+          <div style="display:flex;gap:0.4rem;">
+            <button class="btn-sm btn-edit" onclick="openBoothModal('${b.id}')">编辑</button>
+            <button class="btn-sm btn-delete" onclick="deleteBooth('${b.id}')">删除</button>
+          </div>
+        </div>
+      </div>
+    `).join('') : '<div style="color:var(--haze);font-size:0.85rem;">该活动暂无摊位，点右上角「新增摊位」。</div>'}
+  `;
+}
+
+function normalizeBooths(booths) {
+  return (booths || []).map(b => ({
+    id: b.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
+    code: b.code || b.name || '',
+    title: b.title || '',
+    circleIds: b.circleIds || [],
+    promoTiers: Array.isArray(b.promoTiers)
+      ? b.promoTiers.filter(t => t && (t.minAmount != null || t.giftWorkId))
+      : (b.promo ? [{ minAmount: b.promo.minAmount || 0, giftWorkId: '', text: b.promo.text || '' }] : [])
+  }));
+}
+
+async function saveBoothsForEvent(eventId, booths) {
+  await adminAPI('PUT', `/api/admin/events/${eventId}`, { booths });
+  // refresh local cache event
+  const ev = (window._boothCache?.events || []).find(e => e.id === eventId);
+  if (ev) ev.booths = booths;
+}
+
+function openBoothModal(boothId = null) {
+  const event = getSelectedBoothEvent();
+  if (!event) { showToast('请先选择 ONLY 活动', 'error'); return; }
+  const booths = normalizeBooths(event.booths);
+  const booth = boothId ? booths.find(b => b.id === boothId) : null;
+  const circles = window._boothCache?.circles || [];
+  const works = window._boothCache?.works || [];
+  const relatedWorks = works.filter(w => (event.relatedWorks || []).includes(w.id));
+  const selectedOwners = new Set(booth?.circleIds || []);
+  const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: 50, giftWorkId: '', text: '' }];
+
+  document.getElementById('modalTitle').textContent = booth ? '编辑摊位' : '新增摊位';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-row">
+      <div class="form-group">
+        <label>摊位号 <span style="color:var(--accent)">*</span></label>
+        <input class="form-input" id="boothCode" value="${escapeHtml(booth?.code || '')}" placeholder="如 A1">
+      </div>
+      <div class="form-group">
+        <label>显示名（可选）</label>
+        <input class="form-input" id="boothTitle" value="${escapeHtml(booth?.title || '')}" placeholder="如 关灯睡大 · 主摊">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>挂接摊主（可多选）</label>
+      <div style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:0.5rem;">
+        ${circles.map(c => `
+          <label style="font-size:0.78rem;display:inline-flex;align-items:center;gap:0.25rem;border:1px solid var(--line);border-radius:999px;padding:0.2rem 0.55rem;cursor:pointer;background:var(--card);">
+            <input type="checkbox" class="booth-circle" value="${c.id}" ${selectedOwners.has(c.id) ? 'checked' : ''}>
+            ${escapeHtml(c.name)}
+          </label>
+        `).join('') || '<span style="font-size:0.8rem;color:var(--haze);">暂无作者</span>'}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>满额赠品档（可多档）· 前提是作品已关联本活动</label>
+      <div id="boothTierList" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.5rem;">
+        ${tiers.map((t, i) => renderBoothTierRow(t, relatedWorks, i)).join('')}
+      </div>
+      <button type="button" class="btn-sm" onclick="addBoothTierRow()">+ 添加一档</button>
+      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.35rem;">到额后现场清单会自动加入赠品作品（×1，金额 0）。</div>
+    </div>
+  `;
+  document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
+    const code = document.getElementById('boothCode').value.trim();
+    if (!code) { showToast('请填写摊位号', 'error'); return; }
+    const title = document.getElementById('boothTitle').value.trim();
+    const circleIds = [...document.querySelectorAll('#modalBody .booth-circle:checked')].map(i => i.value);
+    const promoTiers = [...document.querySelectorAll('#boothTierList .booth-tier-row')].map(row => {
+      const minAmount = Number(row.querySelector('.tier-min')?.value) || 0;
+      const giftWorkId = row.querySelector('.tier-gift')?.value || '';
+      const text = row.querySelector('.tier-text')?.value.trim() || '';
+      if (!giftWorkId && !text) return null;
+      return { minAmount, giftWorkId, text };
+    }).filter(Boolean);
+    const next = normalizeBooths(booths);
+    const payload = { id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)), code, title, circleIds, promoTiers };
+    if (booth) {
+      const idx = next.findIndex(b => b.id === booth.id);
+      if (idx >= 0) next[idx] = payload; else next.push(payload);
+    } else {
+      next.push(payload);
+    }
+    await saveBoothsForEvent(event.id, next);
+    closeModal();
+    renderBoothsList();
+    showToast('摊位已保存');
+  });
+  openModal();
+}
+
+function renderBoothTierRow(t, relatedWorks, i) {
+  return `<div class="booth-tier-row" data-i="${i}" style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
+    <input class="form-input tier-min" type="number" min="0" style="width:100px;" placeholder="满额" value="${t.minAmount ?? ''}">
+    <select class="form-input tier-gift" style="flex:1;min-width:160px;">
+      <option value="">不关联作品</option>
+      ${relatedWorks.map(w => `<option value="${w.id}" ${t.giftWorkId === w.id ? 'selected' : ''}>${escapeHtml(w.title)}</option>`).join('')}
+    </select>
+    <input class="form-input tier-text" style="flex:1;min-width:120px;" placeholder="备注文案" value="${escapeHtml(t.text || '')}">
+    <button type="button" class="btn-sm btn-delete" onclick="this.closest('.booth-tier-row').remove()">删</button>
+  </div>`;
+}
+
+function addBoothTierRow() {
+  const event = getSelectedBoothEvent();
+  const works = window._boothCache?.works || [];
+  const relatedWorks = works.filter(w => (event?.relatedWorks || []).includes(w.id));
+  const list = document.getElementById('boothTierList');
+  if (!list) return;
+  list.insertAdjacentHTML('beforeend', renderBoothTierRow({ minAmount: '', giftWorkId: '', text: '' }, relatedWorks, Date.now()));
+}
+
+async function deleteBooth(boothId) {
+  const event = getSelectedBoothEvent();
+  if (!event) return;
+  if (!await showConfirm('确定删除该摊位？', { danger: true })) return;
+  const booths = normalizeBooths(event.booths).filter(b => b.id !== boothId);
+  await saveBoothsForEvent(event.id, booths);
+  renderBoothsList();
+  showToast('已删除');
+}
+

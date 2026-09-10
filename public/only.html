@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>f7goods — ONLY 专场</title>
-  <meta name="description" content="同人 ONLY 专场：摊位参与情况、周边清单、现场购物清单与优惠。">
+  <meta name="description" content="同人 ONLY 专场：摊位参与情况、周边清单、现场购物清单与赠品优惠。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910l">
+  <link rel="stylesheet" href="/css/style.css?v=20260910m">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -34,9 +34,9 @@
     }
     .only-meta { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 10px; }
     .only-stats {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1rem;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem;
     }
-    @media (max-width: 640px) { .only-stats { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .only-stats { grid-template-columns: repeat(3, 1fr); } }
     .only-stat {
       background: var(--card); border: 1px solid var(--line); border-radius: 12px;
       padding: 12px 8px; text-align: center;
@@ -62,36 +62,41 @@
     .only-booth-head .info { flex: 1; min-width: 0; }
     .only-booth-head h3 { margin: 0 0 2px; font-size: 0.95rem; font-weight: 600; }
     .only-booth-head .sub { font-size: 11px; color: var(--muted); }
-    .only-tag {
-      font-size: 10px; padding: 2px 8px; border-radius: 999px; flex-shrink: 0; align-self: flex-start;
-      background: rgba(217,79,92,.1); color: var(--accent);
-    }
-    .only-tag.promo { background: rgba(61,139,110,.12); color: var(--success); }
     .only-goods { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
     .only-g {
       border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper);
+      display: flex; flex-direction: column;
     }
     .only-g .img {
       height: 72px; background: linear-gradient(160deg,#EDE6DA,#E2D9CB);
       display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted);
     }
     .only-g .img img { width: 100%; height: 100%; object-fit: cover; }
-    .only-g .body { padding: 8px; }
+    .only-g .body { padding: 8px; display: flex; flex-direction: column; flex: 1; }
     .only-g .name {
       font-size: 12px; font-weight: 600; line-height: 1.35; margin-bottom: 2px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
-    .only-g .price { font-size: 12px; color: var(--accent); font-weight: 700; }
-    .only-g .add {
-      margin-top: 6px; width: 100%; border: 1px solid var(--line); background: var(--card);
-      border-radius: 999px; padding: 5px 0; font-size: 11px; cursor: pointer; font-family: inherit; color: var(--ink);
+    .only-g .price { font-size: 12px; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+    .only-qtyrow { display: flex; align-items: center; gap: 6px; margin-top: auto; }
+    .only-qtyrow button {
+      width: 28px; height: 28px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--card); cursor: pointer; font-size: 14px; line-height: 1; color: var(--ink);
+      font-family: inherit;
     }
-    .only-g .add:hover, .only-g .add.in {
-      border-color: var(--accent); color: var(--accent); background: rgba(217,79,92,.06);
+    .only-qtyrow button:hover { border-color: var(--accent); color: var(--accent); }
+    .only-qtyrow button:disabled { opacity: .35; cursor: default; }
+    .only-qtyrow .q { min-width: 18px; text-align: center; font-size: 12px; font-weight: 600; }
+    .only-qtyrow .add {
+      margin-left: auto; border: 1px solid var(--accent); background: transparent;
+      color: var(--accent); border-radius: 999px; padding: 5px 10px; font-size: 11px;
+      cursor: pointer; font-family: inherit; width: auto; height: auto;
     }
+    .only-qtyrow .add.in { background: var(--accent); color: #fff; }
     .only-promo-box {
       background: rgba(61,139,110,.06); border: 1px solid rgba(61,139,110,.2);
       border-radius: 10px; padding: 8px 10px; margin-top: 8px; font-size: 11.5px; color: #2f6b55;
+      line-height: 1.55;
     }
     .only-promo-box b { color: var(--success); }
     .only-ov {
@@ -107,42 +112,53 @@
       padding: 10px 14px; display: flex; align-items: center; gap: 12px;
       box-shadow: 0 -4px 16px rgba(0,0,0,.06);
     }
-    .only-cartbar .l { flex: 1; min-width: 0; font-size: 12.5px; }
+    .only-cartbar .l { flex: 1; min-width: 0; font-size: 12.5px; text-align: center; }
     .only-cartbar .l b { color: var(--accent); }
     .only-cartbar .hintline { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .only-cartbar .hintline.ok { color: var(--success); font-weight: 600; }
+    .only-cartbar .barbtns { display: flex; gap: 8px; flex-shrink: 0; }
     .only-cartbar button {
       border: none; background: var(--accent); color: #fff; border-radius: 999px;
-      padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; flex-shrink: 0;
+      padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
     }
-    .only-cartbar button:hover { background: var(--accent-dark); }
+    .only-cartbar button.ghost {
+      background: transparent; border: 1px solid var(--line); color: var(--ink); font-weight: 500;
+    }
     .only-overlay {
       position: fixed; inset: 0; background: rgba(34,32,30,.4); z-index: 1200;
-      display: none; align-items: flex-end; justify-content: center;
+      display: none; align-items: center; justify-content: center; padding: 16px;
     }
     .only-overlay.open { display: flex; }
     .only-drawer {
-      background: var(--card); width: min(520px, 100%); max-height: 78vh;
-      border-radius: 16px 16px 0 0; padding: 16px 16px 20px; overflow-y: auto;
+      background: var(--card); width: min(480px, 100%); max-height: 82vh;
+      border-radius: 16px; padding: 18px 16px 20px; overflow-y: auto;
+      box-shadow: 0 18px 40px rgba(0,0,0,.14);
     }
     .only-drawer h3 {
-      font-size: 1rem; margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center;
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.05rem; margin: 0 0 12px; text-align: center;
     }
-    .only-drawer h3 button {
-      background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted); line-height: 1;
+    .only-drawer .closebtn {
+      position: absolute; top: 10px; right: 12px; background: none; border: none;
+      font-size: 18px; cursor: pointer; color: var(--muted); line-height: 1;
     }
+    .only-drawer-wrap { position: relative; }
     .only-ci {
-      display: flex; gap: 10px; align-items: center; padding: 8px 0;
+      display: flex; gap: 10px; align-items: center; padding: 10px 0;
       border-bottom: 1px solid var(--line); font-size: 13px;
     }
-    .only-ci .n { flex: 1; min-width: 0; }
-    .only-ci .n small { display: block; color: var(--muted); font-size: 11px; }
+    .only-ci .n { flex: 1; min-width: 0; text-align: left; }
+    .only-ci .n small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .only-ci .gift-tag {
+      display: inline-block; font-size: 10px; background: rgba(61,139,110,.12);
+      color: var(--success); border-radius: 999px; padding: 1px 6px; margin-left: 4px;
+    }
     .only-qty { display: flex; align-items: center; gap: 6px; }
     .only-qty button {
-      width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--line);
+      width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line);
       background: var(--card); cursor: pointer; font-size: 14px;
     }
-    .only-empty { color: var(--muted); font-size: 12.5px; padding: 20px 0; text-align: center; }
+    .only-empty { color: var(--muted); font-size: 12.5px; padding: 24px 0; text-align: center; }
     .only-sumrow { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; }
     .only-sumrow.total {
       font-weight: 700; font-size: 15px; border-top: 1px solid var(--line);
@@ -150,12 +166,14 @@
     }
     .only-sumrow.total .v { color: var(--accent); }
     .only-sumrow.gift { color: var(--success); font-size: 12px; }
+    .only-drawer .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
     .only-drawer .go {
-      width: 100%; margin-top: 12px; border: none; background: var(--accent); color: #fff;
-      border-radius: 999px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+      width: 100%; border: none; background: var(--accent); color: #fff;
+      border-radius: 999px; padding: 12px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
     }
     .only-drawer .go.alt {
-      background: transparent; border: 1px solid var(--line); color: var(--ink); margin-top: 8px;
+      background: transparent; border: 1px solid var(--line); color: var(--ink); font-weight: 500;
     }
     #onlyShotCanvasWrap { display: none; }
     .only-screenshot {
@@ -164,8 +182,9 @@
     }
     .only-screenshot h2 {
       font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.1rem; margin: 0 0 4px;
+      text-align: center;
     }
-    .only-screenshot .sh-meta { font-size: 11px; color: #8A8078; margin-bottom: 10px; }
+    .only-screenshot .sh-meta { font-size: 11px; color: #8A8078; margin-bottom: 10px; text-align: center; }
     .only-screenshot .sh-line {
       display: flex; justify-content: space-between; gap: 8px; font-size: 12px;
       padding: 4px 0; border-bottom: 1px solid #E5DDD1;
@@ -181,7 +200,7 @@
   <nav class="navbar" id="navbar"></nav>
   <main class="main-content detail-page">
     <div class="only-wrap" id="onlyRoot">
-      <div style="padding:2rem;color:var(--muted);font-size:13px;">加载中…</div>
+      <div style="padding:2rem;color:var(--muted);font-size:13px;text-align:center;">加载中…</div>
     </div>
   </main>
   <footer class="footer" id="footer"></footer>
@@ -191,21 +210,26 @@
       <div>清单 <b id="ocCount">0</b> 件 · <b id="ocTotal">¥0</b></div>
       <div class="hintline" id="ocHint"></div>
     </div>
-    <button type="button" id="ocOpen">清单</button>
+    <div class="barbtns">
+      <button type="button" class="ghost" id="ocOpen">清单</button>
+    </div>
   </div>
   <div class="only-overlay" id="onlyOverlay">
-    <div class="only-drawer">
-      <h3>现场购物清单 <button type="button" id="ocClose">×</button></h3>
+    <div class="only-drawer only-drawer-wrap">
+      <button type="button" class="closebtn" id="ocClose">×</button>
+      <h3>现场购物清单</h3>
       <div id="ocList"></div>
       <div id="ocSum"></div>
-      <button type="button" class="go" id="ocShot">导出图片清单</button>
-      <button type="button" class="go alt" id="ocCopy">复制文本清单</button>
+      <div class="actions">
+        <button type="button" class="go" id="ocShot">导出图片清单</button>
+        <button type="button" class="go alt" id="ocCopy">复制文本清单</button>
+      </div>
     </div>
   </div>
   <div id="onlyShotCanvasWrap"></div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260910l"></script>
+  <script src="/js/main.js?v=20260910m"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
     (async function bootOnly() {
@@ -213,7 +237,6 @@
       const id = params.get('id');
       if (!id) { location.href = '/events.html'; return; }
       initPage('events', id);
-
       const root = document.getElementById('onlyRoot');
       try {
         await loadCategoriesFromAPI();
@@ -230,14 +253,14 @@
         renderOnlyPage(event, works, circles);
       } catch (e) {
         console.error(e);
-        root.innerHTML = `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound') || '加载失败'}</p></div>`;
+        root.innerHTML = `<div class="empty-state"><div class="icon">!</div><p>加载失败</p></div>`;
       }
     })();
 
     function parsePrice(p) {
       if (p == null) return 0;
       const s = String(p).replace(/[¥￥,，\s]/g, '');
-      if (!s || s === '无料' || /无料|免费|free/i.test(String(p))) return 0;
+      if (!s || /无料|免费|free/i.test(String(p))) return 0;
       const n = parseFloat(s);
       return Number.isFinite(n) ? n : 0;
     }
@@ -249,56 +272,65 @@
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+    function boothLabel(b) {
+      return b.title ? `${b.code || ''} · ${b.title}` : (b.code || b.name || '摊位');
+    }
 
     function renderOnlyPage(event, works, circles) {
       const rootEl = document.getElementById('onlyRoot');
       const circleMap = {};
       circles.forEach(c => { circleMap[c.id] = c; });
-      const booths = Array.isArray(event.booths) ? event.booths : [];
+      // Only works related to this event
       const relatedIds = new Set(event.relatedWorks || []);
+      const relatedWorks = works.filter(w => relatedIds.has(w.id) && (!w.approvalStatus || w.approvalStatus === 'approved'));
 
-      // Build booth model with goods
-      const boothModels = booths.map(b => {
-        const owners = (b.circleIds || []).map(cid => circleMap[cid]).filter(Boolean);
+      const boothsRaw = Array.isArray(event.booths) ? event.booths : [];
+      const boothModels = boothsRaw.map(raw => {
+        const code = raw.code || raw.name || '';
+        const title = raw.title || '';
+        const owners = (raw.circleIds || []).map(cid => circleMap[cid]).filter(Boolean);
         const ownerIds = new Set(owners.map(c => c.id));
-        const goods = works.filter(w => {
-          if (w.approvalStatus && w.approvalStatus !== 'approved') return false;
-          if (relatedIds.has(w.id)) return true;
-          return (w.circles || []).some(cid => ownerIds.has(cid));
-        });
-        return { ...b, owners, goods };
-      }).filter(b => b.name);
+        const goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
+        const promoTiers = Array.isArray(raw.promoTiers) ? raw.promoTiers.filter(t => t && (t.giftWorkId || t.text)) : [];
+        return {
+          id: raw.id,
+          code,
+          title,
+          circleIds: raw.circleIds || [],
+          owners,
+          goods,
+          promoTiers,
+          // legacy single promo
+          promo: raw.promo || null
+        };
+      }).filter(b => b.code || b.title);
 
-      // Unassigned booth: authors in relatedCircles but not in any booth
-      const assigned = new Set();
-      boothModels.forEach(b => (b.circleIds || []).forEach(id => assigned.add(id)));
-      const unassignedOwners = (event.relatedCircles || [])
-        .filter(cid => !assigned.has(cid))
-        .map(cid => circleMap[cid]).filter(Boolean);
-      const unassignedWorkIds = new Set();
-      boothModels.forEach(b => b.goods.forEach(g => unassignedWorkIds.add(g.id)));
-      if (unassignedOwners.length) {
-        const ownerIds = new Set(unassignedOwners.map(c => c.id));
-        const goods = works.filter(w => {
-          if (w.approvalStatus && w.approvalStatus !== 'approved') return false;
-          if (unassignedWorkIds.has(w.id)) return false;
-          if (relatedIds.has(w.id)) return true;
-          return (w.circles || []).some(cid => ownerIds.has(cid));
+      // Unassigned: related works whose authors are not on any booth
+      const assignedCircles = new Set();
+      boothModels.forEach(b => (b.circleIds || []).forEach(id => assignedCircles.add(id)));
+      const usedWorkIds = new Set();
+      boothModels.forEach(b => b.goods.forEach(g => usedWorkIds.add(g.id)));
+      const unassignedGoods = relatedWorks.filter(w => {
+        if (usedWorkIds.has(w.id)) return false;
+        const cs = w.circles || [];
+        if (!cs.length) return true;
+        return cs.some(cid => !assignedCircles.has(cid));
+      });
+      if (unassignedGoods.length) {
+        boothModels.push({
+          id: '_unassigned',
+          code: '—',
+          title: '未分摊',
+          circleIds: [],
+          owners: [],
+          goods: unassignedGoods,
+          promoTiers: [],
+          promo: null
         });
-        if (goods.length || unassignedOwners.length) {
-          boothModels.push({
-            id: '_unassigned',
-            name: '未分摊',
-            circleIds: unassignedOwners.map(c => c.id),
-            promo: null,
-            owners: unassignedOwners,
-            goods
-          });
-        }
       }
 
-      const allGoodsN = boothModels.reduce((s, b) => s + b.goods.length, 0);
-      const promoN = boothModels.filter(b => b.promo && b.promo.text).length;
+      const allGoodsN = relatedWorks.length;
+      const ownerN = boothModels.reduce((s, b) => s + (b.owners?.length || 0), 0);
 
       rootEl.innerHTML = `
         <div class="only-hero">
@@ -316,13 +348,11 @@
         </div>
         <div class="only-stats">
           <div class="only-stat"><b>${boothModels.length}</b><span>摊位</span></div>
-          <div class="only-stat"><b>${boothModels.reduce((s,b)=>s+(b.owners?.length||0),0)}</b><span>参与摊主</span></div>
-          <div class="only-stat"><b>${allGoodsN}</b><span>上架周边</span></div>
-          <div class="only-stat"><b>${promoN}</b><span>优惠摊位</span></div>
+          <div class="only-stat"><b>${ownerN}</b><span>参与摊主</span></div>
+          <div class="only-stat"><b>${allGoodsN}</b><span>关联周边</span></div>
         </div>
         <div class="only-tabs" id="onlyTabs">
           <button type="button" class="on" data-t="all">全部摊位</button>
-          <button type="button" data-t="promo">有优惠</button>
           <button type="button" data-t="ov">活动概况</button>
         </div>
         <div id="onlyListPane"></div>
@@ -334,20 +364,23 @@
               <div class="row"><span class="k">时间</span><span>${formatDate(event.date)}${event.endDate ? ' ~ ' + formatDate(event.endDate) : ''}</span></div>
               <div class="row"><span class="k">地点</span><span>${esc(event.location || '—')}</span></div>
               <div class="row"><span class="k">摊位数</span><span>${boothModels.length}</span></div>
-              <div class="row"><span class="k">上架周边</span><span>${allGoodsN}</span></div>
-              <div class="row"><span class="k">有优惠摊位</span><span>${promoN}</span></div>
+              <div class="row"><span class="k">关联周边</span><span>${allGoodsN}</span></div>
             </div>
           </div>
           <div class="only-ov">
-            <h4>优惠规则（按摊主，与清单联动）</h4>
-            ${boothModels.filter(b => b.promo && b.promo.text).map(b =>
-              `<div>· <b>${esc(b.name)}</b>：${esc(b.promo.text)}${b.promo.minAmount ? `（满 ${money(b.promo.minAmount)}）` : ''}</div>`
-            ).join('') || '<div style="color:var(--muted);font-size:12px;">暂无优惠</div>'}
+            <h4>满额赠品（按摊主，可多档）</h4>
+            ${boothModels.filter(b => b.promoTiers.length).map(b =>
+              `<div style="margin-bottom:4px;"><b>${esc(boothLabel(b))}</b>${b.promoTiers.map(t => {
+                const gift = t.giftWorkId ? relatedWorks.find(w => w.id === t.giftWorkId) : null;
+                const giftName = gift ? gift.title : (t.text || '赠品');
+                return ` · 满 ${money(t.minAmount || 0)} 送「${esc(giftName)}」`;
+              }).join('')}</div>`
+            ).join('') || '<div style="color:var(--muted);font-size:12px;">暂无赠品规则</div>'}
           </div>
         </div>
       `;
 
-      window._only = { event, boothModels };
+      window._only = { event, boothModels, relatedWorks };
       window._onlyCart = loadOnlyCart(event.id);
 
       document.getElementById('onlyTabs').addEventListener('click', e => {
@@ -358,9 +391,10 @@
         renderOnlyBooths(b.dataset.t);
       });
       document.getElementById('onlyListPane').addEventListener('click', e => {
-        const btn = e.target.closest('[data-add]');
-        if (!btn) return;
-        addOnlyItem(btn.dataset.add);
+        const add = e.target.closest('[data-add]');
+        if (add) { setOnlyQty(add.dataset.add, +1); return; }
+        const dec = e.target.closest('[data-dec]');
+        if (dec) { setOnlyQty(dec.dataset.dec, -1); return; }
       });
 
       renderOnlyBooths('all');
@@ -371,9 +405,7 @@
     function onlyGoodsIndex() {
       const idx = {};
       (window._only?.boothModels || []).forEach(b => {
-        b.goods.forEach(g => {
-          idx[g.id] = { booth: b, work: g };
-        });
+        b.goods.forEach(g => { idx[g.id] = { booth: b, work: g }; });
       });
       return idx;
     }
@@ -389,94 +421,133 @@
       }
       listPane.style.display = 'block';
       ovPane.style.display = 'none';
-      const booths = (window._only?.boothModels || []).filter(b => filter === 'promo' ? !!(b.promo && b.promo.text) : true);
+      const booths = window._only?.boothModels || [];
       if (!booths.length) {
-        listPane.innerHTML = `<div class="only-booth" style="color:var(--muted);font-size:13px;">暂无摊位数据，请在管理后台活动里配置 ONLY 摊位。</div>`;
+        listPane.innerHTML = `<div class="only-booth" style="color:var(--muted);font-size:13px;text-align:center;">暂无摊位，请在后台「摊位管理」配置。</div>`;
         return;
       }
+      const cart = window._onlyCart || {};
       listPane.innerHTML = booths.map(b => {
         const ownerNames = (b.owners || []).map(c => esc(c.name)).join('、');
-        const cart = window._onlyCart || {};
+        const tiers = b.promoTiers || [];
         return `
           <div class="only-booth">
             <div class="only-booth-head">
-              <div class="only-avatar">${esc((ownerNames || b.name || '?').slice(0,1))}</div>
+              <div class="only-avatar">${esc((b.code || ownerNames || '?').slice(0,1))}</div>
               <div class="info">
-                <h3>摊位 ${esc(b.name)}</h3>
-                <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件周边</div>
+                <h3>${esc(boothLabel(b))}</h3>
+                <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件关联周边</div>
               </div>
-              ${(b.promo && b.promo.text) ? `<span class="only-tag promo">有优惠</span>` : ''}
             </div>
             <div class="only-goods">
-              ${b.goods.map(g => {
+              ${b.goods.length ? b.goods.map(g => {
                 const q = cart[g.id]?.qty || 0;
                 const img = (g.images && g.images[0]) || '';
                 return `<div class="only-g">
-                  <div class="only-g img">${img ? `<img src="${esc(img)}" alt="">` : (parsePrice(g.price) === 0 ? '无料' : '周边')}</div>
+                  <div class="img">${img ? `<img src="${esc(img)}" alt="">` : (parsePrice(g.price) === 0 ? '无料' : '周边')}</div>
                   <div class="body">
                     <div class="name">${esc(g.title)}</div>
                     <div class="price">${parsePrice(g.price) === 0 ? (g.price || '无料') : money(parsePrice(g.price))}</div>
-                    <button type="button" class="add ${q?'in':''}" data-add="${esc(g.id)}">${q ? '已加 ×'+q : '加入'}</button>
+                    <div class="only-qtyrow">
+                      <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
+                      <span class="q">${q}</span>
+                      <button type="button" data-add="${esc(g.id)}">+</button>
+                    </div>
                   </div>
                 </div>`;
-              }).join('')}
+              }).join('') : `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;">该摊位暂无关联本活动的周边</div>`}
             </div>
-            ${(b.promo && b.promo.text) ? `<div class="only-promo-box">优惠：<b>${esc(b.promo.text)}</b>${b.promo.minAmount ? `（本摊需满 ${money(b.promo.minAmount)}）` : ''}</div>` : ''}
+            ${tiers.length ? `<div class="only-promo-box">${tiers.map(t => {
+              const gift = t.giftWorkId ? (window._only?.relatedWorks || []).find(w => w.id === t.giftWorkId) : null;
+              const giftName = gift ? gift.title : (t.text || '赠品');
+              return `满 <b>${money(t.minAmount || 0)}</b> 送「${esc(giftName)}」`;
+            }).join('<br>')}</div>` : ''}
           </div>
         `;
       }).join('');
     }
 
     function loadOnlyCart(eventId) {
-      try {
-        return JSON.parse(localStorage.getItem('f7onlyCart:' + eventId) || '{}') || {};
-      } catch { return {}; }
+      try { return JSON.parse(localStorage.getItem('f7onlyCart:' + eventId) || '{}') || {}; }
+      catch { return {}; }
     }
     function saveOnlyCart(eventId, cart) {
       localStorage.setItem('f7onlyCart:' + eventId, JSON.stringify(cart));
     }
 
-    function addOnlyItem(workId) {
+    function setOnlyQty(workId, delta) {
       const idx = onlyGoodsIndex();
       const pack = idx[workId];
       if (!pack || !window._only) return;
       const eventId = window._only.event.id;
       const cart = window._onlyCart || (window._onlyCart = {});
-      if (!cart[workId]) {
+      const cur = cart[workId]?.qty || 0;
+      const next = cur + delta;
+      if (next <= 0) {
+        delete cart[workId];
+      } else {
         cart[workId] = {
           id: workId,
           boothId: pack.booth.id,
-          boothName: pack.booth.name,
+          boothName: boothLabel(pack.booth),
           title: pack.work.title,
           price: parsePrice(pack.work.price),
           priceLabel: pack.work.price,
-          qty: 1
+          qty: next,
+          isGift: false
         };
-      } else {
-        cart[workId].qty++;
       }
+      saveOnlyCart(eventId, cart);
+      applyOnlyGifts();
       saveOnlyCart(eventId, cart);
       const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
       renderOnlyBooths(tab);
       renderOnlyCartUI();
     }
 
+    // Auto attach gift items from multi-tier booth promos
+    function applyOnlyGifts() {
+      const cart = window._onlyCart || (window._onlyCart = {});
+      // remove old gifts
+      Object.keys(cart).forEach(k => { if (cart[k] && cart[k].isGift) delete cart[k]; });
+      const byBooth = {};
+      Object.values(cart).forEach(e => {
+        if (e.isGift) return;
+        byBooth[e.boothId] = (byBooth[e.boothId] || 0) + (e.price || 0) * e.qty;
+      });
+      (window._only?.boothModels || []).forEach(b => {
+        const tiers = (b.promoTiers || []).slice().sort((a, z) => (a.minAmount || 0) - (z.minAmount || 0));
+        const spend = byBooth[b.id] || 0;
+        const hit = tiers.filter(t => spend >= (t.minAmount || 0)).slice(-1)[0];
+        if (!hit || !hit.giftWorkId) return;
+        if (cart[hit.giftWorkId] && !cart[hit.giftWorkId].isGift) return; // already in cart as normal
+        const giftWork = (window._only?.relatedWorks || []).find(w => w.id === hit.giftWorkId);
+        if (!giftWork) return;
+        cart[hit.giftWorkId] = {
+          id: hit.giftWorkId,
+          boothId: b.id,
+          boothName: boothLabel(b),
+          title: giftWork.title,
+          price: 0,
+          priceLabel: giftWork.price || '赠品',
+          qty: 1,
+          isGift: true
+        };
+      });
+    }
+
     function onlyCartStats() {
       const cart = window._onlyCart || {};
-      let count = 0, total = 0;
+      let count = 0, total = 0, giftCount = 0;
       const byBooth = {};
       Object.values(cart).forEach(e => {
         count += e.qty;
+        if (e.isGift) { giftCount += e.qty; return; }
         total += (e.price || 0) * e.qty;
         byBooth[e.boothId] = (byBooth[e.boothId] || 0) + (e.price || 0) * e.qty;
       });
-      const gifts = [];
-      (window._only?.boothModels || []).forEach(b => {
-        if (!b.promo || !b.promo.text) return;
-        const s = byBooth[b.id] || 0;
-        if (s >= (b.promo.minAmount || 0)) gifts.push({ booth: b.name, text: b.promo.text });
-      });
-      return { count, total, gifts, byBooth };
+      const gifts = Object.values(cart).filter(e => e.isGift);
+      return { count, total, gifts, byBooth, giftCount };
     }
 
     function renderOnlyCartUI() {
@@ -491,14 +562,25 @@
           hint.textContent = '把要买的周边加进现场清单';
           hint.classList.remove('ok');
         } else if (gifts.length) {
-          hint.textContent = '已触发：' + gifts.map(g => g.text).join('；');
+          hint.textContent = '已得赠品：' + gifts.map(g => g.title).join('、');
           hint.classList.add('ok');
         } else {
-          const boothModels = window._only?.boothModels || [];
           const stats = onlyCartStats();
-          const next = boothModels.find(b => b.promo && b.promo.text && b.promo.minAmount > 0 && (stats.byBooth[b.id] || 0) < b.promo.minAmount);
+          const next = (window._only?.boothModels || []).find(b => {
+            const tiers = (b.promoTiers || []).filter(t => t.giftWorkId);
+            if (!tiers.length) return false;
+            const need = tiers.find(t => (stats.byBooth[b.id] || 0) < (t.minAmount || 0));
+            return !!need;
+          });
           if (next) {
-            hint.textContent = `「${next.name}」再买 ${money(next.promo.minAmount - (stats.byBooth[next.id]||0))} 可得：${next.promo.text}`;
+            const tiers = next.promoTiers.filter(t => t.giftWorkId).sort((a,z)=>(a.minAmount||0)-(z.minAmount||0));
+            const need = tiers.find(t => (stats.byBooth[next.id] || 0) < (t.minAmount || 0));
+            if (need) {
+              const giftWork = (window._only?.relatedWorks || []).find(w => w.id === need.giftWorkId);
+              hint.textContent = `「${boothLabel(next)}」再买 ${money((need.minAmount||0) - (stats.byBooth[next.id]||0))} 可得赠品「${giftWork ? giftWork.title : '赠品'}」`;
+            } else {
+              hint.textContent = '继续挑选';
+            }
           } else {
             hint.textContent = '继续挑选';
           }
@@ -521,24 +603,26 @@
       }
       list.innerHTML = entries.map(e => `
         <div class="only-ci">
-          <div class="n">${esc(e.title)}<small>摊位 ${esc(e.boothName)} · ${e.price === 0 ? (e.priceLabel || '无料') : money(e.price)}</small></div>
+          <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : (e.price === 0 ? (e.priceLabel || '无料') : money(e.price))}</small></div>
           <div class="only-qty">
             <button type="button" data-q="${esc(e.id)}" data-d="-1">−</button>
             <span>${e.qty}</span>
-            <button type="button" data-q="${esc(e.id)}" data-d="1">+</button>
+            <button type="button" data-q="${esc(e.id)}" data-d="1" ${e.isGift ? 'disabled' : ''}>+</button>
           </div>
           <div style="width:52px;text-align:right;font-weight:600;">${e.price === 0 ? '—' : money(e.price * e.qty)}</div>
         </div>
       `).join('');
       const { total, gifts } = onlyCartStats();
       sum.innerHTML = `
-        <div class="only-sumrow"><span style="color:var(--muted);">合计</span><span>${money(total)}</span></div>
-        ${gifts.map(g => `<div class="only-sumrow gift"><span>已得 · ${esc(g.booth)}</span><span>${esc(g.text)}</span></div>`).join('')}
+        <div class="only-sumrow"><span style="color:var(--muted);">合计（不含赠品）</span><span>${money(total)}</span></div>
+        ${gifts.map(g => `<div class="only-sumrow gift"><span>赠品 · ${esc(g.boothName)}</span><span>${esc(g.title)}</span></div>`).join('')}
         <div class="only-sumrow total"><span>预估合计</span><span class="v">${money(total)}</span></div>
       `;
     }
 
     document.getElementById('ocOpen').addEventListener('click', () => {
+      applyOnlyGifts();
+      saveOnlyCart(window._only.event.id, window._onlyCart);
       document.getElementById('onlyOverlay').classList.add('open');
       renderOnlyCartUI();
     });
@@ -550,13 +634,14 @@
     });
     document.getElementById('ocList').addEventListener('click', e => {
       const btn = e.target.closest('[data-q]');
-      if (!btn) return;
+      if (!btn || btn.disabled) return;
       const id = btn.dataset.q;
       const d = Number(btn.dataset.d);
       const cart = window._onlyCart || {};
-      if (!cart[id]) return;
+      if (!cart[id] || cart[id].isGift) return;
       cart[id].qty += d;
       if (cart[id].qty <= 0) delete cart[id];
+      applyOnlyGifts();
       saveOnlyCart(window._only.event.id, cart);
       const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
       renderOnlyBooths(tab);
@@ -568,10 +653,10 @@
       const event = window._only.event;
       const lines = [`【${event.title} · 现场清单】`];
       Object.values(window._onlyCart || {}).forEach(e => {
-        lines.push(`· 摊位${e.boothName} | ${e.title} ×${e.qty}` + (e.price ? ` = ${money(e.price * e.qty)}` : ''));
+        lines.push(`· 摊位${e.boothName} | ${e.title} ×${e.qty}` + (e.isGift ? ' [赠品]' : (e.price ? ` = ${money(e.price * e.qty)}` : '')));
       });
       lines.push(`合计 ${count} 件 · ${money(total)}`);
-      gifts.forEach(g => lines.push(`优惠[${g.booth}] ${g.text}`));
+      gifts.forEach(g => lines.push(`赠品[${g.boothName}] ${g.title}`));
       lines.push('f7goods 现场购物清单');
       return lines.join('\n');
     }
@@ -594,9 +679,9 @@
       wrap.innerHTML = `<div class="only-screenshot" id="onlyShotEl">
         <h2>${esc(event.title)}</h2>
         <div class="sh-meta">ONLY 现场购物清单 · ${formatDate(event.date)}${event.location ? ' · ' + esc(event.location) : ''}</div>
-        ${entries.map(e => `<div class="sh-line"><span>${esc(e.boothName)} · ${esc(e.title)} ×${e.qty}</span><span>${e.price === 0 ? '无料' : money(e.price * e.qty)}</span></div>`).join('')}
+        ${entries.map(e => `<div class="sh-line"><span>${esc(e.boothName)} · ${esc(e.title)}${e.isGift ? ' [赠品]' : ''} ×${e.qty}</span><span>${e.isGift || e.price === 0 ? '—' : money(e.price * e.qty)}</span></div>`).join('')}
         <div class="sh-total"><span>合计 ${count} 件</span><span>${money(total)}</span></div>
-        ${gifts.map(g => `<div class="sh-gift">优惠[${esc(g.booth)}] ${esc(g.text)}</div>`).join('')}
+        ${gifts.map(g => `<div class="sh-gift">赠品[${esc(g.boothName)}] ${esc(g.title)}</div>`).join('')}
         <div class="sh-foot">f7goods.com · 仅供现场对单，非支付凭证</div>
       </div>`;
       const el = document.getElementById('onlyShotEl');

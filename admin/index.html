@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910c">
-  <link rel="stylesheet" href="/admin/css/admin.css?v=20260910a">
+  <link rel="stylesheet" href="/css/style.css?v=20260910m">
+  <link rel="stylesheet" href="/admin/css/admin.css?v=20260910m">
 </head>
 <body class="admin-body">
   <!-- Login Screen -->
@@ -65,6 +65,9 @@
         </a>
         <a href="#" class="sidebar-link" data-page="events">
           <span class="sidebar-icon">📅</span> 活动管理
+        </a>
+        <a href="#" class="sidebar-link" data-page="booths">
+          <span class="sidebar-icon">⛺</span> 摊位管理
         </a>
         <a href="#" class="sidebar-link" data-page="projects">
           <span class="sidebar-icon">📋</span> 企划管理
@@ -358,6 +361,23 @@
               <tbody id="eventsTableBody"></tbody>
             </table>
             <div id="eventsPagination"></div>
+          </div>
+        </div>
+
+        <!-- Booths Management (ONLY events) -->
+        <div id="page-booths" class="admin-page">
+          <div class="page-toolbar">
+            <h3>摊位管理（ONLY）</h3>
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <select class="form-input" id="boothEventSelect" style="width:260px;padding:0.4rem 0.8rem;font-size:0.85rem;" onchange="loadBoothsPage()"></select>
+              <button class="btn btn-primary" onclick="openBoothModal()">+ 新增摊位</button>
+            </div>
+          </div>
+          <div class="admin-card" style="padding:1rem;">
+            <p style="font-size:0.8rem;color:var(--haze);margin-bottom:0.75rem;">
+              仅显示类型为「ONLY 专场」的活动。摊位作品 = 该活动已关联的作品 ∩ 摊位挂接作者的作品。满额赠品可选多档，并关联具体作品。
+            </p>
+            <div id="boothsList"></div>
           </div>
         </div>
 
@@ -944,6 +964,6 @@
     </div>
   </div>
 
-  <script src="/admin/js/admin.js?v=20260910l"></script>
+  <script src="/admin/js/admin.js?v=20260910m"></script>
 </body>
 </html>
