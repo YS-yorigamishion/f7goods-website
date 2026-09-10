@@ -4057,6 +4057,9 @@ async function pickImageFromLibrary(type) {
     } else if (type === 'ann-images') {
       const preview = document.getElementById('annImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
+    } else if (type === 'booth-logo') {
+      const preview = document.getElementById('boothLogoPreview');
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:48px;height:48px;object-fit:cover;border-radius:10px;"></div>`;
     }
   };
   openModal();
@@ -6727,21 +6730,23 @@ function renderBoothsList() {
   const works = window._boothCache?.works || [];
   const relatedIds = new Set(event.relatedWorks || []);
   const relatedWorks = works.filter(w => relatedIds.has(w.id));
-  const booths = (event.booths || []).map(b => {
-    const code = b.code || b.name || '';
-    const title = b.title || '';
-    const owners = (b.circleIds || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
-    const ownerIds = new Set(owners.map(c => c.id));
-    const goodsCount = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid))).length;
-    const tiers = Array.isArray(b.promoTiers) ? b.promoTiers : [];
-    return { ...b, code, title, owners, goodsCount, tiers };
-  });
+  const booths = (event.booths || [])
+    .map((b, idx) => {
+      const code = b.code || b.name || '';
+      const title = b.title || '';
+      const owners = (b.circleIds || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
+      const ownerIds = new Set(owners.map(c => c.id));
+      const goodsCount = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid))).length;
+      const tiers = Array.isArray(b.promoTiers) ? b.promoTiers : [];
+      return { ...b, code, title, order: b.order ?? idx, owners, goodsCount, tiers };
+    })
+    .sort((a, z) => (a.order ?? 0) - (z.order ?? 0));
 
   list.innerHTML = `
     <div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.75rem;">
-      当前活动：${escapeHtml(event.title)} · 关联周边 ${relatedWorks.length} 件 · 摊位 ${booths.length} 个
+      当前活动：${escapeHtml(event.title)} · 关联周边 ${relatedWorks.length} 件 · 摊位 ${booths.length} 个（↑↓ 调整顺序）
     </div>
-    ${booths.length ? booths.map(b => `
+    ${booths.length ? booths.map((b, bi) => `
       <div class="admin-card" style="padding:0.85rem;margin-bottom:0.6rem;">
         <div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;align-items:flex-start;">
           <div style="display:flex;gap:0.65rem;align-items:flex-start;">
@@ -6765,7 +6770,9 @@ function renderBoothsList() {
               </div>
             </div>
           </div>
-          <div style="display:flex;gap:0.4rem;">
+          <div style="display:flex;gap:0.3rem;align-items:center;">
+            <button class="btn-sm" title="上移" onclick="moveBooth('${b.id}', -1)" ${bi === 0 ? 'disabled style="opacity:0.4"' : ''}>↑</button>
+            <button class="btn-sm" title="下移" onclick="moveBooth('${b.id}', 1)" ${bi === booths.length - 1 ? 'disabled style="opacity:0.4"' : ''}>↓</button>
             <button class="btn-sm btn-edit" onclick="openBoothModal('${b.id}')">编辑</button>
             <button class="btn-sm btn-delete" onclick="deleteBooth('${b.id}')">删除</button>
           </div>
@@ -6776,11 +6783,12 @@ function renderBoothsList() {
 }
 
 function normalizeBooths(booths) {
-  return (booths || []).map(b => ({
+  return (booths || []).map((b, i) => ({
     id: b.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
     code: b.code || b.name || '',
     title: b.title || '',
     logo: b.logo || '',
+    order: b.order ?? i,
     circleIds: b.circleIds || [],
     promoTiers: Array.isArray(b.promoTiers)
       ? b.promoTiers.filter(t => t && (t.minAmount != null || t.giftWorkId))
@@ -6824,21 +6832,24 @@ function openBoothModal(boothId = null) {
         ${booth?.logo ? `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(booth.logo)}" style="width:48px;height:48px;object-fit:cover;border-radius:10px;"></div>` : ''}
       </div>
       <input type="file" id="boothLogoInput" accept="image/*" style="font-size:0.85rem;">
-      <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+      <div style="display:flex;gap:0.4rem;margin-top:0.4rem;flex-wrap:wrap;">
         <button type="button" class="btn-sm btn-edit" onclick="uploadBoothLogo()">上传头像</button>
+        <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageFromLibrary('booth-logo')">从图片库选择</button>
         ${booth?.logo ? `<button type="button" class="btn-sm" onclick="clearBoothLogo()">清除自定义头像</button>` : ''}
       </div>
     </div>
     <div class="form-group">
       <label>挂接摊主（可多选）</label>
-      <div style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:0.5rem;">
+      <input type="text" class="form-input" id="boothOwnerSearch" placeholder="搜索作者名称..." style="margin-bottom:0.45rem;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterBoothOwners(this.value)">
+      <div id="boothOwnerList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:0.5rem;">
         ${circles.map(c => `
-          <label style="font-size:0.78rem;display:inline-flex;align-items:center;gap:0.25rem;border:1px solid var(--line);border-radius:999px;padding:0.2rem 0.55rem;cursor:pointer;background:var(--card);">
+          <label class="booth-owner-item" data-name="${escapeHtml((c.name || '').toLowerCase())}" style="font-size:0.78rem;display:inline-flex;align-items:center;gap:0.25rem;border:1px solid var(--line);border-radius:999px;padding:0.2rem 0.55rem;cursor:pointer;background:var(--card);">
             <input type="checkbox" class="booth-circle" value="${c.id}" ${selectedOwners.has(c.id) ? 'checked' : ''}>
             ${escapeHtml(c.name)}
           </label>
         `).join('') || '<span style="font-size:0.8rem;color:var(--haze);">暂无作者</span>'}
       </div>
+      <div id="boothOwnerEmpty" style="display:none;font-size:0.8rem;color:var(--haze);padding:0.4rem;">无匹配作者</div>
     </div>
     <div class="form-group">
       <label>满额赠品档（可多档）· 前提是作品已关联本活动</label>
@@ -6866,8 +6877,12 @@ function openBoothModal(boothId = null) {
     const payload = { id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)), code, title, logo, circleIds, promoTiers };
     if (booth) {
       const idx = next.findIndex(b => b.id === booth.id);
-      if (idx >= 0) next[idx] = payload; else next.push(payload);
+      if (idx >= 0) {
+        payload.order = booth.order ?? idx;
+        next[idx] = payload;
+      } else next.push(payload);
     } else {
+      payload.order = next.length;
       next.push(payload);
     }
     await saveBoothsForEvent(event.id, next);
@@ -6921,6 +6936,20 @@ async function uploadBoothLogo() {
   }
 }
 
+function filterBoothOwners(q) {
+  const query = String(q || '').trim().toLowerCase();
+  const items = [...document.querySelectorAll('#boothOwnerList .booth-owner-item')];
+  let shown = 0;
+  items.forEach(el => {
+    const name = el.dataset.name || '';
+    const ok = !query || name.includes(query);
+    el.style.display = ok ? '' : 'none';
+    if (ok) shown++;
+  });
+  const empty = document.getElementById('boothOwnerEmpty');
+  if (empty) empty.style.display = shown ? 'none' : 'block';
+}
+
 function clearBoothLogo() {
   document.getElementById('boothLogoPreview').innerHTML = '';
 }
@@ -6930,8 +6959,26 @@ async function deleteBooth(boothId) {
   if (!event) return;
   if (!await showConfirm('确定删除该摊位？', { danger: true })) return;
   const booths = normalizeBooths(event.booths).filter(b => b.id !== boothId);
+  booths.forEach((b, i) => { b.order = i; });
   await saveBoothsForEvent(event.id, booths);
   renderBoothsList();
   showToast('已删除');
 }
+
+async function moveBooth(boothId, dir) {
+  const event = getSelectedBoothEvent();
+  if (!event) return;
+  const booths = normalizeBooths(event.booths)
+    .sort((a, z) => (a.order ?? 0) - (z.order ?? 0));
+  const i = booths.findIndex(b => b.id === boothId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= booths.length) return;
+  const tmp = booths[i];
+  booths[i] = booths[j];
+  booths[j] = tmp;
+  booths.forEach((b, k) => { b.order = k; });
+  await saveBoothsForEvent(event.id, booths);
+  renderBoothsList();
+}
+
 
