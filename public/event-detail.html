@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910q">
+  <link rel="stylesheet" href="/css/style.css?v=20260910r">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -46,7 +46,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260910q"></script>
+  <script src="/js/main.js?v=20260910r"></script>
   <script>
     let eventRelatedWorks = [];
     let eventCirclesMap = {};
@@ -167,25 +167,40 @@
 
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('eventDetail');
+        const dateText = formatDate(event.date) + (event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : '');
+        const statusLabel = event.status ? (EVENT_STATUS_LABELS[event.status] || event.status) : '';
+        const cover = event.coverImage || '';
+        const isOnly = event.type === 'only';
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/events.html">${t('nav.events')}</a>
             <span>›</span>
             <span>${escapeHtml(event.title)}</span>
           </div>
-          <div class="detail-header">
-            ${event.coverImage ? `<img src="${event.coverImage}" alt="${escapeHtml(event.title)}" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px;margin-bottom:1rem;cursor:pointer;" class="clickable-img" onclick="openLightbox(['${escapeHtml(event.coverImage).replace(/'/g, '&#39;')}'], 0)">` : ''}
-            <span class="event-date">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
-            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
-              <h1 style="flex:1;">${escapeHtml(event.title)}</h1>
-              ${renderShareButton(event.title, location.href)}
-            </div>
-            <div class="detail-meta">
-              ${event.status ? `<span class="card-tag ${event.status}" style="margin-right:0.5rem;">${EVENT_STATUS_LABELS[event.status] || event.status}</span>` : ''}
-              ${event.type === 'only' ? `<a href="/only.html?id=${encodeURIComponent(event.id)}" class="only-entry-link" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.25rem 0.75rem;border-radius:999px;background:rgba(217,79,92,.1);color:var(--accent);font-size:0.78rem;font-weight:600;text-decoration:none;margin-right:0.5rem;">ONLY 专场页 →</a>` : ''}
-              <span style="display:flex;align-items:center;gap:0.4rem;">📍 ${escapeHtml(event.location)}</span>
+          <div class="ev-hero ${cover ? 'has-cover' : ''}" ${cover ? `style="background-image:url('${escapeHtml(cover).replace(/'/g, '&#39;')}');background-size:cover;background-position:center;"` : ''}>
+            <div class="ev-hero-shade"></div>
+            <div class="ev-hero-body">
+              <div class="ev-hero-row">
+                ${statusLabel ? `<span class="ev-chip">${escapeHtml(statusLabel)}</span>` : ''}
+                ${isOnly ? `<span class="ev-chip ev-chip-only">ONLY 专场</span>` : ''}
+                <span class="ev-hero-share">${renderShareButton(event.title, location.href)}</span>
+              </div>
+              <h1>${escapeHtml(event.title)}</h1>
+              <div class="ev-hero-meta">
+                <span>📅 ${dateText}</span>
+                ${event.location ? `<span>📍 ${escapeHtml(event.location)}</span>` : ''}
+              </div>
             </div>
           </div>
+          ${isOnly ? `
+          <div class="ev-only-banner">
+            <div>
+              <b>ONLY 专场页已开放</b>
+              <p>摊位清单 · 现场购物清单 · 满额赠品</p>
+            </div>
+            <a href="/only.html?id=${encodeURIComponent(event.id)}">进入专场 →</a>
+          </div>
+          ` : ''}
           <div class="detail-content">
             <div class="detail-main">
               <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('events.description')}</h3>

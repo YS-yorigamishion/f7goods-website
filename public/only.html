@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910q">
+  <link rel="stylesheet" href="/css/style.css?v=20260910r">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -240,7 +240,7 @@
   <div id="onlyShotCanvasWrap"></div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260910q"></script>
+  <script src="/js/main.js?v=20260910r"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -493,8 +493,31 @@
     function setOnlyBoothQty(boothId, delta) {
       const booth = (window._only?.boothModels || []).find(b => b.id === boothId);
       if (!booth || !booth.goods?.length) return;
-      booth.goods.forEach(g => setOnlyQty(g.id, delta, true));
-      // setOnlyQty already re-renders; final refresh once
+      const eventId = window._only.event.id;
+      const cart = window._onlyCart || (window._onlyCart = {});
+      const idx = onlyGoodsIndex();
+      booth.goods.forEach(g => {
+        const pack = idx[g.id];
+        if (!pack) return;
+        const cur = cart[g.id]?.qty || 0;
+        const next = cur + delta;
+        if (next <= 0) {
+          delete cart[g.id];
+        } else {
+          cart[g.id] = {
+            id: g.id,
+            boothId: booth.id,
+            boothName: boothLabel(booth),
+            title: g.title,
+            price: parsePrice(g.price),
+            priceLabel: g.price,
+            qty: next,
+            isGift: false
+          };
+        }
+      });
+      applyOnlyGifts();
+      saveOnlyCart(eventId, cart);
       const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
       renderOnlyBooths(tab);
       renderOnlyCartUI();
@@ -534,8 +557,10 @@
     // Auto attach gift items from multi-tier booth promos
     function applyOnlyGifts() {
       const cart = window._onlyCart || (window._onlyCart = {});
-      // remove old gifts
-      Object.keys(cart).forEach(k => { if (cart[k] && cart[k].isGift) delete cart[k]; });
+      // remove old gifts (dedicated keys)
+      Object.keys(cart).forEach(k => {
+        if (cart[k] && cart[k].isGift) delete cart[k];
+      });
       const byBooth = {};
       Object.values(cart).forEach(e => {
         if (e.isGift) return;
@@ -546,16 +571,17 @@
         const spend = byBooth[b.id] || 0;
         const hit = tiers.filter(t => spend >= (t.minAmount || 0)).slice(-1)[0];
         if (!hit || !hit.giftWorkId) return;
-        if (cart[hit.giftWorkId] && !cart[hit.giftWorkId].isGift) return; // already in cart as normal
         const giftWork = (window._only?.relatedWorks || []).find(w => w.id === hit.giftWorkId);
         if (!giftWork) return;
-        cart[hit.giftWorkId] = {
-          id: hit.giftWorkId,
+        // Use dedicated key so gift never collides with a normal cart line
+        const giftKey = 'gift:' + hit.giftWorkId;
+        cart[giftKey] = {
+          id: giftKey,
           boothId: b.id,
           boothName: boothLabel(b),
           title: giftWork.title,
           price: 0,
-          priceLabel: giftWork.price || '赠品',
+          priceLabel: '赠品',
           qty: 1,
           isGift: true
         };
