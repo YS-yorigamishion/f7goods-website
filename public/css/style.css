@@ -1635,8 +1635,10 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   border: 1px solid #3A2C2A;
   background: transparent;
   padding: 0;
-  display: block;
-  align-self: start;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  height: 100%;
 }
 .board-feature-track {
   height: 100%;
@@ -1648,8 +1650,9 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 }
 .board-feature-track {
   position: relative;
-  height: 100%;
+  flex: 1 1 auto;
   min-height: 180px;
+  height: 100%;
 }
 .board-feature-slide {
   position: absolute;
@@ -1745,4 +1748,4 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 .board-feat-nav:hover {
   background: rgba(0,0,0,0.6);
 }
-#boardFeatureRow { align-items: start; }
+#boardFeatureRow { align-items: stretch; }
