@@ -1615,3 +1615,13 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 .board-list-row {
   cursor: pointer;
 }
+.board-list-row:hover b { color: var(--accent); }
+.board-list-row:hover .board-thumb img,
+.board-list-row:hover .board-avatar img { opacity: 0.92; }
+.board-list-row {
+  width: 100%;
+  box-sizing: border-box;
+}
+.board-list-row:visited {
+  color: inherit;
+}
