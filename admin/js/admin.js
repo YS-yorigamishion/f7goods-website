@@ -5739,13 +5739,14 @@ function openUpdateModal(update = null) {
             ${(currentCategories?.updateCategories || []).map(c => `<option value="${c.id}" ${update?.category === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
           </select>
         </div>
+        ${isEdit ? '' : `
         <div class="form-group">
           <label>状态 <span style="color:var(--accent)">*</span></label>
           <select class="form-input" id="updStatus">
             <option value="">请选择</option>
             ${(currentCategories?.updateStatus || []).map(c => `<option value="${c.id}" ${update?.status === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
           </select>
-        </div>
+        </div>`}
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -5825,10 +5826,10 @@ function openUpdateModal(update = null) {
     `;
 
     document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
+      const statusEl = document.getElementById('updStatus');
       const data = {
         title: document.getElementById('updTitle').value,
         category: document.getElementById('updCategory').value,
-        status: document.getElementById('updStatus').value,
         publishDate: document.getElementById('updPublishDate').value,
         content: document.getElementById('updContent').value,
         pinned: document.getElementById('updPinned').checked,
@@ -5838,10 +5839,12 @@ function openUpdateModal(update = null) {
         relatedEvents: [...document.querySelectorAll('.upd-event-cb:checked')].map(cb => cb.value),
         relatedProjects: [...document.querySelectorAll('.upd-project-cb:checked')].map(cb => cb.value)
       };
+      // 编辑时不改状态；新增时才提交状态
+      if (!isEdit && statusEl) data.status = statusEl.value;
 
       if (!data.title) { showToast('请填写标题', 'error'); return; }
       if (!data.category) { showToast('请选择分类', 'error'); return; }
-      if (!data.status) { showToast('请选择状态', 'error'); return; }
+      if (!isEdit && !data.status) { showToast('请选择状态', 'error'); return; }
       if (!data.content) { showToast('请填写内容', 'error'); return; }
 
       if (isEdit) {
