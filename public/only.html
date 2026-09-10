@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910o">
+  <link rel="stylesheet" href="/css/style.css?v=20260910p">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -232,7 +232,7 @@
   <div id="onlyShotCanvasWrap"></div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260910o"></script>
+  <script src="/js/main.js?v=20260910p"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -265,6 +265,14 @@
       if (!s || /无料|免费|free/i.test(String(p))) return 0;
       const n = parseFloat(s);
       return Number.isFinite(n) ? n : 0;
+    }
+    /** 未填/0 → 无料；有数字 → ¥xx */
+    function formatPriceLabel(p) {
+      if (p == null || String(p).trim() === '') return '无料';
+      if (/无料|免费|free/i.test(String(p))) return '无料';
+      const n = parsePrice(p);
+      if (!n) return '无料';
+      return money(n);
     }
     function money(n) {
       return (Number.isInteger(n) ? '¥' + n : '¥' + n.toFixed(2));
@@ -439,14 +447,14 @@
                 const q = cart[g.id]?.qty || 0;
                 const img = (g.images && g.images[0]) || '';
                 return `<a class="only-g" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
-                  <div class="img">${img ? `<img src="${esc(img)}" alt="">` : (parsePrice(g.price) === 0 ? '无料' : '周边')}</div>
+                  <div class="img">${img ? `<img src="${esc(img)}" alt="">` : '周边'}</div>
                   <div class="body">
                     <div class="name">${esc(g.title)}</div>
-                    <div class="price">${parsePrice(g.price) === 0 ? (g.price || '无料') : money(parsePrice(g.price))}</div>
-                    <div class="only-qtyrow" onclick="event.preventDefault();event.stopPropagation();">
-                      <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
+                    <div class="price">${esc(formatPriceLabel(g.price))}</div>
+                    <div class="only-qtyrow">
+                      <button type="button" onclick="event.preventDefault();event.stopPropagation();setOnlyQty('${esc(g.id)}',-1)" ${q ? '' : 'disabled'}>−</button>
                       <span class="q">${q}</span>
-                      <button type="button" data-add="${esc(g.id)}">+</button>
+                      <button type="button" onclick="event.preventDefault();event.stopPropagation();setOnlyQty('${esc(g.id)}',1)">+</button>
                     </div>
                   </div>
                 </a>`;
@@ -598,7 +606,7 @@
       }
       list.innerHTML = entries.map(e => `
         <div class="only-ci">
-          <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : (e.price === 0 ? (e.priceLabel || '无料') : money(e.price))}</small></div>
+          <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : esc(formatPriceLabel(e.priceLabel != null && e.priceLabel !== '' ? e.priceLabel : e.price))}</small></div>
           <div class="only-qty">
             <button type="button" data-q="${esc(e.id)}" data-d="-1">−</button>
             <span>${e.qty}</span>
