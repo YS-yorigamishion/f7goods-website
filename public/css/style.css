@@ -1245,6 +1245,89 @@ body.app-mode .back-to-top {
 .board-section-head a:hover,
 .board-section-head button.linkish:hover { text-decoration: underline; }
 
+/* Home announcement ticker — one-line marquee bar */
+.board-announce {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  margin: 0 0 14px;
+  padding: 0 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  min-width: 0;
+}
+.board-announce.hidden { display: none; }
+.board-announce-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 999px;
+  padding: 2px 9px;
+  text-decoration: none;
+  line-height: 1.4;
+}
+.board-announce-badge:hover { background: var(--accent-dark); color: #fff; }
+.board-announce-viewport {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+}
+.board-announce-track {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.4;
+  will-change: transform;
+}
+.board-announce-track.is-scrolling {
+  animation: board-announce-scroll linear infinite;
+}
+@keyframes board-announce-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.board-announce-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 48px;
+  text-decoration: none;
+  color: inherit;
+}
+.board-announce-item:hover { color: var(--accent); }
+.board-announce-title {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.board-announce-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.board-announce-more {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+}
+.board-announce-more:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) {
+  .board-announce-track.is-scrolling { animation: none; }
+}
+
 .board-list-row {
   display: flex;
   align-items: center;

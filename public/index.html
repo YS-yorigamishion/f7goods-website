@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910c">
+  <link rel="stylesheet" href="/css/style.css?v=20260910d">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -39,10 +39,12 @@
 
     <!-- BOARD VIEW -->
     <div class="home-board" id="homeBoard">
-      <div class="board-section-head">
-        <h2 data-i18n="home.thisWeek">本周主推</h2>
-        <span data-i18n="home.featureCarousel">企划 · 活动轮播</span>
-        <a href="/projects.html" data-i18n="home.allProjects">全部企划 →</a>
+      <div class="board-announce" id="boardAnnounce" role="region" aria-label="公告">
+        <a class="board-announce-badge" href="/announcements.html" data-i18n="nav.announcements">公告</a>
+        <div class="board-announce-viewport" id="boardAnnounceViewport">
+          <div class="board-announce-track" id="boardAnnounceTrack"></div>
+        </div>
+        <a class="board-announce-more" href="/announcements.html" data-i18n="common.more">更多</a>
       </div>
       <div class="board-grid" id="boardFeatureRow">
         <div class="board-feature board-span-8" id="boardFeature" style="display:none;">
@@ -312,6 +314,59 @@
       boardFeatTimer = setInterval(() => {
         if (!boardFeatPaused) goBoardFeature(boardFeatIndex + 1);
       }, 4000);
+    }
+
+    // ===== Board announcement ticker =====
+    async function loadBoardAnnounce() {
+      const bar = document.getElementById('boardAnnounce');
+      const track = document.getElementById('boardAnnounceTrack');
+      if (!bar || !track) return;
+      try {
+        const res = await fetch('/api/announcements');
+        const list = await res.json();
+        if (!Array.isArray(list) || !list.length) {
+          bar.classList.add('hidden');
+          return;
+        }
+        // API already sorts pinned first, then newest
+        const latest = list[0];
+        const title = (latest.title || '').trim();
+        const content = (latest.content || '').replace(/\s+/g, ' ').trim();
+        const text = title && content ? `${title} · ${content}` : (title || content || '');
+        if (!text) {
+          bar.classList.add('hidden');
+          return;
+        }
+        const href = `/announcements.html`;
+        // Duplicate content for seamless marquee when overflowing
+        track.innerHTML =
+          `<a class="board-announce-item" href="${href}"><span class="board-announce-text">${escapeHtml(text)}</span></a>` +
+          `<a class="board-announce-item" href="${href}" aria-hidden="true" tabindex="-1"><span class="board-announce-dot"></span><span class="board-announce-text">${escapeHtml(text)}</span></a>`;
+        bar.classList.remove('hidden');
+
+        // After layout, start marquee only if overflow
+        requestAnimationFrame(() => {
+          const viewport = document.getElementById('boardAnnounceViewport');
+          if (!viewport) return;
+          const overflow = track.scrollWidth > viewport.clientWidth + 2;
+          if (!overflow) {
+            // Single copy is enough; hide the duplicate
+            const dup = track.querySelector('[aria-hidden="true"]');
+            if (dup) dup.remove();
+            track.classList.remove('is-scrolling');
+            track.style.animationDuration = '';
+            return;
+          }
+          // Keep both copies; speed ~40px/s
+          const half = track.scrollWidth / 2;
+          const duration = Math.max(12, half / 40);
+          track.style.animationDuration = duration + 's';
+          track.classList.add('is-scrolling');
+        });
+      } catch (e) {
+        console.warn('announce ticker failed', e);
+        bar.classList.add('hidden');
+      }
     }
 
     function renderBoardFeature() {
@@ -937,6 +992,7 @@
     });
 
     loadWorks();
+    loadBoardAnnounce();
 
     PullToRefresh.init({
       onRefresh: async () => {
