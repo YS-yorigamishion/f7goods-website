@@ -263,7 +263,13 @@ function readJSON(file) {
     return file.endsWith('s.json') ? [] : {};
   }
   try {
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    // Safety: list files must be arrays (corruption guard)
+    if (file.endsWith('s.json') && !Array.isArray(data)) {
+      console.error(`DATA CORRUPT: ${file} expected array, got ${typeof data}. Returning [].`);
+      return [];
+    }
+    return data;
   } catch (e) {
     const err = new Error(`Corrupt JSON data file: ${file}`);
     err.cause = e;
@@ -289,7 +295,9 @@ async function writeJSON(file, data) {
   });
 }
 
-// Mutate a JSON file under the per-file lock (read-modify-write safe)
+// Mutate a JSON file under the per-file lock (read-modify-write safe).
+// mutator receives the parsed value and should mutate it in place.
+// The mutator's return value is for the caller only — it is NEVER written to disk.
 async function mutateJSON(file, mutator) {
   return withFileLock(file, async () => {
     const filePath = path.join(__dirname, 'data', file);
@@ -309,15 +317,15 @@ async function mutateJSON(file, mutator) {
         }
       }
     }
-    const next = await mutator(current);
-    const result = next === undefined ? current : next;
+    const ret = await mutator(current);
+    // Always persist `current` (mutated in place). Never persist `ret`.
     const tmpPath = filePath + '.tmp';
-    await fs.promises.writeFile(tmpPath, JSON.stringify(result, null, 2), 'utf-8');
+    await fs.promises.writeFile(tmpPath, JSON.stringify(current, null, 2), 'utf-8');
     await fs.promises.rename(tmpPath, filePath);
     const type = file.replace('.json', '');
     clearApiCache(type);
     if (file === 'circles.json') circlesAuthCache = { data: null, ts: 0 };
-    return result;
+    return ret === undefined ? current : ret;
   });
 }
 
@@ -1741,10 +1749,14 @@ app.post('/api/admin/circles/:id/toggle-visible', authMiddleware, async (req, re
   res.json({ success: true, visible: circles[index].visible });
 });
 
+function ensureArray(v, fallback = []) {
+  return Array.isArray(v) ? v : fallback;
+}
+
 // ===== Public API =====
 // Works
 app.get('/api/works', cacheMiddleware(60), (req, res) => {
-  let works = readJSON('works.json');
+  let works = ensureArray(readJSON('works.json'));
   // Only return approved works (or legacy works without approvalStatus)
   works = works.filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
   const { category, search, status, circleId, eventId } = req.query;
