@@ -60,8 +60,9 @@
 
 .sidebar {
   width: 240px;
-  background: var(--ink);
-  color: white;
+  background: var(--card);
+  color: var(--ink);
+  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -77,7 +78,7 @@
   align-items: center;
   gap: 10px;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--line);
 }
 
 .sidebar-nav {
@@ -91,20 +92,20 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.7rem 1.5rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted);
   text-decoration: none;
   font-size: 0.9rem;
   transition: var(--transition);
 }
 
 .sidebar-link:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent);
+  background: rgba(217, 79, 92, 0.06);
 }
 
 .sidebar-link.active {
-  color: white;
-  background: rgba(233, 69, 96, 0.15);
+  color: var(--accent);
+  background: rgba(217, 79, 92, 0.12);
   border-right: 3px solid var(--accent);
 }
 
@@ -115,7 +116,7 @@
 }
 
 .sidebar-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--line);
   padding: 0.5rem 0;
 }
 
