@@ -2682,9 +2682,62 @@ function filterEvents() {
   renderEventsTable(filtered);
 }
 
+function toggleOnlyBoothsUI() {
+  const t = document.getElementById('eType')?.value;
+  const wrap = document.getElementById('eOnlyBoothsWrap');
+  if (wrap) wrap.style.display = t === 'only' ? 'block' : 'none';
+}
+
+function addEventBoothRow(booth = null) {
+  const list = document.getElementById('eBoothList');
+  if (!list) return;
+  const id = 'btmp' + Date.now() + Math.random().toString(36).slice(2, 6);
+  const circles = window._adminCirclesCache || [];
+  const selected = new Set(booth?.circleIds || []);
+  const row = document.createElement('div');
+  row.className = 'event-booth-row';
+  row.dataset.bid = booth?.id || id;
+  row.style.cssText = 'border:1px solid var(--line);border-radius:8px;padding:0.6rem;';
+  row.innerHTML = `
+    <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;flex-wrap:wrap;">
+      <input class="form-input booth-name" style="flex:1;min-width:80px;" placeholder="摊位号 如 A1" value="${booth?.name || ''}">
+      <input class="form-input booth-promo-min" style="width:90px;" type="number" min="0" placeholder="满额" value="${booth?.promo?.minAmount ?? ''}">
+      <input class="form-input booth-promo-text" style="flex:2;min-width:140px;" placeholder="优惠文案（可空）" value="${booth?.promo?.text || ''}">
+      <button type="button" class="btn-sm btn-delete" onclick="this.closest('.event-booth-row').remove()">删</button>
+    </div>
+    <div style="font-size:0.75rem;color:var(--haze);margin-bottom:0.3rem;">关联作者（可多选）</div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
+      ${circles.map(c => `
+        <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--line);border-radius:999px;padding:0.15rem 0.5rem;cursor:pointer;">
+          <input type="checkbox" class="booth-circle" value="${c.id}" ${selected.has(c.id) ? 'checked' : ''}>
+          ${c.name}
+        </label>
+      `).join('')}
+    </div>
+  `;
+  list.appendChild(row);
+}
+
+function collectEventBooths() {
+  return [...document.querySelectorAll('#eBoothList .event-booth-row')].map(row => {
+    const name = row.querySelector('.booth-name')?.value.trim();
+    if (!name) return null;
+    const minRaw = row.querySelector('.booth-promo-min')?.value;
+    const promoText = row.querySelector('.booth-promo-text')?.value.trim() || '';
+    const circleIds = [...row.querySelectorAll('.booth-circle:checked')].map(i => i.value);
+    return {
+      id: row.dataset.bid || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
+      name,
+      circleIds,
+      promo: promoText ? { minAmount: Number(minRaw) || 0, text: promoText } : null
+    };
+  }).filter(Boolean);
+}
+
 function openEventModal(event = null) {
   const isEdit = !!event;
   document.getElementById('modalTitle').textContent = isEdit ? '编辑活动' : '新增活动';
+  window._eventBoothDraft = JSON.parse(JSON.stringify(event?.booths || []));
   document.getElementById('modalBody').innerHTML = `
     <div class="form-group">
       <label>活动名称 <span style="color:var(--accent)">*</span></label>
@@ -2697,6 +2750,19 @@ function openEventModal(event = null) {
           `<option value="${s.id}" ${event?.status === s.id ? 'selected' : ''}>${s.name}</option>`
         ).join('')}
       </select>
+    </div>
+    <div class="form-group">
+      <label>活动类型</label>
+      <select class="form-input" id="eType" onchange="toggleOnlyBoothsUI()">
+        <option value="normal" ${(event?.type || 'normal') === 'normal' ? 'selected' : ''}>普通活动</option>
+        <option value="only" ${event?.type === 'only' ? 'selected' : ''}>ONLY 专场</option>
+      </select>
+    </div>
+    <div class="form-group" id="eOnlyBoothsWrap" style="display:${event?.type === 'only' ? 'block' : 'none'};">
+      <label>摊位列表（ONLY）· 摊位号 + 挂接作者 + 优惠</label>
+      <div id="eBoothList" style="display:flex;flex-direction:column;gap:0.6rem;margin-bottom:0.5rem;"></div>
+      <button type="button" class="btn-sm" onclick="addEventBoothRow()">+ 添加摊位</button>
+      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.4rem;">优惠满额为 0 表示关注/到摊即送。作者可多选。</div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -2797,7 +2863,9 @@ function openEventModal(event = null) {
       })(),
       relatedWorks: event?.relatedWorks || [],
       relatedCircles: event?.relatedCircles || [],
-      relatedProjects: event?.relatedProjects || []
+      relatedProjects: event?.relatedProjects || [],
+      type: document.getElementById('eType').value || 'normal',
+      booths: document.getElementById('eType').value === 'only' ? collectEventBooths() : (event?.type === 'only' ? collectEventBooths() : [])
     };
 
     if (!data.title) { showToast('请填写活动名称', 'error'); return; }
@@ -2812,6 +2880,17 @@ function openEventModal(event = null) {
   });
 
   openModal();
+  // render ONLY booths after modal is in DOM
+  if (!window._adminCirclesCache) {
+    adminAPI('GET', '/api/admin/circles').then(list => {
+      window._adminCirclesCache = list || [];
+      (window._eventBoothDraft || []).forEach(b => addEventBoothRow(b));
+    }).catch(() => {
+      (window._eventBoothDraft || []).forEach(b => addEventBoothRow(b));
+    });
+  } else {
+    (window._eventBoothDraft || []).forEach(b => addEventBoothRow(b));
+  }
 }
 
 async function editEvent(id) {

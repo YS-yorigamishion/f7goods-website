@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910k">
+  <link rel="stylesheet" href="/css/style.css?v=20260910l">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -46,7 +46,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260910k"></script>
+  <script src="/js/main.js?v=20260910l"></script>
   <script>
     let eventRelatedWorks = [];
     let eventCirclesMap = {};
@@ -182,6 +182,7 @@
             </div>
             <div class="detail-meta">
               ${event.status ? `<span class="card-tag ${event.status}" style="margin-right:0.5rem;">${EVENT_STATUS_LABELS[event.status] || event.status}</span>` : ''}
+              ${event.type === 'only' ? `<a href="/only.html?id=${encodeURIComponent(event.id)}" class="only-entry-link" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.25rem 0.75rem;border-radius:999px;background:rgba(217,79,92,.1);color:var(--accent);font-size:0.78rem;font-weight:600;text-decoration:none;margin-right:0.5rem;">ONLY 专场页 →</a>` : ''}
               <span style="display:flex;align-items:center;gap:0.4rem;">📍 ${escapeHtml(event.location)}</span>
             </div>
           </div>
