@@ -121,7 +121,8 @@
         <button class="filter-btn active" data-cat="all" data-i18n="common.all">全部</button>
         <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
           <select id="sortSelect" class="form-input sort-select" style="padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:100px;min-width:130px;min-height:32px;">
-            <option value="default" data-i18n="common.sortDefault">默认排序</option>
+            <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
+            <option value="default" data-i18n="common.sortDefault">最新上传</option>
             <option value="date-asc" data-i18n="common.sortDateAsc">发售时间 ↑</option>
             <option value="date-desc" data-i18n="common.sortDateDesc">发售时间 ↓</option>
             <option value="likes-desc" data-i18n="common.sortLikesDesc">喜爱数 ↓</option>
@@ -723,6 +724,17 @@
       }
     }
 
+    // 洗牌并写入 _randomRank，同一会话内筛选/分页保持该顺序
+    function shuffleWorksForSession(list) {
+      if (!Array.isArray(list)) return;
+      const n = list.length;
+      for (let i = n - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+      list.forEach((w, idx) => { w._randomRank = idx; });
+    }
+
     async function loadWorks() {
       try {
         await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
@@ -738,6 +750,8 @@
         allUpdates = updates || [];
         allProjects = projects || [];
         allCirclesList = circles || [];
+        // 每次进入页面洗牌一次，供「随机排序」默认展示
+        shuffleWorksForSession(allWorks);
         circles.forEach(c => { circlesMap[c.id] = c.name; circlesLogoMap[c.id] = c.logo || ''; });
 
         // Apply settings (hero removed in app shell)
@@ -785,7 +799,7 @@
       currentCategory = 'all';
       currentStatus = 'all';
       document.getElementById('searchInput').value = '';
-      document.getElementById('sortSelect').value = 'default';
+      document.getElementById('sortSelect').value = 'random';
       document.querySelectorAll('.filter-btn[data-cat]').forEach(b => b.classList.remove('active'));
       document.querySelector('.filter-btn[data-cat="all"]')?.classList.add('active');
       document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
@@ -808,7 +822,7 @@
       const searchInput = document.getElementById('searchInput');
       const sortSelect = document.getElementById('sortSelect');
       const searchHtml = searchInput ? searchInput.outerHTML : `<input type="text" class="search-input" placeholder="${t('common.searchPlaceholder')}" id="searchInput">`;
-      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input sort-select" style="padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:100px;min-width:130px;min-height:32px;"><option value="default">${t('common.sortDefault')}</option><option value="date-asc">${t('common.sortDateAsc')}</option><option value="date-desc">${t('common.sortDateDesc')}</option><option value="likes-desc">${t('common.sortLikesDesc')}</option><option value="likes-asc">${t('common.sortLikesAsc')}</option><option value="wants-desc">${t('common.sortWantsDesc')}</option><option value="wants-asc">${t('common.sortWantsAsc')}</option></select>`;
+      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input sort-select" style="padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:100px;min-width:130px;min-height:32px;"><option value="random" selected>${t('common.sortRandom')}</option><option value="default">${t('common.sortDefault')}</option><option value="date-asc">${t('common.sortDateAsc')}</option><option value="date-desc">${t('common.sortDateDesc')}</option><option value="likes-desc">${t('common.sortLikesDesc')}</option><option value="likes-asc">${t('common.sortLikesAsc')}</option><option value="wants-desc">${t('common.sortWantsDesc')}</option><option value="wants-asc">${t('common.sortWantsAsc')}</option></select>`;
       catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.all')}</button>` +
         CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${tCat(c)}</button>`).join('') +
         `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;"><button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">${t('common.randomWorks')}</button>${sortHtml}${searchHtml}</div>`;
@@ -895,7 +909,7 @@
       }
 
       // Apply sorting
-      const sortVal = document.getElementById('sortSelect')?.value || 'default';
+      const sortVal = document.getElementById('sortSelect')?.value || 'random';
       if (sortVal === 'date-asc') {
         filtered.sort((a, b) => (a.releaseDate || 'z').localeCompare(b.releaseDate || 'z'));
       } else if (sortVal === 'date-desc') {
@@ -908,9 +922,12 @@
         filtered.sort((a, b) => (b.wants || 0) - (a.wants || 0));
       } else if (sortVal === 'wants-asc') {
         filtered.sort((a, b) => (a.wants || 0) - (b.wants || 0));
-      } else {
-        // 默认按创建时间降序（最新上传在前）
+      } else if (sortVal === 'default') {
+        // 原默认：按创建时间降序（最新上传在前）
         filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      } else {
+        // random（默认）：使用本次进入时洗牌的顺序
+        filtered.sort((a, b) => (a._randomRank ?? 0) - (b._randomRank ?? 0));
       }
 
       // Remove skeleton
