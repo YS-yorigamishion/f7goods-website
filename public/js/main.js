@@ -178,53 +178,56 @@ async function loadCategoriesFromAPI() {
     const res = await _fetch('/api/categories');
     if (!res.ok) return;
     const cats = await res.json();
-    if (cats.works) {
-      const sorted = [...cats.works].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-      CATEGORIES_ORDERED = sorted;
-      CATEGORIES = {};
-      sorted.forEach(c => CATEGORIES[c.id] = tCat(c));
-    }
-    if (cats.workStatus) {
-      const sorted = [...cats.workStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-      STATUS_ORDERED = sorted;
-      STATUS_LABELS = {};
-      sorted.forEach(c => STATUS_LABELS[c.id] = tCat(c));
-    }
-    if (cats.projects) {
-      const sorted = [...cats.projects].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-      PROJECT_CATEGORIES_ORDERED = sorted;
-      PROJECT_CATEGORIES = {};
-      sorted.forEach(c => PROJECT_CATEGORIES[c.id] = tCat(c));
-    }
-    if (cats.projectStatus) {
-      const sorted = [...cats.projectStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-      PROJECT_STATUS_ORDERED = sorted;
-      PROJECT_STATUS_LABELS = {};
-      sorted.forEach(c => PROJECT_STATUS_LABELS[c.id] = tCat(c));
-    }
-    if (cats.eventStatus) {
-      const sorted = [...cats.eventStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-      EVENT_STATUS_ORDERED = sorted;
-      EVENT_STATUS_LABELS = {};
-      sorted.forEach(c => EVENT_STATUS_LABELS[c.id] = tCat(c));
-    }
-    if (cats.circleCategories) {
-      const sorted = [...cats.circleCategories].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-      CIRCLE_CATEGORIES_ORDERED = sorted;
-      CIRCLE_CATEGORIES = {};
-      sorted.forEach(c => CIRCLE_CATEGORIES[c.id] = tCat(c));
-    }
-    if (cats.updateCategories) {
-      const sorted = [...cats.updateCategories].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-      UPDATE_CATEGORIES_ORDERED = sorted;
-      UPDATE_CATEGORIES = {};
-      sorted.forEach(c => UPDATE_CATEGORIES[c.id] = tCat(c));
-    }
-    if (cats.updateStatus) {
-      const sorted = [...cats.updateStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-      UPDATE_STATUS_ORDERED = sorted;
-      UPDATE_STATUS_LABELS = {};
-      sorted.forEach(c => UPDATE_STATUS_LABELS[c.id] = tCat(c));
+    // Guard: never wipe built-in maps when API returns empty/malformed
+    if (cats && typeof cats === 'object' && !Array.isArray(cats)) {
+      if (Array.isArray(cats.works) && cats.works.length) {
+        const sorted = [...cats.works].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+        CATEGORIES_ORDERED = sorted;
+        CATEGORIES = {};
+        sorted.forEach(c => CATEGORIES[c.id] = tCat(c));
+      }
+      if (Array.isArray(cats.workStatus) && cats.workStatus.length) {
+        const sorted = [...cats.workStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+        STATUS_ORDERED = sorted;
+        STATUS_LABELS = {};
+        sorted.forEach(c => STATUS_LABELS[c.id] = tCat(c));
+      }
+      if (Array.isArray(cats.projects) && cats.projects.length) {
+        const sorted = [...cats.projects].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+        PROJECT_CATEGORIES_ORDERED = sorted;
+        PROJECT_CATEGORIES = {};
+        sorted.forEach(c => PROJECT_CATEGORIES[c.id] = tCat(c));
+      }
+      if (Array.isArray(cats.projectStatus) && cats.projectStatus.length) {
+        const sorted = [...cats.projectStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+        PROJECT_STATUS_ORDERED = sorted;
+        PROJECT_STATUS_LABELS = {};
+        sorted.forEach(c => PROJECT_STATUS_LABELS[c.id] = tCat(c));
+      }
+      if (Array.isArray(cats.eventStatus) && cats.eventStatus.length) {
+        const sorted = [...cats.eventStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+        EVENT_STATUS_ORDERED = sorted;
+        EVENT_STATUS_LABELS = {};
+        sorted.forEach(c => EVENT_STATUS_LABELS[c.id] = tCat(c));
+      }
+      if (Array.isArray(cats.circleCategories) && cats.circleCategories.length) {
+        const sorted = [...cats.circleCategories].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+        CIRCLE_CATEGORIES_ORDERED = sorted;
+        CIRCLE_CATEGORIES = {};
+        sorted.forEach(c => CIRCLE_CATEGORIES[c.id] = tCat(c));
+      }
+      if (Array.isArray(cats.updateCategories) && cats.updateCategories.length) {
+        const sorted = [...cats.updateCategories].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+        UPDATE_CATEGORIES_ORDERED = sorted;
+        UPDATE_CATEGORIES = {};
+        sorted.forEach(c => UPDATE_CATEGORIES[c.id] = tCat(c));
+      }
+      if (Array.isArray(cats.updateStatus) && cats.updateStatus.length) {
+        const sorted = [...cats.updateStatus].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+        UPDATE_STATUS_ORDERED = sorted;
+        UPDATE_STATUS_LABELS = {};
+        sorted.forEach(c => UPDATE_STATUS_LABELS[c.id] = tCat(c));
+      }
     }
   } catch (e) {
     // Use defaults if API fails
@@ -416,11 +419,8 @@ function buildNavbar(activePage) {
   const logoText = site.logoText || '';
   const brandName = site.brandName || 'f7goods';
   const favicon = site.favicon;
-  const logoContent = favicon
-    ? `<img src="${favicon}" alt="${brandName}" style="width:36px;height:36px;border-radius:10px;object-fit:cover;">`
-    : logoText
-      ? `<div class="rail-logo">${logoText}</div>`
-      : `<div class="rail-logo">F7</div>`;
+  // Rail always shows a reliable text mark; browser tab uses settings favicon separately
+  const logoContent = `<div class="rail-logo">${escapeHtml(logoText || 'F7')}</div>`;
   const langOptions = ['zh', 'ko', 'en', 'ja'].map(code =>
     `<button class="lang-btn ${_lang === code ? 'active' : ''}" data-lang="${code}" onclick="loadLang('${code}');document.querySelector('.lang-dropdown').classList.remove('open')">${getLangName(code)}</button>`
   ).join('');
@@ -720,7 +720,7 @@ async function sharePage(title, url) {
 function renderShareButton(title, url) {
   const safeTitle = encodeURIComponent(title);
   const safeUrl = encodeURIComponent(url);
-  return `<button class="want-btn" style="font-size:0.85rem;padding:0.45rem 1.2rem;" data-share-title="${safeTitle}" data-share-url="${safeUrl}" onclick="sharePage(decodeURIComponent(this.dataset.shareTitle), decodeURIComponent(this.dataset.shareUrl))">${t('common.share')}</button>`;
+  return `<button class="want-btn" style="font-size:0.85rem;padding:0.45rem 1.2rem;margin-left:auto;" data-share-title="${safeTitle}" data-share-url="${safeUrl}" onclick="sharePage(decodeURIComponent(this.dataset.shareTitle), decodeURIComponent(this.dataset.shareUrl))">${t('common.share')}</button>`;
 }
 
 // Like functionality

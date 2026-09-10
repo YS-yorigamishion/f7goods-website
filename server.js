@@ -251,21 +251,28 @@ function withFileLock(file, fn) {
   return next;
 }
 
+// Known list-type data files (must be JSON arrays)
+const LIST_JSON_FILES = new Set([
+  'works.json', 'circles.json', 'events.json', 'projects.json', 'updates.json',
+  'announcements.json', 'contact.json', 'edit-log.json', 'author-notifications.json',
+  'author-announcements.json', 'author-announcement-reads.json'
+]);
+
 // Helper: read/write JSON files
 // Missing file → empty structure. Parse/IO error → throw (never silently wipe data).
 function readJSON(file) {
   const filePath = path.join(__dirname, 'data', file);
   if (!fs.existsSync(filePath)) {
-    return file.endsWith('s.json') ? [] : {};
+    return LIST_JSON_FILES.has(file) ? [] : {};
   }
   const raw = fs.readFileSync(filePath, 'utf-8');
   if (!raw.trim()) {
-    return file.endsWith('s.json') ? [] : {};
+    return LIST_JSON_FILES.has(file) ? [] : {};
   }
   try {
     const data = JSON.parse(raw);
     // Safety: list files must be arrays (corruption guard)
-    if (file.endsWith('s.json') && !Array.isArray(data)) {
+    if (LIST_JSON_FILES.has(file) && !Array.isArray(data)) {
       console.error(`DATA CORRUPT: ${file} expected array, got ${typeof data}. Returning [].`);
       return [];
     }

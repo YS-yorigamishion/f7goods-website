@@ -497,13 +497,13 @@ textarea.form-input { resize: vertical; min-height: 130px; }
 }
 .detail-breadcrumb a { color: var(--haze); text-decoration: none; transition: var(--transition); }
 .detail-breadcrumb a:hover { color: var(--accent); }
-.detail-header { margin-bottom: 1.75rem; text-align: center; }
+.detail-header { margin-bottom: 1.75rem; text-align: left; }
 .detail-header h1 {
   font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.75rem; font-weight: 700;
-  margin-bottom: 0.4rem; letter-spacing: -0.02em; line-height: 1.35; text-align: center;
+  margin-bottom: 0.4rem; letter-spacing: -0.02em; line-height: 1.35; text-align: left;
 }
 .detail-meta {
-  display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: center; justify-content: center;
+  display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: center; justify-content: flex-start;
   color: var(--muted); font-size: 0.85rem;
 }
 .detail-content { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; }
@@ -517,14 +517,14 @@ textarea.form-input { resize: vertical; min-height: 130px; }
 .sidebar-card h3 {
   font-family: 'Noto Serif SC', Georgia, serif; font-size: 0.95rem; font-weight: 700;
   margin-bottom: 0.85rem; padding-bottom: 0.55rem; border-bottom: 1px solid var(--line);
-  text-align: center;
+  text-align: left;
 }
 .info-row {
-  display: flex; justify-content: center; align-items: center; text-align: center;
-  padding: 0.45rem 0; font-size: 0.88rem; gap: 0.75rem;
+  display: flex; justify-content: space-between; align-items: center; text-align: left;
+  padding: 0.35rem 0; font-size: 0.88rem; gap: 0.75rem;
 }
 .info-label { color: var(--muted); flex-shrink: 0; }
-.info-value { font-weight: 500; text-align: center; word-break: break-all; }
+.info-value { font-weight: 500; text-align: right; word-break: break-all; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .tag {
   padding: 0.18rem 0.6rem; background: rgba(217,79,92,0.06); color: var(--accent);
@@ -821,7 +821,7 @@ html.pull-to-refresh-active { overscroll-behavior-y: contain; }
   .view-btn { flex: 1; justify-content: center; font-size: 0.8rem; padding: 0.4rem 0.5rem; }
   .detail-content { grid-template-columns: 1fr; }
   .detail-header h1 { font-size: 1.35rem; }
-  .detail-meta { flex-direction: column; gap: 0.4rem; align-items: center; justify-content: center; }
+  .detail-meta { flex-direction: column; gap: 0.4rem; align-items: flex-start; justify-content: flex-start; }
   .sidebar-card { padding: 1rem; }
   .info-row { font-size: 0.82rem; }
   .social-links { flex-direction: column; align-items: stretch; }
