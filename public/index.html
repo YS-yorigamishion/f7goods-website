@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910p">
+  <link rel="stylesheet" href="/css/style.css?v=20260910q">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -175,7 +175,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260910p"></script>
+  <script src="/js/main.js?v=20260910q"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -506,7 +506,7 @@
                 <h3 class="card-title">${escapeHtml(w.title)}</h3>
               </div>
               <div class="card-footer">
-                <span class="card-price">${escapeHtml(w.price || '')}</span>
+                <span class="card-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(w.price) : (w.price || ''))}</span>
                 <span class="card-date">${formatDate(w.releaseDate)}</span>
               </div>
             </a>
@@ -958,7 +958,7 @@
             <p class="card-subtitle">${(work.circles || []).map(cid => escapeHtml(circlesMap[cid])).filter(Boolean).join(', ') || ''}${(work.circles || []).length > 0 ? ' · ' : ''}${CATEGORIES[work.category] || work.category}</p>
           </div>
           <div class="card-footer">
-            <span class="card-price">${escapeHtml(work.price)}</span>
+            <span class="card-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || ''))}</span>
             <div style="display:flex;align-items:center;gap:0.5rem;">
               ${(work.wants || 0) > 0 ? `<span style="font-size:0.72rem;color:var(--info);">${t('common.wants')} ${work.wants}</span>` : ''}
               <span class="card-date">${formatDate(work.releaseDate)}</span>
@@ -1005,7 +1005,7 @@
               <p class="card-subtitle">${(work.circles || []).map(cid => escapeHtml(circlesMap[cid])).filter(Boolean).join(', ') || ''}${(work.circles || []).length > 0 ? ' · ' : ''}${CATEGORIES[work.category] || work.category}</p>
             </div>
             <div class="card-footer">
-              <span class="card-price">${escapeHtml(work.price)}</span>
+              <span class="card-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || ''))}</span>
               <div style="display:flex;align-items:center;gap:0.5rem;">
                 ${(work.wants || 0) > 0 ? `<span style="font-size:0.72rem;color:var(--info);">${t('common.wants')} ${work.wants}</span>` : ''}
                 <span class="card-date">${formatDate(work.releaseDate)}</span>

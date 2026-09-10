@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910p">
+  <link rel="stylesheet" href="/css/style.css?v=20260910q">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -47,7 +47,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260910p"></script>
+  <script src="/js/main.js?v=20260910q"></script>
   <script>
     async function loadWork() {
       const params = new URLSearchParams(location.search);
@@ -121,7 +121,7 @@
                 <div class="exhibit-meta">
                   <div class="info-row">
                     <span class="info-label">${t('works.price')}</span>
-                    <span class="info-value" style="color:var(--accent);font-weight:700;">${escapeHtml(work.price)}</span>
+                    <span class="info-value" style="color:var(--accent);font-weight:700;">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料'))}</span>
                   </div>
                   <div class="info-row">
                     <span class="info-label">${t('works.releaseDate')}</span>

@@ -666,6 +666,26 @@ function formatDate(dateStr) {
   return d.toLocaleDateString(({zh:'zh-CN',en:'en-US',ja:'ja-JP',ko:'ko-KR'}[_lang]||'zh-CN'), { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+// Parse price string to number (0 if free / invalid)
+function parsePriceNum(p) {
+  if (p == null || p === '') return 0;
+  const raw = String(p);
+  if (/无料|免费|free/i.test(raw)) return 0;
+  const s = raw.replace(/[¥￥,，\s]/g, '');
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** 空/0/无料 → 无料；有数字 → ¥xx */
+function formatPriceLabel(p) {
+  if (p == null || String(p).trim() === '') return '无料';
+  const raw = String(p).trim();
+  if (/无料|免费|free/i.test(raw)) return '无料';
+  const n = parsePriceNum(raw);
+  if (!n) return '无料';
+  return (Number.isInteger(n) ? '¥' + n : '¥' + n.toFixed(2));
+}
+
 // Check if endDate is within 15 days (deadline approaching)
 function isDeadlineSoon(endDate) {
   if (!endDate) return false;

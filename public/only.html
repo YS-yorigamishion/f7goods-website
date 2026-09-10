@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260910p">
+  <link rel="stylesheet" href="/css/style.css?v=20260910q">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -54,6 +54,14 @@
       padding: 14px; margin-bottom: 10px;
     }
     .only-booth-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+    .only-booth-bulk { display: flex; gap: 6px; flex-shrink: 0; margin-left: auto; align-self: flex-start; }
+    .only-booth-bulk button {
+      border: 1px solid var(--line); background: var(--card); color: var(--muted);
+      border-radius: 999px; padding: 4px 10px; font-size: 11px; cursor: pointer;
+      font-family: inherit; white-space: nowrap;
+    }
+    .only-booth-bulk button:hover { border-color: var(--accent); color: var(--accent); }
+    .only-booth-bulk button:disabled { opacity: 0.4; cursor: default; }
     .only-avatar {
       width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
       background: linear-gradient(145deg,#EDE6DA,#D9D0C2);
@@ -232,7 +240,7 @@
   <div id="onlyShotCanvasWrap"></div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260910p"></script>
+  <script src="/js/main.js?v=20260910q"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -441,6 +449,10 @@
                 <h3>${esc(boothLabel(b))}</h3>
                 <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件关联周边</div>
               </div>
+              <div class="only-booth-bulk" title="本摊全部作品数量">
+                <button type="button" onclick="setOnlyBoothQty('${esc(b.id)}',-1)" ${b.goods.length ? '' : 'disabled'}>全部 −1</button>
+                <button type="button" onclick="setOnlyBoothQty('${esc(b.id)}',1)" ${b.goods.length ? '' : 'disabled'}>全部 +1</button>
+              </div>
             </div>
             <div class="only-goods">
               ${b.goods.length ? b.goods.map(g => {
@@ -478,7 +490,17 @@
       localStorage.setItem('f7onlyCart:' + eventId, JSON.stringify(cart));
     }
 
-    function setOnlyQty(workId, delta) {
+    function setOnlyBoothQty(boothId, delta) {
+      const booth = (window._only?.boothModels || []).find(b => b.id === boothId);
+      if (!booth || !booth.goods?.length) return;
+      booth.goods.forEach(g => setOnlyQty(g.id, delta, true));
+      // setOnlyQty already re-renders; final refresh once
+      const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
+      renderOnlyBooths(tab);
+      renderOnlyCartUI();
+    }
+
+    function setOnlyQty(workId, delta, skipRender) {
       const idx = onlyGoodsIndex();
       const pack = idx[workId];
       if (!pack || !window._only) return;
@@ -503,6 +525,7 @@
       saveOnlyCart(eventId, cart);
       applyOnlyGifts();
       saveOnlyCart(eventId, cart);
+      if (skipRender) return;
       const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
       renderOnlyBooths(tab);
       renderOnlyCartUI();
