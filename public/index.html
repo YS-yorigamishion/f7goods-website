@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260813g">
+  <link rel="stylesheet" href="/css/style.css?v=20260813h">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -40,44 +40,45 @@
     <!-- BOARD VIEW -->
     <div class="home-board" id="homeBoard">
       <div class="board-section-head">
-        <h2 data-i18n="works.boardFeatured">本周主推</h2>
-        <span data-i18n="works.boardFeaturedSub">截止提醒与发售中</span>
+        <h2>本周主推</h2>
+        <span>同人企划</span>
+        <a href="/projects.html">全部企划 →</a>
       </div>
       <div class="board-grid" id="boardFeatureRow">
         <div class="board-panel board-span-8 board-feature" id="boardFeature" style="display:none;"></div>
         <div class="board-panel board-span-4">
           <div class="board-section-head" style="margin-bottom:8px;">
-            <h2 data-i18n="works.boardDeadline">即将截止</h2>
-            <button type="button" class="linkish" onclick="setHomeView('catalog');toggleDeadlineFilter()"></button>
+            <h2>进行中企划</h2>
+            <a href="/projects.html">更多</a>
+          </div>
+          <div id="boardProjectList"></div>
+          <div class="board-section-head" style="margin:12px 0 8px;">
+            <h2>周边截止</h2>
+            <button type="button" class="linkish" onclick="setHomeView('catalog');toggleDeadlineFilter()">更多</button>
           </div>
           <div id="boardDeadlineList"></div>
         </div>
       </div>
 
       <div class="board-section-head">
-        <h2 data-i18n="works.boardOnSale">发售中</h2>
-        <span data-i18n="works.boardOnSaleSub">可关注购买意向</span>
-        <button type="button" class="linkish" onclick="setHomeView('catalog')"></button>
+        <h2>发售中周边</h2>
+        <span>可关注购买意向</span>
+        <button type="button" class="linkish" onclick="setHomeView('catalog')">查看全部 →</button>
       </div>
       <div class="board-strip" id="boardSaleStrip"></div>
-
-      <div class="board-section-head" style="margin-top:1.35rem;">
-        <h2 data-i18n="works.boardCats">按分类速览</h2>
-      </div>
-      <div class="board-cats" id="boardCats"></div>
 
       <div class="board-grid" style="margin-top:1.35rem;">
         <div class="board-panel board-span-6">
           <div class="board-section-head" style="margin-bottom:8px;">
-            <h2 data-i18n="nav.events">近期活动</h2>
-            <a href="/events.html"></a>
+            <h2>近期活动</h2>
+            <a href="/events.html">日历</a>
           </div>
           <div id="boardEventsList"></div>
         </div>
         <div class="board-panel board-span-6">
           <div class="board-section-head" style="margin-bottom:8px;">
-            <h2 data-i18n="nav.updates">最新动态</h2>
-            <a href="/updates.html"></a>
+            <h2>最新动态</h2>
+            <a href="/updates.html">更多</a>
           </div>
           <div id="boardUpdatesList"></div>
         </div>
@@ -146,7 +147,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260813g"></script>
+  <script src="/js/main.js?v=20260813h"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -168,6 +169,7 @@
     let allWorks = [];
     let allEvents = [];
     let allUpdates = [];
+    let allProjects = [];
     let circlesMap = {};
     let currentCategory = 'all';
     let currentStatus = 'all';
@@ -177,6 +179,7 @@
     let wishlistMode = false;
     let wishlistItems = {}; // { workId: quantity }
     let homeView = 'board';
+    let featuredProjectId = null;
 
     function setHomeView(view) {
       homeView = view;
@@ -197,41 +200,120 @@
         : `<div class="board-thumb">🎨</div>`;
     }
 
+    function projectStatusLabel(status) {
+      return (typeof PROJECT_STATUS_LABELS !== 'undefined' && PROJECT_STATUS_LABELS[status]) || status || '';
+    }
+
+    function projectStatusClass(status) {
+      // Map common project statuses to tag class
+      const s = String(status || '');
+      if (s === 'recruiting' || s === 'zhaomuzhong' || s === '招募中') return 'recruiting';
+      if (s === 'in_progress' || s === 'jinxingzhong' || s === '进行中') return 'in_progress';
+      if (s === 'completed' || s === 'yiwancheng' || s === '已完成') return 'completed';
+      if (s === 'cancelled' || s === 'yiquxiao' || s === '已取消') return 'cancelled';
+      return '';
+    }
+
+    function setFeaturedProject(id) {
+      featuredProjectId = id;
+      renderBoardFeature();
+    }
+
+    function renderBoardFeature() {
+      const featEl = document.getElementById('boardFeature');
+      if (!featEl) return;
+      const activeProjects = allProjects.filter(p =>
+        !['completed', 'cancelled', 'yiwancheng', 'yiquxiao'].includes(String(p.status || ''))
+      );
+      const feature = activeProjects.find(p => p.id === featuredProjectId)
+        || activeProjects[0]
+        || allProjects[0];
+      if (!feature) {
+        featEl.style.display = 'none';
+        return;
+      }
+      featuredProjectId = feature.id;
+      const authors = (feature.circles || []).map(cid => circlesMap[cid]).filter(Boolean).slice(0, 2);
+      const authorText = authors.length
+        ? (authors[0] + (feature.circles && feature.circles.length > 1 ? ' 等' : ''))
+        : '';
+      const catLabel = (typeof PROJECT_CATEGORIES !== 'undefined' && PROJECT_CATEGORIES[feature.category])
+        || feature.category || '';
+      const start = feature.startDate ? formatDate(feature.startDate) : '';
+      const end = feature.endDate ? formatDate(feature.endDate) : '';
+      const period = start && end ? `${start} → ${end}` : (start || end || '');
+      const cover = feature.coverImage || (feature.images && feature.images[0]) || '';
+      featEl.style.display = '';
+      if (cover) {
+        featEl.style.backgroundImage = `url('${cover}')`;
+        featEl.classList.add('has-cover');
+      } else {
+        featEl.style.backgroundImage = '';
+        featEl.classList.remove('has-cover');
+      }
+      const stClass = projectStatusClass(feature.status);
+      featEl.innerHTML = `
+        <div class="board-feature-shade"></div>
+        <span class="board-feature-tag ${stClass}">${escapeHtml(projectStatusLabel(feature.status))}</span>
+        <h2>${escapeHtml(feature.title)}</h2>
+        <p>${escapeHtml(feature.description || '')}</p>
+        <div class="board-feature-meta">
+          ${catLabel ? `<span class="pill price">${escapeHtml(catLabel)}</span>` : ''}
+          ${period ? `<span class="pill">${escapeHtml(period)}</span>` : ''}
+          ${authorText ? `<span class="pill">${escapeHtml(authorText)}</span>` : ''}
+        </div>`;
+      featEl.onclick = () => { location.href = '/project-detail.html?id=' + feature.id; };
+    }
+
     function renderBoard() {
+      renderBoardFeature();
+
+      const activeProjects = allProjects.filter(p =>
+        !['completed', 'cancelled', 'yiwancheng', 'yiquxiao'].includes(String(p.status || ''))
+      );
+      const projEl = document.getElementById('boardProjectList');
+      if (projEl) {
+        if (!activeProjects.length) {
+          projEl.innerHTML = `<div style="padding:0.75rem 0;color:var(--haze);font-size:12px;">暂无进行中企划</div>`;
+        } else {
+          projEl.innerHTML = activeProjects.slice(0, 5).map(p => {
+            const name = (p.circles || []).map(cid => circlesMap[cid]).filter(Boolean)[0] || '';
+            const cover = p.coverImage || (p.images && p.images[0]) || '';
+            const stClass = projectStatusClass(p.status);
+            return `<div class="board-list-row" onclick="setFeaturedProject('${p.id}')">
+              ${cover
+                ? `<div class="board-thumb"><img src="${cover}" alt="" loading="lazy"></div>`
+                : `<div class="board-thumb">📋</div>`}
+              <div class="t"><b>${escapeHtml(p.title)}</b><small>${escapeHtml(name)}</small></div>
+              <span class="card-tag ${stClass}" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml(projectStatusLabel(p.status))}</span>
+            </div>`;
+          }).join('');
+        }
+      }
+
       const deadlineWorks = allWorks
         .filter(w => isDeadlineSoon(w.endDate))
         .sort((a, b) => String(a.endDate || 'z').localeCompare(String(b.endDate || 'z')))
-        .slice(0, 5);
+        .slice(0, 4);
 
       const saleWorks = allWorks
-        .filter(w => w.status === 'on_sale' || w.status === 'pre_order')
+        .filter(w => w.status === 'on_sale' || w.status === 'pre_order' || w.status === 'fashouzhong' || w.status === 'yuyuezhong')
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
         .slice(0, 10);
 
-      // Feature: first deadline soon, else first sale
-      const feature = deadlineWorks[0] || saleWorks[0] || allWorks[0];
-      const featEl = document.getElementById('boardFeature');
-      if (featEl && feature) {
-        const authors = (feature.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join(' · ');
-        featEl.style.display = '';
-        featEl.innerHTML = `
-          <span class="board-feature-tag">${isDeadlineSoon(feature.endDate) ? '即将截止' : (STATUS_LABELS[feature.status] || feature.status || '')}</span>
-          <h2>${escapeHtml(feature.title)}</h2>
-          <p>${escapeHtml(authors)}${authors ? ' · ' : ''}${escapeHtml(CATEGORIES[feature.category] || feature.category || '')}</p>
-          <div class="board-feature-meta">
-            <span class="pill price">${escapeHtml(feature.price || '')}</span>
-            <span class="pill">${formatDate(feature.releaseDate)}</span>
-            ${(feature.wants || 0) > 0 ? `<span class="pill">想要 ${feature.wants}</span>` : ''}
-          </div>`;
-        featEl.onclick = () => { location.href = '/work-detail.html?id=' + feature.id; };
-      } else if (featEl) {
-        featEl.style.display = 'none';
+      // Fallback sale filter if statuses use Chinese keys from API
+      if (!saleWorks.length) {
+        const onSaleIds = (STATUS_ORDERED || []).filter(s => /发售|预约|sale|order/i.test(s.id + s.name)).map(s => s.id);
+        saleWorks.push(...allWorks.filter(w => onSaleIds.includes(w.status)).slice(0, 10));
+      }
+      if (!saleWorks.length) {
+        saleWorks.push(...[...allWorks].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 8));
       }
 
       const dl = document.getElementById('boardDeadlineList');
       if (dl) {
         if (deadlineWorks.length === 0) {
-          dl.innerHTML = `<div style="padding:1rem 0;color:var(--haze);font-size:12px;">暂无即将截止的周边</div>`;
+          dl.innerHTML = `<div style="padding:0.5rem 0;color:var(--haze);font-size:12px;">暂无即将截止的周边</div>`;
         } else {
           dl.innerHTML = deadlineWorks.map(w => {
             const days = w.endDate ? Math.max(0, Math.ceil((new Date(w.endDate) - new Date()) / 86400000)) : null;
@@ -266,19 +348,6 @@
             </div>
           `).join('');
         }
-      }
-
-      const catsEl = document.getElementById('boardCats');
-      if (catsEl && Array.isArray(CATEGORIES_ORDERED)) {
-        catsEl.innerHTML = CATEGORIES_ORDERED.map(c => {
-          const n = allWorks.filter(w => w.category === c.id).length;
-          const ics = { figure:'🗿', goods:'🎁', doujin:'📚', cd:'💿', apparel:'👕', other:'✨' };
-          return `<button type="button" class="board-cat" onclick="currentCategory='${c.id}';setHomeView('catalog');document.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.toggle('active',b.dataset.cat==='${c.id}'));renderWorks();">
-            <div class="ic">${ics[c.id] || '✨'}</div>
-            <b>${tCat(c)}</b>
-            <small>${n}</small>
-          </button>`;
-        }).join('');
       }
 
       const evEl = document.getElementById('boardEventsList');
@@ -483,16 +552,18 @@
         await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
         console.log('[loadWorks] categories/settings loaded, CATEGORIES_ORDERED:', CATEGORIES_ORDERED.length, 'STATUS_ORDERED:', STATUS_ORDERED.length);
         console.log('[loadWorks] fetching works/circles/events...');
-        const [works, circles, events, updates] = await Promise.all([
+        const [works, circles, events, updates, projects] = await Promise.all([
           F7API.getWorks(),
           F7API.getCircles(),
           F7API.getEvents(),
-          F7API.getUpdates ? F7API.getUpdates().catch(() => []) : Promise.resolve([])
+          F7API.getUpdates ? F7API.getUpdates().catch(() => []) : Promise.resolve([]),
+          F7API.getProjects ? F7API.getProjects().catch(() => []) : Promise.resolve([])
         ]);
-        console.log('[loadWorks] data received: works=' + (works?.length || 0) + ', circles=' + (circles?.length || 0) + ', events=' + (events?.length || 0));
+        console.log('[loadWorks] data received: works=' + (works?.length || 0) + ', circles=' + (circles?.length || 0) + ', events=' + (events?.length || 0) + ', projects=' + (projects?.length || 0));
         allWorks = works;
         allEvents = events;
         allUpdates = updates || [];
+        allProjects = projects || [];
         circles.forEach(c => circlesMap[c.id] = c.name);
 
         // Apply settings (hero removed in app shell)

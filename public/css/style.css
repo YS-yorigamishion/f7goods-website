@@ -1588,3 +1588,30 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
     padding-bottom: 1.5rem;
   }
 }
+
+.board-feature.has-cover {
+  background-size: cover;
+  background-position: center;
+}
+.board-feature-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(34,30,28,0.9), rgba(34,30,28,0.55) 55%, transparent);
+  pointer-events: none;
+}
+.board-feature-tag.recruiting {
+  background: rgba(61, 139, 110, 0.35);
+  color: #A8D5C0;
+}
+.board-feature-tag.in_progress {
+  background: rgba(196, 138, 42, 0.35);
+  color: #F0D090;
+}
+.board-feature-tag.completed,
+.board-feature-tag.cancelled {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.7);
+}
+.board-list-row {
+  cursor: pointer;
+}
