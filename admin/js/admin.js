@@ -417,15 +417,20 @@ function showAdminNotifications() {
 
 // ===== Dashboard =====
 async function loadDashboard() {
-  // Dynamically load Chart.js if not already loaded
+  // Dynamically load Chart.js if not already loaded; dashboard stats must still work without it
   if (typeof Chart === 'undefined') {
-    await new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Chart.js CDN load failed'));
+        document.head.appendChild(script);
+        setTimeout(() => reject(new Error('Chart.js CDN timeout')), 10000);
+      });
+    } catch (e) {
+      console.warn('Chart.js unavailable, charts skipped:', e && e.message);
+    }
   }
   const [stats, pvData] = await Promise.all([
     adminAPI('GET', '/api/admin/stats'),
@@ -511,6 +516,9 @@ async function loadDashboard() {
 
   const lineColor = 'rgb(233, 69, 96)';
   const fillColor = 'rgba(233, 69, 96, 0.1)';
+
+  // Charts are optional — skip if Chart.js failed to load
+  if (typeof Chart === 'undefined') return;
 
   // 7-day chart
   const d7 = getLastNDays(7);

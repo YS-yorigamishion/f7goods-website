@@ -60,13 +60,13 @@ app.use((req, res, next) => {
   }
   next();
 });
-// CSP: allow self + Google Fonts + inline scripts (legacy pages use inline <script>/onclick)
-// Nginx also sets a CSP; Helmet must not be stricter or browsers block inline handlers.
+// CSP: allow self + Google Fonts + Chart.js CDN + inline scripts (legacy pages use inline <script>/onclick)
+// Nginx also sets a CSP; Helmet must not be stricter or browsers block inline handlers / CDN chart.js.
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net'],
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
       fontSrc: ["'self'", 'fonts.gstatic.com', 'fonts.googleapis.com'],
