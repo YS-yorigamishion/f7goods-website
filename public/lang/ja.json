@@ -43,7 +43,7 @@
     "nameAsc": "名前 A→Z",
     "loadMore": "もっと見る",
     "randomAuthor": "ランダム作者",
-    "sortDefault": "デフォルト",
+    "sortDefault": "新着順",
     "sortDateAsc": "発売日 ↑ 古い順",
     "sortDateDesc": "発売日 ↓ 新しい順",
     "sortLikesDesc": "いいね数 ↓ 高い順",
@@ -96,7 +96,8 @@
     "noMatchingEvents": "該当するイベントはありません",
     "noMatchingAuthors": "該当する作者はありません",
     "noUpdates": "ニュースはまだありません",
-    "refresh": "更新"
+    "refresh": "更新",
+    "sortRandom": "ランダム"
   },
   "home": {
     "board": "ボード",

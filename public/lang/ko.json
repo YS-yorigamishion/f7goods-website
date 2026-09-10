@@ -43,7 +43,7 @@
     "nameAsc": "이름 A→Z",
     "loadMore": "더보기",
     "randomAuthor": "랜덤 작가",
-    "sortDefault": "기본 정렬",
+    "sortDefault": "최신순",
     "sortDateAsc": "발매일 ↑ 오래된순",
     "sortDateDesc": "발매일 ↓ 최신순",
     "sortLikesDesc": "좋아요 ↓ 높은순",
@@ -96,7 +96,8 @@
     "noMatchingEvents": "조건에 맞는 이벤트가 없습니다",
     "noMatchingAuthors": "조건에 맞는 작가가 없습니다",
     "noUpdates": "아직 뉴스가 없습니다",
-    "refresh": "새로고침"
+    "refresh": "새로고침",
+    "sortRandom": "무작위"
   },
   "home": {
     "board": "보드",

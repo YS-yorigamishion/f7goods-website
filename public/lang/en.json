@@ -43,7 +43,7 @@
     "nameAsc": "Name A→Z",
     "loadMore": "Load More",
     "randomAuthor": "Random Author",
-    "sortDefault": "Default Sort",
+    "sortDefault": "Newest",
     "sortDateAsc": "Release Date ↑ Old→New",
     "sortDateDesc": "Release Date ↓ New→Old",
     "sortLikesDesc": "Likes ↓ High→Low",
@@ -96,7 +96,8 @@
     "noMatchingEvents": "No matching events",
     "noMatchingAuthors": "No matching authors",
     "noUpdates": "No updates yet",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "sortRandom": "Random"
   },
   "home": {
     "board": "Board",

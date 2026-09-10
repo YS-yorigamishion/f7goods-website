@@ -43,7 +43,7 @@
     "nameAsc": "名称 A→Z",
     "loadMore": "加载更多",
     "randomAuthor": "随机作者",
-    "sortDefault": "默认排序",
+    "sortDefault": "最新上传",
     "sortDateAsc": "发售时间 ↑ 早→晚",
     "sortDateDesc": "发售时间 ↓ 晚→早",
     "sortLikesDesc": "喜爱数 ↓ 高→低",
@@ -96,7 +96,8 @@
     "noMatchingEvents": "暂无符合条件的活动",
     "noMatchingAuthors": "暂无符合条件的作者",
     "noUpdates": "暂无动态",
-    "refresh": "刷新"
+    "refresh": "刷新",
+    "sortRandom": "随机排序"
   },
   "home": {
     "board": "看板",
