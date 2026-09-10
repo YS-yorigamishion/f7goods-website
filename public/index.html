@@ -317,6 +317,7 @@
     }
 
     // ===== Board announcement ticker =====
+    // Default: play the announcement with the newest publishDate (not pinned-first).
     async function loadBoardAnnounce() {
       const bar = document.getElementById('boardAnnounce');
       const track = document.getElementById('boardAnnounceTrack');
@@ -328,8 +329,12 @@
           bar.classList.add('hidden');
           return;
         }
-        // API already sorts pinned first, then newest
-        const latest = list[0];
+        const latest = [...list].sort((a, b) => {
+          const da = a.publishDate || a.createdAt || '';
+          const db = b.publishDate || b.createdAt || '';
+          if (da === db) return 0;
+          return da < db ? 1 : -1;
+        })[0];
         const title = (latest.title || '').trim();
         const content = (latest.content || '').replace(/\s+/g, ' ').trim();
         const text = title && content ? `${title} · ${content}` : (title || content || '');
@@ -350,14 +355,12 @@
           if (!viewport) return;
           const overflow = track.scrollWidth > viewport.clientWidth + 2;
           if (!overflow) {
-            // Single copy is enough; hide the duplicate
             const dup = track.querySelector('[aria-hidden="true"]');
             if (dup) dup.remove();
             track.classList.remove('is-scrolling');
             track.style.animationDuration = '';
             return;
           }
-          // Keep both copies; speed ~40px/s
           const half = track.scrollWidth / 2;
           const duration = Math.max(12, half / 40);
           track.style.animationDuration = duration + 's';
