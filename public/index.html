@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260813k">
+  <link rel="stylesheet" href="/css/style.css?v=20260813l">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -63,8 +63,8 @@
       <div class="board-grid">
         <div class="board-span-8">
           <div class="board-section-head">
-            <h2>发售中周边</h2>
-            <span>可关注购买意向</span>
+            <h2>最新上传</h2>
+            <span>最近上架的周边</span>
             <button type="button" class="linkish" onclick="setHomeView('catalog')">查看全部 →</button>
           </div>
           <div class="board-strip" id="boardSaleStrip"></div>
@@ -158,7 +158,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260813k"></script>
+  <script src="/js/main.js?v=20260813l"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -328,19 +328,9 @@
         .sort((a, b) => String(a.endDate || 'z').localeCompare(String(b.endDate || 'z')))
         .slice(0, 4);
 
-      const saleWorks = allWorks
-        .filter(w => w.status === 'on_sale' || w.status === 'pre_order' || w.status === 'fashouzhong' || w.status === 'yuyuezhong')
+      const latestWorks = [...allWorks]
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
         .slice(0, 10);
-
-      // Fallback sale filter if statuses use Chinese keys from API
-      if (!saleWorks.length) {
-        const onSaleIds = (STATUS_ORDERED || []).filter(s => /发售|预约|sale|order/i.test(s.id + s.name)).map(s => s.id);
-        saleWorks.push(...allWorks.filter(w => onSaleIds.includes(w.status)).slice(0, 10));
-      }
-      if (!saleWorks.length) {
-        saleWorks.push(...[...allWorks].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 8));
-      }
 
       const dl = document.getElementById('boardDeadlineList');
       if (dl) {
@@ -361,10 +351,10 @@
 
       const strip = document.getElementById('boardSaleStrip');
       if (strip) {
-        if (!saleWorks.length) {
-          strip.innerHTML = `<div style="padding:1rem 0;color:var(--haze);font-size:12px;">暂无发售中周边</div>`;
+        if (!latestWorks.length) {
+          strip.innerHTML = `<div style="padding:1rem 0;color:var(--haze);font-size:12px;">暂无周边</div>`;
         } else {
-          strip.innerHTML = saleWorks.map(w => `
+          strip.innerHTML = latestWorks.map(w => `
             <div class="card" onclick="location.href='/work-detail.html?id=${w.id}'">
               <div class="card-image">
                 ${w.images && w.images[0] ? `<img src="${w.images[0]}" alt="${escapeHtml(w.title)}" loading="lazy">` : '<span class="placeholder-icon">🎨</span>'}
