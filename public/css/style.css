@@ -908,6 +908,11 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 }
 .cl-seg button:last-child { border-right: none; }
 .cl-seg button.on { background: var(--card); color: var(--accent); font-weight: 600; }
+@media (max-width: 640px) {
+  /* 移动端：视图切换独占一行（置于状态筛选上方） */
+  .cl-toolbar-card #viewSeg { flex: 1 1 100%; }
+  .cl-toolbar-card #viewSeg button { flex: 1; }
+}
 
 .cl-ev-month {
   display: flex; align-items: center; gap: 0.6rem;

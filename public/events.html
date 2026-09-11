@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911m">
+  <link rel="stylesheet" href="/css/style.css?v=20260911t">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -128,6 +128,24 @@
       btn.classList.add('on');
       renderEvents();
     }
+
+    // 移动端：把视图切换（时间轴/日历/多格）移到状态筛选上方
+    const mqEventsMobile = window.matchMedia('(max-width: 640px)');
+    function layoutEventFilters() {
+      const seg = document.getElementById('viewSeg');
+      const st = document.getElementById('statusFilters');
+      if (!seg || !st) return;
+      const stRow = st.parentElement;
+      if (!stRow) return;
+      if (mqEventsMobile.matches) {
+        if (stRow.firstElementChild !== seg) stRow.insertBefore(seg, stRow.firstElementChild);
+      } else if (stRow.lastElementChild !== seg) {
+        stRow.appendChild(seg);
+      }
+    }
+    if (mqEventsMobile.addEventListener) mqEventsMobile.addEventListener('change', layoutEventFilters);
+    else if (mqEventsMobile.addListener) mqEventsMobile.addListener(layoutEventFilters);
+    layoutEventFilters();
 
     async function loadEvents() {
       try {
