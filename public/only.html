@@ -497,6 +497,7 @@
           circleIds: raw.circleIds || [],
           owners,
           goods,
+          goodsGroups: Array.isArray(raw.goodsGroups) ? raw.goodsGroups : [],
           claimConditions: (raw.claimConditions && typeof raw.claimConditions === 'object' && !Array.isArray(raw.claimConditions)) ? raw.claimConditions : {},
           promoTiers,
           promo: raw.promo || null
@@ -710,6 +711,52 @@
       return list;
     }
 
+    function onlyGoodsCards(works, booth, cart) {
+      if (!works.length) return `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;grid-column:1/-1;">暂无作品</div>`;
+      return works.map(g => {
+        const q = cart[g.id]?.qty || 0;
+        const img = (g.images && g.images[0]) || '';
+        const claim = String((booth?.claimConditions || {})[g.id] || '').trim();
+        return `<a class="only-g${claim ? ' is-claim' : ''}" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
+          <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
+          <div class="body">
+            <div class="name">${esc(g.title)}</div>
+            <div class="price">${esc(formatPriceLabel(g.price))}${claim ? `<button type="button" class="claim-chip" data-claim="${esc(g.id)}" aria-label="查看领取条件">条件领取<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg></button>` : ''}</div>
+            <div class="only-qtyrow" data-work-qty="${esc(g.id)}">
+              <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
+              <span class="q">${q}</span>
+              <button type="button" data-add="${esc(g.id)}">+</button>
+            </div>
+          </div>
+        </a>`;
+      }).join('');
+    }
+
+    function boothGoodsSectionsHtml(booth, cart) {
+      const groups = Array.isArray(booth.goodsGroups) ? booth.goodsGroups.filter(g => g && (g.name || (g.workIds || []).length)) : [];
+      if (!groups.length) {
+        return `<div class="only-sec">
+          <div class="only-sec-label">周边</div>
+          <div class="only-goods">${booth.goods.length ? onlyGoodsCards(booth.goods, booth, cart) : `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;grid-column:1/-1;">该摊位暂无关联本活动的周边</div>`}</div>
+        </div>`;
+      }
+      const claimed = new Set();
+      const sections = groups.map(g => {
+        const ids = new Set(g.workIds || []);
+        const works = booth.goods.filter(w => ids.has(w.id));
+        works.forEach(w => claimed.add(w.id));
+        return { name: String(g.name || '未命名').trim() || '未命名', works };
+      });
+      const rest = booth.goods.filter(w => !claimed.has(w.id));
+      if (rest.length) sections.push({ name: '其他', works: rest });
+      return sections.map(s => `
+        <div class="only-sec">
+          <div class="only-sec-label">${esc(s.name)}${s.works.length ? ` · ${s.works.length}` : ''}</div>
+          <div class="only-goods">${s.works.length ? onlyGoodsCards(s.works, booth, cart) : `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;grid-column:1/-1;">本分类暂无作品</div>`}</div>
+        </div>
+      `).join('');
+    }
+
     function renderOnlyGoodsGrid() {
       const grid = document.getElementById('onlyGoodsGrid');
       const countEl = document.getElementById('onlyGoodsCount');
@@ -850,28 +897,7 @@
             ${bannersHtml}
             <div class="only-booth-body">
               ${introHtml}
-              <div class="only-sec">
-                <div class="only-sec-label">周边</div>
-                <div class="only-goods">
-                  ${b.goods.length ? b.goods.map(g => {
-                    const q = cart[g.id]?.qty || 0;
-                    const img = (g.images && g.images[0]) || '';
-                    const claim = String((b.claimConditions || {})[g.id] || '').trim();
-                    return `<a class="only-g${claim ? ' is-claim' : ''}" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
-                      <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
-                      <div class="body">
-                        <div class="name">${esc(g.title)}</div>
-                        <div class="price">${esc(formatPriceLabel(g.price))}${claim ? `<button type="button" class="claim-chip" data-claim="${esc(g.id)}" aria-label="查看领取条件">条件领取<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg></button>` : ''}</div>
-                        <div class="only-qtyrow" data-work-qty="${esc(g.id)}">
-                          <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
-                          <span class="q">${q}</span>
-                          <button type="button" data-add="${esc(g.id)}">+</button>
-                        </div>
-                      </div>
-                    </a>`;
-                  }).join('') : `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;grid-column:1/-1;">该摊位暂无关联本活动的周边</div>`}
-                </div>
-              </div>
+              ${boothGoodsSectionsHtml(b, cart)}
               ${tiers.length ? `<div class="only-sec"><div class="only-sec-label">摊位活动</div><div class="only-promo-box">${tiers.map(t => {
                 return `满 <b>${money(t.minAmount || 0)}</b> 送「${esc(tierGiftLabel(t))}」`;
               }).join('<br>')}</div></div>` : ''}

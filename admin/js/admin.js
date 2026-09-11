@@ -6897,6 +6897,13 @@ function normalizeBooths(booths) {
     order: b.order ?? i,
     circleIds: b.circleIds || [],
     workIds: Array.isArray(b.workIds) ? [...new Set(b.workIds.filter(Boolean).map(String))] : [],
+    goodsGroups: Array.isArray(b.goodsGroups)
+      ? b.goodsGroups.filter(g => g && typeof g === 'object').map(g => ({
+          id: String(g.id || ('c' + Date.now())),
+          name: String(g.name || '').trim().slice(0, 40),
+          workIds: [...new Set((Array.isArray(g.workIds) ? g.workIds : []).filter(Boolean).map(String))]
+        }))
+      : [],
     goodsOrder: Array.isArray(b.goodsOrder) ? b.goodsOrder.filter(Boolean) : [],
     claimConditions: (b.claimConditions && typeof b.claimConditions === 'object' && !Array.isArray(b.claimConditions)) ? { ...b.claimConditions } : {},
     promoTiers: Array.isArray(b.promoTiers)
@@ -6998,6 +7005,13 @@ function openBoothModal(boothId = null) {
       </div>
     </div>
     <div class="form-group">
+      <label>自定义分类（可选 · 不添加则前台不分类；未归类作品显示在「其他」）</label>
+      <div id="boothGroupList" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.5rem;">
+        ${(booth?.goodsGroups || []).map(g => renderBoothGroupRow(g, boothOwnerWorks)).join('')}
+      </div>
+      <button type="button" class="btn-sm" onclick="addBoothGroupRow()">+ 添加分类</button>
+    </div>
+    <div class="form-group">
       <label>满额赠品档（可多档 · 一档可送多个作品）· 前提是作品已关联本活动</label>
       <div id="boothTierList" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.5rem;">
         ${tiers.map((t, i) => renderBoothTierRow(t, relatedWorks, i)).join('')}
@@ -7036,9 +7050,15 @@ function openBoothModal(boothId = null) {
     }).filter(Boolean);
     const next = normalizeBooths(booths);
     const workIds = [...document.querySelectorAll('#modalBody .booth-work:checked')].map(i => i.value);
+    const goodsGroups = [...document.querySelectorAll('#boothGroupList .booth-group-row')].map(row => {
+      const name = row.querySelector('.booth-group-name')?.value.trim() || '';
+      const ids = [...row.querySelectorAll('.booth-group-work:checked')].map(i => i.value);
+      if (!name && !ids.length) return null;
+      return { id: row.dataset.id || ('c' + Date.now()), name, workIds: ids };
+    }).filter(Boolean);
     const payload = {
       id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
-      code, title, logo, circleIds, promoTiers, workIds,
+      code, title, logo, circleIds, promoTiers, workIds, goodsGroups,
       description: document.getElementById('boothDescription')?.value || '',
       images: [...document.querySelectorAll('#boothImagesPreview img')].map(img => img.src),
       goodsOrder: Array.isArray(booth?.goodsOrder) ? booth.goodsOrder.slice() : []
@@ -7067,6 +7087,39 @@ function openBoothModal(boothId = null) {
     showToast('摊位已保存');
   });
   openModal();
+}
+
+function renderBoothGroupRow(group, works) {
+  const selected = new Set(Array.isArray(group?.workIds) ? group.workIds : []);
+  return `<div class="booth-group-row" data-id="${escapeHtml(group?.id || '')}" style="display:flex;flex-direction:column;gap:0.4rem;border:1px solid var(--line);border-radius:8px;padding:0.55rem 0.65rem;">
+    <div style="display:flex;gap:0.4rem;align-items:center;">
+      <input class="form-input booth-group-name" style="flex:1;min-width:0;" placeholder="分类名称，如：新品" value="${escapeHtml(group?.name || '')}">
+      <button type="button" class="btn-sm btn-delete" onclick="this.closest('.booth-group-row').remove()">删</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.3rem;max-height:120px;overflow:auto;">
+      ${works.length ? works.map(w => `
+        <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.25rem;border:1px solid var(--line);border-radius:999px;padding:0.2rem 0.55rem;cursor:pointer;background:var(--card);">
+          <input type="checkbox" class="booth-group-work" value="${escapeHtml(w.id)}" ${selected.has(w.id) ? 'checked' : ''}>
+          ${escapeHtml(w.title || '')}
+        </label>
+      `).join('') : '<span style="font-size:0.78rem;color:var(--haze);">暂无可选作品</span>'}
+    </div>
+  </div>`;
+}
+
+function addBoothGroupRow() {
+  const event = getSelectedBoothEvent();
+  const works = window._boothCache?.works || [];
+  const circles = window._boothCache?.circles || [];
+  const relatedWorks = works.filter(w => (event?.relatedWorks || []).includes(w.id));
+  // 默认按当前已勾选摊主过滤；未挂接时展示全部关联作品
+  const owners = new Set([...document.querySelectorAll('#modalBody .booth-circle:checked')].map(i => i.value));
+  const pool = owners.size
+    ? relatedWorks.filter(w => (w.circles || []).some(cid => owners.has(cid)))
+    : relatedWorks;
+  const list = document.getElementById('boothGroupList');
+  if (!list) return;
+  list.insertAdjacentHTML('beforeend', renderBoothGroupRow({ id: 'c' + Date.now(), name: '', workIds: [] }, pool));
 }
 
 function renderBoothTierRow(t, relatedWorks, i) {

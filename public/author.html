@@ -2796,6 +2796,33 @@
     // ===== Author ONLY Booths =====
     let _onlyBoothData = [];
     let _abGiftWorks = [];
+    let _abManageWorks = [];
+
+    function renderAuthorGroupRow(group, works) {
+      const selected = new Set(Array.isArray(group?.workIds) ? group.workIds : []);
+      const name = escapeHtml(group?.name || '');
+      const id = escapeHtml(group?.id || '');
+      return `<div class="ab-group-row" data-id="${id}" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.55rem;display:flex;flex-direction:column;gap:0.35rem;">
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <input class="form-input ab-group-name" style="flex:1;min-width:0;" placeholder="分类名称，如：新品" value="${name}">
+          <button type="button" class="btn-sm btn-delete" onclick="this.closest('.ab-group-row').remove()">删</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.25rem;max-height:100px;overflow:auto;">
+          ${works.length ? works.map(w => `
+            <label style="font-size:0.72rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.45rem;cursor:pointer;">
+              <input type="checkbox" class="ab-group-work" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''}>
+              ${escapeHtml(w.title || '')}
+            </label>
+          `).join('') : '<span style="font-size:0.72rem;color:var(--haze);">暂无可选作品</span>'}
+        </div>
+      </div>`;
+    }
+
+    function addAuthorGroupRow() {
+      const list = document.getElementById('abGroupList');
+      if (!list) return;
+      list.insertAdjacentHTML('beforeend', renderAuthorGroupRow({ id: 'c' + Date.now(), name: '', workIds: [] }, _abManageWorks || []));
+    }
 
     async function loadAuthorOnlyBooths() {
       const list = document.getElementById('onlyBoothsList');
@@ -2968,6 +2995,7 @@
       const manageWorks = boothManageableWorks(pack, booth, canFullEdit);
       const giftWorks = manageWorks;
       _abGiftWorks = manageWorks;
+      _abManageWorks = manageWorks;
       const circles = pack.circles || [];
       const selectedOwners = new Set(booth?.circleIds || []);
       const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: '', giftWorkIds: [], text: '' }];
@@ -3038,6 +3066,18 @@
               <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">仅可管理本摊已挂接摊主的作品；未挂接到本摊的作者作品不可选。</div>
             `;
           })()}
+        </div>
+        <div class="form-group">
+          <label>自定义分类（可选 · 不添加则前台不分类）</label>
+          <div id="abGroupList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
+            ${(() => {
+              const groups = Array.isArray(booth?.goodsGroups) ? booth.goodsGroups : [];
+              if (!groups.length) return '';
+              return groups.map(g => renderAuthorGroupRow(g, manageWorks)).join('');
+            })()}
+          </div>
+          <button type="button" class="btn-sm btn-edit" onclick="addAuthorGroupRow()">+ 添加分类</button>
+          <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">可分几类并编辑名称；每类勾选对应作品。未归入任何分类的作品会显示在「其他」。</div>
         </div>
         <div class="form-group">
           <label>满额赠品档（可多档 · 一档可多作品 · 可选本摊全部作品）</label>
@@ -3132,7 +3172,13 @@
         description: document.getElementById('abDescription')?.value || '',
         images: [...document.querySelectorAll('#abImagesPreview img')].map(img => img.src),
         promoTiers,
-        workIds: [...document.querySelectorAll('.ab-work:checked')].map(i => i.value)
+        workIds: [...document.querySelectorAll('.ab-work:checked')].map(i => i.value),
+        goodsGroups: [...document.querySelectorAll('#abGroupList .ab-group-row')].map(row => {
+          const name = row.querySelector('.ab-group-name')?.value.trim() || '';
+          const workIds = [...row.querySelectorAll('.ab-group-work:checked')].map(i => i.value);
+          if (!name && !workIds.length) return null;
+          return { id: row.dataset.id || ('c' + Date.now()), name, workIds };
+        }).filter(Boolean)
       };
       // 仅在渲染了条件领取区块时提交，避免误清空其他摊主设置的条件
       if (document.getElementById('abClaimList')) {
