@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>作者管理 — 布局预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --accent-alt: #2C3340;
+      --muted: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --shadow-sm: 0 1px 2px rgba(34, 32, 30, 0.04);
+      --shadow-md: 0 8px 24px rgba(34, 32, 30, 0.08);
+      --radius: 14px;
+      --radius-sm: 10px;
+      --transition: 0.2s ease;
+      --sidebar-w: 220px;
+      --topbar-h: 56px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.6;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; border: none; background: none; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* ===== Preview banner ===== */
+    .preview-bar {
+      height: 32px;
+      background: var(--accent-alt);
+      color: #F6F2EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
+      flex-wrap: wrap;
+      padding: 0 0.5rem;
+    }
+    .preview-bar strong { color: #fff; font-weight: 600; }
+    .preview-bar button {
+      color: #F6F2EB;
+      border: 1px solid rgba(246,242,235,0.35);
+      border-radius: 999px;
+      padding: 0.1rem 0.7rem;
+      font-size: 0.72rem;
+      transition: var(--transition);
+    }
+    .preview-bar button:hover,
+    .preview-bar button.on {
+      background: rgba(246,242,235,0.12);
+      border-color: rgba(246,242,235,0.6);
+    }
+
+    /* ===== Shell ===== */
+    .shell {
+      height: calc(100vh - 32px);
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      grid-template-rows: var(--topbar-h) 1fr;
+      grid-template-areas:
+        "brand top"
+        "side  main";
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Brand block (aligned with sidebar) */
+    .brand {
+      grid-area: brand;
+      background: var(--card);
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0 1rem;
+      position: relative;
+    }
+    .brand::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+    .brand-mark {
+      width: 28px; height: 28px;
+      background: var(--ink);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--paper);
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .brand-text {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: -0.02em;
+    }
+    .brand-text span {
+      display: block;
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      font-weight: 400;
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0;
+      margin-top: -2px;
+    }
+
+    /* Top bar (content side) */
+    .topbar {
+      grid-area: top;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      gap: 1rem;
+      position: relative;
+      z-index: 95;
+    }
+    .topbar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+    }
+    .topbar-title {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar-title em {
+      font-style: normal;
+      color: var(--muted);
+      font-weight: 400;
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      font-size: 0.85rem;
+      margin-left: 0.4rem;
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      transition: var(--transition);
+      position: relative;
+    }
+    .icon-btn:hover { background: var(--paper); color: var(--ink); }
+    .icon-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .notif-dot {
+      position: absolute;
+      top: 7px; right: 7px;
+      width: 7px; height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      border: 1.5px solid var(--card);
+    }
+
+    .account-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.55rem 0.25rem 0.3rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      transition: var(--transition);
+      max-width: 220px;
+    }
+    .account-chip:hover { border-color: #D4C8B8; background: var(--card); }
+    .account-chip .meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.15;
+      min-width: 0;
+    }
+    .avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #E8D5C4, #D4A5A5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--ink);
+      flex-shrink: 0;
+    }
+    .avatar.s2 { background: linear-gradient(135deg, #C8D5E0, #8FA8C0); }
+    .avatar.s3 { background: linear-gradient(135deg, #D5E0C8, #A8C08F); }
+    .account-chip .name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+    }
+    .account-chip .sub {
+      font-size: 0.62rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .account-chip .sub.actas { color: var(--accent); font-weight: 600; }
+    .account-chip .chev {
+      width: 14px; height: 14px;
+      stroke: var(--muted); fill: none; stroke-width: 1.8;
+      flex-shrink: 0;
+    }
+    .acct-menu {
+      min-width: 240px;
+      padding: 0.35rem;
+    }
+    .acct-menu .head {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      padding: 0.35rem 0.55rem 0.4rem;
+    }
+    .acct-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      width: 100%;
+      padding: 0.5rem 0.55rem;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      color: var(--ink);
+      text-align: left;
+      transition: var(--transition);
+    }
+    .acct-item:hover { background: var(--paper); }
+    .acct-item.current { background: rgba(217, 79, 92, 0.07); }
+    .acct-item .info { flex: 1; min-width: 0; }
+    .acct-item .nm {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .acct-item .tag {
+      display: inline-block;
+      margin-left: 0.3rem;
+      font-size: 0.62rem;
+      font-weight: 600;
+      padding: 0.05rem 0.35rem;
+      border-radius: 999px;
+      vertical-align: middle;
+    }
+    .tag.owner { background: rgba(34,32,30,0.08); color: var(--ink); }
+    .tag.delegate { background: rgba(74,123,167,0.12); color: var(--info); }
+    .acct-item .hint {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 0.05rem;
+    }
+    .acct-item .check {
+      width: 16px; height: 16px;
+      stroke: var(--accent); fill: none; stroke-width: 2;
+      flex-shrink: 0;
+      opacity: 0;
+    }
+    .acct-item.current .check { opacity: 1; }
+    .acct-menu .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 0.3rem 0.25rem;
+    }
+
+    /* act-as banner */
+    .actas-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      background: rgba(74, 123, 167, 0.08);
+      border: 1px solid rgba(74, 123, 167, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.75rem;
+      margin-bottom: 0.85rem;
+      font-size: 0.78rem;
+      color: var(--info);
+    }
+    .actas-banner.show { display: flex; }
+    .actas-banner strong { color: var(--ink); font-weight: 600; }
+    .actas-banner button {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--info);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      white-space: nowrap;
+    }
+    .actas-banner button:hover { color: var(--accent); }
+
+    /* Sidebar */
+    .sidebar {
+      grid-area: side;
+      background: var(--card);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 0.75rem 0.6rem 0.5rem;
+    }
+    .sidebar-head {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0.5rem 0.65rem;
+      margin-bottom: 0.25rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .sidebar-head .ttl {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .sidebar-head .close-btn {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+    }
+    .sidebar-head .close-btn:hover { background: var(--paper); color: var(--ink); }
+    .sidebar-head .close-btn svg {
+      width: 16px; height: 16px;
+      stroke: currentColor; fill: none; stroke-width: 1.8;
+    }
+    .nav-group { margin-bottom: 1.1rem; }
+    .nav-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      padding: 0 0.7rem 0.35rem;
+      text-transform: none;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      width: 100%;
+      padding: 0.48rem 0.7rem;
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      font-size: 0.86rem;
+      font-weight: 500;
+      text-align: left;
+      transition: var(--transition);
+      position: relative;
+    }
+    .nav-item:hover { background: var(--paper); }
+    .nav-item.active {
+      background: rgba(217, 79, 92, 0.08);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 0 2px 2px 0;
+    }
+    .nav-item svg {
+      width: 16px; height: 16px;
+      stroke: currentColor; fill: none;
+      stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+      opacity: 0.75;
+    }
+    .nav-item.active svg { opacity: 1; }
+    .nav-badge {
+      margin-left: auto;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 600;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sidebar-foot {
+      margin-top: auto;
+      padding: 0.75rem 0.4rem 0.4rem;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .side-action {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.6rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      color: var(--muted);
+      transition: var(--transition);
+      width: 100%;
+    }
+    .side-action:hover { background: var(--paper); color: var(--ink); }
+    .side-action svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+    .side-action.danger:hover { color: var(--accent); }
+
+    /* Main */
+    .main {
+      grid-area: main;
+      overflow-y: auto;
+      background: var(--paper);
+      padding: 1.25rem 1.5rem 2rem;
+    }
+    .page { display: none; animation: fadeIn 0.22s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.1rem;
+      flex-wrap: wrap;
+    }
+    .page-head h1 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.15rem;
+    }
+    .page-head p {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .page-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      height: 34px;
+      padding: 0 0.9rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 500;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--ink);
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .btn:hover { border-color: #D4C8B8; background: var(--paper); }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+    .btn-ghost {
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+    }
+    .btn-ghost:hover { background: var(--paper); color: var(--ink); }
+    .btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+    /* Dropdown */
+    .dropdown { position: relative; }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 160px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      padding: 0.3rem;
+      z-index: 40;
+    }
+    .dropdown.open .dropdown-menu { display: block; }
+    .dropdown-menu button:not(.acct-item) {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.45rem 0.65rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: var(--ink);
+      text-align: left;
+    }
+    .dropdown-menu button:not(.acct-item):hover { background: var(--paper); }
+
+    /* Stats strip */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.7rem;
+      margin-bottom: 1rem;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      text-align: center;
+    }
+    .stat-card .num {
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-family: 'Noto Serif SC', Georgia, serif;
+      color: var(--accent);
+      line-height: 1.2;
+    }
+    .stat-card .num.muted { color: var(--ink); }
+    .stat-card .num.info { color: var(--info); }
+    .stat-card .num.like { color: #E25555; }
+    .stat-card .lbl {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+    .stat-card.clickable { cursor: pointer; transition: var(--transition); }
+    .stat-card.clickable:hover { border-color: #D4C8B8; transform: translateY(-1px); }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.75rem 0.9rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .toolbar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+    .toolbar-row + .toolbar-row {
+      padding-top: 0.65rem;
+      border-top: 1px solid var(--line);
+    }
+    .search-box {
+      flex: 1;
+      min-width: 160px;
+      height: 34px;
+      padding: 0 0.85rem 0 2rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--paper);
+      font-size: 0.82rem;
+      color: var(--ink);
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 160px;
+      display: flex;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 0.7rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px; height: 15px;
+      stroke: var(--muted); fill: none; stroke-width: 1.6;
+      pointer-events: none;
+    }
+    .select-sm {
+      height: 34px;
+      padding: 0 0.6rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      font-size: 0.82rem;
+      min-width: 110px;
+    }
+    .check-all {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .check-all input { accent-color: var(--accent); width: 15px; height: 15px; }
+
+    .filter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+    }
+    .filter-pills .flabel {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-right: 0.15rem;
+      min-width: 2em;
+    }
+    .pill {
+      height: 28px;
+      padding: 0 0.75rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+    .pill:hover { border-color: #D4C8B8; color: var(--ink); }
+    .pill.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Batch bar */
+    .batch-bar {
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(217, 79, 92, 0.06);
+      border: 1px solid rgba(217, 79, 92, 0.2);
+      border-radius: var(--radius);
+      padding: 0.55rem 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+    .batch-bar.show { display: flex; }
+    .batch-bar .count {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .batch-bar .btn { height: 30px; font-size: 0.78rem; }
+    .batch-bar .btn-danger {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .batch-bar .btn-danger:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+    .batch-bar .spacer { flex: 1; }
+
+    /* Cards grid */
+    .works-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.85rem;
+    }
+    .wcard {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+    .wcard:hover {
+      border-color: #D4C8B8;
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-2px);
+    }
+    .wcard-img {
+      height: 140px;
+      background: linear-gradient(145deg, #EDE6DA, #D9CFC0);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .wcard-img .ph {
+      font-size: 1.6rem;
+      opacity: 0.45;
+    }
+    .wcard-check {
+      position: absolute;
+      top: 8px; left: 8px;
+      width: 17px; height: 17px;
+      accent-color: var(--accent);
+      z-index: 2;
+      cursor: pointer;
+    }
+    .badge {
+      position: absolute;
+      top: 8px; right: 8px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.12rem 0.4rem;
+      border-radius: 4px;
+      color: #fff;
+      z-index: 2;
+    }
+    .badge.ok { background: var(--success); }
+    .badge.wait { background: var(--warning); }
+    .badge.no { background: var(--accent); }
+    .wcard-body { padding: 0.7rem 0.8rem 0.8rem; }
+    .wcard-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .wcard-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .wcard-price { color: var(--accent); font-weight: 600; }
+
+    /* Generic panels */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .panel h3 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 0.98rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .panel-hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      height: 36px;
+      padding: 0 0.7rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      font-size: 0.86rem;
+    }
+    .form-group textarea {
+      height: auto;
+      min-height: 80px;
+      padding: 0.55rem 0.7rem;
+      resize: vertical;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-thumb {
+      width: 42px; height: 42px;
+      border-radius: 8px;
+      background: linear-gradient(145deg, #EDE6DA, #D9CFC0);
+      flex-shrink: 0;
+    }
+    .list-item .info { flex: 1; min-width: 0; }
+    .list-item .t { font-weight: 600; font-size: 0.88rem; }
+    .list-item .s { font-size: 0.75rem; color: var(--muted); }
+
+    .empty {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    /* Mobile */
+    .menu-toggle { display: none; }
+    .sidebar-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(34,32,30,0.35);
+      z-index: 90;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+    .sidebar-overlay.open {
+      display: block;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 900px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 0px; }
+      .shell {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "top"
+          "main";
+      }
+      .brand { display: none; }
+      .sidebar {
+        position: absolute;
+        left: 0; top: var(--topbar-h); bottom: 0;
+        width: min(280px, 86vw);
+        z-index: 100;
+        transform: translateX(-105%);
+        transition: transform 0.24s ease;
+        box-shadow: var(--shadow-md);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-head { display: flex; }
+      .menu-toggle { display: inline-flex; }
+      .menu-toggle .bars { display: block; }
+      .menu-toggle .xmark { display: none; }
+      .menu-toggle.is-open .bars { display: none; }
+      .menu-toggle.is-open .xmark { display: block; }
+      .main { padding: 1rem; }
+      .works-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+      .wcard-img { height: 110px; }
+      .account-chip .name { display: none; }
+      .account-chip .meta .sub { display: none; }
+      .account-chip { max-width: 72px; }
+      .page-actions .btn-label-hide { display: none; }
+      .acct-menu { min-width: 220px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Forced mobile preview (independent of viewport) */
+    body.preview-mobile .shell {
+      max-width: 390px;
+      margin: 0 auto;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "top"
+        "main";
+      position: relative;
+    }
+    body.preview-mobile .brand { display: none; }
+    body.preview-mobile .sidebar {
+      position: absolute;
+      left: 0;
+      top: var(--topbar-h);
+      bottom: 0;
+      width: min(280px, 86vw);
+      z-index: 100;
+      transform: translateX(-105%);
+      transition: transform 0.24s ease;
+      box-shadow: var(--shadow-md);
+      grid-area: unset;
+    }
+    body.preview-mobile .sidebar.open {
+      transform: translateX(0);
+    }
+    body.preview-mobile .sidebar-head { display: flex; }
+    body.preview-mobile .menu-toggle { display: inline-flex; }
+    body.preview-mobile .menu-toggle .bars { display: block; }
+    body.preview-mobile .menu-toggle .xmark { display: none; }
+    body.preview-mobile .menu-toggle.is-open .bars { display: none; }
+    body.preview-mobile .menu-toggle.is-open .xmark { display: block; }
+    body.preview-mobile .main { padding: 1rem; }
+    body.preview-mobile .works-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+    body.preview-mobile .wcard-img { height: 110px; }
+    body.preview-mobile .account-chip .name,
+    body.preview-mobile .account-chip .meta .sub { display: none; }
+    body.preview-mobile .account-chip { max-width: 72px; }
+    body.preview-mobile .page-actions .btn-label-hide { display: none; }
+    body.preview-mobile .stats { grid-template-columns: repeat(2, 1fr); }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span><strong>布局预览</strong> · 顶栏与功能区重设计 · 非正式上线页面</span>
+    <button type="button" id="btnDesk" class="on" onclick="setPreviewMode('desktop')">桌面</button>
+    <button type="button" id="btnMob" onclick="setPreviewMode('mobile')">移动端</button>
+  </div>
+
+  <div class="shell" id="shell">
+    <div class="sidebar-overlay" id="sideOverlay" onclick="toggleSidebar(false)"></div>
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-mark">f7</div>
+      <div class="brand-text">f7goods<span>作者管理</span></div>
+    </div>
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn menu-toggle" id="menuToggle" type="button" onclick="toggleSidebar()" aria-label="展开或收起菜单" aria-expanded="false">
+          <svg class="bars" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          <svg class="xmark" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+        <h1 class="topbar-title" id="topTitle">我的作品</h1>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" type="button" onclick="switchPage('notifications')" title="审核通知" aria-label="审核通知">
+          <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+          <span class="notif-dot" id="notifDot"></span>
+        </button>
+        <div class="dropdown" id="acctDrop">
+          <button class="account-chip" type="button" onclick="toggleDrop('acctDrop')" aria-haspopup="true" aria-label="切换管理账号">
+            <span class="avatar" id="acctAvatar">春</span>
+            <span class="meta">
+              <span class="name" id="acctName">春日手作社</span>
+              <span class="sub" id="acctSub">本账号</span>
+            </span>
+            <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="dropdown-menu acct-menu" id="acctMenu">
+            <div class="head">可管理的账号</div>
+            <div id="acctList"></div>
+            <div class="divider"></div>
+            <button type="button" onclick="switchPage('profile');toggleDrop('acctDrop')">作者资料</button>
+            <button type="button" onclick="switchPage('password');toggleDrop('acctDrop')">修改密码</button>
+            <button type="button" onclick="alert('预览版：退出登录')">退出登录</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar" aria-label="管理导航">
+      <div class="sidebar-head">
+        <span class="ttl">f7goods 管理</span>
+        <button class="close-btn" type="button" onclick="toggleSidebar(false)" aria-label="收起侧栏">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">内容</div>
+        <button class="nav-item active" data-page="works" onclick="switchPage('works')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          我的作品
+        </button>
+        <button class="nav-item" data-page="my-events" onclick="switchPage('my-events')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+          我的活动
+        </button>
+        <button class="nav-item" data-page="my-projects" onclick="switchPage('my-projects')">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          我的企划
+        </button>
+        <button class="nav-item" data-page="my-updates" onclick="switchPage('my-updates')">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg>
+          我的动态
+        </button>
+        <button class="nav-item" data-page="only-booths" onclick="switchPage('only-booths')">
+          <svg viewBox="0 0 24 24"><path d="M4 9h16l-1.5 10.5a2 2 0 0 1-2 1.5H7.5a2 2 0 0 1-2-1.5L4 9z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>
+          ONLY 摊位
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">关联</div>
+        <button class="nav-item" data-page="events" onclick="switchPage('events')">
+          <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="17" r="2.5"/><path d="M8 9.5l2.5 5M16 9.5l-2.5 5"/></svg>
+          活动关联
+        </button>
+        <button class="nav-item" data-page="projects" onclick="switchPage('projects')">
+          <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="17" r="2.5"/><path d="M8 9.5l2.5 5M16 9.5l-2.5 5"/></svg>
+          企划关联
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">素材</div>
+        <button class="nav-item" data-page="images" onclick="switchPage('images')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg>
+          图片管理
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">消息</div>
+        <button class="nav-item" data-page="notifications" onclick="switchPage('notifications')">
+          <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+          审核通知
+          <span class="nav-badge">3</span>
+        </button>
+        <button class="nav-item" data-page="announcements" onclick="switchPage('announcements')">
+          <svg viewBox="0 0 24 24"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M17 10a3 3 0 0 1 0 4"/></svg>
+          管理公告
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">账号</div>
+        <button class="nav-item" data-page="profile" onclick="switchPage('profile')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
+          作者资料
+        </button>
+        <button class="nav-item" data-page="password" onclick="switchPage('password')">
+          <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          修改密码
+        </button>
+        <button class="nav-item" data-page="history" onclick="switchPage('history')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+          操作日志
+        </button>
+      </div>
+
+      <div class="sidebar-foot">
+        <button class="side-action" type="button" onclick="alert('预览版：打开作者主页')">
+          <svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          预览主页
+        </button>
+        <button class="side-action danger" type="button" onclick="alert('预览版：退出登录')">
+          <svg viewBox="0 0 24 24"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+          退出登录
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main">
+      <div class="actas-banner" id="actasBanner">
+        <span>正在管理 <strong id="actasName">—</strong>（非本账号）</span>
+        <button type="button" onclick="switchAccount(ownerId)">切回本账号</button>
+      </div>
+
+      <!-- WORKS -->
+      <section class="page active" id="page-works">
+        <div class="page-head">
+          <div>
+            <h1>我的作品</h1>
+            <p>管理同人周边作品，支持拖拽排序与批量操作</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" type="button" onclick="alert('预览版：新增作品')">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              新增作品
+            </button>
+            <div class="dropdown" id="moreDrop">
+              <button class="btn" type="button" onclick="toggleDrop('moreDrop')">
+                更多
+                <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="dropdown-menu">
+                <button type="button" onclick="alert('预览版：批量创建');toggleDrop('moreDrop')">批量创建</button>
+                <button type="button" onclick="alert('预览版：导入');toggleDrop('moreDrop')">导入 Excel</button>
+                <button type="button" onclick="alert('预览版：导出');toggleDrop('moreDrop')">导出 Excel</button>
+                <button type="button" onclick="alert('预览版：使用格式');toggleDrop('moreDrop')">使用格式</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat-card"><div class="num">128</div><div class="lbl">作品总数</div></div>
+          <div class="stat-card"><div class="num like">2,461</div><div class="lbl">总喜爱</div></div>
+          <div class="stat-card"><div class="num info">1,083</div><div class="lbl">总想要</div></div>
+          <div class="stat-card clickable" onclick="alert('预览版：预览主页')"><div class="num muted" style="font-size:1.1rem;padding:0.15rem 0;">预览主页</div><div class="lbl">打开公开页面</div></div>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-row">
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+              <input class="search-box" type="search" placeholder="搜索标题、标签、描述…" id="searchInput" oninput="renderWorks()">
+            </div>
+            <select class="select-sm" id="sortSel">
+              <option>最新上传</option>
+              <option>发售时间 ↑</option>
+              <option>喜爱数 ↓</option>
+              <option>想要数 ↓</option>
+              <option>自定义排序</option>
+            </select>
+            <label class="check-all"><input type="checkbox" id="selectAll" onchange="toggleAll(this.checked)"> 全选</label>
+          </div>
+          <div class="toolbar-row">
+            <div class="filter-pills">
+              <span class="flabel">分类</span>
+              <button class="pill active" data-cat="all" onclick="setCat(this,'all')">全部</button>
+              <button class="pill" data-cat="badge" onclick="setCat(this,'badge')">徽章</button>
+              <button class="pill" data-cat="acrylic" onclick="setCat(this,'acrylic')">亚克力</button>
+              <button class="pill" data-cat="paper" onclick="setCat(this,'paper')">纸品</button>
+              <button class="pill" data-cat="fabric" onclick="setCat(this,'fabric')">布艺</button>
+            </div>
+          </div>
+          <div class="toolbar-row">
+            <div class="filter-pills">
+              <span class="flabel">状态</span>
+              <button class="pill active" data-st="all" onclick="setSt(this,'all')">全部</button>
+              <button class="pill" data-st="on" onclick="setSt(this,'on')">发售中</button>
+              <button class="pill" data-st="pre" onclick="setSt(this,'pre')">预约中</button>
+              <button class="pill" data-st="off" onclick="setSt(this,'off')">已售罄</button>
+              <button class="pill" data-st="soon" onclick="setSt(this,'soon')">即将上架</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="batch-bar" id="batchBar">
+          <span class="count" id="batchCount">已选 0 项</span>
+          <button class="btn" type="button" onclick="alert('预览版：批量编辑')">批量编辑</button>
+          <button class="btn btn-danger" type="button" onclick="alert('预览版：批量删除')">批量删除</button>
+          <span class="spacer"></span>
+          <button class="btn btn-ghost" type="button" onclick="clearSelection()">取消选择</button>
+        </div>
+
+        <div class="works-grid" id="worksGrid"></div>
+      </section>
+
+      <!-- MY EVENTS -->
+      <section class="page" id="page-my-events">
+        <div class="page-head">
+          <div><h1>我的活动</h1><p>提交与管理你参与的同人活动</p></div>
+          <div class="page-actions">
+            <button class="btn btn-primary" type="button" onclick="alert('预览版：提交活动')">提交活动</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="list-item"><div class="list-thumb"></div><div class="info"><div class="t">2026 春季 ONLY</div><div class="s">审核通过 · 3 月 15 日</div></div><span class="badge ok" style="position:static">已通过</span></div>
+          <div class="list-item"><div class="list-thumb"></div><div class="info"><div class="t">夏日祭同人祭</div><div class="s">审核中 · 2 天前提交</div></div><span class="badge wait" style="position:static">待审核</span></div>
+        </div>
+      </section>
+
+      <!-- MY PROJECTS -->
+      <section class="page" id="page-my-projects">
+        <div class="page-head">
+          <div><h1>我的企划</h1><p>管理你发起或参与的联名企划</p></div>
+          <div class="page-actions">
+            <button class="btn btn-primary" type="button" onclick="alert('预览版：提交企划')">提交企划</button>
+          </div>
+        </div>
+        <div class="panel"><div class="empty">暂无企划，点击右上角提交</div></div>
+      </section>
+
+      <!-- MY UPDATES -->
+      <section class="page" id="page-my-updates">
+        <div class="page-head">
+          <div><h1>我的动态</h1><p>向粉丝同步创作与贩售进度</p></div>
+          <div class="page-actions">
+            <button class="btn btn-primary" type="button" onclick="alert('预览版：发布动态')">发布动态</button>
+          </div>
+        </div>
+        <div class="panel"><div class="empty">还没有动态，发布第一条吧</div></div>
+      </section>
+
+      <!-- ONLY BOOTHS -->
+      <section class="page" id="page-only-booths">
+        <div class="page-head">
+          <div>
+            <h1>ONLY 摊位</h1>
+            <p>活动管理员可管理全部摊位；摊位作者仅可管理自己的摊位</p>
+          </div>
+        </div>
+        <div class="panel"><div class="empty">暂无摊位数据</div></div>
+      </section>
+
+      <!-- EVENTS LINK -->
+      <section class="page" id="page-events">
+        <div class="page-head">
+          <div><h1>活动关联</h1><p>勾选要关联的活动，取消勾选可解除关联</p></div>
+        </div>
+        <div class="panel">
+          <label class="list-item" style="cursor:pointer"><input type="checkbox" checked style="accent-color:var(--accent);width:16px;height:16px"> <div class="info"><div class="t">2026 春季 ONLY</div><div class="s">已关联 · 48 件作品</div></div></label>
+          <label class="list-item" style="cursor:pointer"><input type="checkbox" style="accent-color:var(--accent);width:16px;height:16px"> <div class="info"><div class="t">夏日祭同人祭</div><div class="s">未关联</div></div></label>
+        </div>
+      </section>
+
+      <!-- PROJECTS LINK -->
+      <section class="page" id="page-projects">
+        <div class="page-head">
+          <div><h1>企划关联</h1><p>勾选要关联的企划，取消勾选可解除关联</p></div>
+        </div>
+        <div class="panel"><div class="empty">暂无可关联的企划</div></div>
+      </section>
+
+      <!-- IMAGES -->
+      <section class="page" id="page-images">
+        <div class="page-head">
+          <div><h1>图片管理</h1><p>管理上传图片，点击可复制链接；超过 5MB 的图片批量上传时会被跳过</p></div>
+          <div class="page-actions">
+            <button class="btn" type="button" onclick="alert('预览版：选择文件')">选择图片</button>
+            <button class="btn btn-primary" type="button" onclick="alert('预览版：批量上传')">批量上传</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.7rem;">
+            <div style="aspect-ratio:1;border-radius:10px;background:linear-gradient(145deg,#EDE6DA,#D9CFC0)"></div>
+            <div style="aspect-ratio:1;border-radius:10px;background:linear-gradient(145deg,#E5D8C8,#C9B8A4)"></div>
+            <div style="aspect-ratio:1;border-radius:10px;background:linear-gradient(145deg,#E8DDD0,#D0C0AE)"></div>
+            <div style="aspect-ratio:1;border-radius:10px;background:linear-gradient(145deg,#EDE6DA,#D9CFC0)"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NOTIFICATIONS -->
+      <section class="page" id="page-notifications">
+        <div class="page-head">
+          <div><h1>审核通知</h1><p>查看作品 / 活动 / 企划 / 动态的审核结果</p></div>
+        </div>
+        <div class="panel">
+          <div class="list-item"><div class="info"><div class="t">作品「春日徽章」已通过审核</div><div class="s">今天 14:22</div></div><span style="font-size:0.75rem;color:var(--success);font-weight:600">通过</span></div>
+          <div class="list-item"><div class="info"><div class="t">作品「限定立牌」被拒绝</div><div class="s">原因：图片水印过重 · 昨天</div></div><span style="font-size:0.75rem;color:var(--accent);font-weight:600">拒绝</span></div>
+          <div class="list-item"><div class="info"><div class="t">作品「亚克力挂件」待审核</div><div class="s">2 天前提交</div></div><span style="font-size:0.75rem;color:var(--warning);font-weight:600">待审</span></div>
+        </div>
+      </section>
+
+      <!-- ANNOUNCEMENTS -->
+      <section class="page" id="page-announcements">
+        <div class="page-head">
+          <div><h1>管理公告</h1><p>查看管理员发送的公告通知</p></div>
+        </div>
+        <div class="panel"><div class="empty">暂无公告</div></div>
+      </section>
+
+      <!-- PROFILE -->
+      <section class="page" id="page-profile">
+        <div class="page-head">
+          <div><h1>作者资料</h1><p>对外展示的作者 / 社团信息</p></div>
+          <div class="page-actions">
+            <button class="btn btn-primary" type="button" onclick="alert('预览版：保存资料')">保存资料</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="form-grid">
+            <div class="form-group"><label>作者名称</label><input value="春日手作社"></div>
+            <div class="form-group"><label>分类</label><select><option>同人周边</option><option>插画</option></select></div>
+            <div class="form-group full"><label>简介</label><textarea>专注永远的7日之都同人周边，徽章 / 亚克力 / 纸品。</textarea></div>
+            <div class="form-group"><label>联系方式类型</label><select><option>QQ 群</option><option>QQ</option><option>微信</option><option>B站</option></select></div>
+            <div class="form-group"><label>联系方式</label><input placeholder="账号 / 群号 / 链接"></div>
+            <div class="form-group"><label>联系显示名</label><input placeholder="如：加入粉丝群"></div>
+            <div class="form-group"><label>网站链接</label><input placeholder="https://..."></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PASSWORD -->
+      <section class="page" id="page-password">
+        <div class="page-head">
+          <div><h1>修改密码</h1><p>定期更换密码有助于账号安全</p></div>
+        </div>
+        <div class="panel">
+          <div class="form-grid" style="max-width:420px">
+            <div class="form-group full"><label>旧密码</label><input type="password"></div>
+            <div class="form-group full"><label>新密码</label><input type="password" placeholder="至少 6 位"></div>
+            <div class="form-group full"><label>确认新密码</label><input type="password"></div>
+            <div class="form-group full"><button class="btn btn-primary" type="button" onclick="alert('预览版：修改密码')">修改密码</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="page" id="page-history">
+        <div class="page-head">
+          <div><h1>操作日志</h1><p>最近的账号与内容操作记录</p></div>
+        </div>
+        <div class="panel">
+          <div class="list-item"><div class="info"><div class="t">更新作品「春日徽章」状态为发售中</div><div class="s">今天 15:10</div></div></div>
+          <div class="list-item"><div class="info"><div class="t">上传 6 张图片</div><div class="s">今天 11:03</div></div></div>
+          <div class="list-item"><div class="info"><div class="t">登录成功</div><div class="s">昨天 21:44</div></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const PAGE_TITLES = {
+      works: '我的作品',
+      'my-events': '我的活动',
+      'my-projects': '我的企划',
+      'my-updates': '我的动态',
+      'only-booths': 'ONLY 摊位',
+      events: '活动关联',
+      projects: '企划关联',
+      images: '图片管理',
+      notifications: '审核通知',
+      announcements: '管理公告',
+      profile: '作者资料',
+      password: '修改密码',
+      history: '操作日志'
+    };
+
+    const WORKS = [
+      { id: 1, title: '春日限定徽章套装', cat: 'badge', st: 'on', price: '¥25', likes: 186, wants: 92, status: 'ok' },
+      { id: 2, title: '神使亚克力立牌', cat: 'acrylic', st: 'pre', price: '¥68', likes: 241, wants: 173, status: 'wait' },
+      { id: 3, title: '七日明信片组', cat: 'paper', st: 'on', price: '¥18', likes: 97, wants: 41, status: 'ok' },
+      { id: 4, title: '中央庭挂件', cat: 'acrylic', st: 'off', price: '¥32', likes: 154, wants: 88, status: 'ok' },
+      { id: 5, title: '城市印象帆布袋', cat: 'fabric', st: 'soon', price: '¥78', likes: 63, wants: 120, status: 'wait' },
+      { id: 6, title: '角色贴纸包', cat: 'paper', st: 'on', price: '¥12', likes: 210, wants: 95, status: 'ok' },
+      { id: 7, title: '夜色徽章', cat: 'badge', st: 'on', price: '¥22', likes: 88, wants: 37, status: 'ok' },
+      { id: 8, title: '周年纪念册', cat: 'paper', st: 'pre', price: '¥98', likes: 312, wants: 201, status: 'ok' }
+    ];
+
+    // Multi-account model (matches /api/author/accessible-accounts)
+    const ownerId = 'c-spring';
+    const accounts = [
+      { id: 'c-spring', name: '春日手作社', isOwner: true, avatar: '春', avatarClass: '' },
+      { id: 'c-night', name: '夜巡工作室', isOwner: false, avatar: '夜', avatarClass: 's2' },
+      { id: 'c-city', name: '都市档案组', isOwner: false, avatar: '都', avatarClass: 's3' }
+    ];
+    let activeAccountId = ownerId;
+
+    let curCat = 'all';
+    let curSt = 'all';
+    let selected = new Set();
+    let sidebarOpen = false;
+
+    function setCat(btn, v) {
+      curCat = v;
+      btn.parentElement.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      renderWorks();
+    }
+    function setSt(btn, v) {
+      curSt = v;
+      btn.parentElement.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      renderWorks();
+    }
+
+    function filteredWorks() {
+      const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      return WORKS.filter(w => {
+        if (curCat !== 'all' && w.cat !== curCat) return false;
+        if (curSt !== 'all' && w.st !== curSt) return false;
+        if (q && !w.title.toLowerCase().includes(q)) return false;
+        return true;
+      });
+    }
+
+    function renderWorks() {
+      const grid = document.getElementById('worksGrid');
+      const list = filteredWorks();
+      if (!list.length) {
+        grid.innerHTML = '<div class="empty" style="grid-column:1/-1">没有匹配的作品</div>';
+        return;
+      }
+      grid.innerHTML = list.map(w => {
+        const badge = w.status === 'ok'
+          ? '<span class="badge ok">已通过</span>'
+          : w.status === 'wait'
+            ? '<span class="badge wait">待审核</span>'
+            : '<span class="badge no">已拒绝</span>';
+        return `
+        <article class="wcard" onclick="event.stopPropagation()">
+          <div class="wcard-img">
+            <input class="wcard-check" type="checkbox" ${selected.has(w.id)?'checked':''} onclick="event.stopPropagation();toggleOne(${w.id},this.checked)">
+            ${badge}
+            <span class="ph">◻</span>
+          </div>
+          <div class="wcard-body">
+            <div class="wcard-title">${w.title}</div>
+            <div class="wcard-meta">
+              <span class="wcard-price">${w.price}</span>
+              <span>♥ ${w.likes} · ★ ${w.wants}</span>
+            </div>
+          </div>
+        </article>`;
+      }).join('');
+      syncBatchBar();
+    }
+
+    function toggleOne(id, on) {
+      if (on) selected.add(id); else selected.delete(id);
+      document.getElementById('selectAll').checked = filteredWorks().every(w => selected.has(w.id));
+      syncBatchBar();
+    }
+    function toggleAll(on) {
+      const list = filteredWorks();
+      list.forEach(w => on ? selected.add(w.id) : selected.delete(w.id));
+      renderWorks();
+    }
+    function clearSelection() {
+      selected.clear();
+      document.getElementById('selectAll').checked = false;
+      renderWorks();
+    }
+    function syncBatchBar() {
+      const bar = document.getElementById('batchBar');
+      const n = selected.size;
+      if (n > 0) {
+        bar.classList.add('show');
+        document.getElementById('batchCount').textContent = `已选 ${n} 项`;
+      } else {
+        bar.classList.remove('show');
+      }
+    }
+
+    function switchPage(page) {
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.dataset.page === page);
+      });
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      const name = PAGE_TITLES[page] || page;
+      const cur = accounts.find(a => a.id === activeAccountId) || accounts[0];
+      document.getElementById('topTitle').innerHTML = name + '<em style="font-style:normal;color:var(--muted);font-weight:400;font-family:\'Noto Sans SC\',system-ui,sans-serif;font-size:0.85rem;margin-left:0.4rem">' + cur.name + (activeAccountId !== ownerId ? ' · 代管' : '') + '</em>';
+      toggleSidebar(false);
+      document.querySelector('.main').scrollTop = 0;
+      if (page === 'works') renderWorks();
+    }
+
+    function renderAccountList() {
+      const list = document.getElementById('acctList');
+      list.innerHTML = accounts.map(a => {
+        const isActive = a.id === activeAccountId;
+        return `
+        <button class="acct-item ${isActive ? 'current' : ''}" type="button" onclick="switchAccount('${a.id}')">
+          <span class="avatar ${a.avatarClass}">${a.avatar}</span>
+          <span class="info">
+            <span class="nm">${a.name}<span class="tag ${a.isOwner ? 'owner' : 'delegate'}">${a.isOwner ? '本账号' : '可编辑'}</span></span>
+            <span class="hint">${a.isOwner ? '登录的主账号' : '已授权编辑此作者后台'}</span>
+          </span>
+          <svg class="check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+        </button>`;
+      }).join('');
+    }
+
+    function updateAccountChrome() {
+      const cur = accounts.find(a => a.id === activeAccountId) || accounts[0];
+      document.getElementById('acctAvatar').textContent = cur.avatar;
+      document.getElementById('acctAvatar').className = 'avatar ' + (cur.avatarClass || '');
+      document.getElementById('acctName').textContent = cur.name;
+      const sub = document.getElementById('acctSub');
+      if (activeAccountId === ownerId) {
+        sub.textContent = '本账号';
+        sub.classList.remove('actas');
+      } else {
+        sub.textContent = '代管中';
+        sub.classList.add('actas');
+      }
+
+      const banner = document.getElementById('actasBanner');
+      if (activeAccountId !== ownerId) {
+        banner.classList.add('show');
+        document.getElementById('actasName').textContent = cur.name;
+      } else {
+        banner.classList.remove('show');
+      }
+
+      renderAccountList();
+      // Refresh title em
+      const activePage = document.querySelector('.nav-item.active')?.dataset.page || 'works';
+      const name = PAGE_TITLES[activePage] || activePage;
+      document.getElementById('topTitle').innerHTML = name + '<em style="font-style:normal;color:var(--muted);font-weight:400;font-family:\'Noto Sans SC\',system-ui,sans-serif;font-size:0.85rem;margin-left:0.4rem">' + cur.name + (activeAccountId !== ownerId ? ' · 代管' : '') + '</em>';
+    }
+
+    function switchAccount(id) {
+      if (id === activeAccountId) {
+        toggleDrop('acctDrop');
+        return;
+      }
+      activeAccountId = id;
+      const cur = accounts.find(a => a.id === id) || accounts[0];
+      selected.clear();
+      document.getElementById('selectAll').checked = false;
+      updateAccountChrome();
+      renderWorks();
+      toggleDrop('acctDrop');
+      showToast(`已切换到「${cur.name}」`);
+    }
+
+    function showToast(msg) {
+      let t = document.getElementById('toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast';
+        t.style.cssText = 'position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%) translateY(12px);background:var(--ink);color:var(--paper);padding:0.5rem 1rem;border-radius:999px;font-size:0.82rem;z-index:200;opacity:0;transition:0.22s ease;pointer-events:none;box-shadow:0 8px 24px rgba(34,32,30,0.18);';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      requestAnimationFrame(() => {
+        t.style.opacity = '1';
+        t.style.transform = 'translateX(-50%) translateY(0)';
+      });
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateX(-50%) translateY(12px)';
+      }, 1800);
+    }
+
+    function toggleDrop(id) {
+      const el = document.getElementById(id);
+      document.querySelectorAll('.dropdown.open').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+      el.classList.toggle('open');
+    }
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+      }
+    });
+
+    // Sidebar: click hamburger toggles open/close; overlay & close-btn collapse
+    function toggleSidebar(force) {
+      const next = typeof force === 'boolean' ? force : !sidebarOpen;
+      sidebarOpen = next;
+      document.getElementById('sidebar').classList.toggle('open', next);
+      document.getElementById('sideOverlay').classList.toggle('open', next);
+      const toggle = document.getElementById('menuToggle');
+      toggle.classList.toggle('is-open', next);
+      toggle.setAttribute('aria-expanded', next ? 'true' : 'false');
+    }
+
+    function setPreviewMode(mode) {
+      const isMobile = mode === 'mobile';
+      document.body.classList.toggle('preview-mobile', isMobile);
+      document.getElementById('btnMob').classList.toggle('on', isMobile);
+      document.getElementById('btnDesk').classList.toggle('on', !isMobile);
+      toggleSidebar(false);
+    }
+
+    renderAccountList();
+    updateAccountChrome();
+    renderWorks();
+  </script>
+</body>
+</html>
