@@ -3087,16 +3087,25 @@
           <button type="button" class="btn-sm btn-edit" onclick="addAuthorTierRow('${eventId}')">+ 添加一档</button>
         </div>
         <div class="form-group">
-          <label>条件领取（可选 · 按本摊位作品设置）</label>
+          <label>条件领取（可选 · 先勾选要设置的作品）</label>
           ${claimGoods.length ? `
-            <div id="abClaimList" style="display:flex;flex-direction:column;gap:0.45rem;">
+            <div id="abClaimToggles" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:120px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;margin-bottom:0.5rem;">
               ${claimGoods.map(g => `
-                <div style="display:flex;align-items:flex-start;gap:0.5rem;">
+                <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.2rem 0.5rem;cursor:pointer;${claimMap[g.id] ? 'border-color:rgba(196,138,42,.5);background:rgba(196,138,42,.08);' : ''}">
+                  <input type="checkbox" class="ab-claim-on" value="${g.id}" ${claimMap[g.id] ? 'checked' : ''} onchange="toggleAuthorClaimRow(this)">
+                  ${escapeHtml(g.title || '')}
+                </label>
+              `).join('')}
+            </div>
+            <div id="abClaimList" style="display:flex;flex-direction:column;gap:0.45rem;">
+              ${claimGoods.filter(g => claimMap[g.id]).map(g => `
+                <div class="ab-claim-row" data-work="${g.id}" style="display:flex;align-items:flex-start;gap:0.5rem;">
                   <span style="flex:0 0 38%;font-size:0.78rem;padding-top:0.4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
-                  <textarea class="form-input ab-claim" data-work="${g.id}" rows="2" style="flex:1;font-size:0.78rem;padding:0.3rem 0.55rem;line-height:1.55;min-height:42px;resize:vertical;" placeholder="留空为无条件，可换行">${escapeHtml(claimMap[g.id] || '')}</textarea>
+                  <textarea class="form-input ab-claim" data-work="${g.id}" rows="2" style="flex:1;font-size:0.78rem;padding:0.3rem 0.55rem;line-height:1.55;min-height:42px;resize:vertical;" placeholder="领取条件，可换行">${escapeHtml(claimMap[g.id] || '')}</textarea>
                 </div>
               `).join('')}
             </div>
+            <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">仅勾选后出现填写框；取消勾选保存后会清除该作品的条件领取。</div>
           ` : `<div style="font-size:0.75rem;color:var(--haze);">保存摊位并挂接摊主后，可在此按作品设置条件领取。</div>`}
         </div>
         <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
@@ -3113,6 +3122,30 @@
 
     function activeCircleId() {
       return localStorage.getItem('f7author_actAs') || authorCircleId;
+    }
+
+    function toggleAuthorClaimRow(input) {
+      const list = document.getElementById('abClaimList');
+      if (!list || !input) return;
+      const workId = input.value;
+      const title = (input.closest('label')?.textContent || '').trim();
+      let row = list.querySelector('.ab-claim-row[data-work="' + CSS.escape(workId) + '"]');
+      if (input.checked) {
+        if (!row) {
+          row = document.createElement('div');
+          row.className = 'ab-claim-row';
+          row.dataset.work = workId;
+          row.style.cssText = 'display:flex;align-items:flex-start;gap:0.5rem;';
+          row.innerHTML = `
+            <span style="flex:0 0 38%;font-size:0.78rem;padding-top:0.4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+            <textarea class="form-input ab-claim" data-work="${escapeHtml(workId)}" rows="2" style="flex:1;font-size:0.78rem;padding:0.3rem 0.55rem;line-height:1.55;min-height:42px;resize:vertical;" placeholder="领取条件，可换行"></textarea>
+          `;
+          row.querySelector('span').textContent = title;
+          list.appendChild(row);
+        }
+      } else if (row) {
+        row.remove();
+      }
     }
 
     function ownEventWorks(pack) {
@@ -3180,11 +3213,17 @@
           return { id: row.dataset.id || ('c' + Date.now()), name, workIds };
         }).filter(Boolean)
       };
-      // 仅在渲染了条件领取区块时提交，避免误清空其他摊主设置的条件
-      if (document.getElementById('abClaimList')) {
+      // 勾选的作品提交条件（取消勾选提交空串以清除）
+      if (document.getElementById('abClaimToggles')) {
         const claimConditions = {};
-        document.querySelectorAll('#abClaimList .ab-claim').forEach(inp => {
-          claimConditions[inp.dataset.work] = inp.value.trim();
+        document.querySelectorAll('#abClaimToggles .ab-claim-on').forEach(cb => {
+          const workId = cb.value;
+          if (cb.checked) {
+            const ta = document.querySelector('#abClaimList .ab-claim[data-work="' + CSS.escape(workId) + '"]');
+            claimConditions[workId] = ta?.value.trim() || '';
+          } else {
+            claimConditions[workId] = '';
+          }
         });
         payload.claimConditions = claimConditions;
       }
