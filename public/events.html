@@ -49,8 +49,8 @@
         <div id="typeFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
         <span class="spacer"></span>
         <select class="form-input" id="sortSelect">
-          <option value="date-asc" selected>时间 ↑ 近→远</option>
-          <option value="date-desc">时间 ↓ 远→近</option>
+          <option value="date-desc" selected>时间 ↓ 新→旧</option>
+          <option value="date-asc">时间 ↑ 旧→新</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索活动名称、地点、分类..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
         <span class="cl-show-count">显示 <b id="eventShowCount">0</b></span>
@@ -137,8 +137,8 @@
           F7API.getWorks()
         ]);
         allEvents = events;
-        // Default order: nearest first (ascending by date)
-        allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // 默认：最新在前
+        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
         allWorks = works;
         const now = new Date();
         calYear = now.getFullYear();
@@ -194,12 +194,12 @@
           return false;
         });
       }
-      // Sort
-      const sortVal = document.getElementById('sortSelect')?.value || 'date-asc';
+      // Sort（默认：最新在前）
+      const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
       events = events.slice().sort((a, b) =>
-        sortVal === 'date-desc'
-          ? new Date(b.date) - new Date(a.date)
-          : new Date(a.date) - new Date(b.date)
+        sortVal === 'date-asc'
+          ? new Date(a.date) - new Date(b.date)
+          : new Date(b.date) - new Date(a.date)
       );
       return events;
     }
@@ -390,7 +390,7 @@
           F7API.getWorks()
         ]);
         allEvents = events;
-        allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
         allWorks = works;
         renderEvents();
       }
