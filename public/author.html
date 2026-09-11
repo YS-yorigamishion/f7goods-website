@@ -621,7 +621,7 @@
   </div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260911e"></script>
+  <script src="/js/main.js?v=20260911f"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -3017,15 +3017,15 @@
         <div class="form-group">
           <label>条件领取（可选 · 按本摊位作品设置）</label>
           ${claimGoods.length ? `
-            <div id="abClaimList" style="display:flex;flex-direction:column;gap:0.35rem;">
+            <div id="abClaimList" style="display:flex;flex-direction:column;gap:0.45rem;">
               ${claimGoods.map(g => `
-                <div style="display:flex;align-items:center;gap:0.5rem;">
-                  <span style="flex:0 0 38%;font-size:0.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
-                  <input class="form-input ab-claim" data-work="${g.id}" style="flex:1;font-size:0.78rem;padding:0.3rem 0.55rem;" placeholder="留空为无条件，如：购满 50 元可领取" value="${escapeHtml(claimMap[g.id] || '')}">
+                <div style="display:flex;align-items:flex-start;gap:0.5rem;">
+                  <span style="flex:0 0 38%;font-size:0.78rem;padding-top:0.4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+                  <textarea class="form-input ab-claim" data-work="${g.id}" rows="2" style="flex:1;font-size:0.78rem;padding:0.3rem 0.55rem;line-height:1.55;min-height:42px;resize:vertical;" placeholder="留空为无条件，可换行，如：购满 50 元可领取">${escapeHtml(claimMap[g.id] || '')}</textarea>
                 </div>
               `).join('')}
             </div>
-            <div style="font-size:0.72rem;color:var(--haze);margin-top:0.35rem;">填了条件的周边在前台显示「条件领取」按钮，点击可查看条件；同一作品挂在不同摊位可分别设置。</div>
+            <div style="font-size:0.72rem;color:var(--haze);margin-top:0.35rem;">支持换行。填了条件的周边在前台显示「条件领取」按钮，点击可查看条件；同一作品挂在不同摊位可分别设置。</div>
           ` : `<div style="font-size:0.75rem;color:var(--haze);">保存摊位并挂接摊主后，可在此按作品设置条件领取。</div>`}
         </div>
         <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">

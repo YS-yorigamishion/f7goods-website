@@ -148,7 +148,10 @@
     "relatedProjects": "关联企划",
     "tags": "标签",
     "commissionedBy": "约稿作者",
-    "status": "状态"
+    "status": "状态",
+    "shareImage": "分享图片",
+    "shareImageDone": "已生成分享图片",
+    "shareImageFailed": "生成图片失败"
   },
   "events": {
     "title": "近期活动",

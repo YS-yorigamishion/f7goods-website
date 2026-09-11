@@ -365,7 +365,7 @@
   </div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260911e"></script>
+  <script src="/js/main.js?v=20260911f"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -782,7 +782,7 @@
             img: (g.images && g.images[0]) || '',
             qty: next,
             isGift: false,
-            claim: String((booth.claimConditions || {})[g.id] || '').trim()
+            claim: String((booth.claimConditions || {})[g.id] || '').replace(/\s+/g, ' ').trim()
           };
         }
       });
@@ -813,7 +813,7 @@
           img: (pack.work.images && pack.work.images[0]) || '',
           qty: next,
           isGift: false,
-          claim: String((pack.booth.claimConditions || {})[pack.work.id] || '').trim()
+          claim: String((pack.booth.claimConditions || {})[pack.work.id] || '').replace(/\s+/g, ' ').trim()
         };
       }
       applyOnlyGifts();

@@ -148,7 +148,10 @@
     "relatedProjects": "관련 프로젝트",
     "tags": "태그",
     "commissionedBy": "의뢰자",
-    "status": "상태"
+    "status": "상태",
+    "shareImage": "이미지 공유",
+    "shareImageDone": "공유 이미지를 저장했습니다",
+    "shareImageFailed": "이미지 생성 실패"
   },
   "events": {
     "title": "이벤트",

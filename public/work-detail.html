@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260911c">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -47,7 +47,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260911e"></script>
+  <script src="/js/main.js?v=20260911f"></script>
   <script>
     async function loadWork() {
       const params = new URLSearchParams(location.search);
@@ -155,6 +155,12 @@
             </div>
             <div class="exhibit-caption">f7goods · ${escapeHtml(work.title)}</div>
           </div>
+          <div class="exhibit-sharebar">
+            <button type="button" class="exhibit-share-btn" id="shareImageBtn" onclick="shareWorkImage()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17.5l5-4.5 3.5 3 3-2.5 4.5 4"/></svg>
+              ${t('works.shareImage')}
+            </button>
+          </div>
           <div class="exhibit-side">
             ${work.socialLinks && Object.keys(work.socialLinks).filter(k => work.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
               <div class="detail-info-card">
@@ -207,6 +213,7 @@
           </div>
         `;
         window._detailGallery = galleryImages;
+        window._workDetail = { work, workCircles, catLabel, authorLine };
         window.switchDetailImage = function(i) {
           const imgs = window._detailGallery || [];
           if (!imgs[i]) return;
@@ -222,6 +229,253 @@
       } catch (e) {
         document.getElementById('workDetail').innerHTML =
           `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;
+      }
+    }
+
+    // ===== 分享图片：把大卡片导出为 PNG（不含路径与 想要/喜爱/分享 按钮） =====
+    const SHARE_W = 1000;
+    const SHARE_SCALE = 2;
+    const SHARE_SANS = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
+    const SHARE_SERIF = '"Noto Serif SC", Georgia, serif';
+    let shareBusy = false;
+
+    function shareRoundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    // 按宽度折行：CJK 逐字断行，拉丁词整体不拆开
+    function shareWrapText(ctx, text, maxW) {
+      const lines = [];
+      String(text == null ? '' : text).split('\n').forEach(raw => {
+        const para = raw.replace(/\s+$/, '');
+        if (!para) { lines.push(''); return; }
+        const tokens = para.match(/[A-Za-z0-9@._%+\-/:]+|\s+|[^\s]/g) || [];
+        let line = '';
+        tokens.forEach(tok => {
+          const next = line + tok;
+          if (line && ctx.measureText(next).width > maxW) {
+            lines.push(line.replace(/\s+$/, ''));
+            line = /^\s+$/.test(tok) ? '' : tok;
+          } else {
+            line = next;
+          }
+        });
+        lines.push(line.replace(/\s+$/, ''));
+      });
+      return lines;
+    }
+
+    function shareLoadImg(src) {
+      return new Promise(resolve => {
+        if (!src) { resolve(null); return; }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    async function drawWorkSharePng() {
+      const data = window._workDetail;
+      if (!data) return null;
+      const { work, workCircles, catLabel, authorLine } = data;
+      if (document.fonts && document.fonts.ready) {
+        try { await document.fonts.ready; } catch (e) {}
+      }
+
+      const PAD = 28, GAP = 28, FRAME_PAD_X = 14, FRAME_PAD_TOP = 14, FRAME_PAD_BOTTOM = 16;
+      const innerW = SHARE_W - PAD * 2;
+      const frameW = Math.round((innerW - GAP) * 1.15 / 2);
+      const plaqueW = innerW - GAP - frameW;
+      const artW = frameW - FRAME_PAD_X * 2;
+      const artH = Math.min(artW, 420);
+      const frameH = artH + FRAME_PAD_TOP + FRAME_PAD_BOTTOM + 2;
+
+      const TITLE_LH = 38, SUB_LH = 20, META_LH = 24, DESC_LH = 26;
+
+      const m = document.createElement('canvas').getContext('2d');
+      const statusText = (typeof STATUS_LABELS !== 'undefined' && STATUS_LABELS[work.status]) || '';
+      m.font = `600 30px ${SHARE_SERIF}`;
+      const titleLines = shareWrapText(m, work.title || '', plaqueW);
+      const subText = `${authorLine}${catLabel ? (authorLine ? ' · ' : '') + catLabel : ''}`;
+      m.font = `13px ${SHARE_SANS}`;
+      const subLines = shareWrapText(m, subText, plaqueW);
+      const metaRows = [
+        [t('works.price'), typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料')],
+        [t('works.releaseDate'), formatDate(work.releaseDate)],
+        [t('common.category'), catLabel],
+        workCircles.length ? [t('works.author'), workCircles.map(c => c.name).join('、')] : null,
+        (work.isCommissioned && work.commissionedBy) ? [t('works.commissionedBy'), work.commissionedBy] : null
+      ].filter(r => r && String(r[1] || '').trim());
+      m.font = `14px ${SHARE_SANS}`;
+      const descLines = work.description ? shareWrapText(m, work.description, plaqueW - 14) : [];
+
+      // 版面：先算坐标，绘制时复用同一套数值
+      const L = {};
+      let cy = 0;
+      if (statusText) { L.statusY = cy; cy += 22; }
+      L.titleY = cy; cy += titleLines.length * TITLE_LH + 6;
+      L.subY = cy; cy += subLines.length * SUB_LH + 4;
+      cy += 16; L.ruleY = cy; cy += 17;
+      L.metaY = cy; cy += metaRows.length * META_LH + 16;
+      if (descLines.length) { L.descY = cy; cy += descLines.length * DESC_LH; }
+      const plaqueH = cy;
+
+      const bodyH = Math.max(frameH, plaqueH);
+      const cardY = 22;
+      const cardH = PAD + bodyH + 22 + 14 + 16 + 24;
+      const H = cardY + cardH + 22;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = SHARE_W * SHARE_SCALE;
+      canvas.height = H * SHARE_SCALE;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(SHARE_SCALE, SHARE_SCALE);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // 背景
+      ctx.fillStyle = '#E8E2D6';
+      ctx.fillRect(0, 0, SHARE_W, H);
+
+      // 大卡片
+      shareRoundRect(ctx, 0, cardY, SHARE_W, cardH, 18);
+      ctx.fillStyle = '#F6F2EB';
+      ctx.fill();
+      ctx.save();
+      shareRoundRect(ctx, 0, cardY, SHARE_W, cardH, 18);
+      ctx.clip();
+      const glow = ctx.createLinearGradient(0, cardY, 0, cardY + 220);
+      glow.addColorStop(0, 'rgba(217,79,92,0.06)');
+      glow.addColorStop(1, 'rgba(217,79,92,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, cardY, SHARE_W, 220);
+      ctx.restore();
+      shareRoundRect(ctx, 0.5, cardY + 0.5, SHARE_W - 1, cardH - 1, 18);
+      ctx.strokeStyle = '#E5DDD1';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      const left = PAD, top = cardY + PAD;
+
+      // 作品图
+      shareRoundRect(ctx, left, top, frameW, frameH, 4);
+      ctx.fillStyle = '#FFFCF7';
+      ctx.fill();
+      ctx.strokeStyle = '#E5DDD1';
+      ctx.stroke();
+      const artX = left + FRAME_PAD_X, artY = top + FRAME_PAD_TOP;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(artX, artY, artW, artH);
+      ctx.clip();
+      // 与页面 .exhibit-art img 的底色一致，避免透明图留白处颜色不同
+      ctx.fillStyle = '#1a1816';
+      ctx.fillRect(artX, artY, artW, artH);
+      const img = await shareLoadImg((work.images || [])[0] || '');
+      if (img && img.width) {
+        const ratio = Math.min(artW / img.width, artH / img.height);
+        const dw = img.width * ratio, dh = img.height * ratio;
+        ctx.drawImage(img, artX + (artW - dw) / 2, artY + (artH - dh) / 2, dw, dh);
+      } else {
+        ctx.fillStyle = '#8A8078';
+        ctx.font = `14px ${SHARE_SANS}`;
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无图片', artX + artW / 2, artY + artH / 2);
+      }
+      ctx.restore();
+
+      // 铭牌
+      const px = left + frameW + GAP;
+      ctx.textAlign = 'left';
+      if (statusText) {
+        const base = top + L.statusY + 12;
+        ctx.font = `11px ${SHARE_SANS}`;
+        ctx.fillStyle = '#D94F5C';
+        ctx.fillRect(px, base - 4, 18, 1);
+        ctx.save();
+        ctx.letterSpacing = '1.5px';
+        ctx.fillText(statusText, px + 26, base);
+        ctx.restore();
+      }
+      ctx.fillStyle = '#22201E';
+      ctx.font = `600 30px ${SHARE_SERIF}`;
+      titleLines.forEach((line, i) => ctx.fillText(line, px, top + L.titleY + i * TITLE_LH + 26));
+      ctx.fillStyle = '#8A8078';
+      ctx.font = `13px ${SHARE_SANS}`;
+      subLines.forEach((line, i) => ctx.fillText(line, px, top + L.subY + i * SUB_LH + 15));
+      ctx.fillStyle = '#E5DDD1';
+      ctx.fillRect(px, top + L.ruleY, plaqueW, 1);
+      metaRows.forEach(([label, value], i) => {
+        const base = top + L.metaY + i * META_LH + 16;
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#8A8078';
+        ctx.font = `14px ${SHARE_SANS}`;
+        ctx.fillText(label, px, base);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#22201E';
+        ctx.font = `500 14px ${SHARE_SANS}`;
+        let v = String(value);
+        while (v.length > 1 && ctx.measureText(v).width > plaqueW - 96) v = v.slice(0, -1);
+        ctx.fillText(v, px + plaqueW, base);
+        ctx.textAlign = 'left';
+      });
+      if (descLines.length) {
+        const dy = top + L.descY;
+        ctx.fillStyle = '#E5DDD1';
+        ctx.fillRect(px, dy + 2, 2, descLines.length * DESC_LH - 8);
+        ctx.fillStyle = '#4A453F';
+        ctx.font = `14px ${SHARE_SANS}`;
+        descLines.forEach((line, i) => ctx.fillText(line, px + 14, dy + i * DESC_LH + 19));
+      }
+
+      // 底部水印
+      const capTop = cardY + PAD + bodyH + 22;
+      ctx.fillStyle = '#E5DDD1';
+      ctx.fillRect(left, capTop, innerW, 1);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#8A8078';
+      ctx.font = `11px ${SHARE_SANS}`;
+      ctx.save();
+      ctx.letterSpacing = '0.7px';
+      ctx.fillText(`f7goods · ${work.title || ''}`, SHARE_W / 2, capTop + 25);
+      ctx.restore();
+
+      return canvas;
+    }
+
+    async function shareWorkImage() {
+      if (shareBusy || !window._workDetail) return;
+      shareBusy = true;
+      const btn = document.getElementById('shareImageBtn');
+      if (btn) btn.disabled = true;
+      try {
+        const canvas = await drawWorkSharePng();
+        if (!canvas) throw new Error('draw failed');
+        canvas.toBlob(blob => {
+          if (!blob) { showToast(t('works.shareImageFailed'), 'error'); return; }
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `${String(window._workDetail.work.title || 'work').replace(/[\\/:*?"<>|]/g, '_')}-分享.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+          showToast(t('works.shareImageDone'));
+        }, 'image/png');
+      } catch (e) {
+        console.error(e);
+        showToast(t('works.shareImageFailed'), 'error');
+      } finally {
+        shareBusy = false;
+        if (btn) btn.disabled = false;
       }
     }
 

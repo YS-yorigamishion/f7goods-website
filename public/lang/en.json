@@ -148,7 +148,10 @@
     "relatedProjects": "Related Projects",
     "tags": "Tags",
     "commissionedBy": "Commissioned By",
-    "status": "Status"
+    "status": "Status",
+    "shareImage": "Share image",
+    "shareImageDone": "Share image saved",
+    "shareImageFailed": "Failed to create image"
   },
   "events": {
     "title": "Events",

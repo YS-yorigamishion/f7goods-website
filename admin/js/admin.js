@@ -6988,15 +6988,15 @@ function openBoothModal(boothId = null) {
     <div class="form-group">
       <label>条件领取（可选 · 按本摊位作品设置）</label>
       ${claimGoods.length ? `
-        <div id="boothClaimList" style="display:flex;flex-direction:column;gap:0.4rem;">
+        <div id="boothClaimList" style="display:flex;flex-direction:column;gap:0.5rem;">
           ${claimGoods.map(g => `
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-              <span style="flex:0 0 38%;font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
-              <input class="form-input booth-claim" data-work="${g.id}" style="flex:1;padding:0.35rem 0.6rem;font-size:0.82rem;" placeholder="留空为无条件，如：购满 50 元可领取" value="${escapeHtml(claimMap[g.id] || '')}">
+            <div style="display:flex;align-items:flex-start;gap:0.5rem;">
+              <span style="flex:0 0 38%;font-size:0.8rem;padding-top:0.45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+              <textarea class="form-input booth-claim" data-work="${g.id}" rows="2" style="flex:1;padding:0.35rem 0.6rem;font-size:0.82rem;line-height:1.55;min-height:44px;resize:vertical;" placeholder="留空为无条件，可换行，如：购满 50 元可领取">${escapeHtml(claimMap[g.id] || '')}</textarea>
             </div>
           `).join('')}
         </div>
-        <div style="font-size:0.75rem;color:var(--haze);margin-top:0.35rem;">前台在该周边旁显示「条件领取」按钮，点击查看条件；同一作品在不同摊位可分别设置。</div>
+        <div style="font-size:0.75rem;color:var(--haze);margin-top:0.35rem;">支持换行。前台在该周边旁显示「条件领取」按钮，点击查看条件；同一作品在不同摊位可分别设置。</div>
       ` : `<div style="font-size:0.8rem;color:var(--haze);">先保存摊位并挂接摊主，可在此按作品设置条件领取。</div>`}
     </div>
   `;

@@ -5,7 +5,7 @@ let _lang = localStorage.getItem('f7lang') || 'zh';
 let _i18n = {};
 
 // 语言文件版本：新增/修改词条后递增，避免浏览器缓存旧 JSON
-const F7_LANG_VER = '20260911e';
+const F7_LANG_VER = '20260911f';
 
 // 取翻译；若词条缺失（t 会返回 key 本身）则用兜底文案
 function tText(key, fallback) {

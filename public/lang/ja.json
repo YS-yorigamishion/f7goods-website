@@ -148,7 +148,10 @@
     "relatedProjects": "関連プロジェクト",
     "tags": "タグ",
     "commissionedBy": "依頼主",
-    "status": "ステータス"
+    "status": "ステータス",
+    "shareImage": "画像を共有",
+    "shareImageDone": "共有画像を保存しました",
+    "shareImageFailed": "画像の生成に失敗しました"
   },
   "events": {
     "title": "イベント",
