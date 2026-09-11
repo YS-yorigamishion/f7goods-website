@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911i">
+  <link rel="stylesheet" href="/css/style.css?v=20260911u">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -84,6 +84,34 @@
       btn.classList.toggle('active', currentFollowFilter);
       renderProjects();
     }
+
+    // 移动端：把「关注」移到分类行下方（另起一行）
+    const mqProjectsMobile = window.matchMedia('(max-width: 640px)');
+    function layoutProjectFilters() {
+      const fb = document.getElementById('followFilterBtn');
+      const catWrap = document.getElementById('categoryFilters');
+      const stWrap = document.getElementById('statusFilters');
+      if (!fb || !catWrap || !stWrap) return;
+      const catRow = catWrap.parentElement;
+      const stRow = stWrap.parentElement;
+      if (!catRow || !stRow) return;
+      if (mqProjectsMobile.matches) {
+        if (fb.parentElement !== catRow) {
+          const brk = document.createElement('span');
+          brk.className = 'cl-tb-break';
+          brk.setAttribute('aria-hidden', 'true');
+          catRow.insertBefore(brk, catWrap.nextSibling);
+          catRow.insertBefore(fb, brk.nextSibling);
+        }
+      } else {
+        const brk = catRow.querySelector('.cl-tb-break');
+        if (brk) brk.remove();
+        if (fb.parentElement !== stRow) stRow.appendChild(fb);
+      }
+    }
+    if (mqProjectsMobile.addEventListener) mqProjectsMobile.addEventListener('change', layoutProjectFilters);
+    else if (mqProjectsMobile.addListener) mqProjectsMobile.addListener(layoutProjectFilters);
+    layoutProjectFilters();
 
     async function loadProjects() {
       try {

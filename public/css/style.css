@@ -1093,6 +1093,8 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   font-size: 1.15rem; color: var(--ink); font-weight: 700;
 }
 .cl-cat-grp-label { font-size: 0.72rem; color: var(--haze); }
+/* flex 换行占位：让后一个控件另起一行 */
+.cl-tb-break { flex-basis: 100%; height: 0; margin: 0; padding: 0; }
 
 .cl-w-grid {
   display: grid;
