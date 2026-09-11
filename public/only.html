@@ -971,8 +971,9 @@
       const claims = Object.values(window._onlyCart || {}).filter(e => !e.isGift && e.claim);
       sum.innerHTML = `
         <div class="only-sumrow"><span style="color:var(--muted);">合计（不含赠品）</span><span>${money(total)}</span></div>
+        ${claims.length ? `<div class="only-sumrow claim"><span>不计入满赠</span><span></span></div>` : ''}
         ${gifts.map(g => `<div class="only-sumrow gift"><span>赠品 · ${esc(g.boothName)}</span><span>${esc(g.title)}</span></div>`).join('')}
-        ${claims.map(c => `<div class="only-sumrow claim"><span>条件领取 · ${esc(c.boothName)}</span><span>${esc(c.title)} · 不计入满赠</span></div>`).join('')}
+        ${claims.map(c => `<div class="only-sumrow claim"><span>条件领取 · ${esc(c.boothName)}</span><span>${esc(c.title)}</span></div>`).join('')}
         <div class="only-sumrow total"><span>预估合计</span><span class="v">${money(total)}</span></div>
       `;
     }
