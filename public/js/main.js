@@ -1106,13 +1106,106 @@ function debounce(fn, delay = 300) {
 // Lightbox
 let lightboxImages = [];
 let lightboxIndex = 0;
-let lbZoom = { scale: 1, tx: 0, ty: 0, dragging: false, startX: 0, startY: 0, startTx: 0, startTy: 0 };
-let lbTouch = { swiping: false, dragging: false, pinching: false, swipeStartX: 0, swipeStartY: 0, swipeStartTime: 0, pinchStartDist: 0, pinchStartScale: 1, dragStartX: 0, dragStartY: 0, dragStartTx: 0, dragStartTy: 0, moved: false };
+let lbZoom = {
+  scale: 1, tx: 0, ty: 0,
+  targetScale: 1, targetTx: 0, targetTy: 0,
+  dragging: false, startX: 0, startY: 0, startTx: 0, startTy: 0,
+  raf: 0, animTimer: 0
+};
+let lbTouch = { swiping: false, dragging: false, pinching: false, swipeStartX: 0, swipeStartY: 0, swipeStartTime: 0, pinchStartDist: 0, pinchStartScale: 1, pinchOriginX: 0, pinchOriginY: 0, dragStartX: 0, dragStartY: 0, dragStartTx: 0, dragStartTy: 0, moved: false };
 
 function getTouchDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
   return Math.hypot(dx, dy);
+}
+
+function lbClampScale(s) {
+  return Math.max(0.5, Math.min(4, s));
+}
+
+function lbCancelLerp() {
+  if (lbZoom.raf) {
+    cancelAnimationFrame(lbZoom.raf);
+    lbZoom.raf = 0;
+  }
+}
+
+function lbSyncZoomClasses(img, scale) {
+  const on = scale > 1.001;
+  img.classList.toggle('lightbox-zoomed', on);
+  const stage = img.closest('.lightbox-stage');
+  if (stage) stage.classList.toggle('is-zooming', on);
+}
+
+function lbWriteTransform(img) {
+  img.style.transform = `translate(${lbZoom.tx}px, ${lbZoom.ty}px) scale(${lbZoom.scale})`;
+  lbSyncZoomClasses(img, lbZoom.scale);
+}
+
+function lbApplyImmediate(img) {
+  lbCancelLerp();
+  img.classList.remove('lightbox-animating');
+  img.style.transition = 'none';
+  lbZoom.targetScale = lbZoom.scale;
+  lbZoom.targetTx = lbZoom.tx;
+  lbZoom.targetTy = lbZoom.ty;
+  lbWriteTransform(img);
+}
+
+// 连续输入（滚轮）用 rAF 插值，避免一格一格地跳
+function lbLerpTo(img, scale, tx, ty) {
+  lbZoom.targetScale = lbClampScale(scale);
+  lbZoom.targetTx = tx;
+  lbZoom.targetTy = ty;
+  if (lbZoom.raf) return;
+  const step = () => {
+    const k = 0.22;
+    const ds = lbZoom.targetScale - lbZoom.scale;
+    const dx = lbZoom.targetTx - lbZoom.tx;
+    const dy = lbZoom.targetTy - lbZoom.ty;
+    if (Math.abs(ds) < 0.0006 && Math.abs(dx) < 0.35 && Math.abs(dy) < 0.35) {
+      lbZoom.scale = lbZoom.targetScale;
+      lbZoom.tx = lbZoom.targetTx;
+      lbZoom.ty = lbZoom.targetTy;
+      img.style.transition = 'none';
+      lbWriteTransform(img);
+      lbZoom.raf = 0;
+      return;
+    }
+    lbZoom.scale += ds * k;
+    lbZoom.tx += dx * k;
+    lbZoom.ty += dy * k;
+    img.style.transition = 'none';
+    img.classList.remove('lightbox-animating');
+    lbWriteTransform(img);
+    lbZoom.raf = requestAnimationFrame(step);
+  };
+  lbZoom.raf = requestAnimationFrame(step);
+}
+
+// 离散动作（双击 / 回弹到 1 倍）用 CSS 缓动
+function lbAnimateTo(img, scale, tx, ty, duration = 320) {
+  lbCancelLerp();
+  if (lbZoom.animTimer) clearTimeout(lbZoom.animTimer);
+  scale = lbClampScale(scale);
+  lbZoom.scale = scale;
+  lbZoom.tx = tx;
+  lbZoom.ty = ty;
+  lbZoom.targetScale = scale;
+  lbZoom.targetTx = tx;
+  lbZoom.targetTy = ty;
+  img.classList.remove('lightbox-dragging');
+  img.classList.add('lightbox-animating');
+  img.style.transition = `transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+  img.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  lbSyncZoomClasses(img, scale);
+  lbZoom.animTimer = setTimeout(() => {
+    img.classList.remove('lightbox-animating');
+    if (!lbZoom.dragging && !lbTouch.dragging && !lbTouch.pinching) {
+      img.style.transition = '';
+    }
+  }, duration + 40);
 }
 
 function openLightbox(images, startIndex = 0) {
@@ -1146,31 +1239,47 @@ function openLightbox(images, startIndex = 0) {
     img.addEventListener('dblclick', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (lbZoom.scale > 1) {
+      if (lbZoom.scale > 1.05) {
         resetZoom(img);
       } else {
-        lbZoom.scale = 2.5;
-        lbZoom.tx = 0;
-        lbZoom.ty = 0;
-        applyZoom(img);
+        // 以点击点为中心放大
+        const rect = img.getBoundingClientRect();
+        const scale = 2.5;
+        const px = e.clientX - rect.left - rect.width / 2;
+        const py = e.clientY - rect.top - rect.height / 2;
+        const tx = px - (px - lbZoom.tx) * (scale / (lbZoom.scale || 1));
+        const ty = py - (py - lbZoom.ty) * (scale / (lbZoom.scale || 1));
+        lbAnimateTo(img, scale, tx, ty, 340);
       }
     });
 
-    // 长图未放大时滚轮/触控板竖滑交给原生滚动；其余情况缩放
+    // 长图未放大时滚轮/触控板竖滑交给原生滚动；其余情况平滑缩放
     stage.addEventListener('wheel', (e) => {
-      const canScroll = stage.classList.contains('is-scroll') && lbZoom.scale <= 1;
+      const canScroll = stage.classList.contains('is-scroll') && lbZoom.scale <= 1.001 && lbZoom.targetScale <= 1.001;
       if (canScroll && !e.ctrlKey) return;
       e.preventDefault();
-      const factor = e.deltaY > 0 ? 0.95 : 1.05;
-      lbZoom.scale = Math.max(0.5, Math.min(2.5, lbZoom.scale * factor));
-      applyZoom(img);
+      const base = lbZoom.raf || lbZoom.scale > 1.001 ? lbZoom.targetScale : lbZoom.scale;
+      const factor = Math.exp(-e.deltaY * 0.0018);
+      const next = lbClampScale(base * factor);
+      // 以指针为锚点缩放，减少“突然跑掉”的感觉
+      const rect = img.getBoundingClientRect();
+      const px = e.clientX - rect.left - rect.width / 2;
+      const py = e.clientY - rect.top - rect.height / 2;
+      const cur = lbZoom.scale || 1;
+      const ratio = next / cur;
+      const tx = px - (px - lbZoom.tx) * ratio;
+      const ty = py - (py - lbZoom.ty) * ratio;
+      lbLerpTo(img, next, tx, ty);
     }, { passive: false });
 
     img.addEventListener('load', () => fitLightboxImage(img));
 
     img.addEventListener('mousedown', (e) => {
-      if (lbZoom.scale <= 1) return;
+      if (lbZoom.scale <= 1.001) return;
       e.preventDefault();
+      lbCancelLerp();
+      if (lbZoom.animTimer) clearTimeout(lbZoom.animTimer);
+      img.classList.remove('lightbox-animating');
       lbZoom.dragging = true;
       lbZoom.startX = e.clientX;
       lbZoom.startY = e.clientY;
@@ -1183,7 +1292,7 @@ function openLightbox(images, startIndex = 0) {
       if (!lbZoom.dragging) return;
       lbZoom.tx = lbZoom.startTx + (e.clientX - lbZoom.startX);
       lbZoom.ty = lbZoom.startTy + (e.clientY - lbZoom.startY);
-      applyZoom(img);
+      lbApplyImmediate(img);
     });
 
     document.addEventListener('mouseup', () => {
@@ -1201,7 +1310,10 @@ function openLightbox(images, startIndex = 0) {
         lbTouch.swipeStartY = t.clientY;
         lbTouch.swipeStartTime = Date.now();
         lbTouch.moved = false;
-        if (lbZoom.scale > 1) {
+        if (lbZoom.scale > 1.001) {
+          lbCancelLerp();
+          if (lbZoom.animTimer) clearTimeout(lbZoom.animTimer);
+          img.classList.remove('lightbox-animating');
           lbTouch.dragging = true;
           lbTouch.dragStartX = t.clientX;
           lbTouch.dragStartY = t.clientY;
@@ -1214,11 +1326,21 @@ function openLightbox(images, startIndex = 0) {
       }
       if (touches.length === 2) {
         e.preventDefault();
+        lbCancelLerp();
+        if (lbZoom.animTimer) clearTimeout(lbZoom.animTimer);
+        img.classList.remove('lightbox-animating');
+        img.style.transition = 'none';
         lbTouch.swiping = false;
         lbTouch.dragging = false;
         lbTouch.pinching = true;
+        lbTouch.moved = true;
         lbTouch.pinchStartDist = getTouchDist(touches);
         lbTouch.pinchStartScale = lbZoom.scale;
+        const midX = (touches[0].clientX + touches[1].clientX) / 2;
+        const midY = (touches[0].clientY + touches[1].clientY) / 2;
+        const rect = img.getBoundingClientRect();
+        lbTouch.pinchOriginX = midX - rect.left - rect.width / 2;
+        lbTouch.pinchOriginY = midY - rect.top - rect.height / 2;
       }
     }, { passive: false });
 
@@ -1227,21 +1349,25 @@ function openLightbox(images, startIndex = 0) {
       if (lbTouch.pinching && touches.length === 2) {
         e.preventDefault();
         const dist = getTouchDist(touches);
-        const newScale = lbTouch.pinchStartScale * (dist / lbTouch.pinchStartDist);
-        lbZoom.scale = Math.max(0.5, Math.min(4, newScale));
-        applyZoom(img);
+        const newScale = lbClampScale(lbTouch.pinchStartScale * (dist / lbTouch.pinchStartDist));
+        const ratio = newScale / (lbZoom.scale || 1);
+        // 双指中心锚定，缩放跟随手指
+        lbZoom.tx = lbTouch.pinchOriginX - (lbTouch.pinchOriginX - lbZoom.tx) * ratio;
+        lbZoom.ty = lbTouch.pinchOriginY - (lbTouch.pinchOriginY - lbZoom.ty) * ratio;
+        lbZoom.scale = newScale;
+        lbApplyImmediate(img);
         return;
       }
-      if (lbTouch.dragging && touches.length === 1 && lbZoom.scale > 1) {
+      if (lbTouch.dragging && touches.length === 1 && lbZoom.scale > 1.001) {
         e.preventDefault();
         const t = touches[0];
         lbZoom.tx = lbTouch.dragStartTx + (t.clientX - lbTouch.dragStartX);
         lbZoom.ty = lbTouch.dragStartTy + (t.clientY - lbTouch.dragStartY);
         lbTouch.moved = true;
-        applyZoom(img);
+        lbApplyImmediate(img);
         return;
       }
-      if (lbTouch.swiping && touches.length === 1 && lbZoom.scale <= 1) {
+      if (lbTouch.swiping && touches.length === 1 && lbZoom.scale <= 1.001) {
         const t = touches[0];
         const dx = t.clientX - lbTouch.swipeStartX;
         const dy = t.clientY - lbTouch.swipeStartY;
@@ -1257,7 +1383,12 @@ function openLightbox(images, startIndex = 0) {
     img.addEventListener('touchend', (e) => {
       if (lbTouch.pinching) {
         lbTouch.pinching = false;
-        if (lbZoom.scale <= 1) resetZoom(img);
+        // 松手后若接近原尺寸，平滑回弹到 1 倍
+        if (lbZoom.scale <= 1.08) {
+          resetZoom(img);
+        } else {
+          img.style.transition = '';
+        }
         return;
       }
       if (lbTouch.dragging) {
@@ -1289,20 +1420,34 @@ function openLightbox(images, startIndex = 0) {
 }
 
 function applyZoom(img) {
-  img.style.transform = `translate(${lbZoom.tx}px, ${lbZoom.ty}px) scale(${lbZoom.scale})`;
-  img.classList.toggle('lightbox-zoomed', lbZoom.scale > 1);
-  const stage = img.closest('.lightbox-stage');
-  if (stage) stage.classList.toggle('is-zooming', lbZoom.scale > 1);
+  lbApplyImmediate(img);
 }
 
-function resetZoom(img) {
+function resetZoom(img, immediate) {
+  if (lbZoom.dragging || lbTouch.dragging || lbTouch.pinching) {
+    lbZoom.dragging = false;
+    lbTouch.dragging = false;
+    img.classList.remove('lightbox-dragging');
+  }
+  const needsAnim = !immediate && (lbZoom.scale > 1.001 || lbZoom.tx || lbZoom.ty);
   lbZoom.scale = 1;
   lbZoom.tx = 0;
   lbZoom.ty = 0;
+  lbZoom.targetScale = 1;
+  lbZoom.targetTx = 0;
+  lbZoom.targetTy = 0;
   img.classList.remove('lightbox-zoomed', 'lightbox-dragging');
-  img.style.transform = '';
   const stage = img.closest('.lightbox-stage');
   if (stage) stage.classList.remove('is-zooming');
+  if (needsAnim) {
+    lbAnimateTo(img, 1, 0, 0, 280);
+  } else {
+    lbCancelLerp();
+    if (lbZoom.animTimer) clearTimeout(lbZoom.animTimer);
+    img.classList.remove('lightbox-animating');
+    img.style.transition = 'none';
+    img.style.transform = '';
+  }
 }
 
 // 长图判定：按整宽展示后仍超过视口高度，则整宽 + 竖向滚动
@@ -1326,7 +1471,7 @@ function closeLightbox() {
   if (overlay) {
     const img = overlay.querySelector('img');
     const stage = overlay.querySelector('.lightbox-stage');
-    resetZoom(img);
+    resetZoom(img, true);
     img.classList.remove('lightbox-long');
     if (stage) {
       stage.classList.remove('is-scroll', 'is-zooming');
@@ -1348,7 +1493,7 @@ function updateLightbox(direction) {
   if (!overlay) return;
   const img = overlay.querySelector('img');
   const stage = overlay.querySelector('.lightbox-stage');
-  resetZoom(img);
+  resetZoom(img, true);
   img.classList.remove('lightbox-long');
   if (stage) {
     stage.classList.remove('is-scroll', 'is-zooming');

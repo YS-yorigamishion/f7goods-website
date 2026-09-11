@@ -1749,9 +1749,9 @@ textarea.form-input { resize: vertical; min-height: 130px; }
 .lightbox-overlay img {
   max-width: 90vw; max-height: 90vh; border-radius: var(--radius);
   box-shadow: 0 8px 60px rgba(0,0,0,0.5); transform: scale(0.9);
-  transition: transform 0.15s ease-out; cursor: default; user-select: none;
+  transition: opacity 0.2s ease; cursor: default; user-select: none;
   -webkit-user-drag: none; -webkit-touch-callout: none; will-change: transform;
-  display: block;
+  display: block; transform-origin: center center;
 }
 .lightbox-overlay img.lightbox-long {
   max-width: none; max-height: none;
@@ -1759,8 +1759,11 @@ textarea.form-input { resize: vertical; min-height: 130px; }
   box-shadow: none; margin: 0 auto;
 }
 .lightbox-overlay.open img { transform: scale(1); }
+.lightbox-overlay img.lightbox-animating {
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
 .lightbox-overlay img.lightbox-zoomed { max-width: none; max-height: none; cursor: grab; touch-action: none; }
-.lightbox-overlay img.lightbox-dragging { cursor: grabbing; transition: none; }
+.lightbox-overlay img.lightbox-dragging { cursor: grabbing; transition: none !important; }
 .lightbox-close {
   position: absolute; top: 1.5rem; right: 1.5rem; width: 40px; height: 40px; z-index: 3;
   background: rgba(255,255,255,0.15); border: none; border-radius: 50%; color: white;
