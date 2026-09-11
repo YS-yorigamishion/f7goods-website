@@ -166,14 +166,24 @@ if (IS_PROD && !process.env.ALLOWED_ORIGIN) {
 }
 app.use(express.json({ limit: '10mb' }));
 // HTML 不缓存，其他静态资源缓存 1 天
-app.use((req, res, next) => {
-  if (req.path.endsWith('.html') || req.path === '/') {
-    res.set('Cache-Control', 'no-cache');
+app.use(express.static('public', {
+  maxAge: '1d',
+  etag: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
   }
-  next();
-});
-app.use(express.static('public', { maxAge: '1d', etag: true }));
-app.use('/admin', express.static('admin', { maxAge: '1d', etag: true }));
+}));
+app.use('/admin', express.static('admin', {
+  maxAge: '1d',
+  etag: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 app.use('/uploads', express.static('uploads', { maxAge: '7d', etag: true }));
 
 // Request logging

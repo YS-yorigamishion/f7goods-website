@@ -46,7 +46,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260911b"></script>
+  <script src="/js/main.js?v=20260911f"></script>
   <script>
     let circleWorksData = []; // full list for this author, shuffled once per page load
     let cwCategory = 'all';
@@ -309,6 +309,7 @@
           </div>
         `;
         renderCircleWorks();
+        if (typeof applyTranslations === 'function') applyTranslations();
       } catch (e) {
         document.getElementById('circleDetail').innerHTML =
           `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;
