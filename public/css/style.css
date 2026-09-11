@@ -2787,10 +2787,12 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 .cl-hero img {
   width: 100%; height: 100%; object-fit: cover; display: block;
 }
-/* Avatar fallback: show the whole avatar, no hard crop */
+/* Avatar fallback: fill the full width, crop vertically */
 .cl-hero.is-avatar img {
-  object-fit: contain;
-  padding: 0.6rem 0;
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+  padding: 0;
 }
 .cl-hero::after {
   content: '';
