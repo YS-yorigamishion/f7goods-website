@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="/css/style.css?v=20260910n">
-  <link rel="stylesheet" href="/admin/css/admin.css?v=20260910m">
+  <link rel="stylesheet" href="/admin/css/admin.css?v=20260911b">
 </head>
 <body class="admin-body">
   <!-- Login Screen -->
@@ -39,64 +39,102 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="logo-icon" style="width:32px;height:32px;font-size:0.9rem;border-radius:8px;">F7</div>
-        <span style="font-family:'Noto Serif SC',serif;font-weight:700;">f7goods</span>
+        <span style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:0.95rem;line-height:1.15;">f7goods<span style="display:block;font-family:'Noto Sans SC',system-ui,sans-serif;font-weight:400;font-size:0.68rem;color:var(--haze);">管理后台</span></span>
       </div>
       <nav class="sidebar-nav">
-        <a href="#" class="sidebar-link active" data-page="dashboard">
-          <span class="sidebar-icon">📊</span> 仪表盘
-        </a>
-        <a href="#" class="sidebar-link" data-page="editlog">
-          <span class="sidebar-icon">📝</span> 编辑历史
-        </a>
-        <a href="#" class="sidebar-link" data-page="approval">
-          <span class="sidebar-icon">✅</span> 审核管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="page-stats">
-          <span class="sidebar-icon">👁️</span> 浏览统计
-        </a>
-        <a href="#" class="sidebar-link" data-page="works">
-          <span class="sidebar-icon">🎨</span> 作品管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="circles">
-          <span class="sidebar-icon">🏠</span> 作者管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="author-stats">
-          <span class="sidebar-icon">📈</span> 作者统计
-        </a>
-        <a href="#" class="sidebar-link" data-page="events">
-          <span class="sidebar-icon">📅</span> 活动管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="booths">
-          <span class="sidebar-icon">⛺</span> 摊位管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="projects">
-          <span class="sidebar-icon">📋</span> 企划管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="updates">
-          <span class="sidebar-icon">📰</span> 动态管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="categories">
-          <span class="sidebar-icon">🏷️</span> 分类管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="images">
-          <span class="sidebar-icon">🖼️</span> 图片管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="settings">
-          <span class="sidebar-icon">⚙️</span> 页面设置
-        </a>
-        <a href="#" class="sidebar-link" data-page="announcements">
-          <span class="sidebar-icon">📢</span> 公告管理
-        </a>
-        <a href="#" class="sidebar-link" data-page="contacts">
-          <span class="sidebar-icon">💬</span> 联系消息
-        </a>
+        <div class="nav-grp">
+          <div class="nav-grp-label">总览</div>
+          <a href="#" class="sidebar-link active" data-page="dashboard">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+            仪表盘
+          </a>
+          <a href="#" class="sidebar-link" data-page="approval">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></span>
+            审核管理
+            <span class="sidebar-badge" data-badge="approval">0</span>
+          </a>
+          <a href="#" class="sidebar-link" data-page="page-stats">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+            浏览统计
+          </a>
+          <a href="#" class="sidebar-link" data-page="author-stats">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 3-4 6 6"/><path d="M3 21h18"/></svg></span>
+            作者统计
+          </a>
+          <a href="#" class="sidebar-link" data-page="editlog">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>
+            编辑历史
+          </a>
+        </div>
+
+        <div class="nav-grp">
+          <div class="nav-grp-label">内容</div>
+          <a href="#" class="sidebar-link" data-page="works">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg></span>
+            作品管理
+            <span class="sidebar-badge quiet" data-badge="works">0</span>
+          </a>
+          <a href="#" class="sidebar-link" data-page="circles">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg></span>
+            作者管理
+          </a>
+          <a href="#" class="sidebar-link" data-page="events">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+            活动管理
+            <span class="sidebar-badge quiet" data-badge="events">0</span>
+          </a>
+          <a href="#" class="sidebar-link" data-page="booths">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M4 9h16l-1.5 10.5a2 2 0 0 1-2 1.5H7.5a2 2 0 0 1-2-1.5L4 9z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg></span>
+            摊位管理
+          </a>
+          <a href="#" class="sidebar-link" data-page="projects">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M4 7h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+            企划管理
+            <span class="sidebar-badge quiet" data-badge="projects">0</span>
+          </a>
+          <a href="#" class="sidebar-link" data-page="updates">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg></span>
+            动态管理
+            <span class="sidebar-badge quiet" data-badge="updates">0</span>
+          </a>
+        </div>
+
+        <div class="nav-grp">
+          <div class="nav-grp-label">素材</div>
+          <a href="#" class="sidebar-link" data-page="images">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg></span>
+            图片管理
+          </a>
+          <a href="#" class="sidebar-link" data-page="categories">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9-9 9z"/><circle cx="12" cy="12" r="2"/></svg></span>
+            分类管理
+          </a>
+        </div>
+
+        <div class="nav-grp">
+          <div class="nav-grp-label">站点</div>
+          <a href="#" class="sidebar-link" data-page="settings">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></span>
+            页面设置
+          </a>
+          <a href="#" class="sidebar-link" data-page="announcements">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M17 10a3 3 0 0 1 0 4"/></svg></span>
+            公告管理
+          </a>
+          <a href="#" class="sidebar-link" data-page="contacts">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H8l-4 4V5z"/></svg></span>
+            联系消息
+          </a>
+        </div>
       </nav>
       <div class="sidebar-footer">
         <a href="/" target="_blank" class="sidebar-link">
-          <span class="sidebar-icon">🌐</span> 访问前台
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></span>
+          访问前台
         </a>
         <a href="#" class="sidebar-link" id="logoutBtn">
-          <span class="sidebar-icon">🚪</span> 退出登录
+          <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5M21 12H9"/></svg></span>
+          退出登录
         </a>
       </div>
     </aside>
@@ -104,94 +142,91 @@
 
     <main class="admin-main">
       <header class="admin-header">
-        <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="菜单">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
         <h2 id="pageTitle">仪表盘</h2>
-        <div style="display:flex;align-items:center;gap:0.8rem;">
-          <div style="position:relative;cursor:pointer;" onclick="showAdminNotifications()">
-            <span style="font-size:1.2rem;">🔔</span>
-            <span id="adminNotifBadge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--accent);color:white;font-size:0.6rem;padding:0.1rem 0.3rem;border-radius:50%;">0</span>
-          </div>
-          <div class="admin-user">admin</div>
+        <span class="header-crumb" id="headerCrumb">总览</span>
+        <div class="header-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+          <input type="search" id="adminGlobalSearch" placeholder="搜索作品、作者、活动…" autocomplete="off">
+        </div>
+        <div class="header-right">
+          <button class="header-icon-btn" type="button" onclick="showAdminNotifications()" title="通知" aria-label="通知">
+            <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+            <span id="adminNotifBadge" class="header-dot" style="display:none;">0</span>
+          </button>
+          <div class="admin-user"><span class="av">A</span><b>admin</b></div>
         </div>
       </header>
 
       <div class="admin-content" id="adminContent">
         <!-- Dashboard -->
         <div id="page-dashboard" class="admin-page active">
+          <!-- 待办队列 -->
+          <div class="todo-card">
+            <div class="todo-head">
+              <b>待办队列</b>
+              <span>点击直接进入对应列表</span>
+            </div>
+            <div class="todo-grid">
+              <button type="button" class="todo-item" onclick="navigateTo('approval')">
+                <span class="n" id="statPendingWorks">0</span><span class="t">待审作品</span>
+              </button>
+              <button type="button" class="todo-item" onclick="navigateTo('approval')">
+                <span class="n" id="statPendingEvents">0</span><span class="t">待审活动</span>
+              </button>
+              <button type="button" class="todo-item" onclick="navigateTo('approval')">
+                <span class="n" id="statPendingProjects">0</span><span class="t">待审企划</span>
+              </button>
+              <button type="button" class="todo-item" onclick="navigateTo('approval')">
+                <span class="n" id="statPendingUpdates">0</span><span class="t">待审动态</span>
+              </button>
+              <button type="button" class="todo-item is-quiet" onclick="navigateTo('circles')">
+                <span class="n" id="statPendingAuthors">0</span><span class="t">已注册作者</span>
+              </button>
+            </div>
+          </div>
+
           <!-- 内容统计 -->
+          <div class="dash-sec">
+            <h3>内容总览</h3>
+            <span>点击进入对应管理页</span>
+          </div>
           <div class="stats-grid">
             <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('works')">
-              <div class="stat-icon" style="background:rgba(233,69,96,0.1);color:var(--accent);">🎨</div>
+              <div class="stat-icon" style="background:rgba(217,79,92,0.1);color:var(--accent);"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 3-3 6 6"/><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/></svg></div>
               <div class="stat-info">
                 <div class="stat-number" id="statWorks">0</div>
                 <div class="stat-label">作品总数</div>
               </div>
             </div>
             <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('events')">
-              <div class="stat-icon" style="background:rgba(15,52,96,0.1);color:var(--accent-alt);">📅</div>
+              <div class="stat-icon" style="background:rgba(74,123,167,0.1);color:var(--info);"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
               <div class="stat-info">
                 <div class="stat-number" id="statEvents">0</div>
                 <div class="stat-label">活动总数</div>
               </div>
             </div>
             <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('circles')">
-              <div class="stat-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🏠</div>
+              <div class="stat-icon" style="background:rgba(61,139,110,0.1);color:var(--success);"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg></div>
               <div class="stat-info">
                 <div class="stat-number" id="statCircles">0</div>
                 <div class="stat-label">作者总数</div>
               </div>
             </div>
             <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('projects')">
-              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📋</div>
+              <div class="stat-icon" style="background:rgba(196,138,42,0.1);color:var(--warning);"><svg viewBox="0 0 24 24"><path d="M4 7h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
               <div class="stat-info">
                 <div class="stat-number" id="statProjects">0</div>
                 <div class="stat-label">企划总数</div>
               </div>
             </div>
             <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('updates')">
-              <div class="stat-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;">📰</div>
+              <div class="stat-icon" style="background:rgba(138,128,120,0.12);color:var(--muted);"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg></div>
               <div class="stat-info">
                 <div class="stat-number" id="statUpdates">0</div>
                 <div class="stat-label">动态总数</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 待审批统计 -->
-          <div class="stats-grid" style="margin-top:1rem;">
-            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
-              <div class="stat-icon" style="background:rgba(233,69,96,0.1);color:var(--accent);">🎨</div>
-              <div class="stat-info">
-                <div class="stat-number" id="statPendingWorks">0</div>
-                <div class="stat-label">待审核作品</div>
-              </div>
-            </div>
-            <div class="stat-card" style="cursor:pointer;border-left:3px solid #2ecc71;" onclick="navigateTo('circles')">
-              <div class="stat-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🏠</div>
-              <div class="stat-info">
-                <div class="stat-number" id="statPendingAuthors">0</div>
-                <div class="stat-label">已注册作者</div>
-              </div>
-            </div>
-            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
-              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📅</div>
-              <div class="stat-info">
-                <div class="stat-number" id="statPendingEvents">0</div>
-                <div class="stat-label">待审核活动</div>
-              </div>
-            </div>
-            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
-              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📋</div>
-              <div class="stat-info">
-                <div class="stat-number" id="statPendingProjects">0</div>
-                <div class="stat-label">待审核企划</div>
-              </div>
-            </div>
-            <div class="stat-card" style="cursor:pointer;border-left:3px solid #f39c12;" onclick="navigateTo('approval')">
-              <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📰</div>
-              <div class="stat-info">
-                <div class="stat-number" id="statPendingUpdates">0</div>
-                <div class="stat-label">待审核动态</div>
               </div>
             </div>
           </div>
@@ -200,11 +235,11 @@
           <div class="admin-card" style="margin-top:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
               <h3 style="margin:0;">浏览量概览</h3>
-              <button onclick="cleanupPageviews()" class="btn btn-sm" style="font-size:0.75rem;padding:0.25rem 0.5rem;" title="清理365天前的历史数据">🧹 清理旧数据</button>
+              <button onclick="cleanupPageviews()" class="btn btn-sm" style="font-size:0.75rem;padding:0.25rem 0.5rem;" title="清理365天前的历史数据">清理旧数据</button>
             </div>
             <div class="pv-overview-grid">
               <div class="pv-overview-item" onclick="showPVDetail('today')" title="点击查看近 30 日每日浏览量">
-                <div class="pv-overview-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;">👁</div>
+                <div class="pv-overview-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="pvToday">0</div>
                   <div class="pv-overview-label">今日浏览</div>
@@ -212,7 +247,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('month')" title="点击查看本月每日明细及往月对比">
-                <div class="pv-overview-icon" style="background:rgba(52,152,219,0.1);color:#3498db;">📈</div>
+                <div class="pv-overview-icon" style="background:rgba(52,152,219,0.1);color:#3498db;"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 3-4 6 6"/><path d="M3 21h18"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="pvMonth">0</div>
                   <div class="pv-overview-label">本月浏览</div>
@@ -220,7 +255,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('year')" title="点击查看历年浏览量">
-                <div class="pv-overview-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📅</div>
+                <div class="pv-overview-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="pvYear">0</div>
                   <div class="pv-overview-label">今年浏览</div>
@@ -228,14 +263,14 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item pv-overview-item--total">
-                <div class="pv-overview-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🔥</div>
+                <div class="pv-overview-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;"><svg viewBox="0 0 24 24"><path d="M12 3s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3 1-6 1-8z"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="pvTotal">0</div>
                   <div class="pv-overview-label">总浏览量</div>
                 </div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('today-visitors')" title="点击查看近 30 日每日访客数">
-                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">👥</div>
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5"/><path d="M16 6.5a3 3 0 0 1 0 5.5M21 20c0-2.2-1.3-3.8-3.5-4.5"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="visToday">0</div>
                   <div class="pv-overview-label">今日人数</div>
@@ -243,7 +278,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('month-visitors')" title="点击查看近 12 月每月访客数">
-                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">📊</div>
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="visMonth">0</div>
                   <div class="pv-overview-label">本月人数</div>
@@ -251,7 +286,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('year-visitors')" title="点击查看历年访客数">
-                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">👤</div>
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="visYear">0</div>
                   <div class="pv-overview-label">今年人数</div>
@@ -259,7 +294,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item pv-overview-item--total">
-                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">🌐</div>
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="visTotal">0</div>
                   <div class="pv-overview-label">总人数</div>
@@ -299,8 +334,8 @@
                 <span>作品需审核</span>
               </label>
               <input type="text" class="form-input" id="worksSearch" placeholder="搜索作品..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterWorks()">
-              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminWorks()">📥 导出</button>
-              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminWorks(this)"></label>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminWorks()">导出</button>
+              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminWorks(this)"></label>
               <button class="btn btn-primary" id="batchEditBtn" style="display:none;background:var(--accent-alt);" onclick="openBatchEditModal()">批量编辑</button>
               <button class="btn" id="batchDeleteBtn" style="display:none;background:var(--accent);color:white;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteWorks()">批量删除</button>
               <button class="btn btn-primary" onclick="openWorkModal()">+ 新增作品</button>
@@ -337,8 +372,8 @@
             <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
               <input type="text" class="form-input" id="eventsSearch" placeholder="搜索活动..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterEvents()">
               <button id="eventsBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteEvents()">批量删除</button>
-              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminEvents()">📥 导出</button>
-              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminEvents(this)"></label>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminEvents()">导出</button>
+              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminEvents(this)"></label>
               <button class="btn btn-primary" onclick="openEventModal()">+ 新增活动</button>
             </div>
           </div>
@@ -387,7 +422,7 @@
             <h3>作者列表</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
               <input type="text" class="form-input" id="circlesSearch" placeholder="搜索作者..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterCircles()">
-              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminCircles()">📥 导出</button>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminCircles()">导出</button>
               <button id="circlesBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteCircles()">批量删除</button>
               <button class="btn btn-primary" onclick="openCircleModal()">+ 新增作者</button>
             </div>
@@ -419,8 +454,8 @@
             <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
               <input type="text" class="form-input" id="projectsSearch" placeholder="搜索企划..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterProjects()">
               <button id="projectsBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteProjects()">批量删除</button>
-              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminProjects()">📥 导出</button>
-              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminProjects(this)"></label>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminProjects()">导出</button>
+              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminProjects(this)"></label>
               <button class="btn btn-primary" onclick="openProjectModal()">+ 新增企划</button>
             </div>
           </div>
@@ -451,8 +486,8 @@
             <h3>动态管理</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
               <input type="text" class="form-input" id="updatesSearch" placeholder="搜索动态..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterUpdates()">
-              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminUpdates()">📥 导出</button>
-              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">📤 导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminUpdates(this)"></label>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminUpdates()">导出</button>
+              <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminUpdates(this)"></label>
               <button id="updatesBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteUpdates()">批量删除</button>
               <button class="btn btn-primary" onclick="openUpdateModal()">+ 新增动态</button>
             </div>
@@ -486,11 +521,11 @@
             <button class="btn btn-primary" onclick="saveCategories()">保存更改</button>
           </div>
           <div class="view-toggle" style="margin-bottom:1rem;">
-            <button class="view-btn active" data-cattab="works" onclick="switchCatTab('works')">🎨 周边概览</button>
-            <button class="view-btn" data-cattab="circles" onclick="switchCatTab('circles')">👤 同人作者</button>
-            <button class="view-btn" data-cattab="events" onclick="switchCatTab('events')">📅 近期活动</button>
-            <button class="view-btn" data-cattab="projects" onclick="switchCatTab('projects')">📋 同人企划</button>
-            <button class="view-btn" data-cattab="updates" onclick="switchCatTab('updates')">📰 同人动态</button>
+            <button class="view-btn active" data-cattab="works" onclick="switchCatTab('works')">周边概览</button>
+            <button class="view-btn" data-cattab="circles" onclick="switchCatTab('circles')">同人作者</button>
+            <button class="view-btn" data-cattab="events" onclick="switchCatTab('events')">近期活动</button>
+            <button class="view-btn" data-cattab="projects" onclick="switchCatTab('projects')">同人企划</button>
+            <button class="view-btn" data-cattab="updates" onclick="switchCatTab('updates')">同人动态</button>
           </div>
           <div id="categoriesContent">
             <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
@@ -582,7 +617,7 @@
               <span style="color:var(--haze);">至</span>
               <input type="date" class="form-input" id="editLogDateTo" style="width:140px;font-size:0.85rem;" title="结束日期">
               <button class="btn btn-primary" onclick="searchEditLogByDate()" style="font-size:0.85rem;padding:0.4rem 0.8rem;">搜索</button>
-              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportEditLog()">📥 导出</button>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportEditLog()">导出</button>
               <button class="btn btn-primary" onclick="loadEditLog()">刷新</button>
             </div>
           </div>
@@ -599,13 +634,13 @@
           <div class="page-toolbar">
             <h3>审核管理</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
-              <button class="btn" style="background:var(--accent-alt);color:white;" onclick="toggleAaForm()">📢 发送作者公告</button>
+              <button class="btn" style="background:var(--accent-alt);color:white;" onclick="toggleAaForm()">发送作者公告</button>
               <button class="btn btn-primary" onclick="loadApprovalPage()">刷新</button>
             </div>
           </div>
           <div class="admin-card" style="margin-bottom:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-              <h4 style="margin:0;">🎨 待审核作品</h4>
+              <h4 style="margin:0;">待审核作品</h4>
               <div style="display:flex;gap:0.3rem;">
                 <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveWorks()">全部批准</button>
                 <button class="btn-sm btn-delete" onclick="batchRejectWorks()">全部拒绝</button>
@@ -615,7 +650,7 @@
           </div>
           <div class="admin-card" style="margin-bottom:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-              <h4 style="margin:0;">📅 待审核活动</h4>
+              <h4 style="margin:0;">待审核活动</h4>
               <div style="display:flex;gap:0.3rem;">
                 <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveEvents()">全部批准</button>
                 <button class="btn-sm btn-delete" onclick="batchRejectEvents()">全部拒绝</button>
@@ -625,7 +660,7 @@
           </div>
           <div class="admin-card" style="margin-bottom:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-              <h4 style="margin:0;">📋 待审核企划</h4>
+              <h4 style="margin:0;">待审核企划</h4>
               <div style="display:flex;gap:0.3rem;">
                 <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveProjects()">全部批准</button>
                 <button class="btn-sm btn-delete" onclick="batchRejectProjects()">全部拒绝</button>
@@ -635,7 +670,7 @@
           </div>
           <div class="admin-card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-              <h4 style="margin:0;">📰 待审核动态</h4>
+              <h4 style="margin:0;">待审核动态</h4>
               <div style="display:flex;gap:0.3rem;">
                 <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="batchApproveUpdates()">全部批准</button>
                 <button class="btn-sm btn-delete" onclick="batchRejectUpdates()">全部拒绝</button>
@@ -646,7 +681,7 @@
 
           <!-- Author Announcements -->
           <div id="aaFormSection" class="admin-card" style="margin-top:1.5rem;display:none;">
-            <h4 style="margin:0 0 1rem 0;">📢 发送作者公告</h4>
+            <h4 style="margin:0 0 1rem 0;">发送作者公告</h4>
             <div style="display:flex;flex-direction:column;gap:0.8rem;">
               <div>
                 <label style="font-size:0.85rem;color:var(--haze);">标题</label>
@@ -683,7 +718,7 @@
 
           <div class="admin-card" style="margin-top:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-              <h4 style="margin:0;">📋 已发送公告</h4>
+              <h4 style="margin:0;">已发送公告</h4>
               <button class="btn-sm" onclick="loadAuthorAnnouncements()">刷新</button>
             </div>
             <div id="aaHistoryList"><p style="color:var(--haze);">加载中...</p></div>
@@ -693,7 +728,7 @@
         <!-- Author Statistics -->
         <div id="page-author-stats" class="admin-page">
           <div class="page-toolbar">
-            <h3>📊 作者数据统计</h3>
+            <h3>作者数据统计</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
               <div style="display:flex;gap:0.3rem;">
                 <button class="view-btn active" data-author-range="0" onclick="switchAuthorStatsRange(0)" style="font-size:0.8rem;padding:0.3rem 0.6rem;">全部</button>
@@ -703,7 +738,7 @@
                 <button class="view-btn" data-author-range="365" onclick="switchAuthorStatsRange(365)" style="font-size:0.8rem;padding:0.3rem 0.6rem;">1年</button>
               </div>
               <input type="text" class="form-input" id="authorStatsSearch" placeholder="搜索作者..." oninput="filterAuthorStats()" style="width:150px;font-size:0.85rem;">
-              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAuthorStats()">📥 导出</button>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAuthorStats()">导出</button>
               <button class="btn btn-primary" onclick="loadAuthorStats()">刷新</button>
             </div>
           </div>
@@ -729,9 +764,9 @@
         <!-- Page Stats -->
         <div id="page-page-stats" class="admin-page">
           <div class="page-toolbar">
-            <h3>👁️ 浏览统计</h3>
+            <h3>浏览统计</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
-              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="cleanupPageviews()">🧹 清理旧数据</button>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="cleanupPageviews()">清理旧数据</button>
               <button class="btn btn-primary" onclick="loadPageStats()">刷新</button>
             </div>
           </div>
@@ -743,7 +778,7 @@
             </div>
             <div class="pv-overview-grid">
               <div class="pv-overview-item" onclick="showPVDetail('today')" title="点击查看近 30 日每日浏览量">
-                <div class="pv-overview-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;">👁</div>
+                <div class="pv-overview-icon" style="background:rgba(155,89,182,0.1);color:#9b59b6;"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="pvToday2">0</div>
                   <div class="pv-overview-label">今日浏览</div>
@@ -751,7 +786,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('month')" title="点击查看本月每日明细及往月对比">
-                <div class="pv-overview-icon" style="background:rgba(52,152,219,0.1);color:#3498db;">📈</div>
+                <div class="pv-overview-icon" style="background:rgba(52,152,219,0.1);color:#3498db;"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 3-4 6 6"/><path d="M3 21h18"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="pvMonth2">0</div>
                   <div class="pv-overview-label">本月浏览</div>
@@ -759,7 +794,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('year')" title="点击查看历年浏览量">
-                <div class="pv-overview-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;">📅</div>
+                <div class="pv-overview-icon" style="background:rgba(243,156,18,0.1);color:#f39c12;"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="pvYear2">0</div>
                   <div class="pv-overview-label">今年浏览</div>
@@ -767,14 +802,14 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item pv-overview-item--total">
-                <div class="pv-overview-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;">🔥</div>
+                <div class="pv-overview-icon" style="background:rgba(46,204,113,0.1);color:#2ecc71;"><svg viewBox="0 0 24 24"><path d="M12 3s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3 1-6 1-8z"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="pvTotal2">0</div>
                   <div class="pv-overview-label">总浏览量</div>
                 </div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('today-visitors')" title="点击查看近 30 日每日访客数">
-                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">👥</div>
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5"/><path d="M16 6.5a3 3 0 0 1 0 5.5M21 20c0-2.2-1.3-3.8-3.5-4.5"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="visToday2">0</div>
                   <div class="pv-overview-label">今日人数</div>
@@ -782,7 +817,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('month-visitors')" title="点击查看近 12 月每月访客数">
-                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">📊</div>
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="visMonth2">0</div>
                   <div class="pv-overview-label">本月人数</div>
@@ -790,7 +825,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item" onclick="showPVDetail('year-visitors')" title="点击查看历年访客数">
-                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">👤</div>
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="visYear2">0</div>
                   <div class="pv-overview-label">今年人数</div>
@@ -798,7 +833,7 @@
                 <div class="pv-overview-arrow">›</div>
               </div>
               <div class="pv-overview-item pv-overview-item--total">
-                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;">🌐</div>
+                <div class="pv-overview-icon" style="background:rgba(26,188,156,0.1);color:#1abc9c;"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></div>
                 <div class="pv-overview-body">
                   <div class="pv-overview-number" id="visTotal2">0</div>
                   <div class="pv-overview-label">总人数</div>
@@ -829,7 +864,7 @@
 
           <!-- 搜索浏览统计 -->
           <div class="admin-card" style="margin-top:1.5rem;">
-            <h3 style="margin-bottom:1rem;">🔍 搜索浏览统计</h3>
+            <h3 style="margin-bottom:1rem;">搜索浏览统计</h3>
             <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;">
               <input type="text" class="form-input" id="pvSearchInput"
                 placeholder="输入作品/活动/圈子/企划/动态名称..."
@@ -851,7 +886,7 @@
           <!-- 新增内容统计 -->
           <div class="admin-card" style="margin-top:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-              <h3 style="margin:0;">📊 新增内容统计</h3>
+              <h3 style="margin:0;">新增内容统计</h3>
               <div style="display:flex;gap:0.3rem;">
                 <button class="view-btn active" data-creation-range="7" onclick="switchCreationRange(7)">近7天</button>
                 <button class="view-btn" data-creation-range="30" onclick="switchCreationRange(30)">近30天</button>

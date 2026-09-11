@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 — 重设计预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --muted: #8A8078;
+      --haze: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(34,32,30,.04);
+      --shadow-md: 0 8px 24px rgba(34,32,30,.08);
+      --side-w: 226px;
+      --top-h: 56px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper); color: var(--ink);
+      font-size: 14px; line-height: 1.65;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; border: none; background: none; }
+    a { color: inherit; text-decoration: none; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* Preview bar */
+    .pv {
+      height: 32px; background: #2C3340; color: #F6F2EB;
+      display: flex; align-items: center; justify-content: center;
+      gap: .75rem; font-size: .78rem; padding: 0 .5rem;
+    }
+    .pv strong { color: #fff; }
+    .pv button {
+      color: #F6F2EB; border: 1px solid rgba(246,242,235,.35);
+      border-radius: 999px; padding: .05rem .7rem; font-size: .72rem;
+    }
+    .pv button.on { background: rgba(246,242,235,.14); border-color: rgba(246,242,235,.6); }
+
+    /* ===== Shell ===== */
+    .shell {
+      height: calc(100vh - 32px);
+      display: grid;
+      grid-template-columns: var(--side-w) 1fr;
+      grid-template-rows: var(--top-h) 1fr;
+      grid-template-areas: "brand top" "side main";
+      position: relative; overflow: hidden;
+    }
+
+    .brand {
+      grid-area: brand; position: relative;
+      background: var(--card); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: .6rem; padding: 0 1rem;
+    }
+    .brand::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); }
+    .brand-mark {
+      width: 28px; height: 28px; border-radius: 7px; background: var(--ink); color: var(--paper);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .68rem; flex-shrink: 0;
+    }
+    .brand-text { font-family: 'Noto Serif SC', Georgia, serif; font-weight: 700; font-size: .95rem; line-height: 1.15; }
+    .brand-text span { display: block; font-family: 'Noto Sans SC', system-ui, sans-serif; font-weight: 400; font-size: .68rem; color: var(--haze); }
+
+    /* Topbar */
+    .top {
+      grid-area: top; position: relative;
+      background: var(--card); border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: .9rem; padding: 0 1.1rem;
+    }
+    .top::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); }
+    .menu-btn {
+      display: none; width: 34px; height: 34px; border-radius: var(--radius-sm);
+      align-items: center; justify-content: center; color: var(--muted);
+    }
+    .menu-btn:hover { background: var(--paper); color: var(--ink); }
+    .menu-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; }
+    .top h1 { font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.05rem; font-weight: 700; white-space: nowrap; }
+    .top-crumb { font-size: .76rem; color: var(--haze); margin-left: .1rem; white-space: nowrap; }
+    .top-search {
+      flex: 1; max-width: 340px; position: relative; margin-left: auto; display: flex;
+    }
+    .top-search svg {
+      position: absolute; left: .65rem; top: 50%; transform: translateY(-50%);
+      width: 15px; height: 15px; stroke: var(--haze); fill: none; stroke-width: 1.6; pointer-events: none;
+    }
+    .top-search input {
+      width: 100%; height: 34px; padding: 0 .8rem 0 2rem;
+      border: 1px solid var(--line); border-radius: 999px;
+      background: var(--paper); font-size: .8rem;
+    }
+    .top-right { display: flex; align-items: center; gap: .3rem; flex-shrink: 0; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--muted); position: relative; transition: .18s ease;
+    }
+    .icon-btn:hover { background: var(--paper); color: var(--ink); }
+    .icon-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-btn .dot {
+      position: absolute; top: 6px; right: 6px; min-width: 15px; height: 15px;
+      padding: 0 3px; border-radius: 999px; background: var(--accent); color: #fff;
+      font-size: .58rem; font-weight: 700; line-height: 15px; text-align: center;
+      border: 1.5px solid var(--card);
+    }
+    .me {
+      display: flex; align-items: center; gap: .45rem;
+      padding: .22rem .5rem .22rem .25rem; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--paper);
+    }
+    .me .av {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      background: var(--ink); color: var(--paper);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .62rem; font-weight: 700;
+    }
+    .me b { font-size: .78rem; font-weight: 600; }
+
+    /* Sidebar */
+    .side {
+      grid-area: side; background: var(--card); border-right: 1px solid var(--line);
+      overflow-y: auto; padding: .7rem .55rem .5rem;
+      display: flex; flex-direction: column; z-index: 60;
+    }
+    .side-head {
+      display: none; align-items: center; justify-content: space-between;
+      padding: 0 .5rem .6rem; margin-bottom: .3rem; border-bottom: 1px solid var(--line);
+    }
+    .side-head .ttl { font-family: 'Noto Serif SC', Georgia, serif; font-weight: 700; font-size: .92rem; }
+    .grp { margin-bottom: .95rem; }
+    .grp-label {
+      font-size: .66rem; font-weight: 600; color: var(--haze);
+      letter-spacing: .08em; padding: 0 .7rem .3rem;
+    }
+    .nav {
+      display: flex; align-items: center; gap: .55rem; width: 100%;
+      padding: .46rem .7rem; border-radius: var(--radius-sm);
+      font-size: .85rem; font-weight: 500; text-align: left;
+      position: relative; transition: .18s ease;
+    }
+    .nav:hover { background: var(--paper); }
+    .nav.active { background: rgba(217,79,92,.08); color: var(--accent); font-weight: 600; }
+    .nav.active::before {
+      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 16px; background: var(--accent); border-radius: 0 2px 2px 0;
+    }
+    .nav svg {
+      width: 16px; height: 16px; flex-shrink: 0; opacity: .78;
+      stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .nav.active svg { opacity: 1; }
+    .nav .badge {
+      margin-left: auto; min-width: 19px; height: 19px; padding: 0 5px;
+      border-radius: 999px; background: var(--accent); color: #fff;
+      font-size: .64rem; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .nav .badge.quiet { background: rgba(34,32,30,.08); color: var(--ink); }
+    .side-foot { margin-top: auto; padding: .7rem .35rem .35rem; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: .15rem; }
+    .side-foot .nav { font-size: .8rem; color: var(--haze); }
+    .side-foot .nav:hover { color: var(--ink); }
+    .side-foot .nav.danger:hover { color: var(--accent); }
+
+    .side-ov { display: none; position: absolute; inset: 0; background: rgba(34,32,30,.35); z-index: 55; opacity: 0; transition: opacity .2s ease; pointer-events: none; }
+    .side-ov.open { display: block; opacity: 1; pointer-events: auto; }
+
+    /* Main */
+    .main { grid-area: main; overflow-y: auto; padding: 1.15rem 1.35rem 2rem; }
+    .page { display: none; animation: fade .2s ease; }
+    .page.on { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .p-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: .6rem 1rem; margin-bottom: .9rem; }
+    .p-head h2 { font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+    .p-head p { font-size: .82rem; color: var(--haze); margin-top: .15rem; }
+    .p-actions { display: flex; flex-wrap: wrap; gap: .45rem; }
+
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.05rem 1.15rem; }
+    .card + .card { margin-top: .9rem; }
+    .card > h3 {
+      font-family: 'Noto Serif SC', Georgia, serif; font-size: .98rem; font-weight: 700;
+      display: flex; align-items: baseline; gap: .45rem; margin-bottom: .8rem;
+    }
+    .card > h3 small { font-family: 'Noto Sans SC', system-ui, sans-serif; font-size: .72rem; font-weight: 500; color: var(--haze); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+      height: 34px; padding: 0 .9rem; border-radius: var(--radius-sm);
+      border: 1px solid var(--line); background: var(--card);
+      font-size: .82rem; font-weight: 500; transition: .18s ease; white-space: nowrap;
+    }
+    .btn:hover { border-color: #D4C8B8; background: var(--paper); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    .btn.primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+    .btn.sm { height: 28px; padding: 0 .65rem; font-size: .76rem; }
+    .btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+    /* Todo queue */
+    .todo {
+      background: var(--card);
+      border: 1px solid rgba(217,79,92,.22);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: .95rem 1.1rem;
+      margin-bottom: .9rem;
+    }
+    .todo-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; margin-bottom: .7rem; }
+    .todo-top b { font-family: 'Noto Serif SC', Georgia, serif; font-size: 1rem; }
+    .todo-top span { font-size: .76rem; color: var(--haze); }
+    .todo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: .55rem; }
+    .todo-item {
+      display: flex; align-items: center; gap: .55rem; text-align: left;
+      background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-sm);
+      padding: .5rem .65rem; transition: .18s ease;
+    }
+    .todo-item:hover { border-color: var(--accent); background: rgba(217,79,92,.05); }
+    .todo-item .n {
+      min-width: 26px; height: 26px; border-radius: 7px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent); color: #fff; font-weight: 700; font-size: .78rem; flex-shrink: 0;
+    }
+    .todo-item.zero .n { background: rgba(34,32,30,.08); color: var(--haze); }
+    .todo-item .t { font-size: .8rem; font-weight: 500; }
+
+    /* Stat tiles */
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .7rem; }
+    .tile {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: .85rem .95rem; text-align: left; transition: .18s ease;
+    }
+    .tile:hover { border-color: #D4C8B8; transform: translateY(-1px); }
+    .tile .k { display: flex; align-items: center; gap: .35rem; font-size: .74rem; color: var(--haze); }
+    .tile .k svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+    .tile .v {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.5rem; font-weight: 700; line-height: 1.25; margin-top: .1rem;
+    }
+    .tile .d { font-size: .7rem; color: var(--haze); }
+    .tile .d.up { color: var(--success); }
+
+    .two { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: .9rem; }
+
+    /* Lists */
+    .row {
+      display: flex; align-items: center; gap: .7rem;
+      padding: .55rem 0; border-bottom: 1px solid var(--line);
+    }
+    .row:last-child { border-bottom: none; padding-bottom: 0; }
+    .row:first-child { padding-top: 0; }
+    .row .th {
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(145deg,#EDE6DA,#D9CFC0);
+      display: flex; align-items: center; justify-content: center; font-size: .72rem;
+    }
+    .row .t { min-width: 0; flex: 1; }
+    .row .t b { display: block; font-size: .84rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .t small { font-size: .72rem; color: var(--haze); }
+    .row .when { font-size: .72rem; color: var(--haze); white-space: nowrap; }
+
+    /* Table */
+    .tb-wrap { overflow-x: auto; }
+    table.tb { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    table.tb th {
+      text-align: left; font-weight: 600; font-size: .74rem; color: var(--haze);
+      padding: .5rem .6rem; border-bottom: 1px solid var(--line); white-space: nowrap;
+    }
+    table.tb td { padding: .55rem .6rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    table.tb tr:last-child td { border-bottom: none; }
+    table.tb tr:hover td { background: rgba(246,242,235,.7); }
+    .cell-title { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .cell-title .im {
+      width: 38px; height: 38px; border-radius: 8px; flex-shrink: 0; overflow: hidden;
+      background: linear-gradient(145deg,#EDE6DA,#D9CFC0);
+      display: flex; align-items: center; justify-content: center; font-size: .72rem;
+    }
+    .cell-title .tx { min-width: 0; }
+    .cell-title .tx b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+    .cell-title .tx small { font-size: .7rem; color: var(--haze); }
+    .pill {
+      display: inline-flex; align-items: center;
+      font-size: .68rem; font-weight: 600; padding: .12rem .5rem; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--paper); color: var(--haze); white-space: nowrap;
+    }
+    .pill.ok { color: var(--success); border-color: rgba(61,139,110,.3); background: rgba(61,139,110,.07); }
+    .pill.wait { color: var(--warning); border-color: rgba(196,138,42,.35); background: rgba(196,138,42,.08); }
+    .pill.no { color: var(--accent); border-color: rgba(217,79,92,.35); background: rgba(217,79,92,.07); }
+    .row-actions { display: flex; gap: .3rem; justify-content: flex-end; }
+
+    .tb-toolbar { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; margin-bottom: .75rem; }
+    .tb-toolbar input[type="search"], .tb-toolbar select {
+      height: 32px; border: 1px solid var(--line); border-radius: 999px;
+      background: var(--paper); font-size: .8rem; padding: 0 .75rem;
+    }
+    .tb-toolbar input[type="search"] { flex: 1; min-width: 150px; max-width: 260px; }
+    .tb-toolbar .sp { flex: 1; }
+    .count { font-size: .76rem; color: var(--haze); white-space: nowrap; }
+
+    @media (max-width: 900px) {
+      .two { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      :root { --side-w: 0px; }
+      .shell { grid-template-columns: 1fr; grid-template-areas: "top" "main"; }
+      .brand { display: none; }
+      .side {
+        position: absolute; left: 0; top: 0; bottom: 0;
+        width: min(280px, 86vw); transform: translateX(-104%);
+        transition: transform .24s ease; box-shadow: var(--shadow-md);
+      }
+      .side.open { transform: none; }
+      .side-head { display: flex; }
+      .menu-btn { display: inline-flex; }
+      .top-search { display: none; }
+      .me b { display: none; }
+      .main { padding: 1rem .85rem 2rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="pv">
+    <span><strong>预览</strong> · 管理后台重设计（分组侧栏 + 待办队列 + 数据表）</span>
+    <button type="button" class="on" id="pvDesk" onclick="pvMode('desk')">桌面</button>
+    <button type="button" id="pvMob" onclick="pvMode('mob')">移动端</button>
+  </div>
+
+  <div class="shell" id="shell">
+    <div class="side-ov" id="sideOv" onclick="sideToggle(false)"></div>
+
+    <div class="brand">
+      <div class="brand-mark">f7</div>
+      <div class="brand-text">f7goods<span>管理后台</span></div>
+    </div>
+
+    <header class="top">
+      <button class="menu-btn" type="button" onclick="sideToggle()" aria-label="菜单">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <h1 id="topTitle">仪表盘</h1>
+      <span class="top-crumb" id="topCrumb">总览</span>
+      <div class="top-search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+        <input type="search" placeholder="搜索作品、作者、活动…">
+      </div>
+      <div class="top-right">
+        <button class="icon-btn" type="button" onclick="goto('approval')" title="待办">
+          <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+          <span class="dot" id="topBadge">18</span>
+        </button>
+        <div class="me">
+          <span class="av">A</span><b>admin</b>
+        </div>
+      </div>
+    </header>
+
+    <nav class="side" id="side">
+      <div class="side-head">
+        <span class="ttl">f7goods 管理</span>
+        <button class="icon-btn" type="button" onclick="sideToggle(false)" aria-label="收起">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="grp">
+        <div class="grp-label">总览</div>
+        <button class="nav active" data-page="dashboard" data-title="仪表盘" data-crumb="总览" onclick="goto('dashboard')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          仪表盘
+        </button>
+        <button class="nav" data-page="approval" data-title="审核管理" data-crumb="总览" onclick="goto('approval')">
+          <svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+          审核管理
+          <span class="badge">18</span>
+        </button>
+        <button class="nav" data-page="stats" data-title="浏览统计" data-crumb="总览" onclick="goto('stats')">
+          <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+          浏览统计
+        </button>
+        <button class="nav" data-page="editlog" data-title="编辑历史" data-crumb="总览" onclick="goto('editlog')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+          编辑历史
+        </button>
+      </div>
+
+      <div class="grp">
+        <div class="grp-label">内容</div>
+        <button class="nav" data-page="works" data-title="作品管理" data-crumb="内容" onclick="goto('works')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg>
+          作品管理
+          <span class="badge">12</span>
+        </button>
+        <button class="nav" data-page="circles" data-title="作者管理" data-crumb="内容" onclick="goto('circles')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
+          作者管理
+        </button>
+        <button class="nav" data-page="events" data-title="活动管理" data-crumb="内容" onclick="goto('events')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+          活动管理
+          <span class="badge quiet">2</span>
+        </button>
+        <button class="nav" data-page="booths" data-title="摊位管理" data-crumb="内容" onclick="goto('booths')">
+          <svg viewBox="0 0 24 24"><path d="M4 9h16l-1.5 10.5a2 2 0 0 1-2 1.5H7.5a2 2 0 0 1-2-1.5L4 9z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>
+          摊位管理
+        </button>
+        <button class="nav" data-page="projects" data-title="企划管理" data-crumb="内容" onclick="goto('projects')">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          企划管理
+          <span class="badge quiet">1</span>
+        </button>
+        <button class="nav" data-page="updates" data-title="动态管理" data-crumb="内容" onclick="goto('updates')">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg>
+          动态管理
+          <span class="badge quiet">3</span>
+        </button>
+      </div>
+
+      <div class="grp">
+        <div class="grp-label">素材</div>
+        <button class="nav" data-page="images" data-title="图片管理" data-crumb="素材" onclick="goto('images')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg>
+          图片管理
+        </button>
+        <button class="nav" data-page="categories" data-title="分类管理" data-crumb="素材" onclick="goto('categories')">
+          <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9-9 9z"/><circle cx="12" cy="12" r="2"/></svg>
+          分类管理
+        </button>
+      </div>
+
+      <div class="grp">
+        <div class="grp-label">站点</div>
+        <button class="nav" data-page="settings" data-title="页面设置" data-crumb="站点" onclick="goto('settings')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+          页面设置
+        </button>
+        <button class="nav" data-page="announcements" data-title="公告管理" data-crumb="站点" onclick="goto('announcements')">
+          <svg viewBox="0 0 24 24"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M17 10a3 3 0 0 1 0 4"/></svg>
+          公告管理
+        </button>
+        <button class="nav" data-page="contacts" data-title="联系消息" data-crumb="站点" onclick="goto('contacts')">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v12H8l-4 4V5z"/></svg>
+          联系消息
+          <span class="badge">5</span>
+        </button>
+      </div>
+
+      <div class="side-foot">
+        <a class="nav" href="#" onclick="alert('预览：打开前台');return false;">
+          <svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+          访问前台
+        </a>
+        <a class="nav danger" href="#" onclick="alert('预览：退出登录');return false;">
+          <svg viewBox="0 0 24 24"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+          退出登录
+        </a>
+      </div>
+    </nav>
+
+    <main class="main" id="main">
+      <!-- ===== Dashboard ===== -->
+      <section class="page on" id="page-dashboard">
+        <div class="p-head">
+          <div>
+            <h2>仪表盘</h2>
+            <p>今天有 4 类内容等待审核</p>
+          </div>
+          <div class="p-actions">
+            <button class="btn" type="button" onclick="alert('预览：刷新数据')">
+              <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>
+              刷新
+            </button>
+            <button class="btn primary" type="button" onclick="goto('approval')">去审核</button>
+          </div>
+        </div>
+
+        <div class="todo">
+          <div class="todo-top"><b>待办队列</b><span>点击直接进入对应审核列表</span></div>
+          <div class="todo-grid">
+            <button class="todo-item" type="button" onclick="goto('approval')"><span class="n">12</span><span class="t">待审作品</span></button>
+            <button class="todo-item" type="button" onclick="goto('approval')"><span class="n">2</span><span class="t">待审活动</span></button>
+            <button class="todo-item" type="button" onclick="goto('approval')"><span class="n">1</span><span class="t">待审企划</span></button>
+            <button class="todo-item" type="button" onclick="goto('approval')"><span class="n">3</span><span class="t">待审动态</span></button>
+            <button class="todo-item zero" type="button" onclick="goto('contacts')"><span class="n">0</span><span class="t">未读消息</span></button>
+          </div>
+        </div>
+
+        <div class="tiles">
+          <button class="tile" type="button" onclick="goto('works')">
+            <span class="k"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg>作品</span>
+            <span class="v">128</span><span class="d up">本周 +6</span>
+          </button>
+          <button class="tile" type="button" onclick="goto('circles')">
+            <span class="k"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>作者</span>
+            <span class="v">24</span><span class="d up">本周 +1</span>
+          </button>
+          <button class="tile" type="button" onclick="goto('events')">
+            <span class="k"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>活动</span>
+            <span class="v">16</span><span class="d">进行中 2</span>
+          </button>
+          <button class="tile" type="button" onclick="goto('projects')">
+            <span class="k"><svg viewBox="0 0 24 24"><path d="M4 7h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><path d="M8 7V5h8v2"/></svg>企划</span>
+            <span class="v">9</span><span class="d">招募中 4</span>
+          </button>
+          <button class="tile" type="button" onclick="goto('updates')">
+            <span class="k"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg>动态</span>
+            <span class="v">37</span><span class="d up">本周 +3</span>
+          </button>
+          <button class="tile" type="button" onclick="goto('images')">
+            <span class="k"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/></svg>图片</span>
+            <span class="v">412</span><span class="d">未使用 18</span>
+          </button>
+        </div>
+
+        <div class="two" style="margin-top:.9rem;">
+          <div class="card">
+            <h3>最近编辑 <small>最近 6 条</small></h3>
+            <a class="row" href="#" onclick="goto('editlog');return false;">
+              <div class="th">作</div>
+              <div class="t"><b>春日手作社 更新了作品「春日限定徽章套装」</b><small>价格 / 图片</small></div>
+              <span class="when">10 分钟前</span>
+            </a>
+            <a class="row" href="#" onclick="goto('editlog');return false;">
+              <div class="th">管</div>
+              <div class="t"><b>管理员 通过了作品「神使亚克力立牌」</b><small>审核</small></div>
+              <span class="when">1 小时前</span>
+            </a>
+            <a class="row" href="#" onclick="goto('editlog');return false;">
+              <div class="th">管</div>
+              <div class="t"><b>管理员 新增了活动「冬季 ONLY 专场」</b><small>活动</small></div>
+              <span class="when">今天 09:20</span>
+            </a>
+            <a class="row" href="#" onclick="goto('editlog');return false;">
+              <div class="th">夜</div>
+              <div class="t"><b>夜巡工作室 提交了动态「角色歌合辑招募」</b><small>待审核</small></div>
+              <span class="when">昨天 21:04</span>
+            </a>
+            <a class="row" href="#" onclick="goto('editlog');return false;">
+              <div class="th">管</div>
+              <div class="t"><b>管理员 修改了分类「动态分类」</b><small>新增 2 项</small></div>
+              <span class="when">昨天 16:38</span>
+            </a>
+            <a class="row" href="#" onclick="goto('editlog');return false;">
+              <div class="th">春</div>
+              <div class="t"><b>春日手作社 上传了 6 张图片</b><small>图片库</small></div>
+              <span class="when">昨天 11:03</span>
+            </a>
+          </div>
+
+          <div class="card">
+            <h3>今日浏览 <small>近 7 日</small></h3>
+            <div style="display:flex;align-items:flex-end;gap:.4rem;height:96px;padding-top:.3rem;">
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.25rem;text-align:center;">
+                <div style="height:38%;background:var(--line);border-radius:4px 4px 0 0;"></div><span style="font-size:.62rem;color:var(--haze);">一</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.25rem;text-align:center;">
+                <div style="height:52%;background:var(--line);border-radius:4px 4px 0 0;"></div><span style="font-size:.62rem;color:var(--haze);">二</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.25rem;text-align:center;">
+                <div style="height:44%;background:var(--line);border-radius:4px 4px 0 0;"></div><span style="font-size:.62rem;color:var(--haze);">三</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.25rem;text-align:center;">
+                <div style="height:70%;background:var(--line);border-radius:4px 4px 0 0;"></div><span style="font-size:.62rem;color:var(--haze);">四</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.25rem;text-align:center;">
+                <div style="height:62%;background:var(--line);border-radius:4px 4px 0 0;"></div><span style="font-size:.62rem;color:var(--haze);">五</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.25rem;text-align:center;">
+                <div style="height:88%;background:var(--accent);border-radius:4px 4px 0 0;"></div><span style="font-size:.62rem;color:var(--accent);font-weight:600;">六</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:.25rem;text-align:center;">
+                <div style="height:100%;background:var(--accent);border-radius:4px 4px 0 0;"></div><span style="font-size:.62rem;color:var(--accent);font-weight:600;">日</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:.6rem;padding-top:.55rem;border-top:1px solid var(--line);font-size:.76rem;color:var(--haze);">
+              <span>今日 <b style="color:var(--ink);font-size:.9rem;">1,284</b></span>
+              <span>7 日均 <b style="color:var(--ink);font-size:.9rem;">946</b></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Works ===== -->
+      <section class="page" id="page-works">
+        <div class="p-head">
+          <div>
+            <h2>作品管理</h2>
+            <p>共 128 件作品 · 待审核 12 件</p>
+          </div>
+          <div class="p-actions">
+            <button class="btn" type="button" onclick="alert('预览：导入')">导入</button>
+            <button class="btn" type="button" onclick="alert('预览：导出')">导出</button>
+            <button class="btn primary" type="button" onclick="alert('预览：新增作品')">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              新增作品
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="tb-toolbar">
+            <input type="search" placeholder="搜索标题、作者、标签…">
+            <select><option>全部状态</option><option>待审核</option><option>已通过</option><option>已拒绝</option></select>
+            <select><option>全部分类</option><option>立牌</option><option>徽章</option><option>明信片</option></select>
+            <span class="sp"></span>
+            <span class="count">显示 <b>8</b> / 128</span>
+          </div>
+          <div class="tb-wrap">
+            <table class="tb">
+              <thead>
+                <tr>
+                  <th style="width:34px;"><input type="checkbox" style="accent-color:var(--accent);"></th>
+                  <th>作品</th>
+                  <th>分类</th>
+                  <th>作者</th>
+                  <th>价格</th>
+                  <th>审核</th>
+                  <th style="text-align:right;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="worksBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Approval ===== -->
+      <section class="page" id="page-approval">
+        <div class="p-head">
+          <div>
+            <h2>审核管理</h2>
+            <p>共 18 条待处理 · 按提交时间排序</p>
+          </div>
+          <div class="p-actions">
+            <button class="btn" type="button" onclick="alert('预览：全部通过')">全部通过</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tb-toolbar">
+            <select><option>全部类型</option><option>作品</option><option>活动</option><option>企划</option><option>动态</option></select>
+            <span class="sp"></span>
+            <span class="count">待处理 <b>18</b></span>
+          </div>
+          <div class="tb-wrap">
+            <table class="tb">
+              <thead>
+                <tr><th>内容</th><th>类型</th><th>提交者</th><th>提交时间</th><th style="text-align:right;">操作</th></tr>
+              </thead>
+              <tbody id="apprBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Placeholder pages ===== -->
+      <section class="page" id="page-generic">
+        <div class="p-head">
+          <div><h2 id="genTitle">页面</h2><p>预览中未展开该页面，仅演示外壳与导航分组。</p></div>
+          <div class="p-actions"><button class="btn primary" type="button">新建</button></div>
+        </div>
+        <div class="card">
+          <div class="tb-toolbar">
+            <input type="search" placeholder="搜索…">
+            <span class="sp"></span>
+            <span class="count">显示 <b>6</b> / 24</span>
+          </div>
+          <div class="tb-wrap">
+            <table class="tb">
+              <thead><tr><th>名称</th><th>状态</th><th>更新时间</th><th style="text-align:right;">操作</th></tr></thead>
+              <tbody id="genBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const WORKS = [
+      { t:'神使亚克力立牌 · 夜色版', s:'lipai', a:'夜巡工作室', p:'¥68', st:'wait' },
+      { t:'春日限定徽章套装', s:'huizhang', a:'春日手作社', p:'¥25', st:'ok' },
+      { t:'七日明信片组 · 冬之章', s:'mingxinpian', a:'七日邮局', p:'¥18', st:'ok' },
+      { t:'中央庭金属钥匙扣', s:'yaoshikou', a:'都市档案组', p:'¥32', st:'ok' },
+      { t:'角色拍立得套装 A', s:'pailide', a:'晨光线稿', p:'¥45', st:'wait' },
+      { t:'周年纪念册 · 硬壳', s:'qita', a:'纸间印社', p:'¥98', st:'ok' },
+      { t:'限定特典色纸', s:'qita', a:'铃音社', p:'无料', st:'no' },
+      { t:'夏日祭帆布袋', s:'qita', a:'都市档案组', p:'¥78', st:'wait' }
+    ];
+    const CAT = { lipai:'立牌', huizhang:'徽章', mingxinpian:'明信片', yaoshikou:'钥匙扣', pailide:'拍立得', qita:'其它' };
+    const ST_PILL = { wait:['wait','待审核'], ok:['ok','已通过'], no:['no','已拒绝'] };
+
+    document.getElementById('worksBody').innerHTML = WORKS.map(w => `
+      <tr>
+        <td><input type="checkbox" style="accent-color:var(--accent);"></td>
+        <td>
+          <div class="cell-title">
+            <div class="im">${w.t.charAt(0)}</div>
+            <div class="tx"><b>${w.t}</b><small>#${w.s} · 更新于今天</small></div>
+          </div>
+        </td>
+        <td>${CAT[w.s] || w.s}</td>
+        <td>${w.a}</td>
+        <td style="color:var(--accent);font-weight:600;">${w.p}</td>
+        <td><span class="pill ${ST_PILL[w.st][0]}">${ST_PILL[w.st][1]}</span></td>
+        <td>
+          <div class="row-actions">
+            <button class="btn sm" type="button" onclick="alert('预览：编辑')">编辑</button>
+            <button class="btn sm" type="button" onclick="alert('预览：删除')">删除</button>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    const APPR = [
+      { t:'神使亚克力立牌 · 夜色版', ty:'作品', by:'夜巡工作室', at:'今天 10:12', st:'wait' },
+      { t:'秋日茶会 · 同人交流', ty:'活动', by:'七都企划组', at:'今天 09:40', st:'wait' },
+      { t:'角色歌合辑招募', ty:'动态', by:'铃音社', at:'昨天 21:04', st:'wait' },
+      { t:'七日联名企划', ty:'企划', by:'都市档案组', at:'昨天 18:22', st:'wait' },
+      { t:'角色拍立得套装 A', ty:'作品', by:'晨光线稿', at:'昨天 15:08', st:'wait' }
+    ];
+    document.getElementById('apprBody').innerHTML = APPR.map(x => `
+      <tr>
+        <td>
+          <div class="cell-title">
+            <div class="im">${x.t.charAt(0)}</div>
+            <div class="tx"><b>${x.t}</b><small>${x.ty}</small></div>
+          </div>
+        </td>
+        <td><span class="pill">${x.ty}</span></td>
+        <td>${x.by}</td>
+        <td style="color:var(--haze);">${x.at}</td>
+        <td>
+          <div class="row-actions">
+            <button class="btn sm" type="button" style="border-color:rgba(61,139,110,.4);color:var(--success);" onclick="alert('预览：通过')">通过</button>
+            <button class="btn sm" type="button" style="border-color:rgba(217,79,92,.4);color:var(--accent);" onclick="alert('预览：拒绝')">拒绝</button>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    const GEN = [
+      ['2027 七都新春宴','进行中','今天 09:20'],
+      ['永远的7日之都 ONLY 2026 秋','即将开启','昨天 14:02'],
+      ['七日角色歌合辑','招募中','昨天 11:40'],
+      ['2026 夏日祭同人祭','已结束','8 月 18 日'],
+      ['都市档案组','正常','8 月 12 日'],
+      ['冬季 ONLY 专场','即将开启','8 月 05 日']
+    ];
+    document.getElementById('genBody').innerHTML = GEN.map(r => `
+      <tr>
+        <td><div class="cell-title"><div class="im">${r[0].charAt(0)}</div><div class="tx"><b>${r[0]}</b></div></div></td>
+        <td><span class="pill">${r[1]}</span></td>
+        <td style="color:var(--haze);">${r[2]}</td>
+        <td><div class="row-actions"><button class="btn sm" type="button">编辑</button><button class="btn sm" type="button">删除</button></div></td>
+      </tr>`).join('');
+
+    function goto(page) {
+      document.querySelectorAll('.nav[data-page]').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+      const nav = document.querySelector('.nav[data-page="' + page + '"]');
+      const target = (page === 'dashboard' || page === 'works' || page === 'approval') ? page : 'generic';
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+      document.getElementById('page-' + target).classList.add('on');
+      document.getElementById('topTitle').textContent = nav ? nav.dataset.title : '管理后台';
+      document.getElementById('topCrumb').textContent = nav ? nav.dataset.crumb : '';
+      if (target === 'generic') document.getElementById('genTitle').textContent = nav ? nav.dataset.title : '页面';
+      document.getElementById('main').scrollTop = 0;
+      sideToggle(false);
+    }
+
+    function sideToggle(force) {
+      const s = document.getElementById('side');
+      const ov = document.getElementById('sideOv');
+      const next = typeof force === 'boolean' ? force : !s.classList.contains('open');
+      s.classList.toggle('open', next);
+      ov.classList.toggle('open', next);
+    }
+
+    function pvMode(mode) {
+      const mob = mode === 'mob';
+      const shell = document.getElementById('shell');
+      document.body.classList.toggle('pv-mobile', mob);
+      document.getElementById('pvMob').classList.toggle('on', mob);
+      document.getElementById('pvDesk').classList.toggle('on', !mob);
+      if (mob) {
+        shell.style.maxWidth = '390px';
+        shell.style.margin = '0 auto';
+        shell.style.borderLeft = '1px solid var(--line)';
+        shell.style.borderRight = '1px solid var(--line)';
+        document.body.classList.add('force-mobile');
+      } else {
+        shell.style.maxWidth = '';
+        shell.style.margin = '';
+        shell.style.borderLeft = '';
+        shell.style.borderRight = '';
+        document.body.classList.remove('force-mobile');
+        sideToggle(false);
+      }
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') sideToggle(false); });
+  </script>
+
+  <style>
+    /* 强制移动端预览（与真实断点同样的布局规则） */
+    body.force-mobile .shell { grid-template-columns: 1fr; grid-template-areas: "top" "main"; }
+    body.force-mobile .brand { display: none; }
+    body.force-mobile .side {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: min(280px, 86vw); transform: translateX(-104%);
+      transition: transform .24s ease; box-shadow: var(--shadow-md);
+      grid-area: unset;
+    }
+    body.force-mobile .side.open { transform: none; }
+    body.force-mobile .side-head { display: flex; }
+    body.force-mobile .menu-btn { display: inline-flex; }
+    body.force-mobile .top-search { display: none; }
+    body.force-mobile .me b { display: none; }
+    body.force-mobile .main { padding: 1rem .85rem 2rem; }
+    body.force-mobile .two { grid-template-columns: 1fr; }
+  </style>
+</body>
+</html>

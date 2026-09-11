@@ -210,8 +210,18 @@ function navigateTo(page) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${page}`)?.classList.add('active');
 
-  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计' };
+  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计', approval: '审核管理', 'author-stats': '作者统计' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
+
+  // 顶栏分组标签
+  const groups = {
+    dashboard: '总览', approval: '总览', 'page-stats': '总览', 'author-stats': '总览', editlog: '总览',
+    works: '内容', circles: '内容', events: '内容', booths: '内容', projects: '内容', updates: '内容',
+    images: '素材', categories: '素材',
+    settings: '站点', announcements: '站点', contacts: '站点'
+  };
+  const crumb = document.getElementById('headerCrumb');
+  if (crumb) crumb.textContent = groups[page] || '';
 
   // Load data for the page
   if (page === 'dashboard') loadDashboard();
@@ -417,6 +427,16 @@ function showAdminNotifications() {
 }
 
 // ===== Dashboard =====
+// 侧栏徽标（待办数量）；数量为 0 时隐藏
+function setSidebarBadge(page, count, quiet) {
+  const el = document.querySelector('.sidebar-link[data-page="' + page + '"] .sidebar-badge');
+  if (!el) return;
+  const n = Number(count) || 0;
+  el.textContent = n;
+  el.classList.toggle('show', n > 0);
+  if (quiet) el.classList.add('quiet');
+}
+
 async function loadDashboard() {
   // Dynamically load Chart.js if not already loaded; dashboard stats must still work without it
   if (typeof Chart === 'undefined') {
@@ -454,6 +474,13 @@ async function loadDashboard() {
   document.getElementById('statPendingProjects').textContent = pendingProjects;
   document.getElementById('statPendingUpdates').textContent = pendingUpdates;
   document.getElementById('statPendingWorks').textContent = pendingWorks;
+
+  // 侧栏徽标与待办队列同步
+  setSidebarBadge('approval', pendingWorks + pendingEvents + pendingProjects + pendingUpdates);
+  setSidebarBadge('works', pendingWorks, true);
+  setSidebarBadge('events', pendingEvents, true);
+  setSidebarBadge('projects', pendingProjects, true);
+  setSidebarBadge('updates', pendingUpdates, true);
 
   // Load notifications asynchronously
   loadAdminNotifications();
