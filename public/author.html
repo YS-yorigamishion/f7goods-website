@@ -52,9 +52,10 @@
         </div>
         <div class="form-group">
           <label>密码 <span style="color:var(--accent)">*</span></label>
-          <input type="password" class="form-input" name="password" required placeholder="至少6位" minlength="6">
+          <input type="password" class="form-input" name="password" required placeholder="至少8位" minlength="8">
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;">注册</button>
+        <p style="margin-top:0.75rem;font-size:0.75rem;color:var(--muted);text-align:center;line-height:1.5;">注册后即可登录上传作品；作品需管理员审核通过后才会在前台展示。</p>
       </form>
     </div>
   </div>
@@ -738,10 +739,10 @@
           errEl.style.display = 'block';
           return;
         }
-        successEl.textContent = data.message || '注册成功，请登录';
+        successEl.textContent = data.message || '注册成功，现在即可登录。上传的作品需管理员审核后才会展示。';
         successEl.style.display = 'block';
         form.reset();
-        setTimeout(() => switchAuthTab('login'), 1000);
+        setTimeout(() => switchAuthTab('login'), 1200);
       } catch (e) {
         errEl.textContent = '网络错误';
         errEl.style.display = 'block';

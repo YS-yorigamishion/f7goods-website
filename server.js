@@ -524,13 +524,14 @@ app.post('/api/author/register', rateLimitMiddleware, async (req, res) => {
     follows: 0,
     username: username,
     passwordHash,
-    authorStatus: 'pending',
+    // Register open to login immediately; uploaded works still need review
+    authorStatus: 'active',
     requireApproval: true,
     createdAt: new Date().toISOString()
   };
   circles.push(newCircle);
   await writeJSON('circles.json', circles);
-  res.json({ success: true, message: '注册成功，请等待管理员审核后登录' });
+  res.json({ success: true, message: '注册成功，现在即可登录。上传的作品需管理员审核后才会展示。' });
 });
 
 app.post('/api/author/login', rateLimitMiddleware, async (req, res) => {
