@@ -778,12 +778,12 @@
       const actasName = document.getElementById('actasName');
       const menuHead = document.getElementById('acctMenuHead');
 
-      // Prefer profile logo for the active account chip
-      const activeLogo = authorProfile && authorProfile.logo ? authorProfile.logo : '';
+      // Prefer account list logo; fall back to loaded profile for active account
+      const activeLogo = (cur && cur.logo) || (authorProfile && authorProfile.logo) || '';
 
       if (!cur) {
         if (nameEl) nameEl.textContent = authorProfile?.name || '作者';
-        setAvatarHtml(avatarEl, authorProfile?.name, activeLogo);
+        setAvatarHtml(avatarEl, authorProfile?.name, authorProfile?.logo || '');
         return;
       }
       setAvatarHtml(avatarEl, cur.name || authorProfile?.name, activeLogo);
@@ -813,10 +813,11 @@
       if (list) {
         list.innerHTML = accessibleAccounts.map(a => {
           const isActive = a.id === currentId;
-          const logo = isActive ? activeLogo : '';
+          const logo = a.logo || (isActive ? activeLogo : '');
+          const letter = escapeHtml((a.name || '作').slice(0, 1));
           const av = logo
-            ? '<span class="mgmt-avatar"><img src="' + escapeHtml(logo) + '" alt=""></span>'
-            : '<span class="mgmt-avatar">' + escapeHtml((a.name || '作').slice(0, 1)) + '</span>';
+            ? '<span class="mgmt-avatar"><img src="' + escapeHtml(logo) + '" alt="" onerror="this.replaceWith(document.createTextNode(\'' + letter.replace(/'/g, '') + '\'))"></span>'
+            : '<span class="mgmt-avatar">' + letter + '</span>';
           return `<button type="button" class="acct-item${isActive ? ' current' : ''}" onclick="switchAuthorAccount('${escapeAttr(a.id)}');toggleMgmtDropdown('acctMenu')">
             ${av}
             <span class="info">
@@ -1011,6 +1012,13 @@
       const result = await authorAPI('PUT', '/api/author/profile', data);
       if (result) {
         authorProfile = result;
+        const actAs = localStorage.getItem('f7author_actAs');
+        const currentId = actAs || authorCircleId;
+        const acc = accessibleAccounts.find(a => a.id === currentId);
+        if (acc) {
+          acc.name = result.name || acc.name;
+          acc.logo = result.logo || '';
+        }
         renderAccountChrome();
         showToast('资料已保存', 'success');
       }

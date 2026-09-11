@@ -577,6 +577,7 @@ app.get('/api/author/accessible-accounts', authorAuthMiddleware, (req, res) => {
   accounts.push({
     id: currentCircle.id,
     name: currentCircle.name,
+    logo: currentCircle.logo || '',
     isOwner: true,
     isActive: req.author.circleId === currentCircle.id
   });
@@ -587,6 +588,7 @@ app.get('/api/author/accessible-accounts', authorAuthMiddleware, (req, res) => {
       accounts.push({
         id: c.id,
         name: c.name,
+        logo: c.logo || '',
         isOwner: false,
         isActive: req.author.circleId === c.id
       });
