@@ -5112,18 +5112,25 @@ function renderSettings() {
               <textarea class="form-input" id="setting_${key}_contactContent">${pages[key]?.contactContent || ''}</textarea>
             </div>
             <div class="form-group">
-              <label>联系方式列表</label>
+              <label>联系方式列表（卡片英文标签与底部小字可分别命名）</label>
               <div id="aboutContactLinksContainer">
                 ${(pages[key]?.contactLinks || []).map((link, i) => `
-                  <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;" class="about-link-row">
-                    <input class="form-input about-link-icon" value="${link.icon || ''}" style="width:50px;text-align:center;" placeholder="图标">
-                    <input class="form-input about-link-text" value="${link.text || ''}" style="flex:1;" placeholder="显示文字">
-                    <input class="form-input about-link-url" value="${link.url || ''}" style="flex:2;" placeholder="链接">
-                    <button class="btn-sm btn-delete" onclick="this.parentElement.remove()">删除</button>
+                  <div style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.65rem;padding:0.55rem 0.65rem;border:1px solid var(--border);border-radius:8px;" class="about-link-row">
+                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                      <input class="form-input about-link-icon" value="${link.icon || ''}" style="width:50px;text-align:center;" placeholder="图标">
+                      <input class="form-input about-link-text" value="${escapeHtml(link.text || '')}" style="flex:1;min-width:120px;" placeholder="显示文字">
+                      <input class="form-input about-link-url" value="${escapeHtml(link.url || '')}" style="flex:1.5;min-width:140px;" placeholder="链接">
+                      <button class="btn-sm btn-delete" onclick="this.closest('.about-link-row').remove()">删除</button>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                      <input class="form-input about-link-tag" value="${escapeHtml(link.tag || '')}" style="width:110px;" placeholder="英文标签">
+                      <input class="form-input about-link-hint" value="${escapeHtml(link.hint || '')}" style="flex:1;min-width:140px;" placeholder="底部小字">
+                    </div>
                   </div>
                 `).join('')}
               </div>
               <button class="btn-sm btn-edit" onclick="addAboutContactLink()" style="margin-top:0.5rem;">+ 添加联系方式</button>
+              <div style="font-size:0.75rem;color:var(--haze);margin-top:0.35rem;">英文标签 = 卡片顶部小字（如 SOCIAL / EMAIL）；底部小字 = 卡片下方说明（如 动态与公告）。留空则使用默认值。</div>
             </div>
           ` : `
             <div class="form-group">
@@ -5201,7 +5208,9 @@ async function saveSettings() {
     const icon = row.querySelector('.about-link-icon')?.value || '';
     const text = row.querySelector('.about-link-text')?.value || '';
     const url = row.querySelector('.about-link-url')?.value || '';
-    if (text) aboutContactLinks.push({ icon, text, url });
+    const tag = row.querySelector('.about-link-tag')?.value || '';
+    const hint = row.querySelector('.about-link-hint')?.value || '';
+    if (text) aboutContactLinks.push({ icon, text, url, tag, hint });
   });
   pages.about.contactLinks = aboutContactLinks;
 
@@ -5261,13 +5270,19 @@ function addSocialLink() {
 function addAboutContactLink() {
   const container = document.getElementById('aboutContactLinksContainer');
   const row = document.createElement('div');
-  row.style.cssText = 'display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;';
+  row.style.cssText = 'display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.65rem;padding:0.55rem 0.65rem;border:1px solid var(--border);border-radius:8px;';
   row.className = 'about-link-row';
   row.innerHTML = `
-    <input class="form-input about-link-icon" value="" style="width:50px;text-align:center;" placeholder="图标">
-    <input class="form-input about-link-text" value="" style="flex:1;" placeholder="显示文字">
-    <input class="form-input about-link-url" value="" style="flex:2;" placeholder="链接">
-    <button class="btn-sm btn-delete" onclick="this.parentElement.remove()">删除</button>
+    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+      <input class="form-input about-link-icon" value="" style="width:50px;text-align:center;" placeholder="图标">
+      <input class="form-input about-link-text" value="" style="flex:1;min-width:120px;" placeholder="显示文字">
+      <input class="form-input about-link-url" value="" style="flex:1.5;min-width:140px;" placeholder="链接">
+      <button class="btn-sm btn-delete" onclick="this.closest('.about-link-row').remove()">删除</button>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+      <input class="form-input about-link-tag" value="" style="width:110px;" placeholder="英文标签">
+      <input class="form-input about-link-hint" value="" style="flex:1;min-width:140px;" placeholder="底部小字">
+    </div>
   `;
   container.appendChild(row);
 }

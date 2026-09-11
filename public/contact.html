@@ -420,7 +420,7 @@
 
       <section class="about-letter" aria-label="留言表单">
         <div class="about-letter-head">
-          <h4>写一封信给我们</h4>
+          <h4>联系我们</h4>
           <p>咨询、建议都可以。带 * 为必填。</p>
         </div>
         <form id="contactForm">
@@ -500,19 +500,19 @@
       // Render contact links as channel cards
       if (ps.contactLinks && ps.contactLinks.length > 0) {
         const container = document.getElementById('contactLinksContainer');
+        const defaultTags = ['SOCIAL', 'EMAIL', 'WECHAT'];
+        const defaultHints = ['动态与公告', '合作与反馈', '日常沟通'];
         container.innerHTML = ps.contactLinks.map((link, i) => {
           let url = link.url || '#';
           if (url && url !== '#' && !url.startsWith('http') && !url.startsWith('mailto:') && !url.startsWith('#')) {
             url = 'https://' + url;
           }
-          const tags = ['SOCIAL', 'EMAIL', 'WECHAT'];
-          const hints = ['动态与公告', '合作与反馈', '日常沟通'];
-          const tag = tags[i] || 'LINK';
-          const hint = hints[i] || '打开链接';
+          const tag = escapeHtml(link.tag || defaultTags[i] || 'LINK');
+          const hint = escapeHtml(link.hint || defaultHints[i] || '');
           return `<a href="${url}" class="about-channel" target="_blank" rel="noopener noreferrer">
             <span class="tag">${tag}</span>
             <span class="label">${link.icon || ''} ${escapeHtml(link.text)}</span>
-            <span class="hint">${hint}</span>
+            ${hint ? `<span class="hint">${hint}</span>` : ''}
           </a>`;
         }).join('');
       }
