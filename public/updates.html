@@ -41,7 +41,6 @@
         <button type="button" class="pill" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
       </div>
       <div class="cl-toolbar-row">
-        <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
         <span class="spacer"></span>
         <select class="form-input" id="sortSelect">
           <option value="date-desc" selected data-i18n="common.dateDesc">发布日期 ↓ 新→旧</option>
@@ -73,7 +72,6 @@
     let circlesMap = {};
     let circlesData = [];
     let currentUpdateCategory = 'all';
-    let currentUpdateStatus = 'all';
     let currentFollowFilter = false;
 
     function toggleFollowFilter() {
@@ -104,19 +102,6 @@
           catContainer.querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
           btn.classList.add('on');
           currentUpdateCategory = btn.dataset.cat;
-          renderUpdates();
-        });
-      });
-
-      // Status pills
-      const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = `<button type="button" class="pill on" data-status="all">${t('common.allStatus')}</button>` +
-        status.map(c => `<button type="button" class="pill" data-status="${c.id}">${escapeHtml(tCat(c))}</button>`).join('');
-      statusContainer.querySelectorAll('.pill').forEach(btn => {
-        btn.addEventListener('click', () => {
-          statusContainer.querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
-          btn.classList.add('on');
-          currentUpdateStatus = btn.dataset.status;
           renderUpdates();
         });
       });
@@ -207,10 +192,6 @@
       // Category filter
       if (currentUpdateCategory !== 'all') {
         filtered = filtered.filter(u => u.category === currentUpdateCategory);
-      }
-      // Status filter
-      if (currentUpdateStatus !== 'all') {
-        filtered = filtered.filter(u => u.status === currentUpdateStatus);
       }
 
       // Follow filter
