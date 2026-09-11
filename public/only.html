@@ -115,6 +115,14 @@
       border-radius: 10px; padding: 8px 10px; margin-bottom: 10px;
       white-space: pre-wrap;
     }
+    .only-sec {
+      margin-top: 4px;
+    }
+    .only-sec + .only-sec { margin-top: 12px; }
+    .only-sec-label {
+      font-size: 11px; letter-spacing: .1em; color: var(--muted);
+      font-weight: 600; margin-bottom: 8px;
+    }
     .only-goods { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
     .only-g {
       border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper);
@@ -570,14 +578,18 @@
         const images = b.images || [];
         const open = window._onlyOpenBooths.has(b.id);
         const bannersHtml = images.length
-          ? `<div class="only-banners">${images.map((u, i) => `
+          ? `<div class="only-sec"><div class="only-sec-label">宣传图</div><div class="only-banners">${images.map((u, i) => `
               <button type="button" class="only-banner" data-booth="${esc(b.id)}" data-banner="${i}" aria-label="查看宣传图 ${i + 1}">
                 <img src="${esc(u)}" alt="" loading="lazy">
-              </button>`).join('')}</div>`
+              </button>`).join('')}</div></div>`
           : '';
-        const introHtml = b.description
-          ? `<div class="only-booth-intro">${esc(b.description)}</div>`
-          : '';
+        const introHtml = `
+          <div class="only-sec">
+            <div class="only-sec-label">摊位简介</div>
+            ${b.description
+              ? `<div class="only-booth-intro">${esc(b.description)}</div>`
+              : `<div style="font-size:12px;color:var(--muted);padding:0.35rem 0;">暂未填写简介</div>`}
+          </div>`;
         return `
           <div class="only-booth${open ? ' open' : ''}" id="only-booth-${esc(b.id)}">
             <div class="only-booth-head" data-booth-toggle="${esc(b.id)}" role="button" tabindex="0"
@@ -585,7 +597,7 @@
               <div class="only-avatar">${b.logo ? `<img src="${esc(b.logo)}" alt="">` : esc((b.code || ownerNames || '?').slice(0,1))}</div>
               <div class="info">
                 <h3>${esc(boothLabel(b))}</h3>
-                <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件关联周边${images.length ? ' · ' + images.length + ' 张宣传图' : ''}${tiers.length ? ' · 满赠' : ''}</div>
+                <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件关联周边${images.length ? ' · ' + images.length + ' 张宣传图' : ''}${tiers.length ? ' · 摊位活动' : ''}</div>
               </div>
               <div class="only-booth-bulk" title="本摊全部作品数量">
                 <button type="button" data-booth="${esc(b.id)}" data-bulk="-1" ${b.goods.length ? '' : 'disabled'}>全部 −1</button>
@@ -596,27 +608,30 @@
             <div class="only-booth-body">
               ${bannersHtml}
               ${introHtml}
-              <div class="only-goods">
-                ${b.goods.length ? b.goods.map(g => {
-                  const q = cart[g.id]?.qty || 0;
-                  const img = (g.images && g.images[0]) || '';
-                  return `<a class="only-g" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
-                    <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
-                    <div class="body">
-                      <div class="name">${esc(g.title)}</div>
-                      <div class="price">${esc(formatPriceLabel(g.price))}</div>
-                      <div class="only-qtyrow">
-                        <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
-                        <span class="q">${q}</span>
-                        <button type="button" data-add="${esc(g.id)}">+</button>
+              <div class="only-sec">
+                <div class="only-sec-label">周边</div>
+                <div class="only-goods">
+                  ${b.goods.length ? b.goods.map(g => {
+                    const q = cart[g.id]?.qty || 0;
+                    const img = (g.images && g.images[0]) || '';
+                    return `<a class="only-g" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
+                      <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
+                      <div class="body">
+                        <div class="name">${esc(g.title)}</div>
+                        <div class="price">${esc(formatPriceLabel(g.price))}</div>
+                        <div class="only-qtyrow">
+                          <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
+                          <span class="q">${q}</span>
+                          <button type="button" data-add="${esc(g.id)}">+</button>
+                        </div>
                       </div>
-                    </div>
-                  </a>`;
-                }).join('') : `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;grid-column:1/-1;">该摊位暂无关联本活动的周边</div>`}
+                    </a>`;
+                  }).join('') : `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;grid-column:1/-1;">该摊位暂无关联本活动的周边</div>`}
+                </div>
               </div>
-              ${tiers.length ? `<div class="only-promo-box" style="margin-top:10px;">${tiers.map(t => {
+              ${tiers.length ? `<div class="only-sec"><div class="only-sec-label">摊位活动</div><div class="only-promo-box">${tiers.map(t => {
                 return `满 <b>${money(t.minAmount || 0)}</b> 送「${esc(tierGiftLabel(t))}」`;
-              }).join('<br>')}</div>` : ''}
+              }).join('<br>')}</div></div>` : ''}
             </div>
           </div>
         `;
