@@ -1700,14 +1700,15 @@ app.put('/api/author/only-booths/:eventId/:boothId', authorAuthMiddleware, async
     }
     if (req.body.promoTiers !== undefined) booth.promoTiers = sanitizePromoTiers(req.body.promoTiers);
     if (req.body.goodsOrder !== undefined) booth.goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
-    // 摊主只能勾选自己的作品
+    // 摊主可管理本摊全部作品（含共同摊主），不限于自己的作品
     if (req.body.workIds !== undefined) {
-      const mine = new Set(
+      const ownerSet = new Set(booth.circleIds || []);
+      const allowed = new Set(
         readJSON('works.json')
-          .filter(w => (w.circles || []).includes(circleId))
+          .filter(w => (w.circles || []).some(cid => ownerSet.has(cid)))
           .map(w => w.id)
       );
-      booth.workIds = (sanitizeBoothWorkIds(req.body.workIds) || []).filter(id => mine.has(id));
+      booth.workIds = (sanitizeBoothWorkIds(req.body.workIds) || []).filter(id => allowed.has(id));
     }
   }
   // 条件领取：按摊位作品设置；非摊位管理员只影响自己提交的 key，避免覆盖其他摊主

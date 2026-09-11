@@ -2795,6 +2795,7 @@
 
     // ===== Author ONLY Booths =====
     let _onlyBoothData = [];
+    let _abGiftWorks = [];
 
     async function loadAuthorOnlyBooths() {
       const list = document.getElementById('onlyBoothsList');
@@ -2964,15 +2965,15 @@
       const pack = _onlyBoothData.find(p => p.event.id === eventId);
       if (!pack) return;
       const isEdit = !!booth;
-      const giftWorks = ownEventWorks(pack);
+      const manageWorks = boothManageableWorks(pack, booth, canFullEdit);
+      const giftWorks = manageWorks;
+      _abGiftWorks = manageWorks;
       const circles = pack.circles || [];
       const selectedOwners = new Set(booth?.circleIds || []);
       const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: '', giftWorkIds: [], text: '' }];
       const claimMap = (booth?.claimConditions && typeof booth.claimConditions === 'object' && !Array.isArray(booth.claimConditions)) ? booth.claimConditions : {};
-      // 活动管理员可设置本摊全部作品；普通摊主只设置自己的作品
-      const claimGoods = isEdit
-        ? authorBoothGoods(pack, booth).filter(w => canFullEdit || (w.circles || []).includes(activeCircleId()))
-        : [];
+      // 本摊全部作品（含共同摊主），摊主与活动管理员都可管理
+      const claimGoods = isEdit ? authorBoothGoods(pack, booth) : [];
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? (canFullEdit ? '编辑摊位' : '编辑我的摊位') : '新增摊位';
@@ -3020,9 +3021,7 @@
         <div class="form-group">
           <label>展示作品（可多选 · 不勾选则展示摊主全部关联作品）</label>
           ${(() => {
-            const pool = canFullEdit
-              ? (pack.works || [])
-              : ownEventWorks(pack);
+            const pool = manageWorks;
             const selected = new Set(Array.isArray(booth?.workIds) && booth.workIds.length ? booth.workIds : []);
             if (!pool.length) {
               return '<div style="font-size:0.75rem;color:var(--haze);">暂无可选作品（需先将作品关联到本活动）</div>';
@@ -3036,12 +3035,12 @@
                   </label>
                 `).join('')}
               </div>
-              <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">同一作者可在不同摊位勾选不同作品。</div>
+              <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">可管理本摊全部作品（含共同摊主）；同一作者可在不同摊位勾选不同作品。</div>
             `;
           })()}
         </div>
         <div class="form-group">
-          <label>满额赠品档（可多档 · 一档可多作品 · 仅可选我的周边）</label>
+          <label>满额赠品档（可多档 · 一档可多作品 · 可选本摊全部作品）</label>
           <div id="abTierList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
             ${tiers.map((t, i) => renderAuthorTierRow(t, giftWorks, i)).join('')}
           </div>
@@ -3081,6 +3080,15 @@
       return (pack?.works || []).filter(w => (w.circles || []).includes(me));
     }
 
+    // 可管理的作品池：活动管理员=本活动全部；摊主=本摊全部摊主作品（含别人）
+    function boothManageableWorks(pack, booth, canFullEdit) {
+      if (canFullEdit) return pack?.works || [];
+      if (!booth) return ownEventWorks(pack);
+      const owners = new Set(booth.circleIds || []);
+      if (!owners.size) owners.add(activeCircleId());
+      return (pack?.works || []).filter(w => (w.circles || []).some(cid => owners.has(cid)));
+    }
+
     function renderAuthorTierRow(t, works, i) {
       const selected = new Set(Array.isArray(t.giftWorkIds) && t.giftWorkIds.length ? t.giftWorkIds : (t.giftWorkId ? [t.giftWorkId] : []));
       return `<div class="ab-tier-row" data-i="${i}" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.55rem;display:flex;flex-direction:column;gap:0.35rem;">
@@ -3101,11 +3109,9 @@
     }
 
     function addAuthorTierRow(eventId) {
-      const pack = _onlyBoothData.find(p => p.event.id === eventId);
-      const works = ownEventWorks(pack);
       const list = document.getElementById('abTierList');
       if (!list) return;
-      list.insertAdjacentHTML('beforeend', renderAuthorTierRow({ minAmount: '', giftWorkIds: [], text: '' }, works, Date.now()));
+      list.insertAdjacentHTML('beforeend', renderAuthorTierRow({ minAmount: '', giftWorkIds: [], text: '' }, _abGiftWorks || [], Date.now()));
     }
 
     async function saveAuthorBooth(eventId, boothId, canFullEdit) {
