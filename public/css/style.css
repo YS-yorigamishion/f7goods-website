@@ -1106,8 +1106,6 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   font-family: 'Noto Serif SC', Georgia, serif;
   font-size: 1.15rem; color: var(--ink); font-weight: 700;
 }
-.cl-cat-grp-label { font-size: 0.72rem; color: var(--haze); }
-
 .cl-w-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -1221,7 +1219,7 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 .cl-w-more .prog { display: block; margin-top: 0.5rem; font-size: 0.72rem; color: var(--haze); }
 
 @media (max-width: 640px) {
-  /* 「我的」筛选在移动端占满一行，位于分类行下方 */
+  /* 「我的」筛选在移动端独占一行，排在排序/搜索之前 */
   .cl-toolbar-card #userFilters { flex: 1 1 100%; }
 }
 @media (max-width: 480px) {
@@ -1234,7 +1232,6 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   .cl-w-price { font-size: 0.9rem; }
   .cl-w-stats { gap: 0.35rem; font-size: 0.66rem; }
   .cl-w-wish { opacity: 1; transform: none; height: 24px; font-size: 0.62rem; }
-  .cl-cat-grp-label { display: none; }
 }
 
 /* ===== Update detail (article) ===== */

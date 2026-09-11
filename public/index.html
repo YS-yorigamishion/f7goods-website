@@ -124,8 +124,7 @@
           <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
         </div>
         <div class="cl-toolbar-row">
-          <div id="userFilters" style="display:none;flex-wrap:wrap;gap:0.4rem;align-items:center;">
-            <span class="cl-cat-grp-label" data-i18n="common.mine">我的</span>
+          <div id="userFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;">
             <button type="button" class="filter-btn" id="followFilterBtn" onclick="toggleFollowFilter()"><span data-i18n="common.follow">关注</span></button>
             <button type="button" class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')"><span data-i18n="common.like">喜爱</span></button>
             <button type="button" class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')"><span data-i18n="common.want">想要</span></button>
@@ -718,17 +717,6 @@
       renderWorks();
     }
 
-    function checkUserFilters() {
-      const liked = JSON.parse(localStorage.getItem('f7liked') || '[]');
-      const wanted = JSON.parse(localStorage.getItem('f7wanted') || '[]');
-      const followed = getFollowedCircles();
-      const hasDeadlines = allWorks.some(w => isDeadlineSoon(w.endDate));
-      const container = document.getElementById('userFilters');
-      if (container && (liked.length > 0 || wanted.length > 0 || followed.length > 0 || hasDeadlines)) {
-        container.style.display = 'flex';
-      }
-    }
-
     // 洗牌并写入 _randomRank，同一会话内筛选/分页保持该顺序
     function shuffleWorksForSession(list) {
       if (!Array.isArray(list)) return;
@@ -782,7 +770,6 @@
           setHomeView('catalog');
         }
         renderWorks();
-        checkUserFilters();
 
         // Render announcement button
         const annBtn = document.getElementById('announcementBtn');
