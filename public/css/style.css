@@ -560,7 +560,11 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   transition: var(--transition);
   min-width: 0;
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
+.cl-author-card:hover { text-decoration: none; }
+.cl-author-card * { text-decoration: none; }
 .cl-author-card:hover {
   border-color: #D4C8B8;
   transform: translateY(-2px);
@@ -586,6 +590,7 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   flex: 1;
   display: flex;
   flex-direction: column;
+  border-bottom: none;
 }
 .cl-author-avatar {
   width: 52px; height: 52px;
@@ -606,6 +611,9 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   line-height: 1.3;
   margin-bottom: 0.25rem;
   word-break: break-word;
+  border-bottom: none;
+  text-decoration: none;
+  padding-bottom: 0;
 }
 .cl-author-meta { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.4rem; }
 .cl-author-chip {
@@ -625,10 +633,13 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   overflow: hidden;
   flex: 1;
   min-height: 2.4em;
+  border-bottom: none;
+  text-decoration: none;
 }
 .cl-author-foot {
   display: flex; align-items: center; justify-content: space-between;
-  margin-top: 0.55rem;
+  margin-top: 0.55rem; padding-top: 0;
+  border-top: none;
   font-size: 0.72rem; color: var(--haze);
 }
 .cl-author-foot .go { color: var(--accent); font-weight: 600; font-size: 0.75rem; }
