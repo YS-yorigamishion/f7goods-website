@@ -170,17 +170,17 @@
               ${typeof renderShareButton === 'function' ? renderShareButton(circle.name, location.href) : ''}
             </div>
             <div class="cl-stats">
-              <div class="cl-stat"><b>${circleWorks.length}</b><span>${t('circles.worksCount') || '作品'}</span></div>
-              <div class="cl-stat accent"><b>${totalLikes}</b><span>${t('common.likes') || '喜爱'}</span></div>
-              <div class="cl-stat"><b>${totalWants}</b><span>${t('common.wants') || '想要'}</span></div>
-              <div class="cl-stat"><b>${follows}</b><span>${t('common.follow') || '关注'}</span></div>
+              <div class="cl-stat"><b>${circleWorks.length}</b><span>作品</span></div>
+              <div class="cl-stat accent"><b>${totalLikes}</b><span>喜爱</span></div>
+              <div class="cl-stat"><b>${totalWants}</b><span>想要</span></div>
+              <div class="cl-stat"><b>${follows}</b><span>关注</span></div>
             </div>
             ${circle.description ? `<p class="cl-lede">${nl2br(circle.description)}</p>` : ''}
           </section>
           <div class="detail-content">
             <div class="detail-main">
               ${gallery.length > 1 ? `
-                <h3 style="margin:0 0 0.75rem;font-size:1.05rem;">${t('circles.gallery')}</h3>
+                <h3 style="margin:0 0 0.75rem;font-size:1.05rem;">作者图</h3>
                 <div class="cl-gallery">
                   ${gallery.map((img, i) => `<button type="button" onclick="openLightbox(${JSON.stringify(gallery).replace(/"/g, '&quot;')}, ${i})" aria-label="${escapeHtml(circle.name)} ${i + 1}"><img src="${escapeHtml(img)}" alt="" loading="lazy"></button>`).join('')}
                 </div>
@@ -210,22 +210,6 @@
               })() : `<p style="color:var(--haze);">${t('common.noWorks')}</p>`}
             </div>
             <div class="detail-sidebar">
-              <div class="sidebar-card">
-                <h3>${t('circles.authorInfo')}</h3>
-                <div class="info-row">
-                  <span class="info-label">${t('circles.worksCount')}</span>
-                  <span class="info-value">${circleWorks.length}</span>
-                </div>
-                ${catLabel ? `
-                <div class="info-row">
-                  <span class="info-label">${t('works.category') || '分类'}</span>
-                  <span class="info-value">${escapeHtml(catLabel)}</span>
-                </div>` : ''}
-                <div class="info-row">
-                  <span class="info-label">${t('common.follow') || '关注'}</span>
-                  <span class="info-value">${follows}</span>
-                </div>
-              </div>
               ${relatedUpdates.length > 0 ? `
               <div class="sidebar-card">
                 <h3>${t('circles.relatedUpdates')}</h3>
@@ -243,7 +227,16 @@
                   <h3>${t('circles.contactInfo')}</h3>
                   ${Object.entries(circle.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
                     const isUrl = url.startsWith('http');
-                    const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
+                    const socialNameMap = {
+                      qq: 'QQ',
+                      qqGroup: 'QQ 群',
+                      wechat: '微信',
+                      weibo: '微博',
+                      bilibili: 'B站',
+                      website: '官网',
+                      custom: '链接'
+                    };
+                    const defaultLabel = socialNameMap[key] || key;
                     const label = key === 'website' ? (circle.socialLinks.websiteLabel || defaultLabel) : (circle.socialLinks.contactLabel || defaultLabel);
                     return isUrl
                       ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
