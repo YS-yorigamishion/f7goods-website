@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>作者详情 — 重设计预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --accent-alt: #2C3340;
+      --muted: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(34,32,30,.04);
+      --shadow-md: 0 8px 24px rgba(34,32,30,.08);
+      --max: 1120px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.75;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .preview-bar {
+      height: 32px;
+      background: var(--accent-alt);
+      color: #F6F2EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      font-size: 0.78rem;
+      padding: 0 0.5rem;
+    }
+    .preview-bar strong { color: #fff; }
+
+    .wrap {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 1rem 1.25rem 3rem;
+    }
+
+    .crumb {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+    .crumb a:hover { color: var(--accent); }
+
+    /* ===== Hero: cover + overlapping identity card ===== */
+    .hero-cover {
+      position: relative;
+      height: clamp(140px, 22vw, 220px);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, #EDE6DA, #D5CBBB);
+    }
+    .hero-cover img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .hero-cover::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 30%, rgba(34,30,28,.28));
+    }
+    .hero-cover .brand-line {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: var(--accent); z-index: 2;
+    }
+
+    .identity {
+      position: relative;
+      margin: -52px 1rem 0;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.25rem 1rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1rem 1.1rem;
+      align-items: start;
+      box-shadow: var(--shadow-sm);
+    }
+    .avatar {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      border: 3px solid var(--card);
+      background: linear-gradient(145deg,#EDE6DA,#D9D0C2);
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.8rem; font-weight: 700;
+      margin-top: -28px;
+      box-shadow: var(--shadow-sm);
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .identity h1 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: clamp(1.35rem, 2.8vw, 1.7rem);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+      margin-bottom: 0.35rem;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      font-size: 0.72rem; font-weight: 500;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--muted);
+    }
+    .chip.cat { color: var(--ink); border-color: #D4C8B8; }
+    .identity-actions {
+      display: flex; flex-direction: column; gap: 0.4rem; align-items: stretch;
+      min-width: 110px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
+      height: 34px; padding: 0 0.95rem;
+      border-radius: 999px;
+      font-size: 0.82rem; font-weight: 600;
+      border: 1px solid var(--line);
+      background: var(--card);
+      transition: .18s ease;
+    }
+    .btn:hover { border-color: #D4C8B8; background: var(--paper); }
+    .btn.primary {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .btn.primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+    .btn.primary.on { background: var(--success); border-color: var(--success); }
+    .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+      padding-top: 0.85rem;
+      border-top: 1px dashed var(--line);
+      grid-column: 1 / -1;
+    }
+    .stat {
+      text-align: center;
+      padding: 0.15rem 0.25rem;
+    }
+    .stat b {
+      display: block;
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.15rem; font-weight: 700;
+      line-height: 1.2;
+      color: var(--ink);
+    }
+    .stat.accent b { color: var(--accent); }
+    .stat span { font-size: 0.7rem; color: var(--muted); }
+
+    .lede {
+      margin: 1rem 0 0;
+      font-size: 0.92rem;
+      color: #4A453F;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      grid-column: 1 / -1;
+      padding-top: 0.15rem;
+    }
+
+    /* Content grid */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 1.1rem;
+      margin-top: 1.25rem;
+      align-items: start;
+    }
+    .main, .side { min-width: 0; }
+    .side { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+    }
+    .panel h2 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.02rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex; align-items: baseline; gap: 0.4rem;
+    }
+    .panel h2 small {
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    /* Gallery strip */
+    .gallery {
+      display: flex; gap: 0.55rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 2px;
+      margin-bottom: 1rem;
+    }
+    .gallery::-webkit-scrollbar { height: 4px; }
+    .gallery::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+    .gallery button {
+      flex: 0 0 auto;
+      width: min(180px, 58%);
+      aspect-ratio: 4/3;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      overflow: hidden;
+      background: linear-gradient(145deg,#EDE6DA,#D9CFC0);
+      scroll-snap-align: start;
+      cursor: zoom-in;
+      padding: 0;
+    }
+    .gallery img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Works toolbar */
+    .works-bar {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
+      margin-bottom: 0.85rem;
+    }
+    .pill {
+      height: 30px; padding: 0 12px;
+      border: 1px solid var(--line); border-radius: 999px;
+      background: var(--card); color: var(--muted);
+      font-size: 0.78rem; font-weight: 500;
+    }
+    .pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .works-bar select,
+    .works-bar input[type="search"] {
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--paper);
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0 0.75rem;
+      color: var(--ink);
+    }
+    .works-bar input[type="search"] { min-width: 150px; flex: 1; max-width: 220px; margin-left: auto; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.85rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: .18s ease;
+      display: flex; flex-direction: column;
+    }
+    .card:hover {
+      border-color: #D4C8B8;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .card .img {
+      height: 150px;
+      background: linear-gradient(145deg,#EDE6DA,#D9CFC0);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 0.75rem;
+      overflow: hidden;
+    }
+    .card .img img { width: 100%; height: 100%; object-fit: cover; }
+    .card .body { padding: 0.7rem 0.8rem 0.55rem; flex: 1; }
+    .tag {
+      display: inline-block;
+      font-size: 0.68rem; font-weight: 600;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      margin-bottom: 0.3rem;
+    }
+    .tag.on { background: rgba(217,79,92,.1); color: var(--accent); }
+    .tag.pre { background: rgba(196,138,42,.12); color: var(--warning); }
+    .tag.off { background: rgba(34,32,30,.08); color: var(--muted); }
+    .tag.soon { background: rgba(34,32,30,.08); color: var(--ink); }
+    .card h3 {
+      font-size: 0.9rem; font-weight: 600; line-height: 1.35;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card .foot {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.45rem 0.8rem 0.7rem;
+      font-size: 0.78rem;
+    }
+    .card .price { color: var(--accent); font-weight: 700; }
+    .card .meta { color: var(--muted); font-size: 0.72rem; }
+
+    /* Sidebar rows */
+    .row {
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .row:last-child { border-bottom: none; padding-bottom: 0; }
+    .row:first-child { padding-top: 0; }
+    .thumb {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(145deg,#EDE6DA,#D9CFC0);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem;
+    }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .row .t { flex: 1; min-width: 0; }
+    .row .t b {
+      display: block; font-size: 0.86rem; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .row .t small { font-size: 0.72rem; color: var(--muted); }
+    .row a:hover b { color: var(--accent); }
+
+    .kv {
+      display: flex; justify-content: space-between; gap: 0.75rem;
+      font-size: 0.82rem; padding: 0.28rem 0;
+    }
+    .kv .k { color: var(--muted); }
+
+    .contact-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .contact-list a, .contact-list span {
+      display: inline-flex; align-items: center;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--ink);
+      transition: .15s ease;
+    }
+    .contact-list a:hover {
+      border-color: rgba(217,79,92,.35);
+      color: var(--accent);
+      background: rgba(217,79,92,.06);
+    }
+
+    .empty {
+      color: var(--muted); font-size: 0.82rem; padding: 0.5rem 0;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+      .identity {
+        grid-template-columns: auto 1fr;
+        margin: -40px 0.5rem 0;
+      }
+      .identity-actions {
+        grid-column: 1 / -1;
+        flex-direction: row;
+      }
+      .identity-actions .btn { flex: 1; }
+      .stats { grid-template-columns: repeat(4, 1fr); }
+      .avatar { width: 72px; height: 72px; font-size: 1.4rem; margin-top: -20px; }
+    }
+    @media (max-width: 640px) {
+      .wrap { padding: 0.75rem 0.75rem 2rem; }
+      .side { grid-template-columns: 1fr; }
+      .hero-cover { height: 120px; border-radius: 12px; }
+      .identity {
+        margin: -36px 0 0;
+        padding: 1rem 0.9rem 0.85rem;
+        gap: 0.65rem 0.75rem;
+      }
+      .avatar { width: 64px; height: 64px; font-size: 1.25rem; margin-top: -18px; border-width: 2px; }
+      .identity h1 { font-size: 1.2rem; }
+      .lede { font-size: 0.88rem; }
+      .stats { gap: 0.2rem; padding-top: 0.7rem; }
+      .stat b { font-size: 0.98rem; }
+      .stat span { font-size: 0.65rem; }
+      .panel { padding: 0.85rem 0.85rem; }
+      .panel h2 { font-size: 0.95rem; }
+      .gallery button { width: 72%; }
+      .works-bar { gap: 0.35rem; }
+      .works-bar select,
+      .works-bar input[type="search"] { width: 100%; max-width: none; margin-left: 0; }
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 0.55rem; }
+      .card .img { height: 108px; }
+      .card h3 { font-size: 0.82rem; }
+      .card .foot { font-size: 0.72rem; padding: 0.35rem 0.65rem 0.55rem; }
+      .card .body { padding: 0.55rem 0.65rem 0.35rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span><strong>预览</strong> · 作者详情页重设计（封面 + 叠置身份卡 + 数据条 + 侧栏关联）</span>
+  </div>
+
+  <div class="wrap">
+    <div class="crumb">
+      <a href="#">作者</a><span>›</span><span>春日手作社</span>
+    </div>
+
+    <div class="hero-cover" id="heroCover">
+      <div class="brand-line"></div>
+      <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-size:0.85rem;">封面 / 作者图</div>
+    </div>
+
+    <section class="identity">
+      <div class="avatar" id="avatar">春</div>
+      <div>
+        <h1>春日手作社</h1>
+        <div class="chips">
+          <span class="chip cat">同人周边</span>
+          <span class="chip">12 件作品</span>
+        </div>
+      </div>
+      <div class="identity-actions">
+        <button type="button" class="btn primary" id="followBtn" onclick="toggleFollow()">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          关注 <span id="followN">128</span>
+        </button>
+        <button type="button" class="btn" onclick="alert('预览：分享')">
+          <svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v12M8 7l4-4 4 4"/></svg>
+          分享
+        </button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b>12</b><span>作品</span></div>
+        <div class="stat accent"><b>2,461</b><span>喜爱</span></div>
+        <div class="stat"><b>1,083</b><span>想要</span></div>
+        <div class="stat"><b id="followStat">128</b><span>关注</span></div>
+      </div>
+
+      <p class="lede">专注永远的7日之都同人周边，徽章 / 亚克力 / 纸品。
+摊位常见于 ONLY 专场，欢迎来玩。</p>
+    </section>
+
+    <div class="layout">
+      <div class="main">
+        <div class="panel">
+          <h2>作者图 <small>3 张</small></h2>
+          <div class="gallery" id="gallery">
+            <button type="button" onclick="alert('预览：灯箱')"><span style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-size:12px;background:linear-gradient(145deg,hsl(20 30% 88%),hsl(20 22% 78%))">图 1</span></button>
+            <button type="button" onclick="alert('预览：灯箱')"><span style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-size:12px;background:linear-gradient(145deg,hsl(200 28% 88%),hsl(200 22% 76%))">图 2</span></button>
+            <button type="button" onclick="alert('预览：灯箱')"><span style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-size:12px;background:linear-gradient(145deg,hsl(320 28% 90%),hsl(320 20% 80%))">图 3</span></button>
+          </div>
+
+          <h2>作品 <small id="worksCount">(12)</small></h2>
+          <div class="works-bar" id="worksBar">
+            <button type="button" class="pill on" data-cat="all" onclick="setCat(this,'all')">全部</button>
+            <button type="button" class="pill" data-cat="badge" onclick="setCat(this,'badge')">徽章</button>
+            <button type="button" class="pill" data-cat="acrylic" onclick="setCat(this,'acrylic')">亚克力</button>
+            <button type="button" class="pill" data-cat="paper" onclick="setCat(this,'paper')">纸品</button>
+            <select id="sortSel" onchange="renderWorks()">
+              <option value="default">默认排序</option>
+              <option value="date-desc">发售日期 ↓</option>
+              <option value="likes-desc">喜爱数 ↓</option>
+              <option value="wants-desc">想要数 ↓</option>
+            </select>
+            <input type="search" id="searchIn" placeholder="搜索作品…" oninput="renderWorks()">
+          </div>
+          <div class="grid" id="worksGrid"></div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <h2>作者信息</h2>
+          <div class="kv"><span class="k">作品</span><span>12</span></div>
+          <div class="kv"><span class="k">分类</span><span>同人周边</span></div>
+          <div class="kv"><span class="k">关注</span><span id="followKv">128</span></div>
+        </div>
+
+        <div class="panel">
+          <h2>最新动态</h2>
+          <a class="row" href="#">
+            <div class="t"><b>春日徽章开启预售</b><small>2026-03-01</small></div>
+          </a>
+          <a class="row" href="#">
+            <div class="t"><b>ONLY 摊位位置公布</b><small>2026-02-18</small></div>
+          </a>
+        </div>
+
+        <div class="panel">
+          <h2>联系方式</h2>
+          <div class="contact-list">
+            <a href="#">QQ 群</a>
+            <a href="#">访问官网</a>
+            <span>B站</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>相关活动</h2>
+          <a class="row" href="#">
+            <div class="thumb">A</div>
+            <div class="t"><b>2026 春季 ONLY</b><small>2026-04-12 · 上海</small></div>
+          </a>
+          <a class="row" href="#">
+            <div class="thumb">B</div>
+            <div class="t"><b>夏日祭同人祭</b><small>2026-07-20 · 广州</small></div>
+          </a>
+        </div>
+
+        <div class="panel">
+          <h2>相关企划</h2>
+          <a class="row" href="#">
+            <div class="thumb">P</div>
+            <div class="t"><b>七日联名企划</b><small>进行中</small></div>
+          </a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const WORKS = [
+      { id: 1, title: '春日限定徽章套装', cat: 'badge', status: 'on', price: '¥25', likes: 186, wants: 92 },
+      { id: 2, title: '神使亚克力立牌', cat: 'acrylic', status: 'pre', price: '¥68', likes: 241, wants: 173 },
+      { id: 3, title: '七日明信片组', cat: 'paper', status: 'on', price: '¥18', likes: 97, wants: 41 },
+      { id: 4, title: '中央庭挂件', cat: 'acrylic', status: 'off', price: '¥32', likes: 154, wants: 88 },
+      { id: 5, title: '角色贴纸包', cat: 'paper', status: 'on', price: '¥12', likes: 210, wants: 95 },
+      { id: 6, title: '夜色徽章', cat: 'badge', status: 'soon', price: '¥22', likes: 88, wants: 37 },
+      { id: 7, title: '周年纪念册', cat: 'paper', status: 'pre', price: '¥98', likes: 312, wants: 201 },
+      { id: 8, title: '城市印象帆布袋', cat: 'fabric', status: 'on', price: '¥78', likes: 63, wants: 120 }
+    ];
+    const ST = { on: '发售中', pre: '预约中', off: '已售罄', soon: '即将上架' };
+    const STC = { on: 'on', pre: 'pre', off: 'off', soon: 'soon' };
+
+    let curCat = 'all';
+    let following = false;
+    let followN = 128;
+
+    function setCat(btn, v) {
+      curCat = v;
+      btn.parentElement.querySelectorAll('.pill[data-cat]').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      renderWorks();
+    }
+
+    function toggleFollow() {
+      following = !following;
+      followN += following ? 1 : -1;
+      const btn = document.getElementById('followBtn');
+      btn.classList.toggle('on', following);
+      btn.innerHTML = following
+        ? '已关注 <span id="followN">' + followN + '</span>'
+        : '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> 关注 <span id="followN">' + followN + '</span>';
+      document.getElementById('followStat').textContent = followN;
+      document.getElementById('followKv').textContent = followN;
+    }
+
+    function renderWorks() {
+      const q = (document.getElementById('searchIn').value || '').trim().toLowerCase();
+      const sort = document.getElementById('sortSel').value;
+      let list = WORKS.filter(w => curCat === 'all' || w.cat === curCat);
+      if (q) list = list.filter(w => w.title.toLowerCase().includes(q));
+      if (sort === 'date-desc') list = list.slice().sort((a, b) => b.id - a.id);
+      if (sort === 'likes-desc') list = list.slice().sort((a, b) => b.likes - a.likes);
+      if (sort === 'wants-desc') list = list.slice().sort((a, b) => b.wants - a.wants);
+      document.getElementById('worksCount').textContent = '(' + list.length + ')';
+      const grid = document.getElementById('worksGrid');
+      if (!list.length) {
+        grid.innerHTML = '<div class="empty" style="grid-column:1/-1">没有匹配的作品</div>';
+        return;
+      }
+      grid.innerHTML = list.map(w => `
+        <a class="card" href="#" onclick="event.preventDefault()">
+          <div class="img">◻</div>
+          <div class="body">
+            <span class="tag ${STC[w.status]}">${ST[w.status]}</span>
+            <h3>${w.title}</h3>
+          </div>
+          <div class="foot">
+            <span class="price">${w.price}</span>
+            <span class="meta">♥ ${w.likes} · ★ ${w.wants}</span>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    renderWorks();
+  </script>
+</body>
+</html>

@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260911d">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -136,36 +136,53 @@
 
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('circleDetail');
+        const gallery = Array.isArray(circle.images) ? circle.images.filter(Boolean) : [];
+        const cover = gallery[0] || '';
+        const totalLikes = circleWorks.reduce((s, w) => s + (w.likes || 0), 0);
+        const totalWants = circleWorks.reduce((s, w) => s + (w.wants || 0), 0);
+        const follows = circle.follows || 0;
+        const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || circle.category) : '';
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/circles.html">${t('nav.circles')}</a>
             <span>›</span>
             <span>${escapeHtml(circle.name)}</span>
           </div>
-          <div class="detail-header">
-            <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1rem;">
+          <div class="cl-hero ${cover ? 'has-cover' : ''}">
+            <div class="cl-hero-line"></div>
+            ${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(circle.name)}" loading="eager">` : ''}
+          </div>
+          <section class="cl-identity">
+            <div class="cl-avatar">
               ${circle.logo
-                ? `<div style="width:70px;height:70px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${circle.logo}" alt="${escapeHtml(circle.name)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                : `<div class="circle-avatar" style="width:70px;height:70px;font-size:1.5rem;flex-shrink:0;">${escapeHtml(circle.name.charAt(0))}</div>`}
-              <div style="flex:1;">
-                <h1 style="margin-bottom:0.25rem;">${escapeHtml(circle.name)}</h1>
-                ${circle.category ? `<span class="card-tag" style="font-size:0.8rem;padding:0.2rem 0.6rem;">${CIRCLE_CATEGORIES[circle.category] || circle.category}</span>` : ''}
-                <div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;">
-                  ${typeof renderFollowButton === 'function' ? renderFollowButton(circle.id, circle.follows || 0) : ''}
-                  ${typeof renderShareButton === 'function' ? renderShareButton(circle.name, location.href) : ''}
-                </div>
+                ? `<img src="${escapeHtml(circle.logo)}" alt="${escapeHtml(circle.name)}">`
+                : escapeHtml(circle.name.charAt(0))}
+            </div>
+            <div>
+              <h1>${escapeHtml(circle.name)}</h1>
+              <div class="cl-chips">
+                ${catLabel ? `<span class="cl-chip cat">${escapeHtml(catLabel)}</span>` : ''}
+                <span class="cl-chip">${circleWorks.length} 件作品</span>
               </div>
             </div>
-          </div>
+            <div class="cl-actions">
+              ${typeof renderFollowButton === 'function' ? renderFollowButton(circle.id, follows) : ''}
+              ${typeof renderShareButton === 'function' ? renderShareButton(circle.name, location.href) : ''}
+            </div>
+            <div class="cl-stats">
+              <div class="cl-stat"><b>${circleWorks.length}</b><span>${t('circles.worksCount') || '作品'}</span></div>
+              <div class="cl-stat accent"><b>${totalLikes}</b><span>${t('common.likes') || '喜爱'}</span></div>
+              <div class="cl-stat"><b>${totalWants}</b><span>${t('common.wants') || '想要'}</span></div>
+              <div class="cl-stat"><b>${follows}</b><span>${t('common.follow') || '关注'}</span></div>
+            </div>
+            ${circle.description ? `<p class="cl-lede">${nl2br(circle.description)}</p>` : ''}
+          </section>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('circles.description')}</h3>
-              <p style="line-height:1.8;color:var(--ink);">${nl2br(circle.description)}</p>
-
-              ${circle.images && circle.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('circles.gallery')}</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
-                  ${circle.images.map((img, i) => `<img src="${img}" alt="${escapeHtml(circle.name)}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(circle.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
+              ${gallery.length > 1 ? `
+                <h3 style="margin:0 0 0.75rem;font-size:1.05rem;">${t('circles.gallery')}</h3>
+                <div class="cl-gallery">
+                  ${gallery.map((img, i) => `<button type="button" onclick="openLightbox(${JSON.stringify(gallery).replace(/"/g, '&quot;')}, ${i})" aria-label="${escapeHtml(circle.name)} ${i + 1}"><img src="${escapeHtml(img)}" alt="" loading="lazy"></button>`).join('')}
                 </div>
               ` : ''}
 
@@ -173,7 +190,7 @@
                 const usedCats = [...new Set(circleWorks.map(w => w.category).filter(Boolean))];
                 const catBtns = CATEGORIES_ORDERED.filter(c => usedCats.includes(c.id));
                 return `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('circles.worksList')} <span id="circleWorksCount">(${circleWorks.length})</span></h3>
+                <h3 style="margin:0 0 0.85rem;font-size:1.05rem;">${t('circles.worksList')} <span id="circleWorksCount" style="font-size:0.78rem;color:var(--muted);font-weight:500;">(${circleWorks.length})</span></h3>
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
                   <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${t('common.all')}</button>
                   ${catBtns.map(c => `<button class="filter-btn" data-cat="${c.id}" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${tCat(c)}</button>`).join('')}
@@ -199,7 +216,45 @@
                   <span class="info-label">${t('circles.worksCount')}</span>
                   <span class="info-value">${circleWorks.length}</span>
                 </div>
+                ${catLabel ? `
+                <div class="info-row">
+                  <span class="info-label">${t('works.category') || '分类'}</span>
+                  <span class="info-value">${escapeHtml(catLabel)}</span>
+                </div>` : ''}
+                <div class="info-row">
+                  <span class="info-label">${t('common.follow') || '关注'}</span>
+                  <span class="info-value">${follows}</span>
+                </div>
               </div>
+              ${relatedUpdates.length > 0 ? `
+              <div class="sidebar-card">
+                <h3>${t('circles.relatedUpdates')}</h3>
+                ${relatedUpdates.map(u => `
+                  <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
+                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
+                    <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(u.title)}</div>
+                    <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(u.publishDate)}</div>
+                  </a>
+                `).join('')}
+              </div>
+              ` : ''}
+              ${circle.socialLinks && Object.keys(circle.socialLinks).filter(k => circle.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
+                <div class="sidebar-card">
+                  <h3>${t('circles.contactInfo')}</h3>
+                  ${Object.entries(circle.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
+                    const isUrl = url.startsWith('http');
+                    const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
+                    const label = key === 'website' ? (circle.socialLinks.websiteLabel || defaultLabel) : (circle.socialLinks.contactLabel || defaultLabel);
+                    return isUrl
+                      ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
+                           onmouseover="this.style.background='rgba(233,69,96,0.12)'" onmouseout="this.style.background='rgba(233,69,96,0.06)'">${escapeHtml(label)}</a>`
+                      : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;">
+                           <span style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(15,52,96,0.06);color:var(--accent-alt);border-radius:100px;font-weight:500;">${escapeHtml(label)}</span>
+                           <span style="color:var(--accent);font-weight:500;">${escapeHtml(url)}</span>
+                         </div>`;
+                  }).join('')}
+                </div>
+              ` : ''}
               ${relatedEvents.length > 0 ? `
               <div class="sidebar-card">
                 <h3>${t('circles.relatedEvents')}</h3>
@@ -234,35 +289,6 @@
                   </a>
                 `).join('')}
               </div>
-              ` : ''}
-              ${relatedUpdates.length > 0 ? `
-              <div class="sidebar-card">
-                <h3>${t('circles.relatedUpdates')}</h3>
-                ${relatedUpdates.map(u => `
-                  <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
-                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    <div style="font-weight:600;font-size:0.9rem;">📰 ${escapeHtml(u.title)}</div>
-                    <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(u.publishDate)}</div>
-                  </a>
-                `).join('')}
-              </div>
-              ` : ''}
-              ${circle.socialLinks && Object.keys(circle.socialLinks).filter(k => circle.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
-                <div class="sidebar-card">
-                  <h3>${t('circles.contactInfo')}</h3>
-                  ${Object.entries(circle.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
-                    const isUrl = url.startsWith('http');
-                    const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
-                    const label = key === 'website' ? (circle.socialLinks.websiteLabel || defaultLabel) : (circle.socialLinks.contactLabel || defaultLabel);
-                    return isUrl
-                      ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
-                           onmouseover="this.style.background='rgba(233,69,96,0.12)'" onmouseout="this.style.background='rgba(233,69,96,0.06)'">${escapeHtml(label)}</a>`
-                      : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;">
-                           <span style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(15,52,96,0.06);color:var(--accent-alt);border-radius:100px;font-weight:500;">${escapeHtml(label)}</span>
-                           <span style="color:var(--accent);font-weight:500;">${escapeHtml(url)}</span>
-                         </div>`;
-                  }).join('')}
-                </div>
               ` : ''}
             </div>
           </div>
