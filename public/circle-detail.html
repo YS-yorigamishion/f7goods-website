@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 作者详情</title>
-  <meta name="description" content="查看同人作者详情，包括作品列表、活动、联系方式等。">
+  <title>f7goods �?作者详�?/title>
+  <meta name="description" content="查看同人作者详情，包括作品列表、活动、联系方式等�?>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.svg">
@@ -46,7 +46,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260911f"></script>
+  <script src="/js/main.js?v=20260912a"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -79,7 +79,7 @@
       } else if (sortVal === 'wants-asc') {
         filtered.sort((a, b) => (a.wants || 0) - (b.wants || 0));
       } else {
-        // 最新上传（默认）
+        // 最新上传（默认�?
         filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       }
 
@@ -133,7 +133,7 @@
         const relatedProjects = (allProjects || []).filter(p => (p.circles || []).includes(circle.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedCircles || []).includes(circle.id));
 
-        document.title = `${circle.name} — f7goods`;
+        document.title = `${circle.name} �?f7goods`;
         document.querySelector('meta[property="og:title"]').content = circle.name;
         document.querySelector('meta[property="og:description"]').content = (circle.description || '').substring(0, 160);
         if (circle.cardCover || circle.logo) document.querySelector('meta[property="og:image"]').content = circle.cardCover || circle.logo;
@@ -151,7 +151,7 @@
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/circles.html">${t('nav.circles')}</a>
-            <span>›</span>
+            <span>�?/span>
             <span>${escapeHtml(circle.name)}</span>
           </div>
           <div class="cl-hero ${cover ? 'has-cover' : ''}${coverIsAvatar ? ' is-avatar' : ''}">
@@ -168,7 +168,7 @@
               <h1>${escapeHtml(circle.name)}</h1>
               <div class="cl-chips">
                 ${catLabel ? `<span class="cl-chip cat">${escapeHtml(catLabel)}</span>` : ''}
-                <span class="cl-chip">${circleWorks.length} 件作品</span>
+                <span class="cl-chip">${circleWorks.length} 件作�?/span>
               </div>
             </div>
             <div class="cl-actions">
@@ -201,7 +201,7 @@
                   <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${t('common.all')}</button>
                   ${catBtns.map(c => `<button class="filter-btn" data-cat="${c.id}" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${tCat(c)}</button>`).join('')}
                   <select id="circleSortSelect" class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="renderCircleWorks();">
-                    <option value="default" selected>最新上传</option>
+                    <option value="default" selected>最新上�?/option>
                     <option value="date-asc" data-i18n="common.sortDateAsc">${t('common.sortDateAsc')}</option>
                     <option value="date-desc" data-i18n="common.sortDateDesc">${t('common.sortDateDesc')}</option>
                     <option value="likes-desc" data-i18n="common.sortLikesDesc">${t('common.sortLikesDesc')}</option>
@@ -235,10 +235,10 @@
                     const isUrl = url.startsWith('http');
                     const socialNameMap = {
                       qq: 'QQ',
-                      qqGroup: 'QQ 群',
+                      qqGroup: 'QQ �?,
                       wechat: '微信',
                       weibo: '微博',
-                      bilibili: 'B站',
+                      bilibili: 'B�?,
                       website: '官网',
                       custom: '链接'
                     };

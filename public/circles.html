@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 同人作者</title>
-  <meta name="description" content="发现优秀的同人创作者与作者，支持独立创作。浏览作者的作品、活动和联系方式。">
-  <meta property="og:title" content="f7goods — 同人作者">
-  <meta property="og:description" content="发现优秀的同人创作者与作者，支持独立创作。">
+  <title>f7goods �?同人作�?/title>
+  <meta name="description" content="发现优秀的同人创作者与作者，支持独立创作。浏览作者的作品、活动和联系方式�?>
+  <meta property="og:title" content="f7goods �?同人作�?>
+  <meta property="og:description" content="发现优秀的同人创作者与作者，支持独立创作�?>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.svg">
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911h">
+  <link rel="stylesheet" href="/css/style.css?v=20260912a">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -22,14 +22,14 @@
   <section class="hero cl-list-hero">
     <div class="cl-list-mast">
       <div>
-        <h1 id="heroTitle" class="settings-pending" data-i18n="circles.heroTitle">同人作者</h1>
+        <h1 id="heroTitle" class="settings-pending" data-i18n="circles.heroTitle">同人作�?/h1>
         <p id="heroSubtitle" class="settings-pending" data-i18n="circles.heroSubtitle">发现优秀的同人创作者与作者，支持独立创作</p>
       </div>
-      <div class="cl-list-count">共 <b id="circleTotalCount">0</b> 位入驻作者</div>
+      <div class="cl-list-count">�?<b id="circleTotalCount">0</b> 位入驻作�?/div>
     </div>
     <div class="cl-list-sub">
-      <strong id="pageTitle" class="settings-pending" data-i18n="circles.listTitle">入驻作者</strong>
-      <span id="pageSubtitle" class="settings-pending" data-i18n="circles.subtitle">在 f7goods 展示作品的同人作者</span>
+      <strong id="pageTitle" class="settings-pending" data-i18n="circles.listTitle">入驻作�?/strong>
+      <span id="pageSubtitle" class="settings-pending" data-i18n="circles.subtitle">�?f7goods 展示作品的同人作�?/span>
     </div>
   </section>
 
@@ -37,15 +37,13 @@
     <div class="cl-toolbar-card">
       <div class="cl-toolbar-row" id="categoryFilters"></div>
       <div class="cl-toolbar-row">
-        <div id="circleUserFilters" style="display:none;">
-          <button class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">关注</button>
-        </div>
+        <button type="button" class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">关注</button>
         <select class="form-input" id="sortSelect">
           <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
           <option value="order" data-i18n="common.sortDefault">默认排序</option>
           <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
         </select>
-        <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+        <input type="text" class="search-input" placeholder="搜索作�?.." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
         <span class="cl-show-count">显示 <b id="circleShowCount">0</b></span>
       </div>
     </div>
@@ -66,7 +64,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260911f"></script>
+  <script src="/js/main.js?v=20260912a"></script>
   <script>
     initPage('circles');
 
@@ -115,14 +113,6 @@
         btn.classList.toggle('active', btn.dataset.circleFilter === currentCircleFilter);
       });
       renderCircles();
-    }
-
-    function checkCircleUserFilters() {
-      const followed = getFollowedIds();
-      const container = document.getElementById('circleUserFilters');
-      if (container && followed.length > 0) {
-        container.style.display = 'flex';
-      }
     }
 
     async function loadCircles() {
@@ -237,12 +227,12 @@
             <div class="cl-author-name">${escapeHtml(circle.name)}</div>
             <div class="cl-author-meta">
               ${catLabel ? `<span class="cl-author-chip cat">${escapeHtml(catLabel)}</span>` : ''}
-              <span class="cl-author-chip">${workCount} 件作品</span>
+              <span class="cl-author-chip">${workCount} 件作�?/span>
             </div>
             <div class="cl-author-desc">${escapeHtml(circle.description || '')}</div>
             <div class="cl-author-foot">
-              <span>${isFollowed ? '已关注' : '作者'}</span>
-              <span class="go">查看 →</span>
+              <span>${isFollowed ? '已关�? : '作�?}</span>
+              <span class="go">查看 �?/span>
             </div>
           </div>
         </a>
@@ -254,7 +244,6 @@
     document.getElementById('sortSelect').addEventListener('change', renderCircles);
 
     loadCircles();
-    checkCircleUserFilters();
 
     PullToRefresh.init({
       onRefresh: async () => {

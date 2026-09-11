@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 同人动态</title>
-  <meta name="description" content="了解同人圈的最新动态和重要更新。查看作者发布的新作品、活动信息和企划进展。">
-  <meta property="og:title" content="f7goods — 同人动态">
-  <meta property="og:description" content="了解同人圈的最新动态和重要更新。">
+  <title>f7goods �?同人动�?/title>
+  <meta name="description" content="了解同人圈的最新动态和重要更新。查看作者发布的新作品、活动信息和企划进展�?>
+  <meta property="og:title" content="f7goods �?同人动�?>
+  <meta property="og:description" content="了解同人圈的最新动态和重要更新�?>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.svg">
@@ -22,13 +22,13 @@
   <section class="hero cl-list-hero">
     <div class="cl-list-mast">
       <div>
-        <h1 id="heroTitle" class="settings-pending" data-i18n="updates.heroTitle">同人动态</h1>
+        <h1 id="heroTitle" class="settings-pending" data-i18n="updates.heroTitle">同人动�?/h1>
         <p id="heroSubtitle" class="settings-pending" data-i18n="updates.heroSubtitle">了解同人圈的最新动态和重要更新</p>
       </div>
-      <div class="cl-list-count">共 <b id="updateTotalCount">0</b> 条动态</div>
+      <div class="cl-list-count">�?<b id="updateTotalCount">0</b> 条动�?/div>
     </div>
     <div class="cl-list-sub">
-      <strong id="pageTitle" class="settings-pending" data-i18n="updates.listTitle">动态列表</strong>
+      <strong id="pageTitle" class="settings-pending" data-i18n="updates.listTitle">动态列�?/strong>
       <span id="pageSubtitle" class="settings-pending" data-i18n="updates.listSubtitle">按发布时间倒序排列</span>
     </div>
   </section>
@@ -39,10 +39,10 @@
       <div class="cl-toolbar-row">
         <button type="button" class="filter-btn" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
         <select class="form-input" id="sortSelect">
-          <option value="date-desc" selected data-i18n="common.dateDesc">发布日期 ↓ 新→旧</option>
-          <option value="date-asc" data-i18n="common.dateAsc">发布日期 ↑ 旧→新</option>
+          <option value="date-desc" selected data-i18n="common.dateDesc">发布日期 �?新→�?/option>
+          <option value="date-asc" data-i18n="common.dateAsc">发布日期 �?旧→�?/option>
         </select>
-        <input type="text" class="search-input" placeholder="搜索动态..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+        <input type="text" class="search-input" placeholder="搜索动�?.." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
         <span class="cl-show-count">显示 <b id="updateShowCount">0</b></span>
       </div>
     </div>
@@ -60,7 +60,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260911f"></script>
+  <script src="/js/main.js?v=20260912a"></script>
   <script>
     initPage('updates');
 
@@ -141,18 +141,18 @@
     function monthLabelOf(key) {
       const parts = key.split('-');
       if (parts.length < 2) return key || '未标日期';
-      return parts[0] + ' 年 ' + Number(parts[1]) + ' 月';
+      return parts[0] + ' �?' + Number(parts[1]) + ' �?;
     }
 
     function updateRowHtml(u, isPinned) {
       const cover = u.coverImage || (u.images && u.images[0]) || '';
-      const authorNames = (u.relatedCircles || []).map(cid => circlesMap[cid]).filter(Boolean).join('、');
+      const authorNames = (u.relatedCircles || []).map(cid => circlesMap[cid]).filter(Boolean).join('�?);
       const catLabel = updateCatLabels[u.category] || '';
       const stLabel = updateStLabels[u.status] || '';
       const stDone = /结束|完成/.test(stLabel);
       const d = String(u.publishDate || '');
       const day = d.slice(8, 10) || '';
-      const mon = d.slice(5, 7) ? Number(d.slice(5, 7)) + '月' : '';
+      const mon = d.slice(5, 7) ? Number(d.slice(5, 7)) + '�? : '';
       return `
         <div class="cl-upd-row${isPinned ? ' pinned' : ''}">
           <div class="cl-upd-date">${day ? `<b>${day}</b>${mon}` : ''}</div>
@@ -224,7 +224,7 @@
 
       let html = '';
       if (pinned.length) {
-        html += `<div class="cl-pin-label">${t('updates.pinned') || '置顶'}动态</div>`;
+        html += `<div class="cl-pin-label">${t('updates.pinned') || '置顶'}动�?/div>`;
         html += pinned.map(u => updateRowHtml(u, true)).join('');
       }
 

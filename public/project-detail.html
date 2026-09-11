@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 企划详情</title>
-  <meta name="description" content="查看同人企划详情，包括状态、参与者、相关作品等。">
+  <title>f7goods �?企划详情</title>
+  <meta name="description" content="查看同人企划详情，包括状态、参与者、相关作品等�?>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.svg">
@@ -46,7 +46,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260911f"></script>
+  <script src="/js/main.js?v=20260912a"></script>
   <script>
     async function loadProject() {
       const params = new URLSearchParams(location.search);
@@ -69,7 +69,7 @@
         const relatedWorks = allWorks.filter(w => (project.works || []).includes(w.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedProjects || []).includes(project.id));
 
-        document.title = `${project.title} — f7goods`;
+        document.title = `${project.title} �?f7goods`;
         document.querySelector('meta[property="og:title"]').content = project.title;
         document.querySelector('meta[property="og:description"]').content = (project.description || '').substring(0, 160);
         if (project.coverImage) document.querySelector('meta[property="og:image"]').content = project.coverImage;
@@ -85,7 +85,7 @@
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/projects.html">${t('nav.projects')}</a>
-            <span>›</span>
+            <span>�?/span>
             <span>${escapeHtml(project.title)}</span>
           </div>
           <div class="ev-hero ${cover ? 'has-cover' : ''}" ${cover ? `style="background-image:url('${escapeHtml(cover).replace(/'/g, '&#39;')}');background-size:cover;background-position:center;"` : ''}>

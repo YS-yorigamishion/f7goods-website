@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>搜索 — f7goods</title>
-  <meta name="description" content="在 f7goods 搜索周边、作者、活动、企划与动态。">
+  <title>搜索 �?f7goods</title>
+  <meta name="description" content="�?f7goods 搜索周边、作者、活动、企划与动态�?>
   <meta name="robots" content="noindex">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,13 +18,13 @@
     <div class="cl-list-mast">
       <div>
         <h1 id="srTitle">搜索结果</h1>
-        <p id="srSub">正在搜索…</p>
+        <p id="srSub">正在搜索�?/p>
       </div>
-      <div class="cl-list-count">共 <b id="srTotal">0</b> 条结果</div>
+      <div class="cl-list-count">�?<b id="srTotal">0</b> 条结�?/div>
     </div>
     <div class="cl-list-sub">
       <strong>分类结果</strong>
-      <span>按内容类型分组展示</span>
+      <span>按内容类型分组展�?/span>
     </div>
   </section>
 
@@ -33,21 +33,21 @@
       <div class="cl-toolbar-row">
         <div id="srTypes" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
         <span class="spacer"></span>
-        <input type="search" class="search-input" id="srInput" placeholder="搜索周边、作者、活动…" autocomplete="off">
+        <input type="search" class="search-input" id="srInput" placeholder="搜索周边、作者、活动�? autocomplete="off">
         <button type="button" class="pill" id="srGo">搜索</button>
         <span class="cl-show-count">显示 <b id="srShow">0</b></span>
       </div>
     </div>
 
     <div id="srResults">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div class="loading"><div class="spinner"></div><p>加载�?..</p></div>
     </div>
   </main>
 
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260911f"></script>
+  <script src="/js/main.js?v=20260912a"></script>
   <script>
     initPage('search');
 
@@ -62,13 +62,13 @@
     const TYPE_META = [
       { key: 'all', label: '全部' },
       { key: 'works', label: '周边' },
-      { key: 'circles', label: '作者' },
+      { key: 'circles', label: '作�? },
       { key: 'events', label: '活动' },
       { key: 'projects', label: '企划' },
-      { key: 'updates', label: '动态' }
+      { key: 'updates', label: '动�? }
     ];
 
-    // 高亮命中片段（先转义再替换，安全）
+    // 高亮命中片段（先转义再替换，安全�?
     function hl(text, q) {
       const safe = escapeHtml(String(text == null ? '' : text));
       if (!q) return safe;
@@ -109,13 +109,13 @@
     function secHead(title, n, moreHref, moreLabel) {
       return `<div class="cl-sr-head">
         <h2>${title} <span class="n">${n}</span></h2>
-        ${moreHref ? `<a class="more" href="${moreHref}">${moreLabel} →</a>` : ''}
+        ${moreHref ? `<a class="more" href="${moreHref}">${moreLabel} �?/a>` : ''}
       </div>`;
     }
 
     function workCardHtml(w) {
       const cover = (w.images && w.images[0]) || '';
-      const authors = (w.circles || []).map(id => srCirclesMap[id]).filter(Boolean).join('、');
+      const authors = (w.circles || []).map(id => srCirclesMap[id]).filter(Boolean).join('�?);
       const cat = (typeof CATEGORIES !== 'undefined' && CATEGORIES[w.category]) || '';
       const st = (typeof STATUS_LABELS !== 'undefined' && STATUS_LABELS[w.status]) || '';
       let stCls = 'cl-w-status';
@@ -134,7 +134,7 @@
           </div>
           <div class="cl-w-foot">
             <span class="cl-w-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(w.price) : (w.price || ''))}</span>
-            <span class="cl-w-stats"><span title="喜爱">♥ ${w.likes || 0}</span><span title="想要">★ ${w.wants || 0}</span></span>
+            <span class="cl-w-stats"><span title="喜爱">�?${w.likes || 0}</span><span title="想要">�?${w.wants || 0}</span></span>
           </div>
         </a>`;
     }
@@ -152,10 +152,10 @@
             <div class="cl-author-name">${hl(c.name, SRQ)}</div>
             <div class="cl-author-meta">
               ${cat ? `<span class="cl-author-chip cat">${escapeHtml(cat)}</span>` : ''}
-              <span class="cl-author-chip">${n} 件作品</span>
+              <span class="cl-author-chip">${n} 件作�?/span>
             </div>
             <div class="cl-author-desc">${escapeHtml(c.description || '')}</div>
-            <div class="cl-author-foot"><span>作者</span><span class="go">查看 →</span></div>
+            <div class="cl-author-foot"><span>作�?/span><span class="go">查看 �?/span></div>
           </div>
         </a>`;
     }
@@ -176,8 +176,8 @@
 
       if (!c.all) {
         box.innerHTML = `<div class="cl-sr-empty">
-          <p>没有找到与 <span class="q">「${escapeHtml(SRQ)}」</span> 相关的内容</p>
-          <p class="tip">试试更短的关键词，或换成作者名 / 活动名 / 标签</p>
+          <p>没有找到�?<span class="q">�?{escapeHtml(SRQ)}�?/span> 相关的内�?/p>
+          <p class="tip">试试更短的关键词，或换成作者名 / 活动�?/ 标签</p>
         </div>`;
         return;
       }
@@ -193,7 +193,7 @@
       }
       if ((showAll || SR_TYPE === 'circles') && c.circles) {
         html += `<section class="cl-sr-sec">
-          ${showAll ? secHead('作者', c.circles, '/circles.html', '全部作者') : ''}
+          ${showAll ? secHead('作�?, c.circles, '/circles.html', '全部作�?) : ''}
           <div class="cl-author-grid">${SR.circles.map(x => circleCardHtml(x, srWorkCount[x.id] || 0)).join('')}</div>
         </section>`;
       }
@@ -221,7 +221,7 @@
       }
       if ((showAll || SR_TYPE === 'updates') && c.updates) {
         html += `<section class="cl-sr-sec">
-          ${showAll ? secHead('动态', c.updates, '/updates.html', '全部动态') : ''}
+          ${showAll ? secHead('动�?, c.updates, '/updates.html', '全部动�?) : ''}
           <div class="cl-sr-list">${SR.updates.map(u => rowHtml(
             '/update-detail.html?id=' + encodeURIComponent(u.id),
             escapeHtml((u.title || '?').charAt(0)),
@@ -238,9 +238,9 @@
       SRQ = (q || '').trim();
       const url = SRQ ? '/search.html?q=' + encodeURIComponent(SRQ) : '/search.html';
       if (push !== false) history.replaceState(null, '', url);
-      document.title = SRQ ? `「${SRQ}」的搜索结果 — f7goods` : '搜索 — f7goods';
+      document.title = SRQ ? `�?{SRQ}」的搜索结果 �?f7goods` : '搜索 �?f7goods';
       const sub = document.getElementById('srSub');
-      if (sub) sub.textContent = SRQ ? `关键词：${SRQ}` : '输入关键词开始搜索';
+      if (sub) sub.textContent = SRQ ? `关键词：${SRQ}` : '输入关键词开始搜�?;
       const input = document.getElementById('srInput');
       if (input && input.value !== SRQ) input.value = SRQ;
       if (_loaded) applyFilter();
@@ -308,7 +308,7 @@
       }
     }
 
-    // 页面内搜索（改写关键词后回车或点搜索）
+    // 页面内搜索（改写关键词后回车或点搜索�?
     document.getElementById('srGo').addEventListener('click', () => doSearch(document.getElementById('srInput').value));
     document.getElementById('srInput').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') doSearch(e.target.value);

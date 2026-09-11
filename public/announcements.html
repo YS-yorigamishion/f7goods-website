@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 公告</title>
-  <meta name="description" content="了解 f7goods 的最新公告和重要通知，掌握同人活动资讯。">
-  <meta property="og:title" content="f7goods — 公告">
-  <meta property="og:description" content="了解 f7goods 的最新公告和重要通知，掌握同人活动资讯。">
+  <title>f7goods �?公告</title>
+  <meta name="description" content="了解 f7goods 的最新公告和重要通知，掌握同人活动资讯�?>
+  <meta property="og:title" content="f7goods �?公告">
+  <meta property="og:description" content="了解 f7goods 的最新公告和重要通知，掌握同人活动资讯�?>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.svg">
@@ -25,7 +25,7 @@
         <h1 id="heroTitle" data-i18n="announcements.heroTitle">公告</h1>
         <p id="heroSubtitle" data-i18n="announcements.heroSubtitle">了解 f7goods 的最新动态和重要通知</p>
       </div>
-      <div class="cl-list-count">共 <b id="annTotalCount">0</b> 条公告</div>
+      <div class="cl-list-count">�?<b id="annTotalCount">0</b> 条公�?/div>
     </div>
     <div class="cl-list-sub">
       <strong id="pageTitle" data-i18n="announcements.listTitle">公告列表</strong>
@@ -42,13 +42,13 @@
           <button type="button" class="pill" data-f="popup">弹窗公告</button>
         </div>
         <span class="spacer"></span>
-        <input type="search" class="search-input" id="annSearch" placeholder="搜索公告标题、内容...">
+        <input type="search" class="search-input" id="annSearch" placeholder="搜索公告标题、内�?..">
         <span class="cl-show-count">显示 <b id="annShowCount">0</b></span>
       </div>
     </div>
 
     <div id="announcementsContainer" class="cl-an-list">
-      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+      <div class="loading"><div class="spinner"></div><p>加载�?..</p></div>
     </div>
   </main>
 
@@ -59,7 +59,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260911f"></script>
+  <script src="/js/main.js?v=20260912a"></script>
   <script>
     initPage('announcements');
 
@@ -69,15 +69,15 @@
 
     function annPreview(text) {
       const s = String(text || '').replace(/\s+/g, ' ').trim();
-      return s.length > 78 ? s.slice(0, 78) + '…' : s;
+      return s.length > 78 ? s.slice(0, 78) + '�? : s;
     }
-    function monOf(d) { return d && d.slice(5, 7) ? Number(d.slice(5, 7)) + ' 月' : ''; }
-    function dayOf(d) { return d && d.slice(8, 10) ? d.slice(8, 10) : '—'; }
+    function monOf(d) { return d && d.slice(5, 7) ? Number(d.slice(5, 7)) + ' �? : ''; }
+    function dayOf(d) { return d && d.slice(8, 10) ? d.slice(8, 10) : '�?; }
     function monthKeyOf(d) { return String(d || '').slice(0, 7); }
     function monthLabelOf(k) {
       const p = k.split('-');
       if (p.length < 2) return k || '未标日期';
-      return p[0] + ' 年 ' + Number(p[1]) + ' 月';
+      return p[0] + ' �?' + Number(p[1]) + ' �?;
     }
 
     function filteredAnns() {
@@ -106,9 +106,9 @@
             <span class="cl-an-chips">${chips.join('')}</span>
             <span class="cl-an-title">${escapeHtml(a.title)}</span>
             <span class="cl-an-exc">${escapeHtml(annPreview(a.content))}</span>
-            <span class="cl-an-more">点击查看详情 ›</span>
+            <span class="cl-an-more">点击查看详情 �?/span>
           </span>
-          <span class="cl-an-chev">›</span>
+          <span class="cl-an-chev">�?/span>
         </button>`;
     }
 
@@ -171,7 +171,7 @@
           <div class="cl-an-imgs">
             ${images.map((url, i) => `<button type="button" data-img="${i}"><img src="${escapeHtml(url)}" alt="" loading="lazy"></button>`).join('')}
           </div>` : ''}
-        <div class="cl-an-foot"><button type="button" onclick="closeAnnouncement()">知道了</button></div>`;
+        <div class="cl-an-foot"><button type="button" onclick="closeAnnouncement()">知道�?/button></div>`;
 
       sheet.querySelectorAll('.cl-an-imgs button').forEach(btn => {
         btn.addEventListener('click', () => {
