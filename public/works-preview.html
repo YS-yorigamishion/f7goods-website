@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全部周边 — 重设计预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --muted: #8A8078;
+      --haze: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(34,32,30,.04);
+      --shadow-md: 0 8px 24px rgba(34,32,30,.08);
+      --max: 1120px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper); color: var(--ink);
+      font-size: 15px; line-height: 1.7; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .preview-bar {
+      height: 32px; background: #2C3340; color: #F6F2EB;
+      display: flex; align-items: center; justify-content: center;
+      gap: .75rem; font-size: .78rem; padding: 0 .5rem;
+    }
+    .preview-bar strong { color: #fff; }
+
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+
+    /* Slim head: view switch + total */
+    .head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: .75rem; flex-wrap: wrap; margin-bottom: .85rem;
+    }
+    .seg {
+      display: inline-flex; border: 1px solid var(--line);
+      border-radius: 999px; overflow: hidden; background: var(--paper);
+    }
+    .seg button {
+      height: 32px; padding: 0 15px; font-size: .8rem;
+      color: var(--haze); border-right: 1px solid var(--line);
+    }
+    .seg button:last-child { border-right: none; }
+    .seg button.on { background: var(--card); color: var(--accent); font-weight: 600; }
+    .total { font-size: .78rem; color: var(--haze); white-space: nowrap; }
+    .total b { font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.15rem; color: var(--ink); font-weight: 700; }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: .7rem .85rem;
+      margin-bottom: 1.1rem; display: flex; flex-direction: column; gap: .55rem;
+    }
+    .trow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+    .trow + .trow { padding-top: .55rem; }
+    .pill {
+      height: 30px; padding: 0 12px; border: 1px solid var(--line);
+      border-radius: 999px; background: var(--card); color: var(--haze);
+      font-size: .78rem; font-weight: 500; transition: .15s ease;
+      display: inline-flex; align-items: center; white-space: nowrap;
+    }
+    .pill:hover { border-color: #D4C8B8; color: var(--ink); }
+    .pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .pill.ghost.on { background: var(--info); border-color: var(--info); }
+    .spacer { flex: 1; }
+    .grp-label { font-size: .72rem; color: var(--haze); margin-right: .1rem; }
+    select, input[type="search"] {
+      height: 30px; border: 1px solid var(--line); border-radius: 999px;
+      background: var(--paper); font: inherit; font-size: .78rem;
+      padding: 0 .75rem; color: var(--ink);
+    }
+    select { min-width: 130px; }
+    input[type="search"] { min-width: 150px; flex: 1; max-width: 210px; }
+    .show-n { font-size: .76rem; color: var(--haze); white-space: nowrap; }
+    .show-n b { color: var(--ink); font-size: .9rem; }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 1rem;
+    }
+    .w-card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: .18s ease; position: relative;
+      text-decoration: none; color: inherit;
+    }
+    .w-card, .w-card * { text-decoration: none; }
+    .w-card:hover {
+      border-color: #D4C8B8; transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .w-cover {
+      position: relative; aspect-ratio: 4 / 3;
+      background: linear-gradient(145deg, #EDE6DA, #D5CBBB);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      color: #6b6560;
+      font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.6rem;
+    }
+    .w-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .w-status {
+      position: absolute; top: 8px; left: 8px; z-index: 2;
+      font-size: .66rem; font-weight: 600;
+      padding: .12rem .5rem; border-radius: 999px;
+      background: rgba(255,252,247,.94);
+      border: 1px solid rgba(34,32,30,.06);
+      color: var(--haze);
+    }
+    .w-status.on_sale { color: var(--accent); }
+    .w-status.pre_order { color: var(--warning); }
+    .w-status.group_buy { color: var(--info); }
+    .w-deadline {
+      position: absolute; top: 8px; right: 8px; z-index: 2;
+      font-size: .64rem; font-weight: 600;
+      padding: .12rem .45rem; border-radius: 999px;
+      background: var(--accent); color: #fff;
+    }
+    .w-body { padding: .75rem .85rem .4rem; flex: 1; display: flex; flex-direction: column; }
+    .w-title {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: .96rem; font-weight: 700; line-height: 1.4;
+      margin-bottom: .2rem; word-break: break-word;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      min-height: 2.8em;
+    }
+    .w-meta {
+      font-size: .72rem; color: var(--haze);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .w-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: .5rem; padding: .5rem .85rem .7rem;
+      margin-top: .45rem; border-top: 1px solid var(--line);
+    }
+    .w-price {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.05rem; font-weight: 700; color: var(--accent);
+    }
+    .w-stats { display: flex; align-items: center; gap: .5rem; font-size: .72rem; color: var(--haze); }
+    .w-stats span { display: inline-flex; align-items: center; gap: .15rem; }
+    .w-wish {
+      position: absolute; bottom: 66px; right: 8px; z-index: 3;
+      height: 26px; padding: 0 9px; border-radius: 999px;
+      background: rgba(255,252,247,.94); border: 1px solid var(--line);
+      font-size: .68rem; color: var(--haze);
+      display: inline-flex; align-items: center; gap: .2rem;
+      opacity: 0; transform: translateY(4px); transition: .16s ease;
+    }
+    .w-card:hover .w-wish { opacity: 1; transform: translateY(0); }
+    .w-wish:hover { border-color: var(--accent); color: var(--accent); }
+    .w-wish.on { background: var(--accent); border-color: var(--accent); color: #fff; opacity: 1; transform: none; }
+
+    /* Load more */
+    .more { grid-column: 1 / -1; text-align: center; padding: 1.2rem 0 .4rem; }
+    .more button {
+      height: 38px; padding: 0 22px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--card);
+      font-size: .84rem; font-weight: 500; color: var(--ink);
+    }
+    .more button:hover { border-color: var(--accent); color: var(--accent); }
+    .more .prog { display: block; margin-top: .5rem; font-size: .72rem; color: var(--haze); }
+
+    .empty { grid-column: 1/-1; text-align: center; color: var(--muted); padding: 3rem 1rem; }
+    .empty .reset {
+      margin-top: 1rem; height: 34px; padding: 0 18px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--card); font-size: .82rem;
+    }
+
+    @media (max-width: 640px) {
+      .wrap { padding: .75rem .8rem 2rem; }
+      .grid { grid-template-columns: repeat(2, 1fr) !important; gap: .6rem; }
+      .w-cover { aspect-ratio: 1 / 1; }
+      .w-body { padding: .55rem .6rem .3rem; }
+      .w-title { font-size: .82rem; min-height: 2.6em; }
+      .w-meta { font-size: .66rem; }
+      .w-foot { padding: .4rem .6rem .55rem; }
+      .w-price { font-size: .9rem; }
+      .w-stats { gap: .35rem; font-size: .66rem; }
+      .w-wish { opacity: 1; transform: none; bottom: 56px; right: 6px; height: 24px; font-size: .62rem; }
+      input[type="search"] { max-width: none; width: 100%; flex: 1 1 100%; }
+      select { flex: 1; min-width: 0; }
+      .grp-label { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span><strong>预览</strong> · 全部周边重设计（三层筛选收成一条工具条 + 卡片信息分层 + 心愿快捷</span>
+  </div>
+
+  <div class="wrap">
+    <div class="head">
+      <div class="seg">
+        <button type="button" onclick="alert('预览：切换回看板')">看板</button>
+        <button type="button" class="on">全部周边</button>
+      </div>
+      <div class="total">共 <b id="totalN">0</b> 件周边</div>
+    </div>
+
+    <div class="toolbar">
+      <div class="trow">
+        <div id="stRow" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
+          <button type="button" class="pill on" data-st="all" onclick="setSt(this)">全部状态</button>
+          <button type="button" class="pill" data-st="pre" onclick="setSt(this)">预售中</button>
+          <button type="button" class="pill" data-st="group" onclick="setSt(this)">拼团中</button>
+          <button type="button" class="pill" data-st="on" onclick="setSt(this)">发售中</button>
+          <button type="button" class="pill" data-st="out" onclick="setSt(this)">已售空</button>
+        </div>
+        <span class="spacer"></span>
+        <span class="grp-label">我的</span>
+        <button type="button" class="pill ghost" data-mine="follow" onclick="toggleMine(this)">关注</button>
+        <button type="button" class="pill ghost" data-mine="liked" onclick="toggleMine(this)">喜爱</button>
+        <button type="button" class="pill ghost" data-mine="wanted" onclick="toggleMine(this)">想要</button>
+        <button type="button" class="pill ghost" data-mine="deadline" onclick="toggleMine(this)">即将截止</button>
+      </div>
+      <div class="trow">
+        <div id="catRow" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
+          <button type="button" class="pill on" data-cat="all" onclick="setCat(this)">全部</button>
+          <button type="button" class="pill" data-cat="lipai" onclick="setCat(this)">立牌</button>
+          <button type="button" class="pill" data-cat="yaoshikou" onclick="setCat(this)">钥匙扣</button>
+          <button type="button" class="pill" data-cat="huizhang" onclick="setCat(this)">徽章</button>
+          <button type="button" class="pill" data-cat="pailide" onclick="setCat(this)">拍立得</button>
+          <button type="button" class="pill" data-cat="mingxinpian" onclick="setCat(this)">明信片</button>
+          <button type="button" class="pill" data-cat="qita" onclick="setCat(this)">其它</button>
+        </div>
+        <span class="spacer"></span>
+        <button type="button" class="pill" onclick="alert('预览：随机周边弹窗')">随机周边</button>
+        <select id="sortSel" onchange="render()">
+          <option value="random" selected>随机排序</option>
+          <option value="default">最新上传</option>
+          <option value="likes-desc">喜爱数 ↓</option>
+          <option value="wants-desc">想要数 ↓</option>
+        </select>
+        <input type="search" id="searchIn" placeholder="搜索作品…" oninput="render()">
+        <span class="show-n">显示 <b id="showN">0</b></span>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script>
+    const ST = { pre: '预售中', group: '拼团中', on: '发售中', out: '已售空' };
+    const CAT = { lipai: '立牌', yaoshikou: '钥匙扣', huizhang: '徽章', pailide: '拍立得', mingxinpian: '明信片', qita: '其它' };
+    const TODAY = new Date('2026-09-11');
+
+    const WORKS = [
+      { id:'w1', title:'神使亚克力立牌 · 夜色版', cat:'lipai', st:'on', price:'¥68', likes:241, wants:173, author:'夜巡工作室', end:'2026-09-22', hue:210 },
+      { id:'w2', title:'春日限定徽章套装', cat:'huizhang', st:'pre', price:'¥25', likes:186, wants:92, author:'春日手作社', end:'2026-10-30', hue:18 },
+      { id:'w3', title:'七日明信片组 · 冬之章', cat:'mingxinpian', st:'on', price:'¥18', likes:97, wants:41, author:'七日邮局', end:'', hue:200 },
+      { id:'w4', title:'中央庭金属钥匙扣', cat:'yaoshikou', st:'group', price:'¥32', likes:154, wants:88, author:'都市档案组', end:'2026-09-18', hue:160 },
+      { id:'w5', title:'角色拍立得套装 A', cat:'pailide', st:'on', price:'¥45', likes:210, wants:95, author:'晨光线稿', end:'', hue:50 },
+      { id:'w6', title:'周年纪念册 · 硬壳', cat:'qita', st:'on', price:'¥98', likes:312, wants:201, author:'纸间印社', end:'2026-09-25', hue:40 },
+      { id:'w7', title:'夜色亚克力挂件', cat:'yaoshikou', st:'out', price:'¥28', likes:178, wants:64, author:'夜巡工作室', end:'', hue:280 },
+      { id:'w8', title:'城市印象立牌 · 双人', cat:'lipai', st:'pre', price:'¥88', likes:126, wants:143, author:'都市档案组', end:'2026-11-15', hue:130 },
+      { id:'w9', title:'角色贴纸包 Vol.2', cat:'qita', st:'on', price:'¥12', likes:88, wants:37, author:'春日手作社', end:'', hue:340 },
+      { id:'w10', title:'纪念徽章 · 银箔', cat:'huizhang', st:'group', price:'¥35', likes:64, wants:52, author:'铃音社', end:'2026-09-16', hue:300 },
+      { id:'w11', title:'明信片全套 12 张', cat:'mingxinpian', st:'on', price:'¥58', likes:143, wants:70, author:'七日邮局', end:'', hue:190 },
+      { id:'w12', title:'拍立得 · 神使特典', cat:'pailide', st:'out', price:'无料', likes:199, wants:120, author:'晨光线稿', end:'', hue:60 }
+    ];
+
+    let curSt = 'all', curCat = 'all', mine = new Set();
+    let page = 1;
+    const PAGE = 8;
+    const wish = new Set(['w2']);
+
+    // session shuffle
+    (function () {
+      for (let i = WORKS.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = WORKS[i]; WORKS[i] = WORKS[j]; WORKS[j] = t;
+      }
+      WORKS.forEach((w, i) => w._rank = i);
+    })();
+
+    function setSt(btn) {
+      curSt = btn.dataset.st;
+      document.querySelectorAll('#stRow .pill[data-st]').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on'); page = 1; render();
+    }
+    function setCat(btn) {
+      curCat = btn.dataset.cat;
+      document.querySelectorAll('#catRow .pill').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on'); page = 1; render();
+    }
+    function toggleMine(btn) {
+      const k = btn.dataset.mine;
+      if (mine.has(k)) mine.delete(k); else mine.add(k);
+      btn.classList.toggle('on', mine.has(k));
+      page = 1; render();
+    }
+    function toggleWish(id, ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      if (wish.has(id)) wish.delete(id); else wish.add(id);
+      render();
+    }
+    function loadMore() { page++; render(); }
+
+    function deadlineSoon(w) {
+      if (!w.end) return false;
+      const d = new Date(w.end + 'T23:59:59');
+      const diff = d - TODAY;
+      return diff > 0 && diff <= 15 * 86400000;
+    }
+
+    function filtered() {
+      const q = (document.getElementById('searchIn').value || '').trim().toLowerCase();
+      const sort = document.getElementById('sortSel').value;
+      let list = WORKS.filter(w =>
+        (curSt === 'all' || w.st === curSt) &&
+        (curCat === 'all' || w.cat === curCat)
+      );
+      if (mine.has('deadline')) list = list.filter(deadlineSoon);
+      if (mine.has('liked')) list = list.filter(w => w.likes > 100);
+      if (mine.has('wanted')) list = list.filter(w => w.wants > 60);
+      if (mine.has('follow')) list = list.filter(w => ['夜巡工作室','春日手作社'].includes(w.author));
+      if (q) list = list.filter(w => w.title.toLowerCase().includes(q) || w.author.toLowerCase().includes(q));
+      list = list.slice();
+      if (sort === 'default') list.sort((a, b) => a.id.localeCompare(b.id));
+      else if (sort === 'likes-desc') list.sort((a, b) => b.likes - a.likes);
+      else if (sort === 'wants-desc') list.sort((a, b) => b.wants - a.wants);
+      else list.sort((a, b) => a._rank - b._rank);
+      return list;
+    }
+
+    function render() {
+      document.getElementById('totalN').textContent = WORKS.length;
+      const list = filtered();
+      document.getElementById('showN').textContent = list.length;
+      const grid = document.getElementById('grid');
+
+      if (!list.length) {
+        grid.innerHTML = `<div class="empty"><p>没有匹配的周边</p><button class="reset" onclick="resetAll()">清除筛选</button></div>`;
+        return;
+      }
+
+      const shown = list.slice(0, page * PAGE);
+      grid.innerHTML = shown.map(w => `
+        <a class="w-card" href="#" onclick="event.preventDefault()">
+          <div class="w-cover">
+            <span class="w-status ${w.st === 'on' ? 'on_sale' : w.st === 'pre' ? 'pre_order' : w.st === 'group' ? 'group_buy' : ''}">${ST[w.st]}</span>
+            ${deadlineSoon(w) ? '<span class="w-deadline">即将截止</span>' : ''}
+            <span style="position:absolute;inset:0;background:linear-gradient(145deg,hsl(${w.hue} 30% 88%),hsl(${w.hue} 24% 74%))"></span>
+            <span style="position:relative;z-index:1">${w.title.charAt(0)}</span>
+          </div>
+          <button type="button" class="w-wish${wish.has(w.id) ? ' on' : ''}" onclick="toggleWish('${w.id}',event)">${wish.has(w.id) ? '✓ 心愿' : '＋ 心愿'}</button>
+          <div class="w-body">
+            <div class="w-title">${w.title}</div>
+            <div class="w-meta">${w.author} · ${CAT[w.cat]}</div>
+          </div>
+          <div class="w-foot">
+            <span class="w-price">${w.price}</span>
+            <span class="w-stats"><span title="喜爱">♥ ${w.likes}</span><span title="想要">★ ${w.wants}</span></span>
+          </div>
+        </a>
+      `).join('') + (shown.length < list.length
+        ? `<div class="more">
+             <button type="button" onclick="loadMore()">加载更多</button>
+             <span class="prog">已显示 ${shown.length} / 共 ${list.length} 件</span>
+           </div>`
+        : '');
+    }
+
+    function resetAll() {
+      curSt = 'all'; curCat = 'all'; mine.clear();
+      document.getElementById('searchIn').value = '';
+      document.querySelectorAll('#stRow .pill[data-st]').forEach(b => b.classList.toggle('on', b.dataset.st === 'all'));
+      document.querySelectorAll('#catRow .pill').forEach(b => b.classList.toggle('on', b.dataset.cat === 'all'));
+      document.querySelectorAll('[data-mine]').forEach(b => b.classList.remove('on'));
+      page = 1; render();
+    }
+
+    render();
+  </script>
+</body>
+</html>

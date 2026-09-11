@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260911n">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -41,7 +41,10 @@
           <button type="button" data-view="catalog" onclick="setHomeView('catalog')" data-i18n="home.catalog">全部周边</button>
         </div>
       </div>
-      <div id="announcementBtn"></div>
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <div class="cl-cat-total">共 <b id="worksTotalCount">0</b> 件周边</div>
+        <div id="announcementBtn"></div>
+      </div>
     </div>
 
     <!-- BOARD VIEW -->
@@ -114,13 +117,23 @@
 
     <!-- CATALOG VIEW -->
     <div class="home-catalog hidden" id="homeCatalog">
-      <div class="filter-bar" id="statusFilters">
-        <button class="filter-btn active" data-status="all" data-i18n="common.allStatus">全部状态</button>
-      </div>
-      <div class="filter-bar" id="categoryFilters">
-        <button class="filter-btn active" data-cat="all" data-i18n="common.all">全部</button>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
-          <select id="sortSelect" class="form-input sort-select" style="padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:100px;min-width:130px;min-height:32px;">
+      <div class="cl-toolbar-card">
+        <div class="cl-toolbar-row">
+          <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+          <span class="spacer"></span>
+          <div id="userFilters" style="display:none;flex-wrap:wrap;gap:0.4rem;align-items:center;">
+            <span class="cl-cat-grp-label" data-i18n="common.mine">我的</span>
+            <button type="button" class="pill" id="followFilterBtn" onclick="toggleFollowFilter()"><span data-i18n="common.follow">关注</span></button>
+            <button type="button" class="pill" data-user-filter="liked" onclick="toggleUserFilter('liked')"><span data-i18n="common.like">喜爱</span></button>
+            <button type="button" class="pill" data-user-filter="wanted" onclick="toggleUserFilter('wanted')"><span data-i18n="common.want">想要</span></button>
+            <button type="button" class="pill" id="deadlineFilterBtn" onclick="toggleDeadlineFilter()"><span data-i18n="common.deadlineSoon">即将截止</span></button>
+          </div>
+        </div>
+        <div class="cl-toolbar-row">
+          <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+          <span class="spacer"></span>
+          <button type="button" class="pill" onclick="showRandomWorks()" data-i18n="common.randomWorks">随机周边</button>
+          <select id="sortSelect" class="form-input">
             <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
             <option value="default" data-i18n="common.sortDefault">最新上传</option>
             <option value="date-asc" data-i18n="common.sortDateAsc">发售时间 ↑</option>
@@ -131,17 +144,12 @@
             <option value="wants-asc" data-i18n="common.sortWantsAsc">想要数 ↑</option>
           </select>
           <input type="text" class="search-input" data-i18n-placeholder="common.searchPlaceholder" placeholder="搜索作品..." id="searchInput">
+          <button type="button" class="pill" id="wishlistToggleBtn" onclick="activateWishlist()" data-i18n="home.wishlist">心愿单</button>
+          <span class="cl-show-count">显示 <b id="worksShowCount">0</b></span>
         </div>
       </div>
-      <div class="filter-bar" id="userFilters">
-        <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn"><span data-i18n="common.follow">关注</span></button>
-        <button class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')"><span data-i18n="common.like">喜爱</span></button>
-        <button class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')"><span data-i18n="common.want">想要</span></button>
-        <button class="filter-btn" onclick="toggleDeadlineFilter()" id="deadlineFilterBtn"><span data-i18n="common.deadlineSoon">即将截止</span></button>
-        <button class="filter-btn" id="wishlistToggleBtn" onclick="activateWishlist()" style="margin-left:auto;" data-i18n="home.wishlist">心愿单</button>
-      </div>
 
-      <div class="cards-grid" id="worksGrid">
+      <div class="cl-w-grid" id="worksGrid">
         <div class="skeleton-grid" id="worksSkeleton">
           <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
           <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
@@ -827,42 +835,77 @@
       }
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = `<button class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
-        STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${tCat(s)}</button>`).join('');
+      statusContainer.innerHTML = `<button type="button" class="pill on" data-status="all">${t('common.allStatus')}</button>` +
+        STATUS_ORDERED.map(s => `<button type="button" class="pill" data-status="${s.id}">${tCat(s)}</button>`).join('');
 
       // Category filters
       const catContainer = document.getElementById('categoryFilters');
-      const searchInput = document.getElementById('searchInput');
-      const sortSelect = document.getElementById('sortSelect');
-      const searchHtml = searchInput ? searchInput.outerHTML : `<input type="text" class="search-input" placeholder="${t('common.searchPlaceholder')}" id="searchInput">`;
-      const sortHtml = sortSelect ? sortSelect.outerHTML : `<select id="sortSelect" class="form-input sort-select" style="padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:100px;min-width:130px;min-height:32px;"><option value="random" selected>${t('common.sortRandom')}</option><option value="default">${t('common.sortDefault')}</option><option value="date-asc">${t('common.sortDateAsc')}</option><option value="date-desc">${t('common.sortDateDesc')}</option><option value="likes-desc">${t('common.sortLikesDesc')}</option><option value="likes-asc">${t('common.sortLikesAsc')}</option><option value="wants-desc">${t('common.sortWantsDesc')}</option><option value="wants-asc">${t('common.sortWantsAsc')}</option></select>`;
-      catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.all')}</button>` +
-        CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${tCat(c)}</button>`).join('') +
-        `<div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;"><button class="filter-btn" onclick="showRandomWorks()" style="white-space:nowrap;">${t('common.randomWorks')}</button>${sortHtml}${searchHtml}</div>`;
+      catContainer.innerHTML = `<button type="button" class="pill on" data-cat="all">${t('common.all')}</button>` +
+        CATEGORIES_ORDERED.map(c => `<button type="button" class="pill" data-cat="${c.id}">${tCat(c)}</button>`).join('');
 
       // Re-bind events
-      document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
+      document.querySelectorAll('.pill[data-cat]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.filter-btn[data-cat]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
+          document.querySelectorAll('.pill[data-cat]').forEach(b => b.classList.remove('on'));
+          btn.classList.add('on');
           currentCategory = btn.dataset.cat;
+          window._worksPage = 1;
           renderWorks();
         });
       });
-      document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
+      document.querySelectorAll('.pill[data-status]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
+          document.querySelectorAll('.pill[data-status]').forEach(b => b.classList.remove('on'));
+          btn.classList.add('on');
           currentStatus = btn.dataset.status;
+          window._worksPage = 1;
           renderWorks();
         });
       });
       document.getElementById('searchInput').addEventListener('input', debounce(() => {
+        window._worksPage = 1;
         renderWorks();
       }));
       document.getElementById('sortSelect').addEventListener('change', () => {
+        window._worksPage = 1;
         renderWorks();
       });
+    }
+
+    // 作品状态胶囊配色（按状态名匹配，重命名后仍可用）
+    function workStatusClass(statusId, label) {
+      const n = String(label || '');
+      if (/售空|售罄|结束|下架/.test(n)) return 'done';
+      if (/预售|预约/.test(n)) return 'pre';
+      if (/拼团|众筹/.test(n)) return 'group';
+      if (/发售|在售|现货/.test(n)) return 'sale';
+      return '';
+    }
+
+    // 卡片上的心愿快捷：未开启则先走开启确认（含免责说明）
+    async function addToWishlist(workId, e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!wishlistMode) {
+        await activateWishlist();
+        if (!wishlistMode) return;
+        wishlistItems[workId] = 1;
+        updateWishlistBadge(workId);
+        updateWishlistBar();
+        renderWorks();
+        return;
+      }
+      const wasZero = !wishlistItems[workId];
+      wishlistItems[workId] = (wishlistItems[workId] || 0) + 1;
+      if (wasZero) renderWorks();
+      else updateWishlistBadge(workId);
+      updateWishlistBar();
+    }
+
+    // 数量减到 0 时把控件切回「＋ 心愿」
+    function decreaseWishlistThenRefresh(workId, e) {
+      decreaseWishlistItem(workId, e);
+      if (!wishlistItems[workId]) renderWorks();
     }
 
     function renderWorks() {
@@ -951,36 +994,58 @@
         return;
       }
 
+      // Counts
+      const totalEl = document.getElementById('worksTotalCount');
+      if (totalEl) totalEl.textContent = allWorks.length;
+      const showEl = document.getElementById('worksShowCount');
+      if (showEl) showEl.textContent = filtered.length;
+
       // Pagination
       const pageSize = 20;
       const currentPage = window._worksPage || 1;
       const totalPages = Math.ceil(filtered.length / pageSize);
       const pageWorks = filtered.slice(0, currentPage * pageSize);
 
-      grid.innerHTML = pageWorks.map(work => `
-        <a class="card" href="/work-detail.html?id=${work.id}" style="text-decoration:none;color:inherit;">
-          <div class="card-image">
+      grid.innerHTML = pageWorks.map(work => {
+        const statusLabel = STATUS_LABELS[work.status] || work.status || '';
+        const authors = (work.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join('、');
+        const catLabel = CATEGORIES[work.category] || work.category || '';
+        const qty = wishlistItems[work.id] || 0;
+        const wishHtml = (wishlistMode && qty > 0)
+          ? `<span class="cl-w-wish on">
+               <button type="button" class="qbtn" onclick="decreaseWishlistThenRefresh('${work.id}',event)">−</button>
+               <span class="wishlist-badge" data-wid="${work.id}">×${qty}</span>
+               <button type="button" class="qbtn" onclick="toggleWishlistItem('${work.id}',event)">＋</button>
+             </span>`
+          : `<button type="button" class="cl-w-wish" onclick="addToWishlist('${work.id}',event)">＋ 心愿</button>`;
+        return `
+        <a class="cl-w-card" href="/work-detail.html?id=${work.id}">
+          <div class="cl-w-cover">
+            ${statusLabel ? `<span class="cl-w-status ${workStatusClass(work.status, statusLabel)}">${escapeHtml(statusLabel)}</span>` : ''}
+            ${isDeadlineSoon(work.endDate) ? `<span class="cl-w-deadline">${t('common.deadlineSoon')}</span>` : ''}
             ${work.images && work.images.length > 0
               ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}" loading="lazy">`
-              : '<span class="placeholder-icon">🎨</span>'}
-            ${isDeadlineSoon(work.endDate) ? `<span class="deadline-badge">${t('common.deadlineSoon')}</span>` : ''}
+              : `<span>${escapeHtml((work.title || '?').charAt(0))}</span>`}
+            ${wishHtml}
           </div>
-          <div class="card-body">
-            <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
-            <h3 class="card-title">${escapeHtml(work.title)}</h3>
-            <p class="card-subtitle">${(work.circles || []).map(cid => escapeHtml(circlesMap[cid])).filter(Boolean).join(', ') || ''}${(work.circles || []).length > 0 ? ' · ' : ''}${CATEGORIES[work.category] || work.category}</p>
+          <div class="cl-w-body">
+            <div class="cl-w-title">${escapeHtml(work.title)}</div>
+            <div class="cl-w-meta">${escapeHtml(authors)}${authors ? ' · ' : ''}${escapeHtml(catLabel)}</div>
           </div>
-          <div class="card-footer">
-            <span class="card-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || ''))}</span>
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-              ${(work.wants || 0) > 0 ? `<span style="font-size:0.72rem;color:var(--info);">${t('common.wants')} ${work.wants}</span>` : ''}
-              <span class="card-date">${formatDate(work.releaseDate)}</span>
+          <div class="cl-w-foot">
+            <span class="cl-w-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || ''))}</span>
+            <span class="cl-w-stats">
               ${renderLikeButton(work.id, work.likes)}
-              ${wishlistMode ? '<span class="wishlist-qty-group"><button class="wishlist-add-btn" type="button" onclick="event.preventDefault();event.stopPropagation();decreaseWishlistItem(\'' + work.id + '\',event)">−</button><span class="wishlist-badge" data-wid="' + work.id + '" style="' + ((wishlistItems[work.id] || 0) > 0 ? '' : 'display:none;') + '">' + ((wishlistItems[work.id] || 0) > 0 ? wishlistItems[work.id] : '') + '</span><button class="wishlist-add-btn" type="button" onclick="event.preventDefault();event.stopPropagation();toggleWishlistItem(\'' + work.id + '\',event)">＋</button></span>' : ''}
-            </div>
+              <span title="${t('common.wants')}">★ ${work.wants || 0}</span>
+            </span>
           </div>
-        </a>
-      `).join('') + (currentPage < totalPages ? `<div id="loadMoreTrigger" style="grid-column:1/-1;text-align:center;padding:1rem;"><button class="btn" onclick="loadMoreWorks()">${t('common.loadMore')}</button></div>` : '');
+        </a>`;
+      }).join('') + (currentPage < totalPages
+        ? `<div class="cl-w-more">
+             <button type="button" onclick="loadMoreWorks()">${t('common.loadMore') || '加载更多'}</button>
+             <span class="prog">已显示 ${pageWorks.length} / 共 ${filtered.length} 件</span>
+           </div>`
+        : '');
     }
 
     function loadMoreWorks() {
