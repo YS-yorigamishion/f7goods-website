@@ -6816,7 +6816,7 @@ function renderBoothsList() {
                 ${escapeHtml(b.code || '摊位')}${b.title ? ` <span style="font-weight:500;color:var(--muted);">· ${escapeHtml(b.title)}</span>` : ''}
               </div>
               <div style="font-size:0.78rem;color:var(--haze);margin-top:0.2rem;">
-                摊主：${b.owners.length ? b.owners.map(c => escapeHtml(c.name)).join('、') : '未挂接'} · 关联周边 ${b.goodsCount} 件
+                摊主：${b.owners.length ? b.owners.map(c => escapeHtml(c.name)).join('、') : '未挂接'} · 关联周边 ${b.goodsCount} 件${Array.isArray(b.workIds) && b.workIds.length ? '（已勾选作品）' : ''}
               </div>
               <div style="font-size:0.78rem;color:var(--haze);margin-top:0.15rem;">
                 赠品档：${b.tiers.length ? b.tiers.map(t => {
@@ -6871,7 +6871,11 @@ function tierGiftIds(t) {
 function boothGoodsList(booth, relatedWorks, circles) {
   const owners = (booth.circleIds || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
   const ownerIds = new Set(owners.map(c => c.id));
-  const goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
+  let goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
+  if (Array.isArray(booth.workIds) && booth.workIds.length) {
+    const sel = new Set(booth.workIds);
+    goods = relatedWorks.filter(w => sel.has(w.id));
+  }
   const order = Array.isArray(booth.goodsOrder) ? booth.goodsOrder : [];
   const rank = new Map(order.map((id, i) => [id, i]));
   return goods.slice().sort((a, z) => {
@@ -6892,6 +6896,7 @@ function normalizeBooths(booths) {
     images: Array.isArray(b.images) ? b.images.filter(Boolean).map(String) : [],
     order: b.order ?? i,
     circleIds: b.circleIds || [],
+    workIds: Array.isArray(b.workIds) ? [...new Set(b.workIds.filter(Boolean).map(String))] : [],
     goodsOrder: Array.isArray(b.goodsOrder) ? b.goodsOrder.filter(Boolean) : [],
     claimConditions: (b.claimConditions && typeof b.claimConditions === 'object' && !Array.isArray(b.claimConditions)) ? { ...b.claimConditions } : {},
     promoTiers: Array.isArray(b.promoTiers)
@@ -6978,6 +6983,17 @@ function openBoothModal(boothId = null) {
       <div id="boothOwnerEmpty" style="display:none;font-size:0.8rem;color:var(--haze);padding:0.4rem;">无匹配作者</div>
     </div>
     <div class="form-group">
+      <label>展示作品（可多选 · 不勾选则展示摊主全部关联作品；同一作者可开多个摊位并分别勾选）</label>
+      <div id="boothWorkList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:0.5rem;">
+        ${relatedWorks.map(w => `
+          <label style="font-size:0.78rem;display:inline-flex;align-items:center;gap:0.25rem;border:1px solid var(--line);border-radius:999px;padding:0.2rem 0.55rem;cursor:pointer;background:var(--card);">
+            <input type="checkbox" class="booth-work" value="${escapeHtml(w.id)}" ${(booth?.workIds || []).includes(w.id) ? 'checked' : ''}>
+            ${escapeHtml(w.title || '')}
+          </label>
+        `).join('') || '<span style="font-size:0.8rem;color:var(--haze);">本活动暂无关联作品</span>'}
+      </div>
+    </div>
+    <div class="form-group">
       <label>满额赠品档（可多档 · 一档可送多个作品）· 前提是作品已关联本活动</label>
       <div id="boothTierList" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.5rem;">
         ${tiers.map((t, i) => renderBoothTierRow(t, relatedWorks, i)).join('')}
@@ -7015,9 +7031,10 @@ function openBoothModal(boothId = null) {
       return { minAmount, giftWorkId, giftWorkIds, text };
     }).filter(Boolean);
     const next = normalizeBooths(booths);
+    const workIds = [...document.querySelectorAll('#modalBody .booth-work:checked')].map(i => i.value);
     const payload = {
       id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
-      code, title, logo, circleIds, promoTiers,
+      code, title, logo, circleIds, promoTiers, workIds,
       description: document.getElementById('boothDescription')?.value || '',
       images: [...document.querySelectorAll('#boothImagesPreview img')].map(img => img.src),
       goodsOrder: Array.isArray(booth?.goodsOrder) ? booth.goodsOrder.slice() : []

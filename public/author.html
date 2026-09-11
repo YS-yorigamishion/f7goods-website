@@ -2829,7 +2829,7 @@
                       ${b.isOwner && !b.canFullEdit ? '<span style="font-size:0.7rem;color:var(--haze);margin-left:0.35rem;">我的摊位</span>' : ''}
                     </div>
                     <div style="font-size:0.72rem;color:var(--haze);margin-top:0.15rem;">
-                      摊主 ${(b.circleIds || []).length} 人 · 作品顺序 ${Array.isArray(b.goodsOrder) ? b.goodsOrder.length : 0} 项已设
+                      摊主 ${(b.circleIds || []).length} 人 · ${Array.isArray(b.workIds) && b.workIds.length ? `已选作品 ${b.workIds.length} 件` : '展示摊主全部作品'}
                     </div>
                   </div>
                   <div style="display:flex;gap:0.25rem;flex-wrap:wrap;">
@@ -2860,6 +2860,10 @@
       const related = pack.works || [];
       const owners = new Set(booth.circleIds || []);
       let goods = related.filter(w => (w.circles || []).some(cid => owners.has(cid)));
+      if (Array.isArray(booth.workIds) && booth.workIds.length) {
+        const sel = new Set(booth.workIds);
+        goods = related.filter(w => sel.has(w.id));
+      }
       const order = Array.isArray(booth.goodsOrder) ? booth.goodsOrder : [];
       const rank = new Map(order.map((id, i) => [id, i]));
       return goods.slice().sort((a, z) => {
@@ -2876,7 +2880,7 @@
       const goods = authorBoothGoods(pack, booth);
       const claimMap = (booth.claimConditions && typeof booth.claimConditions === 'object' && !Array.isArray(booth.claimConditions)) ? booth.claimConditions : {};
       if (!goods.length) {
-        el.innerHTML = '<div style="font-size:0.75rem;color:var(--haze);">该摊位暂无关联作品</div>';
+        el.innerHTML = '<div style="font-size:0.75rem;color:var(--haze);">该摊位暂无展示作品，可在「编辑」中勾选</div>';
         return;
       }
       el.innerHTML = `
@@ -3002,7 +3006,7 @@
         </div>
         ${canFullEdit ? `
         <div class="form-group">
-          <label>挂接摊主（可多选）</label>
+          <label>挂接摊主（可多选 · 同一作者可开多个摊位）</label>
           <div style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:140px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
             ${circles.map(c => `
               <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.2rem 0.5rem;cursor:pointer;">
@@ -3013,6 +3017,29 @@
           </div>
         </div>
         ` : ''}
+        <div class="form-group">
+          <label>展示作品（可多选 · 不勾选则展示摊主全部关联作品）</label>
+          ${(() => {
+            const pool = canFullEdit
+              ? (pack.works || [])
+              : ownEventWorks(pack);
+            const selected = new Set(Array.isArray(booth?.workIds) && booth.workIds.length ? booth.workIds : []);
+            if (!pool.length) {
+              return '<div style="font-size:0.75rem;color:var(--haze);">暂无可选作品（需先将作品关联到本活动）</div>';
+            }
+            return `
+              <div style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
+                ${pool.map(w => `
+                  <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.2rem 0.5rem;cursor:pointer;">
+                    <input type="checkbox" class="ab-work" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''}>
+                    ${escapeHtml(w.title || '')}
+                  </label>
+                `).join('')}
+              </div>
+              <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">同一作者可在不同摊位勾选不同作品。</div>
+            `;
+          })()}
+        </div>
         <div class="form-group">
           <label>满额赠品档（可多档 · 一档可多作品 · 仅可选我的周边）</label>
           <div id="abTierList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
@@ -3097,7 +3124,8 @@
         logo: document.querySelector('#abLogoPreview img')?.src || '',
         description: document.getElementById('abDescription')?.value || '',
         images: [...document.querySelectorAll('#abImagesPreview img')].map(img => img.src),
-        promoTiers
+        promoTiers,
+        workIds: [...document.querySelectorAll('.ab-work:checked')].map(i => i.value)
       };
       // 仅在渲染了条件领取区块时提交，避免误清空其他摊主设置的条件
       if (document.getElementById('abClaimList')) {

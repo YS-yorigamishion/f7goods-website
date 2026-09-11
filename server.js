@@ -1526,6 +1526,12 @@ function sanitizeBoothImages(images) {
   if (!Array.isArray(images)) return undefined;
   return images.filter(u => u != null && String(u).trim() !== '').map(u => String(u));
 }
+// 摊位展示作品：空/缺省 = 展示摊主全部关联作品；有值 = 只展示勾选作品
+function sanitizeBoothWorkIds(input) {
+  if (input === undefined) return undefined;
+  if (!Array.isArray(input)) return [];
+  return [...new Set(input.filter(Boolean).map(String))];
+}
 // 条件领取：按「摊位 × 作品」存，只接受该摊位关联作品的 key
 function sanitizeClaimConditions(input, booth, event) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
@@ -1546,15 +1552,19 @@ function sanitizeClaimConditions(input, booth, event) {
   return out;
 }
 
-// 后台整体保存摊位数组时，清理条件领取里的空值与超长文本
+// 后台整体保存摊位数组时，清理条件领取里的空值与超长文本，并规范 workIds
 function sanitizeBoothsClaimFields(booths) {
   if (!Array.isArray(booths)) return booths;
   return booths.map(b => {
     if (!b || typeof b !== 'object') return b;
-    const raw = b.claimConditions;
-    if (raw === undefined) return b;
+    let next = b;
+    if (b.workIds !== undefined) {
+      next = { ...next, workIds: sanitizeBoothWorkIds(b.workIds) || [] };
+    }
+    const raw = next.claimConditions;
+    if (raw === undefined) return next;
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-      const { claimConditions, ...rest } = b;
+      const { claimConditions, ...rest } = next;
       return rest;
     }
     const clean = {};
@@ -1562,7 +1572,7 @@ function sanitizeBoothsClaimFields(booths) {
       const text = String(value == null ? '' : value).trim().slice(0, 200);
       if (text) clean[workId] = text;
     }
-    return { ...b, claimConditions: clean };
+    return { ...next, claimConditions: clean };
   });
 }
 
@@ -1640,6 +1650,7 @@ app.post('/api/author/only-booths/:eventId', authorAuthMiddleware, async (req, r
     order: booths.length,
     circleIds: Array.isArray(req.body.circleIds) ? req.body.circleIds.filter(Boolean) : [],
     goodsOrder: [],
+    workIds: sanitizeBoothWorkIds(req.body.workIds) || [],
     claimConditions: {},
     promoTiers: sanitizePromoTiers(req.body.promoTiers)
   };
@@ -1677,6 +1688,7 @@ app.put('/api/author/only-booths/:eventId/:boothId', authorAuthMiddleware, async
     if (req.body.circleIds !== undefined) booth.circleIds = Array.isArray(req.body.circleIds) ? req.body.circleIds.filter(Boolean) : [];
     if (req.body.promoTiers !== undefined) booth.promoTiers = sanitizePromoTiers(req.body.promoTiers);
     if (req.body.goodsOrder !== undefined) booth.goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
+    if (req.body.workIds !== undefined) booth.workIds = sanitizeBoothWorkIds(req.body.workIds) || [];
   } else {
     // Booth owner / event editor: limited fields including description + promo images
     if (req.body.title !== undefined) booth.title = String(req.body.title || '').trim();
@@ -1688,6 +1700,15 @@ app.put('/api/author/only-booths/:eventId/:boothId', authorAuthMiddleware, async
     }
     if (req.body.promoTiers !== undefined) booth.promoTiers = sanitizePromoTiers(req.body.promoTiers);
     if (req.body.goodsOrder !== undefined) booth.goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
+    // 摊主只能勾选自己的作品
+    if (req.body.workIds !== undefined) {
+      const mine = new Set(
+        readJSON('works.json')
+          .filter(w => (w.circles || []).includes(circleId))
+          .map(w => w.id)
+      );
+      booth.workIds = (sanitizeBoothWorkIds(req.body.workIds) || []).filter(id => mine.has(id));
+    }
   }
   // 条件领取：按摊位作品设置；非摊位管理员只影响自己提交的 key，避免覆盖其他摊主
   if (req.body.claimConditions !== undefined) {
