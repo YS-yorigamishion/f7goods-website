@@ -1559,7 +1559,17 @@ function sanitizeBoothsClaimFields(booths) {
     if (!b || typeof b !== 'object') return b;
     let next = b;
     if (b.workIds !== undefined) {
-      next = { ...next, workIds: sanitizeBoothWorkIds(b.workIds) || [] };
+      let ids = sanitizeBoothWorkIds(b.workIds) || [];
+      const ownerSet = new Set(b.circleIds || []);
+      if (ownerSet.size) {
+        const allowed = new Set(
+          readJSON('works.json')
+            .filter(w => (w.circles || []).some(cid => ownerSet.has(cid)))
+            .map(w => w.id)
+        );
+        ids = ids.filter(id => allowed.has(id));
+      }
+      next = { ...next, workIds: ids };
     }
     const raw = next.claimConditions;
     if (raw === undefined) return next;
@@ -1700,7 +1710,7 @@ app.put('/api/author/only-booths/:eventId/:boothId', authorAuthMiddleware, async
     }
     if (req.body.promoTiers !== undefined) booth.promoTiers = sanitizePromoTiers(req.body.promoTiers);
     if (req.body.goodsOrder !== undefined) booth.goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
-    // 摊主可管理本摊全部作品（含共同摊主），不限于自己的作品
+    // 仅可管理本摊已挂接摊主的作品
     if (req.body.workIds !== undefined) {
       const ownerSet = new Set(booth.circleIds || []);
       const allowed = new Set(

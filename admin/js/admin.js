@@ -6926,6 +6926,10 @@ function openBoothModal(boothId = null) {
   const works = window._boothCache?.works || [];
   const relatedWorks = works.filter(w => (event.relatedWorks || []).includes(w.id));
   const selectedOwners = new Set(booth?.circleIds || []);
+  // 展示作品：仅限本摊已挂接摊主的作品
+  const boothOwnerWorks = (booth && (booth.circleIds || []).length)
+    ? relatedWorks.filter(w => (w.circles || []).some(cid => selectedOwners.has(cid)))
+    : relatedWorks;
   const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: 50, giftWorkId: '', giftWorkIds: [], text: '' }];
   const claimGoods = booth ? boothGoodsList(booth, relatedWorks, circles) : [];
   const claimMap = (booth?.claimConditions && typeof booth.claimConditions === 'object' && !Array.isArray(booth.claimConditions)) ? booth.claimConditions : {};
@@ -6983,14 +6987,14 @@ function openBoothModal(boothId = null) {
       <div id="boothOwnerEmpty" style="display:none;font-size:0.8rem;color:var(--haze);padding:0.4rem;">无匹配作者</div>
     </div>
     <div class="form-group">
-      <label>展示作品（可多选 · 不勾选则展示摊主全部关联作品；同一作者可开多个摊位并分别勾选）</label>
+      <label>展示作品（可多选 · 不勾选则展示摊主全部关联作品；仅限本摊已挂接摊主的作品）</label>
       <div id="boothWorkList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:0.5rem;">
-        ${relatedWorks.map(w => `
+        ${boothOwnerWorks.map(w => `
           <label style="font-size:0.78rem;display:inline-flex;align-items:center;gap:0.25rem;border:1px solid var(--line);border-radius:999px;padding:0.2rem 0.55rem;cursor:pointer;background:var(--card);">
             <input type="checkbox" class="booth-work" value="${escapeHtml(w.id)}" ${(booth?.workIds || []).includes(w.id) ? 'checked' : ''}>
             ${escapeHtml(w.title || '')}
           </label>
-        `).join('') || '<span style="font-size:0.8rem;color:var(--haze);">本活动暂无关联作品</span>'}
+        `).join('') || '<span style="font-size:0.8rem;color:var(--haze);">请先挂接摊主，再勾选其作品</span>'}
       </div>
     </div>
     <div class="form-group">

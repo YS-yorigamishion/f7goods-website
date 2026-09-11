@@ -3035,7 +3035,7 @@
                   </label>
                 `).join('')}
               </div>
-              <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">可管理本摊全部作品（含共同摊主）；同一作者可在不同摊位勾选不同作品。</div>
+              <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">仅可管理本摊已挂接摊主的作品；未挂接到本摊的作者作品不可选。</div>
             `;
           })()}
         </div>
@@ -3080,12 +3080,13 @@
       return (pack?.works || []).filter(w => (w.circles || []).includes(me));
     }
 
-    // 可管理的作品池：活动管理员=本活动全部；摊主=本摊全部摊主作品（含别人）
+    // 可管理的作品池：仅限本摊已挂接摊主的作品
     function boothManageableWorks(pack, booth, canFullEdit) {
-      if (canFullEdit) return pack?.works || [];
-      if (!booth) return ownEventWorks(pack);
+      if (!booth) {
+        return canFullEdit ? (pack?.works || []) : ownEventWorks(pack);
+      }
       const owners = new Set(booth.circleIds || []);
-      if (!owners.size) owners.add(activeCircleId());
+      if (!owners.size) return ownEventWorks(pack);
       return (pack?.works || []).filter(w => (w.circles || []).some(cid => owners.has(cid)));
     }
 
