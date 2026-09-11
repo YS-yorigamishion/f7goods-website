@@ -14,43 +14,55 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260911m">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <section class="hero">
-    <h1 id="heroTitle" class="settings-pending" data-i18n="events.heroTitle">近期活动</h1>
-    <p id="heroSubtitle" class="settings-pending" data-i18n="events.heroSubtitle">关注最新的同人展会与活动信息，不错过每一场精彩</p>
+  <section class="hero cl-list-hero">
+    <div class="cl-list-mast">
+      <div>
+        <h1 id="heroTitle" class="settings-pending" data-i18n="events.heroTitle">近期活动</h1>
+        <p id="heroSubtitle" class="settings-pending" data-i18n="events.heroSubtitle">关注最新的同人展会与活动信息，不错过每一场精彩</p>
+      </div>
+      <div class="cl-list-count">共 <b id="eventTotalCount">0</b> 场活动</div>
+    </div>
+    <div class="cl-list-sub">
+      <strong id="pageTitle" class="settings-pending" data-i18n="events.listTitle">活动日历</strong>
+      <span id="pageSubtitle" class="settings-pending" data-i18n="events.listSubtitle">f7goods 参展及推荐的同人活动</span>
+    </div>
   </section>
 
   <main class="main-content">
-    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
-      <div>
-        <h2 id="pageTitle" class="settings-pending" data-i18n="events.listTitle">活动日历</h2>
-        <p id="pageSubtitle" class="settings-pending" data-i18n="events.listSubtitle">f7goods 参展及推荐的同人活动</p>
-      </div>
-      <div style="display:flex;gap:0.5rem;align-items:center;">
-        <div class="view-toggle">
-          <button class="view-btn active" data-view="timeline" data-i18n="events.timeline">时间轴</button>
-          <button class="view-btn" data-view="calendar" data-i18n="events.calendar">日历</button>
-          <button class="view-btn" data-view="grid" data-i18n="events.gridView">多格</button>
+    <div class="cl-toolbar-card">
+      <div class="cl-toolbar-row">
+        <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+        <span class="spacer"></span>
+        <button type="button" class="pill" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
+        <div class="cl-seg" id="viewSeg">
+          <button type="button" class="on" data-view="timeline" data-i18n="events.timeline">时间轴</button>
+          <button type="button" data-view="calendar" data-i18n="events.calendar">日历</button>
+          <button type="button" data-view="grid" data-i18n="events.gridView">多格</button>
         </div>
       </div>
-    </div>
-
-    <div class="filter-bar" style="margin-bottom:1.5rem;">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn" data-i18n="common.follow">关注</button>
-      <input type="text" class="search-input" placeholder="搜索活动名称、地点、分类..." id="searchInput" style="min-width:100%;margin-left:0;" data-i18n-placeholder="common.searchPlaceholder">
+      <div class="cl-toolbar-row">
+        <div id="typeFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+        <span class="spacer"></span>
+        <select class="form-input" id="sortSelect">
+          <option value="date-asc" selected>时间 ↑ 近→远</option>
+          <option value="date-desc">时间 ↓ 远→近</option>
+        </select>
+        <input type="text" class="search-input" placeholder="搜索活动名称、地点、分类..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+        <span class="cl-show-count">显示 <b id="eventShowCount">0</b></span>
+      </div>
     </div>
 
     <div id="eventsContainer">
       <div id="eventsSkeleton">
-        <div style="display:flex;flex-direction:column;gap:1rem;">
-          <div class="skeleton-card" style="display:flex;gap:1rem;padding:1rem;"><div class="skeleton" style="width:120px;height:80px;border-radius:8px;flex-shrink:0;"></div><div style="flex:1;"><div class="skeleton skeleton-text" style="width:70%;"></div><div class="skeleton skeleton-text" style="width:40%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:30%;margin-top:0.5rem;"></div></div></div>
-          <div class="skeleton-card" style="display:flex;gap:1rem;padding:1rem;"><div class="skeleton" style="width:120px;height:80px;border-radius:8px;flex-shrink:0;"></div><div style="flex:1;"><div class="skeleton skeleton-text" style="width:60%;"></div><div class="skeleton skeleton-text" style="width:50%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:25%;margin-top:0.5rem;"></div></div></div>
-          <div class="skeleton-card" style="display:flex;gap:1rem;padding:1rem;"><div class="skeleton" style="width:120px;height:80px;border-radius:8px;flex-shrink:0;"></div><div style="flex:1;"><div class="skeleton skeleton-text" style="width:80%;"></div><div class="skeleton skeleton-text" style="width:35%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:45%;margin-top:0.5rem;"></div></div></div>
-          <div class="skeleton-card" style="display:flex;gap:1rem;padding:1rem;"><div class="skeleton" style="width:120px;height:80px;border-radius:8px;flex-shrink:0;"></div><div style="flex:1;"><div class="skeleton skeleton-text" style="width:55%;"></div><div class="skeleton skeleton-text" style="width:60%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:30%;margin-top:0.5rem;"></div></div></div>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+          <div class="skeleton-card" style="display:flex;gap:0;padding:0;overflow:hidden;"><div class="skeleton" style="width:78px;height:104px;flex-shrink:0;"></div><div style="flex:1;padding:0.8rem;"><div class="skeleton skeleton-text" style="width:70%;"></div><div class="skeleton skeleton-text" style="width:40%;margin-top:0.5rem;"></div></div></div>
+          <div class="skeleton-card" style="display:flex;gap:0;padding:0;overflow:hidden;"><div class="skeleton" style="width:78px;height:104px;flex-shrink:0;"></div><div style="flex:1;padding:0.8rem;"><div class="skeleton skeleton-text" style="width:60%;"></div><div class="skeleton skeleton-text" style="width:50%;margin-top:0.5rem;"></div></div></div>
+          <div class="skeleton-card" style="display:flex;gap:0;padding:0;overflow:hidden;"><div class="skeleton" style="width:78px;height:104px;flex-shrink:0;"></div><div style="flex:1;padding:0.8rem;"><div class="skeleton skeleton-text" style="width:80%;"></div><div class="skeleton skeleton-text" style="width:35%;margin-top:0.5rem;"></div></div></div>
         </div>
       </div>
     </div>
@@ -69,10 +81,51 @@
     let currentView = 'timeline';
     let calYear, calMonth;
     let currentFollowFilter = false;
+    let currentStatusFilter = 'all';
+    let currentTypeFilter = 'all';
 
     function toggleFollowFilter() {
       currentFollowFilter = !currentFollowFilter;
-      document.getElementById('followFilterBtn').classList.toggle('active', currentFollowFilter);
+      const btn = document.getElementById('followFilterBtn');
+      btn.classList.toggle('on', currentFollowFilter);
+      btn.classList.toggle('active', currentFollowFilter);
+      renderEvents();
+    }
+
+    function buildEventFilterButtons() {
+      // Status pills
+      const st = document.getElementById('statusFilters');
+      st.innerHTML = `<button type="button" class="pill on" data-status="all">${t('common.allStatus')}</button>` +
+        EVENT_STATUS_ORDERED.map(s => `<button type="button" class="pill" data-status="${s.id}">${escapeHtml(tCat(s))}</button>`).join('');
+      st.querySelectorAll('.pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          st.querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
+          btn.classList.add('on');
+          currentStatusFilter = btn.dataset.status;
+          renderEvents();
+        });
+      });
+
+      // Type pills
+      const ty = document.getElementById('typeFilters');
+      ty.innerHTML =
+        '<button type="button" class="pill on" data-ty="all">全部类型</button>' +
+        '<button type="button" class="pill" data-ty="only">ONLY 专场</button>' +
+        '<button type="button" class="pill" data-ty="normal">综合展会</button>';
+      ty.querySelectorAll('.pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          ty.querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
+          btn.classList.add('on');
+          currentTypeFilter = btn.dataset.ty;
+          renderEvents();
+        });
+      });
+    }
+
+    function setEventView(btn) {
+      currentView = btn.dataset.view;
+      document.querySelectorAll('#viewSeg button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
       renderEvents();
     }
 
@@ -84,8 +137,8 @@
           F7API.getWorks()
         ]);
         allEvents = events;
-        // Sort: date descending (newest first)
-        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // Default order: nearest first (ascending by date)
+        allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
         allWorks = works;
         const now = new Date();
         calYear = now.getFullYear();
@@ -102,6 +155,7 @@
         document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
         document.querySelectorAll('.hero, .page-header').forEach(el => el.style.visibility = '');
 
+        buildEventFilterButtons();
         renderEvents();
       } catch (e) {
         document.getElementById('eventsContainer').innerHTML =
@@ -116,19 +170,48 @@
         const followedList = getFollowedCircles();
         events = events.filter(e => (e.relatedCircles || []).some(cid => followedList.includes(cid)));
       }
+      // Status filter
+      if (currentStatusFilter !== 'all') {
+        events = events.filter(e => e.status === currentStatusFilter);
+      }
+      // Type filter
+      if (currentTypeFilter === 'only') {
+        events = events.filter(e => e.type === 'only');
+      } else if (currentTypeFilter === 'normal') {
+        events = events.filter(e => e.type !== 'only');
+      }
       const search = document.getElementById('searchInput').value.toLowerCase();
-      if (!search) return events;
-      return events.filter(e => {
-        // Match event name, location, description
-        if (e.title.toLowerCase().includes(search)) return true;
-        if ((e.location || '').toLowerCase().includes(search)) return true;
-        if ((e.description || '').toLowerCase().includes(search)) return true;
-        // Match category from related works
-        const related = allWorks.filter(w => (e.relatedWorks || []).includes(w.id));
-        if (related.some(w => (CATEGORIES[w.category] || '').includes(search))) return true;
-        if (related.some(w => (w.tags || []).some(t => t.toLowerCase().includes(search)))) return true;
-        return false;
-      });
+      if (search) {
+        events = events.filter(e => {
+          // Match event name, location, description
+          if (e.title.toLowerCase().includes(search)) return true;
+          if ((e.location || '').toLowerCase().includes(search)) return true;
+          if ((e.description || '').toLowerCase().includes(search)) return true;
+          // Match category from related works
+          const related = allWorks.filter(w => (e.relatedWorks || []).includes(w.id));
+          if (related.some(w => (CATEGORIES[w.category] || '').includes(search))) return true;
+          if (related.some(w => (w.tags || []).some(t => t.toLowerCase().includes(search)))) return true;
+          return false;
+        });
+      }
+      // Sort
+      const sortVal = document.getElementById('sortSelect')?.value || 'date-asc';
+      events = events.slice().sort((a, b) =>
+        sortVal === 'date-desc'
+          ? new Date(b.date) - new Date(a.date)
+          : new Date(a.date) - new Date(b.date)
+      );
+      return events;
+    }
+
+    function eventChipHtml(event) {
+      const stLabel = EVENT_STATUS_LABELS[event.status] || event.status || '';
+      let cls = 'cl-ev-chip';
+      if (event.status === 'jinxingzhong') cls += ' now';
+      else if (event.status === 'jijiangkaiqi') cls += ' soon';
+      const isOnly = event.type === 'only';
+      return (stLabel ? `<span class="${cls}">${escapeHtml(stLabel)}</span>` : '') +
+        (isOnly ? '<span class="cl-ev-chip only">ONLY 专场</span>' : '');
     }
 
     function renderEvents() {
@@ -136,6 +219,14 @@
       // Remove skeleton
       document.getElementById('eventsSkeleton')?.remove();
       const events = getFilteredEvents();
+
+      const totalEl = document.getElementById('eventTotalCount');
+      if (totalEl) totalEl.textContent = allEvents.length;
+      const showEl = document.getElementById('eventShowCount');
+      if (showEl) showEl.textContent = events.length;
+      const showWrap = document.querySelector('.cl-show-count');
+      if (showWrap) showWrap.style.display = currentView === 'calendar' ? 'none' : '';
+
       if (events.length === 0) {
         container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${t('common.noMatchingEvents')}</p></div>`;
         return;
@@ -145,34 +236,62 @@
       else renderGrid(container, events);
     }
 
-    // ===== Timeline View =====
+    // ===== Timeline View (month groups + ticket-stub date) =====
     function renderTimeline(container, events) {
-      container.innerHTML = `<div class="events-timeline">${events.map(event => `
-        <a class="event-card" style="cursor:pointer;display:flex;gap:1.5rem;text-decoration:none;color:inherit;" href="/event-detail.html?id=${event.id}">
-          <div style="flex:1;">
-            <span class="event-date">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
-            <h3 class="event-title">${escapeHtml(event.title)}</h3>
-            ${event.status ? `<span class="card-tag ${event.status}" style="font-size:0.75rem;padding:0.2rem 0.6rem;margin-bottom:0.5rem;display:inline-block;">${EVENT_STATUS_LABELS[event.status] || escapeHtml(event.status)}</span>` : ''}
-            <div class="event-location">${escapeHtml(event.location || '')}</div>
-            ${event.booth ? `<div class="event-booth">展位: ${escapeHtml(event.booth)}</div>` : ''}
-          </div>
-          ${event.coverImage ? `<div style="flex-shrink:0;width:160px;height:110px;border-radius:8px;overflow:hidden;"><img src="${event.coverImage}" alt="${escapeHtml(event.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
-        </a>
-      `).join('')}</div>`;
+      const WD = ['日', '一', '二', '三', '四', '五', '六'];
+      let html = '';
+      let lastMonth = null;
+      events.forEach(event => {
+        const d = String(event.date || '');
+        const mk = d.slice(0, 7);
+        if (mk !== lastMonth) {
+          html += `<div class="cl-ev-month">${mk ? mk.slice(0, 4) + ' 年 ' + Number(mk.slice(5, 7)) + ' 月' : '未标日期'}</div>`;
+          lastMonth = mk;
+        }
+        const endD = event.endDate || event.date;
+        const multi = endD && endD !== event.date;
+        const wd = d ? WD[new Date(d + 'T00:00:00').getDay()] : '';
+        const cover = event.coverImage || (event.images && event.images[0]) || '';
+        const workN = (event.relatedWorks || []).length;
+        html += `
+          <a class="cl-ev-row${event.status === 'jinxingzhong' ? ' ongoing' : ''}" href="/event-detail.html?id=${encodeURIComponent(event.id)}">
+            <div class="cl-ev-stub">
+              <span class="m">${d.slice(5, 7) ? Number(d.slice(5, 7)) + ' 月' : ''}</span>
+              <span class="d">${d.slice(8, 10) || '—'}</span>
+              ${multi ? `<span class="r">– ${endD.slice(8, 10)} 日</span>` : (wd ? `<span class="wd">周${wd}</span>` : '')}
+            </div>
+            <div class="cl-ev-main">
+              <div class="cl-ev-info">
+                <div class="cl-ev-meta">${eventChipHtml(event)}${workN ? `<span class="cl-ev-chip">${workN} 件周边</span>` : ''}</div>
+                <div class="cl-ev-title">${escapeHtml(event.title)}</div>
+                <div class="cl-ev-loc">${escapeHtml(event.location || '')}</div>
+                ${event.booth ? `<div class="cl-ev-booth">展位 ${escapeHtml(event.booth)}</div>` : ''}
+              </div>
+              <div class="cl-ev-thumb">
+                ${cover
+                  ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(event.title)}" loading="lazy">`
+                  : `<span>${escapeHtml((event.title || '?').charAt(0))}</span>`}
+              </div>
+            </div>
+          </a>`;
+      });
+      container.innerHTML = html;
     }
 
     // ===== Calendar View =====
     function renderCalendar(container, events) {
-      const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-      const weekdays = ['日','一','二','三','四','五','六'];
+      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+      const pad2 = n => String(n).padStart(2, '0');
+      const keyOf = dt => dt.getFullYear() + '-' + pad2(dt.getMonth() + 1) + '-' + pad2(dt.getDate());
 
       // Build event lookup by date string
       const eventMap = {};
       events.forEach(e => {
-        const start = new Date(e.date);
-        const end = e.endDate ? new Date(e.endDate) : start;
+        if (!e.date) return;
+        const start = new Date(e.date + 'T00:00:00');
+        const end = e.endDate ? new Date(e.endDate + 'T00:00:00') : start;
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-          const key = d.toISOString().slice(0, 10);
+          const key = keyOf(d);
           if (!eventMap[key]) eventMap[key] = [];
           eventMap[key].push(e);
         }
@@ -182,43 +301,41 @@
       const lastDay = new Date(calYear, calMonth + 1, 0);
       const startPad = firstDay.getDay();
       const totalDays = lastDay.getDate();
-      const today = new Date().toISOString().slice(0, 10);
+      const todayKey = keyOf(new Date());
 
       let daysHTML = '';
       // Pad before
       const prevLast = new Date(calYear, calMonth, 0).getDate();
       for (let i = startPad - 1; i >= 0; i--) {
-        daysHTML += `<div class="calendar-day other-month"><span class="calendar-day-num">${prevLast - i}</span></div>`;
+        daysHTML += `<div class="cl-cal-day muted"><span class="num">${prevLast - i}</span></div>`;
       }
       // Current month
       for (let d = 1; d <= totalDays; d++) {
-        const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const isToday = dateStr === today;
+        const dateStr = `${calYear}-${pad2(calMonth + 1)}-${pad2(d)}`;
+        const isToday = dateStr === todayKey;
         const dayEvents = eventMap[dateStr] || [];
-        daysHTML += `<div class="calendar-day${isToday ? ' today' : ''}">
-          <span class="calendar-day-num">${d}</span>
-          ${dayEvents.map(e => `<a class="calendar-event" href="/event-detail.html?id=${e.id}" title="${escapeHtml(e.title)}">${escapeHtml(e.title)}</a>`).join('')}
+        daysHTML += `<div class="cl-cal-day${isToday ? ' today' : ''}">
+          <span class="num">${d}</span>
+          ${dayEvents.map(e => `<a class="cl-cal-ev${e.type === 'only' ? ' only' : ''}" href="/event-detail.html?id=${encodeURIComponent(e.id)}" title="${escapeHtml(e.title)}">${escapeHtml(e.title)}</a>`).join('')}
         </div>`;
       }
       // Pad after
       const endPad = 7 - ((startPad + totalDays) % 7);
       if (endPad < 7) {
         for (let i = 1; i <= endPad; i++) {
-          daysHTML += `<div class="calendar-day other-month"><span class="calendar-day-num">${i}</span></div>`;
+          daysHTML += `<div class="cl-cal-day muted"><span class="num">${i}</span></div>`;
         }
       }
 
       container.innerHTML = `
-        <div class="calendar-container">
-          <div class="calendar-header">
-            <button class="calendar-nav" onclick="changeMonth(-1)">&#8249;</button>
-            <h3>${calYear}年 ${monthNames[calMonth]}</h3>
-            <button class="calendar-nav" onclick="changeMonth(1)">&#8250;</button>
+        <div class="cl-cal">
+          <div class="cl-cal-head">
+            <button type="button" class="cl-cal-nav" onclick="changeMonth(-1)">&#8249;</button>
+            <h3>${calYear} 年 ${calMonth + 1} 月</h3>
+            <button type="button" class="cl-cal-nav" onclick="changeMonth(1)">&#8250;</button>
           </div>
-          <div class="calendar-weekdays">
-            ${weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('')}
-          </div>
-          <div class="calendar-days">${daysHTML}</div>
+          <div class="cl-cal-week">${weekdays.map(w => `<div>${w}</div>`).join('')}</div>
+          <div class="cl-cal-days">${daysHTML}</div>
         </div>
       `;
     }
@@ -232,41 +349,37 @@
 
     // ===== Grid View =====
     function renderGrid(container, events) {
-      container.innerHTML = `<div class="events-grid">${events.map(event => `
-        <a class="event-grid-card" style="text-decoration:none;color:inherit;" href="/event-detail.html?id=${event.id}">
-          ${event.coverImage
-            ? `<div style="height:180px;overflow:hidden;"><img src="${event.coverImage}" alt="${escapeHtml(event.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-            : `<div class="event-grid-card-header">
-                <span class="event-date">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
-                <h3>${escapeHtml(event.title)}</h3>
-                ${event.status ? `<span class="card-tag ${event.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${EVENT_STATUS_LABELS[event.status] || escapeHtml(event.status)}</span>` : ''}
-              </div>`
-          }
-          <div class="event-grid-card-body">
-            ${event.coverImage ? `
-              <span class="event-date" style="margin-bottom:0.5rem;">${formatDate(event.date)}${event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : ''}</span>
-              <h3 style="font-family:'Noto Serif SC',serif;font-size:1.05rem;font-weight:600;margin-bottom:0.5rem;">${escapeHtml(event.title)}</h3>
-              ${event.status ? `<span class="card-tag ${event.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-bottom:0.5rem;display:inline-block;">${EVENT_STATUS_LABELS[event.status] || escapeHtml(event.status)}</span>` : ''}
-            ` : ''}
-            <div class="event-location">${escapeHtml(event.location || '')}</div>
-            ${event.booth ? `<div class="event-booth" style="margin-top:0.8rem;">展位: ${escapeHtml(event.booth)}</div>` : ''}
+      container.innerHTML = `<div class="cl-ev-grid">${events.map(event => {
+        const cover = event.coverImage || (event.images && event.images[0]) || '';
+        const d = String(event.date || '');
+        return `
+        <a class="cl-ev-gcard" href="/event-detail.html?id=${encodeURIComponent(event.id)}">
+          <div class="cl-ev-gcover">
+            <div class="cl-ev-gstub">
+              <span class="m">${d.slice(5, 7) ? Number(d.slice(5, 7)) + ' 月' : ''}</span>
+              <span class="d">${d.slice(8, 10) || '—'}</span>
+            </div>
+            ${cover
+              ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(event.title)}" loading="lazy">`
+              : `<span style="position:relative;z-index:1">${escapeHtml((event.title || '?').charAt(0))}</span>`}
           </div>
-        </a>
-      `).join('')}</div>`;
+          <div class="cl-ev-gbody">
+            <div class="cl-ev-gtitle">${escapeHtml(event.title)}</div>
+            <div class="cl-ev-gloc">${escapeHtml(event.location || '')}</div>
+            <div class="cl-ev-gmeta">${eventChipHtml(event)}</div>
+          </div>
+        </a>`;
+      }).join('')}</div>`;
     }
 
     // ===== View Toggle =====
-    document.querySelectorAll('.view-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentView = btn.dataset.view;
-        renderEvents();
-      });
+    document.querySelectorAll('#viewSeg button').forEach(btn => {
+      btn.addEventListener('click', () => setEventView(btn));
     });
 
-    // ===== Search =====
+    // ===== Sort & Search =====
     document.getElementById('searchInput').addEventListener('input', debounce(renderEvents));
+    document.getElementById('sortSelect').addEventListener('change', renderEvents);
 
     loadEvents();
 
@@ -277,7 +390,7 @@
           F7API.getWorks()
         ]);
         allEvents = events;
-        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+        allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
         allWorks = works;
         renderEvents();
       }

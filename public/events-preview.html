@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>近期活动 — 重设计预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --muted: #8A8078;
+      --haze: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(34,32,30,.04);
+      --max: 1060px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper); color: var(--ink);
+      font-size: 15px; line-height: 1.7; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .preview-bar {
+      height: 32px; background: #2C3340; color: #F6F2EB;
+      display: flex; align-items: center; justify-content: center;
+      gap: .75rem; font-size: .78rem; padding: 0 .5rem;
+    }
+    .preview-bar strong { color: #fff; }
+
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+
+    /* Masthead */
+    .mast {
+      position: relative; background: var(--card);
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 1.15rem 1.25rem 1rem; margin-bottom: .9rem;
+    }
+    .mast::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: var(--accent);
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .mast-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: .5rem 1rem; }
+    .mast h1 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: clamp(1.35rem, 2.8vw, 1.65rem);
+      font-weight: 700; letter-spacing: -.01em; line-height: 1.2;
+    }
+    .mast .sub { color: var(--muted); font-size: .86rem; margin-top: .25rem; }
+    .count-chip { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+    .count-chip b { font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.2rem; color: var(--ink); font-weight: 700; }
+    .mast-foot {
+      margin-top: .7rem; display: flex; flex-wrap: wrap; align-items: baseline;
+      gap: .5rem; font-size: .8rem; color: var(--muted);
+    }
+    .mast-foot strong { font-family: 'Noto Serif SC', Georgia, serif; font-size: .92rem; color: var(--ink); font-weight: 700; }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: .7rem .85rem;
+      margin-bottom: 1.1rem; display: flex; flex-direction: column; gap: .55rem;
+    }
+    .trow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+    .trow + .trow { padding-top: .55rem; }
+    .pill {
+      height: 30px; padding: 0 12px; border: 1px solid var(--line);
+      border-radius: 999px; background: var(--card); color: var(--haze);
+      font-size: .78rem; font-weight: 500; transition: .15s ease;
+      display: inline-flex; align-items: center;
+    }
+    .pill:hover { border-color: #D4C8B8; color: var(--ink); }
+    .pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .spacer { flex: 1; }
+    select, input[type="search"] {
+      height: 30px; border: 1px solid var(--line); border-radius: 999px;
+      background: var(--paper); font: inherit; font-size: .78rem;
+      padding: 0 .75rem; color: var(--ink);
+    }
+    select { min-width: 130px; }
+    input[type="search"] { min-width: 150px; flex: 1; max-width: 220px; }
+    .show-n { font-size: .76rem; color: var(--haze); white-space: nowrap; }
+    .show-n b { color: var(--ink); font-size: .9rem; }
+
+    /* Segmented view switch */
+    .seg {
+      display: inline-flex; border: 1px solid var(--line);
+      border-radius: 999px; overflow: hidden; background: var(--paper);
+    }
+    .seg button {
+      height: 30px; padding: 0 13px; font-size: .78rem;
+      color: var(--haze); border-right: 1px solid var(--line);
+    }
+    .seg button:last-child { border-right: none; }
+    .seg button.on { background: var(--card); color: var(--accent); font-weight: 600; }
+
+    /* ===== Timeline: month groups + ticket-stub date ===== */
+    .month-sep {
+      display: flex; align-items: center; gap: .6rem;
+      margin: 1.1rem 0 .6rem;
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: .82rem; font-weight: 700; letter-spacing: .04em;
+    }
+    .month-sep:first-child { margin-top: 0; }
+    .month-sep::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+    .tl-row {
+      display: flex; align-items: stretch;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
+      margin-bottom: .6rem; transition: .18s ease;
+    }
+    .tl-row:hover { border-color: #D4C8B8; box-shadow: var(--shadow-sm); }
+    .tl-row.ongoing { border-color: rgba(217,79,92,.4); }
+
+    /* Date stub (ticket style) */
+    .stub {
+      flex-shrink: 0; width: 78px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: .7rem .3rem;
+      background: var(--paper);
+      border-right: 1px dashed #C9C2B6;
+      position: relative;
+    }
+    .stub .m { font-size: .7rem; color: var(--haze); letter-spacing: .06em; }
+    .stub .d {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.65rem; font-weight: 700; line-height: 1.1; color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+    .stub .r { font-size: .64rem; color: var(--haze); margin-top: .1rem; }
+    .stub .wd { font-size: .64rem; color: var(--haze); margin-top: .15rem; }
+    /* perforation notches */
+    .stub::before, .stub::after {
+      content: ''; position: absolute; right: -6px; width: 12px; height: 12px;
+      background: var(--paper); border: 1px solid var(--line); border-radius: 50%;
+    }
+    .stub::before { top: -7px; }
+    .stub::after { bottom: -7px; }
+
+    .tl-main { flex: 1; min-width: 0; padding: .75rem .9rem .7rem; display: flex; gap: .85rem; }
+    .tl-info { flex: 1; min-width: 0; }
+    .tl-meta { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; margin-bottom: .35rem; }
+    .chip {
+      font-size: .66rem; font-weight: 600; padding: .1rem .45rem;
+      border-radius: 999px; background: var(--paper);
+      border: 1px solid var(--line); color: var(--haze);
+    }
+    .chip.soon { color: var(--warning); border-color: rgba(196,138,42,.35); background: rgba(196,138,42,.08); }
+    .chip.now { color: #fff; background: var(--accent); border-color: var(--accent); }
+    .chip.done { color: var(--haze); }
+    .chip.only { color: var(--info); border-color: rgba(74,123,167,.35); background: rgba(74,123,167,.08); }
+    .tl-title {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.02rem; font-weight: 700; line-height: 1.35;
+      margin-bottom: .25rem; word-break: break-word;
+    }
+    .tl-loc { font-size: .78rem; color: #4A453F; }
+    .tl-booth { font-size: .74rem; color: var(--accent); margin-top: .15rem; }
+    .tl-thumb {
+      width: 150px; height: 96px; flex-shrink: 0; border-radius: var(--radius-sm);
+      overflow: hidden; background: linear-gradient(145deg,#EDE6DA,#D5CBBB);
+      display: flex; align-items: center; justify-content: center;
+      color: #6b6560; font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.3rem;
+    }
+    .tl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* ===== Calendar ===== */
+    .cal {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .cal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .7rem .9rem; border-bottom: 1px solid var(--line);
+    }
+    .cal-head h3 { font-family: 'Noto Serif SC', Georgia, serif; font-size: 1rem; font-weight: 700; }
+    .cal-nav {
+      width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--line);
+      display: inline-flex; align-items: center; justify-content: center; color: var(--muted);
+    }
+    .cal-nav:hover { border-color: var(--accent); color: var(--accent); }
+    .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--line); }
+    .cal-week div {
+      text-align: center; font-size: .7rem; color: var(--haze);
+      padding: .4rem 0; border-right: 1px solid var(--line);
+    }
+    .cal-week div:last-child { border-right: none; }
+    .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .cal-day {
+      min-height: 84px; padding: .35rem .4rem;
+      border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+      font-size: .72rem;
+    }
+    .cal-day:nth-child(7n) { border-right: none; }
+    .cal-day.muted { background: rgba(246,242,235,.6); color: var(--haze); }
+    .cal-day.today { background: rgba(217,79,92,.05); }
+    .cal-day .num {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 20px; height: 20px; border-radius: 999px;
+      font-family: 'Noto Serif SC', Georgia, serif; font-weight: 700; font-size: .78rem;
+    }
+    .cal-day.today .num { background: var(--accent); color: #fff; }
+    .cal-ev {
+      display: block; margin-top: .2rem; padding: .1rem .3rem;
+      font-size: .64rem; border-radius: 4px; line-height: 1.4;
+      background: rgba(217,79,92,.1); color: var(--accent);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cal-ev.only { background: rgba(74,123,167,.12); color: var(--info); }
+
+    /* ===== Grid ===== */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: .9rem; }
+    .g-card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; flex-direction: column; transition: .18s ease;
+    }
+    .g-card:hover { border-color: #D4C8B8; transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+    .g-cover {
+      height: 150px; position: relative; overflow: hidden;
+      background: linear-gradient(145deg,#EDE6DA,#D5CBBB);
+      display: flex; align-items: center; justify-content: center;
+      color: #6b6560; font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.5rem;
+    }
+    .g-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .g-cover::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(34,30,28,.1), transparent 45%, rgba(34,30,28,.3));
+    }
+    .g-stub {
+      position: absolute; left: 10px; top: 10px; z-index: 2;
+      background: rgba(255,252,247,.94); border-radius: 8px;
+      padding: .25rem .5rem; text-align: center; line-height: 1.15;
+      border: 1px solid rgba(34,32,30,.06);
+    }
+    .g-stub .m { font-size: .6rem; color: var(--haze); display: block; }
+    .g-stub .d {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.05rem; font-weight: 700; color: var(--ink);
+    }
+    .g-body { padding: .75rem .9rem .8rem; flex: 1; display: flex; flex-direction: column; }
+    .g-title {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: .98rem; font-weight: 700; line-height: 1.35;
+      margin-bottom: .25rem;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .g-loc { font-size: .76rem; color: #4A453F; }
+    .g-meta { margin-top: .5rem; display: flex; flex-wrap: wrap; gap: .3rem; }
+
+    .empty { text-align: center; color: var(--muted); padding: 2.5rem 1rem; font-size: .88rem; }
+
+    @media (max-width: 640px) {
+      .wrap { padding: .75rem .8rem 2rem; }
+      .stub { width: 62px; }
+      .stub .d { font-size: 1.35rem; }
+      .tl-main { padding: .65rem .7rem; gap: .6rem; }
+      .tl-thumb { width: 92px; height: 92px; }
+      .tl-title { font-size: .92rem; }
+      .cal-day { min-height: 62px; padding: .25rem .2rem; }
+      .cal-day .num { min-width: 17px; height: 17px; font-size: .7rem; }
+      .cal-ev { font-size: .58rem; }
+      .grid { grid-template-columns: 1fr; }
+      input[type="search"] { max-width: none; width: 100%; flex: 1 1 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span><strong>预览</strong> · 近期活动重设计（日期存根时间轴 / 日历 / 多格）</span>
+  </div>
+
+  <div class="wrap">
+    <header class="mast">
+      <div class="mast-top">
+        <div>
+          <h1>近期活动</h1>
+          <p class="sub">关注最新的同人展会与活动信息，不错过每一场精彩</p>
+        </div>
+        <div class="count-chip">共 <b id="totalN">0</b> 场活动</div>
+      </div>
+      <div class="mast-foot">
+        <strong>活动日历</strong>
+        <span>f7goods 参展及推荐的同人活动</span>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="trow">
+        <div id="stRow" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
+          <button type="button" class="pill on" data-st="all" onclick="setSt(this)">全部状态</button>
+          <button type="button" class="pill" data-st="jijiangkaiqi" onclick="setSt(this)">即将开启</button>
+          <button type="button" class="pill" data-st="jinxingzhong" onclick="setSt(this)">进行中</button>
+          <button type="button" class="pill" data-st="yijiesu" onclick="setSt(this)">已结束</button>
+        </div>
+        <span class="spacer"></span>
+        <button type="button" class="pill" id="followBtn" onclick="toggleFollow()">关注</button>
+        <div class="seg" id="seg">
+          <button type="button" class="on" data-v="timeline" onclick="setView(this)">时间轴</button>
+          <button type="button" data-v="calendar" onclick="setView(this)">日历</button>
+          <button type="button" data-v="grid" onclick="setView(this)">多格</button>
+        </div>
+      </div>
+      <div class="trow">
+        <div id="tyRow" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
+          <button type="button" class="pill on" data-ty="all" onclick="setTy(this)">全部类型</button>
+          <button type="button" class="pill" data-ty="only" onclick="setTy(this)">ONLY 专场</button>
+          <button type="button" class="pill" data-ty="normal" onclick="setTy(this)">综合展会</button>
+        </div>
+        <span class="spacer"></span>
+        <select id="sortSel" onchange="render()">
+          <option value="date-asc" selected>时间 ↑ 近→远</option>
+          <option value="date-desc">时间 ↓ 远→近</option>
+        </select>
+        <input type="search" id="searchIn" placeholder="搜索活动、地点…" oninput="render()">
+        <span class="show-n">显示 <b id="showN">0</b></span>
+      </div>
+    </div>
+
+    <div id="viewRoot"></div>
+  </div>
+
+  <script>
+    const ST = { jijiangkaiqi: '即将开启', jinxingzhong: '进行中', yijiesu: '已结束' };
+    const WD = ['日','一','二','三','四','五','六'];
+    const TODAY = '2026-09-11';
+
+    const EVENTS = [
+      { id:'e1', title:'秋日茶会 · 同人交流', start:'2026-09-09', end:'2026-09-13', loc:'北京 · 朝阳文创园', st:'jinxingzhong', type:'normal', booth:'B12', works:6, hue:40, followed:true },
+      { id:'e2', title:'永远的7日之都 ONLY 2026 秋', start:'2026-09-20', end:'2026-09-20', loc:'广州 · 保利世贸博览馆', st:'jijiangkaiqi', type:'only', booth:'A-01', works:14, hue:340, followed:true },
+      { id:'e3', title:'七都同人祭', start:'2026-10-05', end:'2026-10-06', loc:'杭州 · 国际会展中心', st:'jijiangkaiqi', type:'normal', booth:'', works:9, hue:160, followed:false },
+      { id:'e4', title:'冬季 ONLY 专场', start:'2026-12-06', end:'2026-12-06', loc:'上海 · 光大会展中心', st:'jijiangkaiqi', type:'only', booth:'C-07', works:11, hue:280, followed:false },
+      { id:'e5', title:'2026 夏日祭同人祭', start:'2026-08-15', end:'2026-08-16', loc:'上海 · 国家会展中心', st:'yijiesu', type:'normal', booth:'', works:18, hue:200, followed:false },
+      { id:'e6', title:'7都 · 迴梦游园', start:'2026-07-11', end:'2026-07-11', loc:'成都 · 新会展中和城际酒店', st:'yijiesu', type:'normal', booth:'', works:5, hue:18, followed:false }
+    ];
+
+    let curSt = 'all', curTy = 'all', followOnly = false, view = 'timeline';
+    let calY = 2026, calM = 8; // 2026-09
+
+    function setSt(btn) {
+      curSt = btn.dataset.st;
+      document.querySelectorAll('#stRow .pill').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on'); render();
+    }
+    function setTy(btn) {
+      curTy = btn.dataset.ty;
+      document.querySelectorAll('#tyRow .pill').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on'); render();
+    }
+    function toggleFollow() {
+      followOnly = !followOnly;
+      document.getElementById('followBtn').classList.toggle('on', followOnly);
+      render();
+    }
+    function setView(btn) {
+      view = btn.dataset.v;
+      document.querySelectorAll('#seg button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on'); render();
+    }
+
+    const pad = n => String(n).padStart(2, '0');
+    function fmt(d) { return d.slice(0, 7).replace('-', '/') + '/' + d.slice(8, 10); }
+    function dayOf(d) { return d.slice(8, 10); }
+    function monOf(d) { return Number(d.slice(5, 7)); }
+    function yearOf(d) { return d.slice(0, 4); }
+    function weekdayOf(d) { return WD[new Date(d + 'T00:00:00').getDay()]; }
+
+    function chipHtml(e) {
+      const st = ST[e.st];
+      const cls = e.st === 'jinxingzhong' ? 'now' : (e.st === 'jijiangkaiqi' ? 'soon' : 'done');
+      return `<span class="chip ${cls}">${st}</span>` +
+        (e.type === 'only' ? '<span class="chip only">ONLY 专场</span>' : '');
+    }
+
+    function filtered() {
+      const q = (document.getElementById('searchIn').value || '').trim().toLowerCase();
+      const sort = document.getElementById('sortSel').value;
+      let list = EVENTS.filter(e =>
+        (curSt === 'all' || e.st === curSt) &&
+        (curTy === 'all' || e.type === curTy) &&
+        (!followOnly || e.followed)
+      );
+      if (q) list = list.filter(e => e.title.toLowerCase().includes(q) || e.loc.toLowerCase().includes(q));
+      list = list.slice().sort((a, b) =>
+        sort === 'date-desc' ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start)
+      );
+      return list;
+    }
+
+    function render() {
+      document.getElementById('totalN').textContent = EVENTS.length;
+      const list = filtered();
+      document.getElementById('showN').textContent = list.length;
+      document.querySelector('.show-n').style.display = view === 'calendar' ? 'none' : '';
+      const root = document.getElementById('viewRoot');
+      if (!list.length) { root.innerHTML = '<div class="empty">没有匹配的活动</div>'; return; }
+      if (view === 'timeline') root.innerHTML = renderTimeline(list);
+      else if (view === 'calendar') root.innerHTML = renderCal();
+      else root.innerHTML = renderGrid(list);
+    }
+
+    function renderTimeline(list) {
+      let html = '', lastMon = null;
+      list.forEach(e => {
+        const mk = e.start.slice(0, 7);
+        if (mk !== lastMon) {
+          html += `<div class="month-sep">${yearOf(e.start)} 年 ${monOf(e.start)} 月</div>`;
+          lastMon = mk;
+        }
+        const multi = e.end !== e.start;
+        html += `
+          <a class="tl-row${e.st === 'jinxingzhong' ? ' ongoing' : ''}" href="#" onclick="event.preventDefault()">
+            <div class="stub">
+              <span class="m">${monOf(e.start)} 月</span>
+              <span class="d">${dayOf(e.start)}</span>
+              ${multi ? `<span class="r">– ${dayOf(e.end)} 日</span>` : `<span class="wd">周${weekdayOf(e.start)}</span>`}
+            </div>
+            <div class="tl-main">
+              <div class="tl-info">
+                <div class="tl-meta">${chipHtml(e)}<span class="chip">${e.works} 件周边</span></div>
+                <div class="tl-title">${e.title}</div>
+                <div class="tl-loc">${e.loc}</div>
+                ${e.booth ? `<div class="tl-booth">展位 ${e.booth}</div>` : ''}
+              </div>
+              <div class="tl-thumb">
+                <div style="position:absolute;inset:0"></div>
+                <span style="position:relative;z-index:1;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,hsl(${e.hue} 30% 88%),hsl(${e.hue} 24% 74%))">${e.title.charAt(0)}</span>
+              </div>
+            </div>
+          </a>`;
+      });
+      return html;
+    }
+
+    function renderCal() {
+      const evDays = {};
+      EVENTS.forEach(e => {
+        const d0 = new Date(e.start + 'T00:00:00');
+        const d1 = new Date(e.end + 'T00:00:00');
+        for (let d = new Date(d0); d <= d1; d.setDate(d.getDate() + 1)) {
+          const k = d.toISOString().slice(0, 10);
+          (evDays[k] = evDays[k] || []).push(e);
+        }
+      });
+      const first = new Date(calY, calM, 1);
+      const days = new Date(calY, calM + 1, 0).getDate();
+      const pad0 = first.getDay();
+      const prevDays = new Date(calY, calM, 0).getDate();
+
+      let cells = '';
+      for (let i = pad0 - 1; i >= 0; i--) cells += `<div class="cal-day muted"><span class="num">${prevDays - i}</span></div>`;
+      for (let d = 1; d <= days; d++) {
+        const ds = `${calY}-${pad(calM + 1)}-${pad(d)}`;
+        const evs = evDays[ds] || [];
+        cells += `<div class="cal-day${ds === TODAY ? ' today' : ''}">
+          <span class="num">${d}</span>
+          ${evs.map(e => `<a class="cal-ev${e.type === 'only' ? ' only' : ''}" href="#" onclick="event.preventDefault()" title="${e.title}">${e.title}</a>`).join('')}
+        </div>`;
+      }
+      const endPad = 7 - ((pad0 + days) % 7);
+      if (endPad < 7) for (let i = 1; i <= endPad; i++) cells += `<div class="cal-day muted"><span class="num">${i}</span></div>`;
+
+      return `
+        <div class="cal">
+          <div class="cal-head">
+            <button class="cal-nav" onclick="calM--;if(calM<0){calM=11;calY--;}render()">‹</button>
+            <h3>${calY} 年 ${calM + 1} 月</h3>
+            <button class="cal-nav" onclick="calM++;if(calM>11){calM=0;calY++;}render()">›</button>
+          </div>
+          <div class="cal-week">${WD.map(w => `<div>${w}</div>`).join('')}</div>
+          <div class="cal-days">${cells}</div>
+        </div>`;
+    }
+
+    function renderGrid(list) {
+      return `<div class="grid">${list.map(e => `
+        <a class="g-card" href="#" onclick="event.preventDefault()">
+          <div class="g-cover">
+            <div class="g-stub"><span class="m">${monOf(e.start)} 月</span><span class="d">${dayOf(e.start)}</span></div>
+            <span style="position:absolute;inset:0;background:linear-gradient(145deg,hsl(${e.hue} 30% 88%),hsl(${e.hue} 24% 74%))"></span>
+            <span style="position:relative;z-index:1">${e.title.charAt(0)}</span>
+          </div>
+          <div class="g-body">
+            <div class="g-title">${e.title}</div>
+            <div class="g-loc">${e.loc}</div>
+            <div class="g-meta">${chipHtml(e)}</div>
+          </div>
+        </a>`).join('')}</div>`;
+    }
+
+    render();
+  </script>
+</body>
+</html>
