@@ -629,7 +629,7 @@
                       <div class="body">
                         <div class="name">${esc(g.title)}</div>
                         <div class="price">${esc(formatPriceLabel(g.price))}</div>
-                        <div class="only-qtyrow">
+                        <div class="only-qtyrow" data-work-qty="${esc(g.id)}">
                           <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
                           <span class="q">${q}</span>
                           <button type="button" data-add="${esc(g.id)}">+</button>
@@ -693,8 +693,7 @@
       });
       applyOnlyGifts();
       saveOnlyCart(eventId, cart);
-      const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
-      renderOnlyBooths(tab);
+      patchOnlyQtyUI(booth.goods.map(g => g.id));
       renderOnlyCartUI();
     }
 
@@ -721,13 +720,25 @@
           isGift: false
         };
       }
-      saveOnlyCart(eventId, cart);
       applyOnlyGifts();
       saveOnlyCart(eventId, cart);
       if (skipRender) return;
-      const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
-      renderOnlyBooths(tab);
+      patchOnlyQtyUI([workId]);
       renderOnlyCartUI();
+    }
+
+    // Patch qty display in-place to avoid full list re-render flicker
+    function patchOnlyQtyUI(workIds) {
+      const cart = window._onlyCart || {};
+      (workIds || []).forEach(workId => {
+        const q = cart[workId]?.qty || 0;
+        document.querySelectorAll('[data-work-qty="' + String(workId).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]').forEach(row => {
+          const qEl = row.querySelector('.q');
+          const dec = row.querySelector('[data-dec]');
+          if (qEl) qEl.textContent = q;
+          if (dec) dec.disabled = !q;
+        });
+      });
     }
 
     // Auto attach gift items from multi-tier booth promos
@@ -887,8 +898,7 @@
       if (cart[id].qty <= 0) delete cart[id];
       applyOnlyGifts();
       saveOnlyCart(window._only.event.id, cart);
-      const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
-      renderOnlyBooths(tab);
+      patchOnlyQtyUI([id]);
       renderOnlyCartUI();
     });
 
