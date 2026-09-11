@@ -957,7 +957,7 @@
         return `
         <div class="only-ci">
           ${img ? `<img class="thumb" src="${esc(img)}" alt="">` : '<div class="thumb"></div>'}
-          <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}${(!e.isGift && e.claim) ? '<span class="claim-tag">条件领取</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : esc(formatPriceLabel(e.priceLabel != null && e.priceLabel !== '' ? e.priceLabel : e.price))}${(!e.isGift && e.claim) ? ' · ' + esc(e.claim) : ''}</small></div>
+          <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}${(!e.isGift && e.claim) ? '<span class="claim-tag">条件领取</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : esc(formatPriceLabel(e.priceLabel != null && e.priceLabel !== '' ? e.priceLabel : e.price))}</small></div>
           <div class="only-qty">
             <button type="button" data-q="${esc(e.id)}" data-d="-1">−</button>
             <span>${e.qty}</span>
@@ -972,7 +972,7 @@
       sum.innerHTML = `
         <div class="only-sumrow"><span style="color:var(--muted);">合计（不含赠品）</span><span>${money(total)}</span></div>
         ${gifts.map(g => `<div class="only-sumrow gift"><span>赠品 · ${esc(g.boothName)}</span><span>${esc(g.title)}</span></div>`).join('')}
-        ${claims.map(c => `<div class="only-sumrow claim"><span>条件领取 · ${esc(c.boothName)}</span><span>${esc(c.title)}（${esc(c.claim)}）· 不计入满赠</span></div>`).join('')}
+        ${claims.map(c => `<div class="only-sumrow claim"><span>条件领取 · ${esc(c.boothName)}</span><span>${esc(c.title)} · 不计入满赠</span></div>`).join('')}
         <div class="only-sumrow total"><span>预估合计</span><span class="v">${money(total)}</span></div>
       `;
     }
@@ -1009,7 +1009,7 @@
       const event = window._only.event;
       const lines = [`【${event.title} · 现场清单】`];
       Object.values(window._onlyCart || {}).forEach(e => {
-        lines.push(`· 摊位${e.boothName} | ${e.title} ×${e.qty}` + (e.isGift ? ' [赠品]' : (e.claim ? ` [条件领取：${e.claim}·不计入满赠]` : '') + (e.price ? ` = ${money(e.price * e.qty)}` : '')));
+        lines.push(`· 摊位${e.boothName} | ${e.title} ×${e.qty}` + (e.isGift ? ' [赠品]' : (e.claim ? ' [条件领取·不计入满赠]' : '') + (e.price ? ` = ${money(e.price * e.qty)}` : '')));
       });
       lines.push(`合计 ${count} 件 · ${money(total)}`);
       gifts.forEach(g => lines.push(`赠品[${g.boothName}] ${g.title}`));
@@ -1105,7 +1105,16 @@
       const event = window._only.event;
       const entries = Object.values(window._onlyCart || {});
       const claims = entries.filter(e => !e.isGift && e.claim);
-      const claimBooths = [...new Set(claims.map(e => e.boothName))];
+      // 按摊位归并：右侧列出该摊位里条件领取的作品名（不打印条件文案）
+      const claimLines = [];
+      claims.forEach(e => {
+        const row = claimLines.find(r => r.booth === e.boothName);
+        if (row) {
+          if (!row.titles.includes(e.title)) row.titles.push(e.title);
+        } else {
+          claimLines.push({ booth: e.boothName, titles: [e.title] });
+        }
+      });
       const imgs = await Promise.all(entries.map(e => loadImg(resolveEntryImg(e))));
 
       // receipt proportions — logical size, rendered at 2x for crisp export
@@ -1116,7 +1125,7 @@
       const rowH = 58;
       const headerH = 118;
       const giftH = gifts.length * 24;
-      const claimH = claimBooths.length * 18;
+      const claimH = claimLines.length * 18;
       const footerH = 78;
       const bodyH = entries.length * rowH;
       const totalH = 64;
@@ -1259,16 +1268,30 @@
         });
       }
 
-      // 条件领取备注（按摊位去重，不打印条件文案）
-      if (claimBooths.length) {
+      // 条件领取备注（同一摊位一行：左侧摊位，右侧作品名；不打印条件文案）
+      if (claimLines.length) {
         y += 18;
         dashLine(ctx, paperX + padX, paperX + paperW - padX, y);
         y += 18;
-        claimBooths.forEach(name => {
+        const usable = paperW - padX * 2;
+        ctx.font = '11px "Noto Sans SC", sans-serif';
+        const fit = (txt, maxW) => {
+          if (ctx.measureText(txt).width <= maxW) return txt;
+          let s = txt;
+          while (s.length > 1 && ctx.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+          return s + '…';
+        };
+        claimLines.forEach(row => {
           ctx.fillStyle = '#C48A2A';
-          ctx.font = '11px "Noto Sans SC", sans-serif';
-          const label = String(name).length > 28 ? String(name).slice(0, 27) + '…' : String(name);
-          ctx.fillText(`※ 条件领取(不计入满赠) ${label}`, paperX + padX, y);
+          const leftTxt = fit(`※ 条件领取(不计入满赠) ${row.booth}`, usable * 0.6);
+          ctx.fillText(leftTxt, paperX + padX, y);
+          const rightX = paperX + paperW - padX;
+          const avail = rightX - (paperX + padX + ctx.measureText(leftTxt).width) - 14;
+          if (avail > 28) {
+            ctx.textAlign = 'right';
+            ctx.fillText(fit(row.titles.join('、'), avail), rightX, y);
+            ctx.textAlign = 'left';
+          }
           y += 18;
         });
       }
