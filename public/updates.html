@@ -14,44 +14,49 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260911l">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <section class="hero">
-    <h1 id="heroTitle" class="settings-pending" data-i18n="updates.heroTitle">📰 同人动态</h1>
-    <p id="heroSubtitle" class="settings-pending" data-i18n="updates.heroSubtitle">了解同人圈的最新动态和重要更新</p>
+  <section class="hero cl-list-hero">
+    <div class="cl-list-mast">
+      <div>
+        <h1 id="heroTitle" class="settings-pending" data-i18n="updates.heroTitle">同人动态</h1>
+        <p id="heroSubtitle" class="settings-pending" data-i18n="updates.heroSubtitle">了解同人圈的最新动态和重要更新</p>
+      </div>
+      <div class="cl-list-count">共 <b id="updateTotalCount">0</b> 条动态</div>
+    </div>
+    <div class="cl-list-sub">
+      <strong id="pageTitle" class="settings-pending" data-i18n="updates.listTitle">动态列表</strong>
+      <span id="pageSubtitle" class="settings-pending" data-i18n="updates.listSubtitle">按发布时间倒序排列</span>
+    </div>
   </section>
 
   <main class="main-content">
-    <div class="page-header">
-      <h2 id="pageTitle" class="settings-pending" data-i18n="updates.listTitle">动态列表</h2>
-      <p id="pageSubtitle" class="settings-pending" data-i18n="updates.listSubtitle">按发布时间倒序排列</p>
-    </div>
-
-    <div class="filter-bar" id="statusFilters">
-      <button class="filter-btn active" data-status="all" data-i18n="common.all">全部状态</button>
-    </div>
-    <div class="filter-bar" id="categoryFilters">
-      <button class="filter-btn active" data-cat="all" data-i18n="common.all">全部分类</button>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
-        <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
-          <option value="date-desc" data-i18n="common.dateDesc">发布日期 ↓ 新→旧</option>
+    <div class="cl-toolbar-card">
+      <div class="cl-toolbar-row">
+        <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+        <span class="spacer"></span>
+        <button type="button" class="pill" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
+      </div>
+      <div class="cl-toolbar-row">
+        <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+        <span class="spacer"></span>
+        <select class="form-input" id="sortSelect">
+          <option value="date-desc" selected data-i18n="common.dateDesc">发布日期 ↓ 新→旧</option>
           <option value="date-asc" data-i18n="common.dateAsc">发布日期 ↑ 旧→新</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索动态..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+        <span class="cl-show-count">显示 <b id="updateShowCount">0</b></span>
       </div>
     </div>
-    <div class="filter-bar">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn" data-i18n="common.follow">关注</button>
-    </div>
 
-    <div class="cards-grid" id="updatesGrid">
-      <div id="updatesSkeleton" class="skeleton-grid">
-        <div class="skeleton-card" style="grid-column:1/-1;"><div class="skeleton" style="height:180px;border-radius:8px 8px 0 0;"></div><div style="padding:1rem;"><div class="skeleton skeleton-text" style="width:60%;"></div><div class="skeleton skeleton-text" style="width:40%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:80%;margin-top:0.5rem;"></div></div></div>
-        <div class="skeleton-card" style="grid-column:1/-1;"><div class="skeleton" style="height:180px;border-radius:8px 8px 0 0;"></div><div style="padding:1rem;"><div class="skeleton skeleton-text" style="width:70%;"></div><div class="skeleton skeleton-text" style="width:30%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:75%;margin-top:0.5rem;"></div></div></div>
-        <div class="skeleton-card" style="grid-column:1/-1;"><div class="skeleton" style="height:180px;border-radius:8px 8px 0 0;"></div><div style="padding:1rem;"><div class="skeleton skeleton-text" style="width:50%;"></div><div class="skeleton skeleton-text" style="width:45%;margin-top:0.5rem;"></div><div class="skeleton skeleton-text short" style="width:85%;margin-top:0.5rem;"></div></div></div>
+    <div id="updatesGrid" class="cl-feed">
+      <div id="updatesSkeleton">
+        <div class="skeleton-card" style="margin-bottom:0.6rem;"><div style="display:flex;gap:0;"><div class="skeleton" style="width:168px;height:104px;flex-shrink:0;"></div><div style="padding:0.8rem;flex:1;"><div class="skeleton skeleton-text" style="width:60%;"></div><div class="skeleton skeleton-text short" style="width:80%;margin-top:0.5rem;"></div></div></div></div>
+        <div class="skeleton-card" style="margin-bottom:0.6rem;"><div style="display:flex;gap:0;"><div class="skeleton" style="width:168px;height:104px;flex-shrink:0;"></div><div style="padding:0.8rem;flex:1;"><div class="skeleton skeleton-text" style="width:70%;"></div><div class="skeleton skeleton-text short" style="width:75%;margin-top:0.5rem;"></div></div></div></div>
+        <div class="skeleton-card"><div style="display:flex;gap:0;"><div class="skeleton" style="width:168px;height:104px;flex-shrink:0;"></div><div style="padding:0.8rem;flex:1;"><div class="skeleton skeleton-text" style="width:50%;"></div><div class="skeleton skeleton-text short" style="width:85%;margin-top:0.5rem;"></div></div></div></div>
       </div>
     </div>
   </main>
@@ -73,37 +78,44 @@
 
     function toggleFollowFilter() {
       currentFollowFilter = !currentFollowFilter;
-      document.getElementById('followFilterBtn').classList.toggle('active', currentFollowFilter);
+      const btn = document.getElementById('followFilterBtn');
+      btn.classList.toggle('on', currentFollowFilter);
+      btn.classList.toggle('active', currentFollowFilter);
       renderUpdates();
     }
+
+    let updateCatLabels = {};
+    let updateStLabels = {};
 
     function buildUpdateFilterButtons() {
       const cats = window._updateCategories || [];
       const status = window._updateStatus || [];
-      // Category buttons
+      updateCatLabels = {};
+      updateStLabels = {};
+      cats.forEach(c => updateCatLabels[c.id] = tCat(c));
+      status.forEach(s => updateStLabels[s.id] = tCat(s));
+
+      // Category pills
       const catContainer = document.getElementById('categoryFilters');
-      const catHtml = `<button class="filter-btn active" data-cat="all">${t('common.allCategories')}</button>` +
-        cats.map(c => `<button class="filter-btn" data-cat="${c.id}">${escapeHtml(tCat(c))}</button>`).join('');
-      // Keep the sort/search area
-      const rightSide = catContainer.querySelector('div[style*="margin-left:auto"]');
-      catContainer.innerHTML = catHtml;
-      if (rightSide) catContainer.appendChild(rightSide);
-      catContainer.querySelectorAll('.filter-btn').forEach(btn => {
+      catContainer.innerHTML = `<button type="button" class="pill on" data-cat="all">${t('common.allCategories')}</button>` +
+        cats.map(c => `<button type="button" class="pill" data-cat="${c.id}">${escapeHtml(tCat(c))}</button>`).join('');
+      catContainer.querySelectorAll('.pill').forEach(btn => {
         btn.addEventListener('click', () => {
-          catContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
+          catContainer.querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
+          btn.classList.add('on');
           currentUpdateCategory = btn.dataset.cat;
           renderUpdates();
         });
       });
-      // Status buttons
+
+      // Status pills
       const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = `<button class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
-        status.map(c => `<button class="filter-btn" data-status="${c.id}">${escapeHtml(tCat(c))}</button>`).join('');
-      statusContainer.querySelectorAll('.filter-btn').forEach(btn => {
+      statusContainer.innerHTML = `<button type="button" class="pill on" data-status="all">${t('common.allStatus')}</button>` +
+        status.map(c => `<button type="button" class="pill" data-status="${c.id}">${escapeHtml(tCat(c))}</button>`).join('');
+      statusContainer.querySelectorAll('.pill').forEach(btn => {
         btn.addEventListener('click', () => {
-          statusContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
+          statusContainer.querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
+          btn.classList.add('on');
           currentUpdateStatus = btn.dataset.status;
           renderUpdates();
         });
@@ -143,6 +155,47 @@
       }
     }
 
+    function monthKeyOf(dateStr) {
+      return String(dateStr || '').slice(0, 7);
+    }
+    function monthLabelOf(key) {
+      const parts = key.split('-');
+      if (parts.length < 2) return key || '未标日期';
+      return parts[0] + ' 年 ' + Number(parts[1]) + ' 月';
+    }
+
+    function updateRowHtml(u, isPinned) {
+      const cover = u.coverImage || (u.images && u.images[0]) || '';
+      const authorNames = (u.relatedCircles || []).map(cid => circlesMap[cid]).filter(Boolean).join('、');
+      const catLabel = updateCatLabels[u.category] || '';
+      const stLabel = updateStLabels[u.status] || '';
+      const stDone = /结束|完成/.test(stLabel);
+      const d = String(u.publishDate || '');
+      const day = d.slice(8, 10) || '';
+      const mon = d.slice(5, 7) ? Number(d.slice(5, 7)) + '月' : '';
+      return `
+        <div class="cl-upd-row${isPinned ? ' pinned' : ''}">
+          <div class="cl-upd-date">${day ? `<b>${day}</b>${mon}` : ''}</div>
+          <a class="cl-upd-card${isPinned ? ' pinned' : ''}" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
+            <div class="cl-upd-thumb">
+              ${cover
+                ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(u.title)}" loading="lazy">`
+                : `<span style="position:relative;z-index:1;">${escapeHtml((u.title || '?').charAt(0))}</span>`}
+            </div>
+            <div class="cl-upd-main">
+              <div class="cl-upd-meta">
+                ${isPinned ? `<span class="cl-upd-chip pin">${t('updates.pinned') || '置顶'}</span>` : ''}
+                ${catLabel ? `<span class="cl-upd-chip cat">${escapeHtml(catLabel)}</span>` : ''}
+                ${stLabel ? `<span class="cl-upd-chip${stDone ? ' done' : ''}">${escapeHtml(stLabel)}</span>` : ''}
+              </div>
+              <div class="cl-upd-title">${escapeHtml(u.title)}</div>
+              ${authorNames ? `<div class="cl-upd-author">${escapeHtml(authorNames)}</div>` : ''}
+              <div class="cl-upd-excerpt">${escapeHtml(u.content || '')}</div>
+            </div>
+          </a>
+        </div>`;
+    }
+
     function renderUpdates() {
       const grid = document.getElementById('updatesGrid');
       // Remove skeleton
@@ -179,34 +232,37 @@
         filtered.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate));
       }
 
+      const totalEl = document.getElementById('updateTotalCount');
+      if (totalEl) totalEl.textContent = allUpdates.length;
+      const showEl = document.getElementById('updateShowCount');
+      if (showEl) showEl.textContent = filtered.length;
+
       if (filtered.length === 0) {
         grid.innerHTML = `<div class="empty-state"><div class="icon">📰</div><p>${t('common.noUpdates')}</p></div>`;
         return;
       }
 
-      grid.innerHTML = filtered.map(u => {
-        const preview = u.content.length > 60 ? u.content.substring(0, 60) + '...' : u.content;
-        const authorNames = (u.relatedCircles || []).map(cid => circlesMap[cid]).filter(Boolean).join('、');
-        return `
-        <a class="card" href="/update-detail.html?id=${u.id}" style="text-decoration:none;color:inherit;">
-          <div class="card-image" style="${(u.coverImage || (u.images && u.images.length > 0)) ? '' : 'background:linear-gradient(135deg,#9b59b6,#8e44ad);'}">
-            ${u.coverImage
-              ? `<img src="${u.coverImage}" alt="${escapeHtml(u.title)}" loading="lazy">`
-              : (u.images && u.images.length > 0
-                ? `<img src="${u.images[0]}" alt="${escapeHtml(u.title)}" loading="lazy">`
-                : '<span class="placeholder-icon" style="color:white;">📰</span>')}
-          </div>
-          <div class="card-body">
-            ${u.pinned ? `<span class="card-tag" style="background:var(--accent);color:white;">${t('updates.pinned')}</span>` : ''}
-            <h3 class="card-title">${escapeHtml(u.title)}</h3>
-            ${authorNames ? `<p style="font-size:0.75rem;color:var(--accent);margin-top:0.2rem;">${escapeHtml(authorNames)}</p>` : ''}
-            <p class="card-subtitle" style="color:var(--haze);font-size:0.8rem;">${escapeHtml(preview)}</p>
-          </div>
-          <div class="card-footer">
-            <span class="card-date">${formatDate(u.publishDate)}</span>
-          </div>
-        </a>`;
-      }).join('');
+      // Pinned first, then month-grouped timeline
+      const pinned = filtered.filter(u => u.pinned);
+      const rest = filtered.filter(u => !u.pinned);
+
+      let html = '';
+      if (pinned.length) {
+        html += `<div class="cl-pin-label">${t('updates.pinned') || '置顶'}动态</div>`;
+        html += pinned.map(u => updateRowHtml(u, true)).join('');
+      }
+
+      let lastMonth = null;
+      rest.forEach(u => {
+        const mk = monthKeyOf(u.publishDate);
+        if (mk !== lastMonth) {
+          html += `<div class="cl-month-sep"><span>${escapeHtml(monthLabelOf(mk))}</span></div>`;
+          lastMonth = mk;
+        }
+        html += updateRowHtml(u, false);
+      });
+
+      grid.innerHTML = html;
     }
 
     loadUpdates();

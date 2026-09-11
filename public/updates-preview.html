@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同人动态 — 重设计预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --muted: #8A8078;
+      --haze: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(34,32,30,.04);
+      --max: 1000px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.7;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .preview-bar {
+      height: 32px; background: #2C3340; color: #F6F2EB;
+      display: flex; align-items: center; justify-content: center;
+      gap: .75rem; font-size: .78rem; padding: 0 .5rem;
+    }
+    .preview-bar strong { color: #fff; }
+
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+
+    /* Masthead (same language as circles / projects) */
+    .mast {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.25rem 1rem;
+      margin-bottom: .9rem;
+    }
+    .mast::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: var(--accent);
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .mast-top {
+      display: flex; flex-wrap: wrap; align-items: flex-end;
+      justify-content: space-between; gap: .5rem 1rem;
+    }
+    .mast h1 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: clamp(1.35rem, 2.8vw, 1.65rem);
+      font-weight: 700; letter-spacing: -.01em; line-height: 1.2;
+    }
+    .mast .sub { color: var(--muted); font-size: .86rem; margin-top: .25rem; }
+    .count-chip { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+    .count-chip b {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.2rem; color: var(--ink); font-weight: 700;
+    }
+    .mast-foot {
+      margin-top: .7rem; display: flex; flex-wrap: wrap;
+      align-items: baseline; gap: .5rem; font-size: .8rem; color: var(--muted);
+    }
+    .mast-foot strong {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: .92rem; color: var(--ink); font-weight: 700;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: .7rem .85rem;
+      margin-bottom: 1.1rem; display: flex; flex-direction: column; gap: .55rem;
+    }
+    .trow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+    .trow + .trow { padding-top: .55rem; }
+    .pill {
+      height: 30px; padding: 0 12px;
+      border: 1px solid var(--line); border-radius: 999px;
+      background: var(--card); color: var(--haze);
+      font-size: .78rem; font-weight: 500; transition: .15s ease;
+      display: inline-flex; align-items: center;
+    }
+    .pill:hover { border-color: #D4C8B8; color: var(--ink); }
+    .pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .spacer { flex: 1; }
+    select, input[type="search"] {
+      height: 30px; border: 1px solid var(--line); border-radius: 999px;
+      background: var(--paper); font: inherit; font-size: .78rem;
+      padding: 0 .75rem; color: var(--ink);
+    }
+    select { min-width: 140px; }
+    input[type="search"] { min-width: 150px; flex: 1; max-width: 220px; }
+    .show-n { font-size: .76rem; color: var(--haze); white-space: nowrap; }
+    .show-n b { color: var(--ink); font-size: .9rem; }
+
+    /* Pinned */
+    .pin-label {
+      display: flex; align-items: center; gap: .45rem;
+      font-size: .74rem; color: var(--accent); font-weight: 600;
+      letter-spacing: .04em; margin: 0 0 .5rem .1rem;
+    }
+    .pin-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+    /* Feed with date rail */
+    .feed { position: relative; padding-left: 74px; }
+    .feed::before {
+      content: ''; position: absolute; left: 57px; top: .4rem; bottom: .4rem;
+      width: 1px; background: var(--line);
+    }
+    .month-sep {
+      position: relative; margin: 1.1rem 0 .55rem -74px; padding-left: 74px;
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: .8rem; font-weight: 700; color: var(--ink);
+      letter-spacing: .04em;
+    }
+    .month-sep:first-child { margin-top: 0; }
+    .month-sep span {
+      display: inline-block; background: var(--paper); padding-right: .6rem;
+    }
+    .row { position: relative; margin-bottom: .6rem; }
+    .row::before {
+      content: ''; position: absolute; left: -20px; top: 26px;
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--paper);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .row.pinned::before { background: var(--warning); box-shadow: 0 0 0 1px var(--warning); }
+    .row-date {
+      position: absolute; left: -74px; top: 20px; width: 52px;
+      text-align: right; font-size: .7rem; color: var(--haze);
+      font-variant-numeric: tabular-nums; line-height: 1.3;
+    }
+    .row-date b {
+      display: block; font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: .92rem; color: var(--ink); font-weight: 700;
+    }
+
+    /* Update card */
+    .u-card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; gap: 0; transition: .18s ease;
+      text-decoration: none; color: inherit;
+    }
+    .u-card, .u-card * { text-decoration: none; }
+    .u-card:hover { border-color: #D4C8B8; box-shadow: var(--shadow-sm); }
+    .u-card.pinned { border-color: rgba(217,79,92,.35); }
+    .u-thumb {
+      width: 168px; flex-shrink: 0; position: relative;
+      background: linear-gradient(145deg, #EDE6DA, #D5CBBB);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      color: #6b6560; font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.4rem;
+    }
+    .u-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .u-main { padding: .8rem .95rem .75rem; flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .u-meta { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; margin-bottom: .35rem; }
+    .chip {
+      font-size: .66rem; font-weight: 600;
+      padding: .1rem .45rem; border-radius: 999px;
+      background: var(--paper); border: 1px solid var(--line); color: var(--haze);
+    }
+    .chip.cat { color: var(--ink); border-color: #D4C8B8; }
+    .chip.pin { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .chip.done { color: var(--success); }
+    .u-title {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.02rem; font-weight: 700; line-height: 1.35;
+      margin-bottom: .2rem; word-break: break-word;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .u-author { font-size: .72rem; color: var(--accent); margin-bottom: .3rem; }
+    .u-excerpt {
+      font-size: .8rem; color: #4A453F; line-height: 1.6;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      flex: 1;
+    }
+
+    .empty { text-align: center; color: var(--muted); padding: 2.5rem 1rem; font-size: .88rem; }
+
+    @media (max-width: 640px) {
+      .wrap { padding: .75rem .8rem 2rem; }
+      .feed { padding-left: 58px; }
+      .feed::before { left: 43px; }
+      .month-sep { margin-left: -58px; padding-left: 58px; }
+      .row-date { left: -58px; width: 38px; font-size: .62rem; }
+      .row-date b { font-size: .78rem; }
+      .row::before { left: -16px; top: 22px; width: 8px; height: 8px; }
+      .u-thumb { width: 92px; }
+      .u-main { padding: .7rem .75rem .65rem; }
+      .u-title { font-size: .9rem; }
+      .u-excerpt { font-size: .74rem; }
+      input[type="search"] { max-width: none; width: 100%; flex: 1 1 100%; }
+      select { flex: 1; min-width: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span><strong>预览</strong> · 同人动态重设计（置顶条 + 日期轴时间线 + 横排动态卡）</span>
+  </div>
+
+  <div class="wrap">
+    <header class="mast">
+      <div class="mast-top">
+        <div>
+          <h1>同人动态</h1>
+          <p class="sub">了解同人圈的最新动态和重要更新</p>
+        </div>
+        <div class="count-chip">共 <b id="totalN">0</b> 条动态</div>
+      </div>
+      <div class="mast-foot">
+        <strong>动态列表</strong>
+        <span>按发布时间倒序排列</span>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="trow">
+        <div id="catRow" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
+          <button type="button" class="pill on" data-cat="all" onclick="setCat(this)">全部分类</button>
+          <button type="button" class="pill" data-cat="zixun" onclick="setCat(this)">资讯</button>
+          <button type="button" class="pill" data-cat="zuopin" onclick="setCat(this)">作品</button>
+          <button type="button" class="pill" data-cat="huodong" onclick="setCat(this)">活动</button>
+          <button type="button" class="pill" data-cat="qita" onclick="setCat(this)">其它</button>
+        </div>
+        <span class="spacer"></span>
+        <button type="button" class="pill" id="followBtn" onclick="toggleFollow()">关注</button>
+      </div>
+      <div class="trow">
+        <div id="stRow" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
+          <button type="button" class="pill on" data-st="all" onclick="setSt(this)">全部状态</button>
+          <button type="button" class="pill" data-st="jinxingzhong" onclick="setSt(this)">进行中</button>
+          <button type="button" class="pill" data-st="yijiesu" onclick="setSt(this)">已结束</button>
+        </div>
+        <span class="spacer"></span>
+        <select id="sortSel" onchange="render()">
+          <option value="date-desc" selected>发布日期 ↓ 新→旧</option>
+          <option value="date-asc">发布日期 ↑ 旧→新</option>
+        </select>
+        <input type="search" id="searchIn" placeholder="搜索动态…" oninput="render()">
+        <span class="show-n">显示 <b id="showN">0</b></span>
+      </div>
+    </div>
+
+    <div id="feed" class="feed"></div>
+  </div>
+
+  <script>
+    const CAT = { zixun: '资讯', zuopin: '作品', huodong: '活动', qita: '其它' };
+    const ST = { jinxingzhong: '进行中', yijiesu: '已结束' };
+
+    const UPDATES = [
+      { id:'u1', title:'2027 七都新春宴投稿通道开启', cat:'huodong', st:'jinxingzhong', pinned:true,
+        authors:['七都企划组'], date:'2026-09-08',
+        content:'新春宴视频企划正式开始收稿，短片、合唱、手书均可投稿，截止日期为 2027 年 1 月 10 日。',
+        hue:18, followed:true },
+      { id:'u2', title:'春日手作社 9 月新品上架', cat:'zuopin', st:'jinxingzhong', pinned:false,
+        authors:['春日手作社'], date:'2026-09-08',
+        content:'徽章套装与明信片组已上架，ONLY 专场现场可自提，线上预售同步开启。',
+        hue:340, followed:true },
+      { id:'u3', title:'夏日祭画集《昼长》正式发布', cat:'zuopin', st:'yijiesu', pinned:false,
+        authors:['都市档案组','夜巡工作室'], date:'2026-09-02',
+        content:'合志画集已完成印制并线上发布，感谢所有参与创作者。',
+        hue:200, followed:false },
+      { id:'u4', title:'ONLY 专场摊位位置公布', cat:'zixun', st:'jinxingzhong', pinned:false,
+        authors:['七都企划组'], date:'2026-08-28',
+        content:'本届 ONLY 摊位图已更新，可在专场页摊位列查看各摊位周边与满赠信息。',
+        hue:40, followed:true },
+      { id:'u5', title:'角色歌合辑招募混音师', cat:'huodong', st:'jinxingzhong', pinned:false,
+        authors:['铃音社'], date:'2026-08-20',
+        content:'合辑已完成录制，现招募混音与母带处理，欢迎有经验的朋友联系。',
+        hue:300, followed:false },
+      { id:'u6', title:'平台新增「卡片封面」自定义', cat:'zixun', st:'yijinzhong', pinned:false,
+        authors:[], date:'2026-08-12',
+        content:'作者可在个人资料中设置卡片封面图，未设置时默认使用头像。',
+        hue:160, followed:false },
+      { id:'u7', title:'2026 夏日祭活动圆满结束', cat:'huodong', st:'yijiesu', pinned:false,
+        authors:['七都企划组'], date:'2026-07-20',
+        content:'感谢到场与线上支持的每一位，活动记录已归档至活动详情页。',
+        hue:60, followed:false }
+    ];
+
+    let curCat = 'all';
+    let curSt = 'all';
+    let followOnly = false;
+
+    function setCat(btn) {
+      curCat = btn.dataset.cat;
+      document.querySelectorAll('#catRow .pill').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      render();
+    }
+    function setSt(btn) {
+      curSt = btn.dataset.st;
+      document.querySelectorAll('#stRow .pill').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      render();
+    }
+    function toggleFollow() {
+      followOnly = !followOnly;
+      document.getElementById('followBtn').classList.toggle('on', followOnly);
+      render();
+    }
+
+    function monthKey(d) { return d.slice(0, 7); }
+    function monthLabel(key) {
+      const [y, m] = key.split('-');
+      return y + ' 年 ' + Number(m) + ' 月';
+    }
+
+    function render() {
+      document.getElementById('totalN').textContent = UPDATES.length;
+      const q = (document.getElementById('searchIn').value || '').trim().toLowerCase();
+      const sort = document.getElementById('sortSel').value;
+
+      let list = UPDATES.filter(u =>
+        (curCat === 'all' || u.cat === curCat) &&
+        (curSt === 'all' || u.st === curSt) &&
+        (!followOnly || u.followed)
+      );
+      if (q) list = list.filter(u =>
+        u.title.toLowerCase().includes(q) ||
+        u.content.toLowerCase().includes(q) ||
+        u.authors.join(' ').toLowerCase().includes(q)
+      );
+
+      list = list.slice().sort((a, b) =>
+        sort === 'date-asc' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)
+      );
+
+      document.getElementById('showN').textContent = list.length;
+      const feed = document.getElementById('feed');
+      if (!list.length) {
+        feed.innerHTML = '<div class="empty">没有匹配的动态</div>';
+        return;
+      }
+
+      const pinned = list.filter(u => u.pinned);
+      const rest = list.filter(u => !u.pinned);
+
+      let html = '';
+
+      const card = (u, isPinned) => `
+        <div class="row${isPinned ? ' pinned' : ''}">
+          <div class="row-date"><b>${u.date.slice(8, 10)}</b>${Number(u.date.slice(5, 7))}月</div>
+          <a class="u-card${isPinned ? ' pinned' : ''}" href="#" onclick="event.preventDefault()">
+            <div class="u-thumb">
+              <div style="position:absolute;inset:0;background:linear-gradient(145deg,hsl(${u.hue} 30% 88%),hsl(${u.hue} 24% 74%))"></div>
+              <span style="position:relative;z-index:1">${u.title.charAt(0)}</span>
+            </div>
+            <div class="u-main">
+              <div class="u-meta">
+                ${isPinned ? '<span class="chip pin">置顶</span>' : ''}
+                <span class="chip cat">${CAT[u.cat] || u.cat}</span>
+                ${ST[u.st] ? `<span class="chip${u.st === 'yijiesu' ? ' done' : ''}">${ST[u.st]}</span>` : ''}
+              </div>
+              <div class="u-title">${u.title}</div>
+              ${u.authors.length ? `<div class="u-author">${u.authors.join('、')}</div>` : ''}
+              <div class="u-excerpt">${u.content}</div>
+            </div>
+          </a>
+        </div>`;
+
+      if (pinned.length) {
+        html += '<div class="pin-label">置顶动态</div>';
+        html += pinned.map(u => card(u, true)).join('');
+      }
+
+      let lastMonth = null;
+      rest.forEach(u => {
+        const mk = monthKey(u.date);
+        if (mk !== lastMonth) {
+          html += `<div class="month-sep"><span>${monthLabel(mk)}</span></div>`;
+          lastMonth = mk;
+        }
+        html += card(u, false);
+      });
+
+      feed.innerHTML = html;
+    }
+
+    render();
+  </script>
+</body>
+</html>

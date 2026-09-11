@@ -799,6 +799,103 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   .cl-proj-desc { font-size: 0.75rem; }
 }
 
+/* ===== Updates list page (redesign): date-rail timeline feed ===== */
+.cl-feed {
+  position: relative;
+  padding-left: 74px;
+}
+.cl-feed::before {
+  content: '';
+  position: absolute; left: 57px; top: 0.4rem; bottom: 0.4rem;
+  width: 1px; background: var(--line);
+}
+.cl-pin-label {
+  display: flex; align-items: center; gap: 0.45rem;
+  font-size: 0.74rem; color: var(--accent); font-weight: 600;
+  letter-spacing: 0.04em; margin: 0 0 0.5rem 0.1rem;
+}
+.cl-pin-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.cl-month-sep {
+  position: relative; margin: 1.1rem 0 0.55rem -74px; padding-left: 74px;
+  font-family: 'Noto Serif SC', Georgia, serif;
+  font-size: 0.8rem; font-weight: 700; color: var(--ink);
+  letter-spacing: 0.04em;
+}
+.cl-month-sep:first-child { margin-top: 0; }
+.cl-month-sep span { display: inline-block; background: var(--paper); padding-right: 0.6rem; }
+.cl-upd-row { position: relative; margin-bottom: 0.6rem; }
+.cl-upd-row::before {
+  content: '';
+  position: absolute; left: -20px; top: 26px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.cl-upd-row.pinned::before { background: var(--accent); }
+.cl-upd-date {
+  position: absolute; left: -74px; top: 20px; width: 52px;
+  text-align: right; font-size: 0.7rem; color: var(--haze);
+  font-variant-numeric: tabular-nums; line-height: 1.3;
+}
+.cl-upd-date b {
+  display: block;
+  font-family: 'Noto Serif SC', Georgia, serif;
+  font-size: 0.92rem; color: var(--ink); font-weight: 700;
+}
+.cl-upd-card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); overflow: hidden;
+  display: flex; transition: var(--transition);
+  text-decoration: none; color: inherit;
+}
+.cl-upd-card, .cl-upd-card * { text-decoration: none; }
+.cl-upd-card:hover { border-color: #D4C8B8; box-shadow: var(--shadow-sm); }
+.cl-upd-card.pinned { border-color: rgba(217,79,92,0.35); }
+.cl-upd-thumb {
+  width: 168px; flex-shrink: 0; position: relative;
+  background: linear-gradient(145deg, #EDE6DA, #D5CBBB);
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  color: #6b6560;
+  font-family: 'Noto Serif SC', Georgia, serif;
+  font-size: 1.4rem;
+}
+.cl-upd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cl-upd-main { padding: 0.8rem 0.95rem 0.75rem; flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cl-upd-meta { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; margin-bottom: 0.35rem; }
+.cl-upd-chip {
+  font-size: 0.66rem; font-weight: 600;
+  padding: 0.1rem 0.45rem; border-radius: 999px;
+  background: var(--paper); border: 1px solid var(--line); color: var(--haze);
+}
+.cl-upd-chip.cat { color: var(--ink); border-color: #D4C8B8; }
+.cl-upd-chip.pin { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cl-upd-chip.done { color: var(--success); }
+.cl-upd-title {
+  font-family: 'Noto Serif SC', Georgia, serif;
+  font-size: 1.02rem; font-weight: 700; line-height: 1.35;
+  margin-bottom: 0.2rem; word-break: break-word;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.cl-upd-author { font-size: 0.72rem; color: var(--accent); margin-bottom: 0.3rem; }
+.cl-upd-excerpt {
+  font-size: 0.8rem; color: #4A453F; line-height: 1.6;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+@media (max-width: 640px) {
+  .cl-feed { padding-left: 58px; }
+  .cl-feed::before { left: 43px; }
+  .cl-month-sep { margin-left: -58px; padding-left: 58px; }
+  .cl-upd-date { left: -58px; width: 38px; font-size: 0.62rem; }
+  .cl-upd-date b { font-size: 0.78rem; }
+  .cl-upd-row::before { left: -16px; top: 22px; width: 8px; height: 8px; }
+  .cl-upd-thumb { width: 92px; }
+  .cl-upd-main { padding: 0.7rem 0.75rem 0.65rem; }
+  .cl-upd-title { font-size: 0.9rem; }
+  .cl-upd-excerpt { font-size: 0.74rem; }
+}
+
 /* Forms & buttons */
 .form-group { margin-bottom: 1.25rem; }
 .form-group label {
