@@ -6754,16 +6754,15 @@ function renderBoothsList() {
       const code = b.code || b.name || '';
       const title = b.title || '';
       const owners = (b.circleIds || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
-      const ownerIds = new Set(owners.map(c => c.id));
-      const goodsCount = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid))).length;
+      const goods = boothGoodsList(b, relatedWorks, circles);
       const tiers = Array.isArray(b.promoTiers) ? b.promoTiers : [];
-      return { ...b, code, title, order: b.order ?? idx, owners, goodsCount, tiers };
+      return { ...b, code, title, order: b.order ?? idx, owners, goods, goodsCount: goods.length, tiers };
     })
     .sort((a, z) => (a.order ?? 0) - (z.order ?? 0));
 
   list.innerHTML = `
     <div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.75rem;">
-      当前活动：${escapeHtml(event.title)} · 关联周边 ${relatedWorks.length} 件 · 摊位 ${booths.length} 个（↑↓ 调整顺序）
+      当前活动：${escapeHtml(event.title)} · 关联周边 ${relatedWorks.length} 件 · 摊位 ${booths.length} 个（↑↓ 调整顺序；摊位内作品也可 ↑↓ 排序）
     </div>
     ${booths.length ? booths.map((b, bi) => `
       <div class="admin-card" style="padding:0.85rem;margin-bottom:0.6rem;">
@@ -6792,12 +6791,30 @@ function renderBoothsList() {
             </div>
           </div>
           <div style="display:flex;gap:0.3rem;align-items:center;">
-            <button class="btn-sm" title="上移" onclick="moveBooth('${b.id}', -1)" ${bi === 0 ? 'disabled style="opacity:0.4"' : ''}>↑</button>
-            <button class="btn-sm" title="下移" onclick="moveBooth('${b.id}', 1)" ${bi === booths.length - 1 ? 'disabled style="opacity:0.4"' : ''}>↓</button>
+            <button class="btn-sm" title="摊位上移" onclick="moveBooth('${b.id}', -1)" ${bi === 0 ? 'disabled style="opacity:0.4"' : ''}>↑</button>
+            <button class="btn-sm" title="摊位下移" onclick="moveBooth('${b.id}', 1)" ${bi === booths.length - 1 ? 'disabled style="opacity:0.4"' : ''}>↓</button>
             <button class="btn-sm btn-edit" onclick="openBoothModal('${b.id}')">编辑</button>
             <button class="btn-sm btn-delete" onclick="deleteBooth('${b.id}')">删除</button>
           </div>
         </div>
+        ${b.goods.length ? `
+          <div style="margin-top:0.75rem;padding-top:0.65rem;border-top:1px dashed var(--line);">
+            <div style="font-size:0.75rem;color:var(--haze);margin-bottom:0.4rem;letter-spacing:0.04em;">摊位作品（↑↓ 排序）</div>
+            <div style="display:flex;flex-direction:column;gap:0.3rem;">
+              ${b.goods.map((g, gi) => `
+                <div style="display:flex;align-items:center;gap:0.45rem;font-size:0.8rem;padding:0.3rem 0.4rem;border-radius:6px;background:var(--paper);">
+                  <span style="color:var(--haze);width:1.2rem;text-align:right;">${gi + 1}.</span>
+                  ${g.images && g.images[0]
+                    ? `<img src="${escapeHtml(g.images[0])}" alt="" style="width:28px;height:28px;border-radius:4px;object-fit:cover;flex-shrink:0;">`
+                    : `<div style="width:28px;height:28px;border-radius:4px;background:linear-gradient(145deg,#EDE6DA,#D9D0C2);flex-shrink:0;"></div>`}
+                  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+                  <button class="btn-sm" title="作品上移" onclick="moveBoothGood('${b.id}','${g.id}',-1)" ${gi === 0 ? 'disabled style="opacity:0.35;padding:0.15rem 0.4rem;"' : 'style="padding:0.15rem 0.4rem;"'}>↑</button>
+                  <button class="btn-sm" title="作品下移" onclick="moveBoothGood('${b.id}','${g.id}',1)" ${gi === b.goods.length - 1 ? 'disabled style="opacity:0.35;padding:0.15rem 0.4rem;"' : 'style="padding:0.15rem 0.4rem;"'}>↓</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : `<div style="margin-top:0.6rem;font-size:0.75rem;color:var(--haze);">该摊位暂无关联本活动的作品</div>`}
       </div>
     `).join('') : '<div style="color:var(--haze);font-size:0.85rem;">该活动暂无摊位，点右上角「新增摊位」。</div>'}
   `;
@@ -6812,6 +6829,20 @@ function tierGiftIds(t) {
   return t.giftWorkId ? [t.giftWorkId] : [];
 }
 
+function boothGoodsList(booth, relatedWorks, circles) {
+  const owners = (booth.circleIds || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
+  const ownerIds = new Set(owners.map(c => c.id));
+  const goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
+  const order = Array.isArray(booth.goodsOrder) ? booth.goodsOrder : [];
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return goods.slice().sort((a, z) => {
+    const ra = rank.has(a.id) ? rank.get(a.id) : Number.MAX_SAFE_INTEGER;
+    const rz = rank.has(z.id) ? rank.get(z.id) : Number.MAX_SAFE_INTEGER;
+    if (ra !== rz) return ra - rz;
+    return String(a.title || '').localeCompare(String(z.title || ''));
+  });
+}
+
 function normalizeBooths(booths) {
   return (booths || []).map((b, i) => ({
     id: b.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
@@ -6820,6 +6851,7 @@ function normalizeBooths(booths) {
     logo: b.logo || '',
     order: b.order ?? i,
     circleIds: b.circleIds || [],
+    goodsOrder: Array.isArray(b.goodsOrder) ? b.goodsOrder.filter(Boolean) : [],
     promoTiers: Array.isArray(b.promoTiers)
       ? b.promoTiers
           .filter(t => t && (t.minAmount != null || tierGiftIds(t).length || t.text))
@@ -6910,7 +6942,11 @@ function openBoothModal(boothId = null) {
       return { minAmount, giftWorkId, giftWorkIds, text };
     }).filter(Boolean);
     const next = normalizeBooths(booths);
-    const payload = { id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)), code, title, logo, circleIds, promoTiers };
+    const payload = {
+      id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
+      code, title, logo, circleIds, promoTiers,
+      goodsOrder: Array.isArray(booth?.goodsOrder) ? booth.goodsOrder.slice() : []
+    };
     if (booth) {
       const idx = next.findIndex(b => b.id === booth.id);
       if (idx >= 0) {
@@ -7021,6 +7057,30 @@ async function moveBooth(boothId, dir) {
   booths[i] = booths[j];
   booths[j] = tmp;
   booths.forEach((b, k) => { b.order = k; });
+  await saveBoothsForEvent(event.id, booths);
+  renderBoothsList();
+}
+
+async function moveBoothGood(boothId, workId, dir) {
+  const event = getSelectedBoothEvent();
+  if (!event) return;
+  const circles = window._boothCache?.circles || [];
+  const works = window._boothCache?.works || [];
+  const relatedIds = new Set(event.relatedWorks || []);
+  const relatedWorks = works.filter(w => relatedIds.has(w.id));
+  const booths = normalizeBooths(event.booths)
+    .sort((a, z) => (a.order ?? 0) - (z.order ?? 0));
+  const booth = booths.find(b => b.id === boothId);
+  if (!booth) return;
+  const goods = boothGoodsList(booth, relatedWorks, circles);
+  const i = goods.findIndex(g => g.id === workId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= goods.length) return;
+  const ids = goods.map(g => g.id);
+  const tmp = ids[i];
+  ids[i] = ids[j];
+  ids[j] = tmp;
+  booth.goodsOrder = ids;
   await saveBoothsForEvent(event.id, booths);
   renderBoothsList();
 }

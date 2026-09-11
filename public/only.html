@@ -344,7 +344,17 @@
         const title = raw.title || '';
         const owners = (raw.circleIds || []).map(cid => circleMap[cid]).filter(Boolean);
         const ownerIds = new Set(owners.map(c => c.id));
-        const goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
+        let goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
+        // Manual goods order from admin (goodsOrder)
+        if (Array.isArray(raw.goodsOrder) && raw.goodsOrder.length) {
+          const rank = new Map(raw.goodsOrder.map((id, i) => [id, i]));
+          goods = goods.slice().sort((a, z) => {
+            const ra = rank.has(a.id) ? rank.get(a.id) : Number.MAX_SAFE_INTEGER;
+            const rz = rank.has(z.id) ? rank.get(z.id) : Number.MAX_SAFE_INTEGER;
+            if (ra !== rz) return ra - rz;
+            return String(a.title || '').localeCompare(String(z.title || ''));
+          });
+        }
         const promoTiers = Array.isArray(raw.promoTiers) ? raw.promoTiers.filter(t => t && (tierGiftIds(t).length || t.text)) : [];
         const logo = raw.logo || owners.find(o => o.logo)?.logo || '';
         return {
