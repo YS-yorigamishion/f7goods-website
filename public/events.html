@@ -38,7 +38,6 @@
       <div class="cl-toolbar-row">
         <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
         <span class="spacer"></span>
-        <button type="button" class="pill" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
         <div class="cl-seg" id="viewSeg">
           <button type="button" class="on" data-view="timeline" data-i18n="events.timeline">时间轴</button>
           <button type="button" data-view="calendar" data-i18n="events.calendar">日历</button>
@@ -80,17 +79,8 @@
     let allWorks = [];
     let currentView = 'timeline';
     let calYear, calMonth;
-    let currentFollowFilter = false;
     let currentStatusFilter = 'all';
     let currentTypeFilter = 'all';
-
-    function toggleFollowFilter() {
-      currentFollowFilter = !currentFollowFilter;
-      const btn = document.getElementById('followFilterBtn');
-      btn.classList.toggle('on', currentFollowFilter);
-      btn.classList.toggle('active', currentFollowFilter);
-      renderEvents();
-    }
 
     function buildEventFilterButtons() {
       // Status pills
@@ -129,32 +119,19 @@
       renderEvents();
     }
 
-    // 移动端：视图切换移到状态行上方；「关注」移到「全部类型」下方
+    // 移动端：视图切换移到状态行上方
     const mqEventsMobile = window.matchMedia('(max-width: 640px)');
     function layoutEventFilters() {
       const seg = document.getElementById('viewSeg');
       const st = document.getElementById('statusFilters');
-      const fb = document.getElementById('followFilterBtn');
-      const ty = document.getElementById('typeFilters');
-      if (!seg || !st || !fb || !ty) return;
+      if (!seg || !st) return;
       const stRow = st.parentElement;
-      const tyRow = ty.parentElement;
-      if (!stRow || !tyRow) return;
+      if (!stRow) return;
 
       if (mqEventsMobile.matches) {
         if (stRow.firstElementChild !== seg) stRow.insertBefore(seg, stRow.firstElementChild);
-        if (fb.parentElement !== tyRow) {
-          const brk = document.createElement('span');
-          brk.className = 'cl-tb-break';
-          brk.setAttribute('aria-hidden', 'true');
-          tyRow.insertBefore(brk, ty.nextSibling);
-          tyRow.insertBefore(fb, brk.nextSibling);
-        }
       } else {
         if (stRow.lastElementChild !== seg) stRow.appendChild(seg);
-        const brk = tyRow.querySelector('.cl-tb-break');
-        if (brk) brk.remove();
-        if (fb.parentElement !== stRow) stRow.insertBefore(fb, seg);
       }
     }
     if (mqEventsMobile.addEventListener) mqEventsMobile.addEventListener('change', layoutEventFilters);
@@ -197,11 +174,6 @@
 
     function getFilteredEvents() {
       let events = allEvents;
-      // Follow filter
-      if (currentFollowFilter) {
-        const followedList = getFollowedCircles();
-        events = events.filter(e => (e.relatedCircles || []).some(cid => followedList.includes(cid)));
-      }
       // Status filter
       if (currentStatusFilter !== 'all') {
         events = events.filter(e => e.status === currentStatusFilter);
