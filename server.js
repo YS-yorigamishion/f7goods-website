@@ -262,10 +262,11 @@ function withFileLock(file, fn) {
 }
 
 // Known list-type data files (must be JSON arrays)
+// 注意：author-announcement-reads.json 是「对象」结构（{ 公告id: [作者id...] }），不要放进来
 const LIST_JSON_FILES = new Set([
   'works.json', 'circles.json', 'events.json', 'projects.json', 'updates.json',
   'announcements.json', 'contact.json', 'edit-log.json', 'author-notifications.json',
-  'author-announcements.json', 'author-announcement-reads.json'
+  'author-announcements.json'
 ]);
 
 // Helper: read/write JSON files
