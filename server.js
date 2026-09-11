@@ -893,7 +893,7 @@ app.put('/api/author/works/batch', authorAuthMiddleware, async (req, res) => {
 
   const circleId = req.author.circleId;
   const idSet = new Set(ids);
-  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy', 'claimCondition'];
   const updates = {};
   allowed.forEach(field => {
     if (data[field] !== undefined) updates[field] = data[field];
@@ -956,7 +956,7 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   const oldMoreImages = works[index].moreImages || [];
 
   // Only allow updating specific fields
-  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy', 'claimCondition'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -1031,7 +1031,7 @@ app.post('/api/author/works/batch-create', authorAuthMiddleware, async (req, res
   const globalRequireApproval = settings.site?.requireWorkApproval !== false;
   const requireApproval = authorRequireApproval && globalRequireApproval;
 
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'claimCondition', 'socialLinks'];
   const created = [];
   const now = new Date().toISOString();
 
@@ -1083,7 +1083,7 @@ app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
   const globalRequireApproval = settings.site?.requireWorkApproval !== false;
   const requireApproval = authorRequireApproval && globalRequireApproval;
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'claimCondition', 'socialLinks'];
   const workData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) workData[field] = req.body[field];
@@ -2394,7 +2394,11 @@ app.get('/api/projects', cacheMiddleware(60), (req, res) => {
       (p.tags || []).some(t => (t || '').toLowerCase().includes(s))
     );
   }
-  projects.sort((a, b) => a.order - b.order);
+  projects.sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return (a.order ?? 0) - (b.order ?? 0);
+  });
   // Optional pagination: ?page=1&limit=20
   const page = parseInt(req.query.page);
   const limit = parseInt(req.query.limit);
@@ -3009,10 +3013,16 @@ app.delete('/api/admin/announcements/:id', authMiddleware, async (req, res) => {
 
 // Helper: get author announcement reads
 function getAuthorAnnouncementReads() {
-  try { return readJSON('author-announcement-reads.json'); } catch { return {}; }
+  try {
+    const v = readJSON('author-announcement-reads.json');
+    // 兼容历史遗留：早期该文件被初始化成数组，这里统一按对象处理
+    if (v && typeof v === 'object' && !Array.isArray(v)) return v;
+    return {};
+  } catch { return {}; }
 }
 async function saveAuthorAnnouncementReads(reads) {
-  await writeJSON('author-announcement-reads.json', reads);
+  const safe = (reads && typeof reads === 'object' && !Array.isArray(reads)) ? reads : {};
+  await writeJSON('author-announcement-reads.json', safe);
 }
 
 // Admin: send announcement to authors
@@ -3233,7 +3243,7 @@ app.post('/api/admin/works', authMiddleware, async (req, res) => {
   const works = readJSON('works.json');
   const maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
   // Whitelist allowed fields
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'isCommissioned', 'commissionedBy', 'claimCondition', 'socialLinks'];
   const workData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) workData[field] = req.body[field];
@@ -3365,7 +3375,7 @@ app.put('/api/admin/works/:id', authMiddleware, async (req, res) => {
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
   const oldTitle = works[index].title;
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'likes', 'wants', 'order', 'isCommissioned', 'commissionedBy', 'socialLinks', 'approvalStatus', 'rejectReason', 'submittedBy'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'likes', 'wants', 'order', 'isCommissioned', 'commissionedBy', 'claimCondition', 'socialLinks', 'approvalStatus', 'rejectReason', 'submittedBy'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -3919,7 +3929,7 @@ app.post('/api/admin/projects', authMiddleware, async (req, res) => {
   const projects = readJSON('projects.json');
   const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
   // Whitelist allowed fields
-  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'editableBy'];
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'editableBy', 'pinned'];
   const projectData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) projectData[field] = req.body[field];
@@ -3975,7 +3985,7 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
   // Whitelist allowed fields
-  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'order', 'socialLinks', 'coverImage', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'order', 'socialLinks', 'coverImage', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy', 'pinned'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];

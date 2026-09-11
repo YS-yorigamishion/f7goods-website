@@ -2040,6 +2040,16 @@ function openWorkModal(work = null, returnToCircleId = null) {
         <input type="date" class="form-input" id="wEndDate" value="${work?.endDate || ''}">
       </div>
     </div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" id="wConditionalClaim" ${work?.claimCondition ? 'checked' : ''} onchange="document.getElementById('wClaimConditionGroup').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--accent);">
+        条件领取（ONLY 现场按条件领取）
+      </label>
+    </div>
+    <div class="form-group" id="wClaimConditionGroup" style="display:${work?.claimCondition ? 'block' : 'none'};">
+      <label>领取条件</label>
+      <input class="form-input" id="wClaimCondition" value="${escapeHtml(work?.claimCondition || '')}" placeholder="如：购满 50 元可领取 / 凭票领取">
+    </div>
     ${isEdit ? `<div class="form-row">
       <div class="form-group">
         <label>点赞数</label>
@@ -2147,6 +2157,9 @@ function openWorkModal(work = null, returnToCircleId = null) {
       price: document.getElementById('wPrice').value,
       releaseDate: document.getElementById('wReleaseDate').value,
       endDate: document.getElementById('wEndDate').value,
+      claimCondition: document.getElementById('wConditionalClaim')?.checked
+        ? (document.getElementById('wClaimCondition')?.value.trim() || '')
+        : '',
       circles: [...document.querySelectorAll('#wCirclesTags .circle-tag')].map(el => el.dataset.cid),
       tags: document.getElementById('wTags').value.split(',').map(t => t.trim()).filter(Boolean),
       description: document.getElementById('wDesc').value,
@@ -4137,11 +4150,12 @@ function renderProjectsTable(projects) {
       const circle = adminCirclesMap[cid];
       return circle ? `<span style="background:var(--paper);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.7rem;margin-right:0.2rem;">${escapeHtml(circle)}</span>` : '';
     }).join('') || '<span style="color:var(--haze);font-size:0.75rem;">-</span>';
+    const pinnedBadge = p.pinned ? '<span style="background:var(--accent);color:#fff;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.68rem;margin-right:0.35rem;">置顶</span>' : '';
     return `
     <tr>
       <td>${renderOrderControls('projects', p.id, i, projects.length)}</td>
       <td><input type="checkbox" class="project-checkbox" value="${p.id}" onchange="updateProjectBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
-      <td class="editable-cell" onclick="makeProjectEditable(this, '${p.id}', 'title', '${escapeHtml(p.title)}')">${p.title}</td>
+      <td class="editable-cell" onclick="makeProjectEditable(this, '${p.id}', 'title', '${escapeHtml(p.title)}')">${pinnedBadge}${p.title}</td>
       <td>${approvalBadge}</td>
       <td class="editable-cell" onclick="makeSelectProjectCategory(this, '${p.id}', '${p.category}')">${PROJECT_CATEGORIES[p.category] || p.category}</td>
       <td class="editable-cell" onclick="makeSelectProjectStatus(this, '${p.id}', '${p.status}')"><span class="card-tag ${p.status}">${PROJECT_STATUS_LABELS[p.status] || p.status}</span></td>
@@ -4375,6 +4389,12 @@ function openProjectModal(project = null) {
       <input class="form-input" id="pWebsiteLabel" value="${project?.socialLinks?.websiteLabel || ''}" placeholder="如：访问官网、企划主页">
     </div>
     <div class="form-group">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" id="pPinned" style="width:16px;height:16px;accent-color:var(--accent);" ${project?.pinned ? 'checked' : ''}>
+        置顶企划（前台列表置顶展示）
+      </label>
+    </div>
+    <div class="form-group">
       <label>首图（列表页封面图，仅限1张）</label>
       <div id="pCoverPreview" style="margin-bottom:0.5rem;">
         ${project?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${project.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
@@ -4425,7 +4445,8 @@ function openProjectModal(project = null) {
         return sl;
       })(),
       coverImage: document.querySelector('#pCoverPreview img')?.src || '',
-      images: [...document.querySelectorAll('#pImagesPreview img')].map(img => img.src)
+      images: [...document.querySelectorAll('#pImagesPreview img')].map(img => img.src),
+      pinned: !!document.getElementById('pPinned')?.checked
     };
 
     if (!data.title) { showToast('请填写企划名称', 'error'); return; }

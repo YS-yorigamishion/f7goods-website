@@ -235,6 +235,24 @@
       display: inline-block; font-size: 10px; background: rgba(61,139,110,.12);
       color: var(--success); border-radius: 999px; padding: 1px 6px; margin-left: 4px;
     }
+    /* 条件领取 */
+    .only-g.is-claim { border-color: rgba(196,138,42,.45); }
+    .claim-chip {
+      display: inline-block; font-size: 10px; font-weight: 600;
+      margin-left: 4px; padding: 0 5px; border-radius: 999px;
+      background: rgba(196,138,42,.12); color: var(--warning);
+      border: 1px solid rgba(196,138,42,.35); vertical-align: middle;
+    }
+    .claim-note {
+      font-size: 11px; color: var(--warning); line-height: 1.45;
+      margin: 2px 0 4px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .only-ci .claim-tag {
+      display: inline-block; font-size: 10px; background: rgba(196,138,42,.12);
+      color: var(--warning); border-radius: 999px; padding: 1px 6px; margin-left: 4px;
+    }
+    .only-sumrow.claim { color: var(--warning); font-size: 12px; }
     .only-qty { display: flex; align-items: center; gap: 6px; }
     .only-qty button {
       width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line);
@@ -624,11 +642,13 @@
                   ${b.goods.length ? b.goods.map(g => {
                     const q = cart[g.id]?.qty || 0;
                     const img = (g.images && g.images[0]) || '';
-                    return `<a class="only-g" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
+                    const claim = String(g.claimCondition || '').trim();
+                    return `<a class="only-g${claim ? ' is-claim' : ''}" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
                       <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
                       <div class="body">
                         <div class="name">${esc(g.title)}</div>
-                        <div class="price">${esc(formatPriceLabel(g.price))}</div>
+                        <div class="price">${esc(formatPriceLabel(g.price))}${claim ? '<span class="claim-chip">条件领取</span>' : ''}</div>
+                        ${claim ? `<div class="claim-note" title="${esc(claim)}">${esc(claim)}</div>` : ''}
                         <div class="only-qtyrow" data-work-qty="${esc(g.id)}">
                           <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
                           <span class="q">${q}</span>
@@ -687,7 +707,8 @@
             priceLabel: g.price,
             img: (g.images && g.images[0]) || '',
             qty: next,
-            isGift: false
+            isGift: false,
+            claim: String(g.claimCondition || '').trim()
           };
         }
       });
@@ -717,7 +738,8 @@
           priceLabel: pack.work.price,
           img: (pack.work.images && pack.work.images[0]) || '',
           qty: next,
-          isGift: false
+          isGift: false,
+          claim: String(pack.work.claimCondition || '').trim()
         };
       }
       applyOnlyGifts();
@@ -857,7 +879,7 @@
         return `
         <div class="only-ci">
           ${img ? `<img class="thumb" src="${esc(img)}" alt="">` : '<div class="thumb"></div>'}
-          <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : esc(formatPriceLabel(e.priceLabel != null && e.priceLabel !== '' ? e.priceLabel : e.price))}</small></div>
+          <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}${(!e.isGift && e.claim) ? '<span class="claim-tag">条件领取</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : esc(formatPriceLabel(e.priceLabel != null && e.priceLabel !== '' ? e.priceLabel : e.price))}${(!e.isGift && e.claim) ? ' · ' + esc(e.claim) : ''}</small></div>
           <div class="only-qty">
             <button type="button" data-q="${esc(e.id)}" data-d="-1">−</button>
             <span>${e.qty}</span>
@@ -868,9 +890,11 @@
       `;
       }).join('');
       const { total, gifts } = onlyCartStats();
+      const claims = Object.values(window._onlyCart || {}).filter(e => !e.isGift && e.claim);
       sum.innerHTML = `
         <div class="only-sumrow"><span style="color:var(--muted);">合计（不含赠品）</span><span>${money(total)}</span></div>
         ${gifts.map(g => `<div class="only-sumrow gift"><span>赠品 · ${esc(g.boothName)}</span><span>${esc(g.title)}</span></div>`).join('')}
+        ${claims.map(c => `<div class="only-sumrow claim"><span>条件领取 · ${esc(c.boothName)}</span><span>${esc(c.title)}（${esc(c.claim)}）</span></div>`).join('')}
         <div class="only-sumrow total"><span>预估合计</span><span class="v">${money(total)}</span></div>
       `;
     }
@@ -907,7 +931,7 @@
       const event = window._only.event;
       const lines = [`【${event.title} · 现场清单】`];
       Object.values(window._onlyCart || {}).forEach(e => {
-        lines.push(`· 摊位${e.boothName} | ${e.title} ×${e.qty}` + (e.isGift ? ' [赠品]' : (e.price ? ` = ${money(e.price * e.qty)}` : '')));
+        lines.push(`· 摊位${e.boothName} | ${e.title} ×${e.qty}` + (e.isGift ? ' [赠品]' : (e.claim ? ` [条件领取：${e.claim}]` : '') + (e.price ? ` = ${money(e.price * e.qty)}` : '')));
       });
       lines.push(`合计 ${count} 件 · ${money(total)}`);
       gifts.forEach(g => lines.push(`赠品[${g.boothName}] ${g.title}`));
@@ -1002,6 +1026,7 @@
       const { count, total, gifts } = onlyCartStats();
       const event = window._only.event;
       const entries = Object.values(window._onlyCart || {});
+      const claims = entries.filter(e => !e.isGift && e.claim);
       const imgs = await Promise.all(entries.map(e => loadImg(resolveEntryImg(e))));
 
       // receipt proportions — logical size, rendered at 2x for crisp export
@@ -1012,10 +1037,11 @@
       const rowH = 58;
       const headerH = 118;
       const giftH = gifts.length * 24;
+      const claimH = claims.length * 18;
       const footerH = 78;
       const bodyH = entries.length * rowH;
       const totalH = 64;
-      const LOGICAL_H = Math.max(360, headerH + bodyH + totalH + giftH + footerH + 24);
+      const LOGICAL_H = Math.max(360, headerH + bodyH + totalH + giftH + claimH + footerH + 24);
       const W = LOGICAL_W;
       const H = LOGICAL_H;
       const canvas = document.createElement('canvas');
@@ -1105,7 +1131,7 @@
         ctx.font = '11px "Noto Sans SC", sans-serif';
         ctx.fillStyle = '#8A8078';
         const booth = e.boothName.length > 14 ? e.boothName.slice(0, 13) + '…' : e.boothName;
-        ctx.fillText(`${booth}${e.isGift ? ' · 赠品' : ''} ×${e.qty}`, paperX + textX, rowTop + 40);
+        ctx.fillText(`${booth}${e.isGift ? ' · 赠品' : ''}${(!e.isGift && e.claim) ? ' · 条件领取' : ''} ×${e.qty}`, paperX + textX, rowTop + 40);
 
         // amount
         const right = (e.isGift || e.price === 0) ? '—' : money(e.price * e.qty);
@@ -1149,6 +1175,23 @@
           ctx.fillText(`★ 赠品 ${g.boothName}`, paperX + padX, y);
           ctx.textAlign = 'right';
           ctx.fillText(gTitle, paperX + paperW - padX, y);
+          ctx.textAlign = 'left';
+          y += 18;
+        });
+      }
+
+      // 条件领取备注
+      if (claims.length) {
+        y += 18;
+        dashLine(ctx, paperX + padX, paperX + paperW - padX, y);
+        y += 18;
+        claims.forEach(c => {
+          ctx.fillStyle = '#C48A2A';
+          ctx.font = '11px "Noto Sans SC", sans-serif';
+          const cond = String(c.claim).length > 18 ? String(c.claim).slice(0, 17) + '…' : String(c.claim);
+          ctx.fillText(`※ 条件领取 ${c.boothName}`, paperX + padX, y);
+          ctx.textAlign = 'right';
+          ctx.fillText(cond, paperX + paperW - padX, y);
           ctx.textAlign = 'left';
           y += 18;
         });

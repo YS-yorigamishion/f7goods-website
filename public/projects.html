@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911u">
+  <link rel="stylesheet" href="/css/style.css?v=20260911y">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -186,18 +186,24 @@
         );
       }
 
-      // Sorting
+      // Sorting（置顶始终在最前）
       filtered = filtered.slice();
       const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
+      let cmp;
       if (sortVal === 'date-asc') {
-        filtered.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+        cmp = (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
       } else if (sortVal === 'name-asc') {
-        filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        cmp = (a, b) => (a.title || '').localeCompare(b.title || '');
       } else if (sortVal === 'progress-desc') {
-        filtered.sort((a, b) => (projectProgress(b)?.pct || 0) - (projectProgress(a)?.pct || 0));
+        cmp = (a, b) => (projectProgress(b)?.pct || 0) - (projectProgress(a)?.pct || 0);
       } else {
-        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        cmp = (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
       }
+      filtered.sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return cmp(a, b);
+      });
 
       const totalEl = document.getElementById('projectTotalCount');
       if (totalEl) totalEl.textContent = allProjects.length;
@@ -218,9 +224,10 @@
         const fillCls = statusClassOf(project.status, statusLabel);
         const tags = (project.tags || []).slice(0, 3);
         return `
-        <a class="cl-proj-card" href="/project-detail.html?id=${encodeURIComponent(project.id)}">
+        <a class="cl-proj-card${project.pinned ? ' pinned' : ''}" href="/project-detail.html?id=${encodeURIComponent(project.id)}">
           <div class="cl-proj-cover">
             ${statusLabel ? `<span class="cl-proj-status ${fillCls === 'open' ? 'open' : fillCls}">${escapeHtml(statusLabel)}</span>` : ''}
+            ${project.pinned ? '<span class="cl-proj-pin">置顶</span>' : ''}
             ${cover
               ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(project.title)}" loading="lazy">`
               : `<span style="position:relative;z-index:1;">${escapeHtml((project.title || '?').charAt(0))}</span>`}

@@ -2287,6 +2287,16 @@
         </div>
         <div class="form-group">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+            <input type="checkbox" id="wfConditionalClaim" ${w.claimCondition ? 'checked' : ''} onchange="document.getElementById('claimConditionGroup').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--accent);">
+            条件领取（ONLY 现场按条件领取）
+          </label>
+        </div>
+        <div class="form-group" id="claimConditionGroup" style="display:${w.claimCondition ? 'block' : 'none'};">
+          <label>领取条件</label>
+          <input class="form-input" id="wfClaimCondition" value="${escapeHtml(w.claimCondition || '')}" placeholder="如：购满 50 元可领取 / 凭票领取">
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
             <input type="checkbox" id="wfIsCommissioned" ${w.isCommissioned ? 'checked' : ''} onchange="document.getElementById('commissionedByGroup').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--accent);">
             约稿作品
           </label>
@@ -2391,6 +2401,9 @@
       const selectedProjectIds = [...document.querySelectorAll('.wf-project-cb:checked')].map(cb => cb.value);
 
       const isCommissioned = document.getElementById('wfIsCommissioned').checked;
+      const claimCondition = document.getElementById('wfConditionalClaim')?.checked
+        ? (document.getElementById('wfClaimCondition')?.value.trim() || '')
+        : '';
       const priceRaw = document.getElementById('wfPrice').value.trim();
       const priceFormatted = (!priceRaw || priceRaw === '无料' || priceRaw === '免费') ? priceRaw : (/^[¥￥]/.test(priceRaw) ? priceRaw : (/^\d/.test(priceRaw) ? '¥' + priceRaw : priceRaw));
       const data = {
@@ -2408,7 +2421,8 @@
         relatedProjects: selectedProjectIds,
         relatedEvents: selectedEventIds,
         isCommissioned,
-        commissionedBy: isCommissioned ? document.getElementById('wfCommissionedBy').value : ''
+        commissionedBy: isCommissioned ? document.getElementById('wfCommissionedBy').value : '',
+        claimCondition
       };
 
       if (!data.title) { showToast('请填写标题', 'error'); document.getElementById('wfTitle').focus(); return; }
