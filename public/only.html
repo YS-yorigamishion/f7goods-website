@@ -1283,7 +1283,7 @@
         };
         claimLines.forEach(row => {
           ctx.fillStyle = '#C48A2A';
-          const leftTxt = fit(`※ 条件领取(不计入满赠) ${row.booth}`, usable * 0.6);
+          const leftTxt = fit(`※ 条件领取(不计入满赠) ${row.booth}`, usable * 0.68);
           ctx.fillText(leftTxt, paperX + padX, y);
           const rightX = paperX + paperW - padX;
           const avail = rightX - (paperX + padX + ctx.measureText(leftTxt).width) - 14;
