@@ -528,6 +528,18 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   padding-top: 0.55rem;
 }
 .cl-toolbar-card .spacer { flex: 1; }
+/* Divider between two filter groups sharing one toolbar row */
+.cl-toolbar-card .cl-toolbar-sep {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 16px;
+  background: var(--line);
+  margin: 0 0.15rem;
+}
+/* Narrow screens: groups wrap onto their own lines, the divider would strand at a line start */
+@media (max-width: 640px) {
+  .cl-toolbar-card .cl-toolbar-sep { display: none; }
+}
 /* Compact pills inside the list-page toolbar (works for .filter-btn and .pill) */
 .cl-toolbar-card .filter-btn,
 .cl-toolbar-card .pill {
@@ -915,11 +927,6 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 }
 .cl-seg button:last-child { border-right: none; }
 .cl-seg button.on { background: var(--card); color: var(--accent); font-weight: 600; }
-@media (max-width: 640px) {
-  /* 移动端：视图切换独占一行（置于状态筛选上方） */
-  .cl-toolbar-card #viewSeg { flex: 1 1 100%; }
-  .cl-toolbar-card #viewSeg button { flex: 1; }
-}
 
 .cl-ev-month {
   display: flex; align-items: center; gap: 0.6rem;
@@ -1100,8 +1107,6 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   font-size: 1.15rem; color: var(--ink); font-weight: 700;
 }
 .cl-cat-grp-label { font-size: 0.72rem; color: var(--haze); }
-/* flex 换行占位：让后一个控件另起一行 */
-.cl-tb-break { flex-basis: 100%; height: 0; margin: 0; padding: 0; }
 
 .cl-w-grid {
   display: grid;

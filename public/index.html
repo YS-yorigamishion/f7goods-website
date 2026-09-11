@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911s">
+  <link rel="stylesheet" href="/css/style.css?v=20260912a">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -120,18 +120,17 @@
       <div class="cl-toolbar-card">
         <div class="cl-toolbar-row">
           <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
-          <span class="spacer"></span>
-          <div id="userFilters" style="display:none;flex-wrap:wrap;gap:0.4rem;align-items:center;">
-            <span class="cl-cat-grp-label" data-i18n="common.mine">我的</span>
-            <button type="button" class="pill" id="followFilterBtn" onclick="toggleFollowFilter()"><span data-i18n="common.follow">关注</span></button>
-            <button type="button" class="pill" data-user-filter="liked" onclick="toggleUserFilter('liked')"><span data-i18n="common.like">喜爱</span></button>
-            <button type="button" class="pill" data-user-filter="wanted" onclick="toggleUserFilter('wanted')"><span data-i18n="common.want">想要</span></button>
-            <button type="button" class="pill" id="deadlineFilterBtn" onclick="toggleDeadlineFilter()"><span data-i18n="common.deadlineSoon">即将截止</span></button>
-          </div>
+          <span class="cl-toolbar-sep" aria-hidden="true"></span>
+          <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
         </div>
         <div class="cl-toolbar-row">
-          <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
-          <span class="spacer"></span>
+          <div id="userFilters" style="display:none;flex-wrap:wrap;gap:0.4rem;align-items:center;">
+            <span class="cl-cat-grp-label" data-i18n="common.mine">我的</span>
+            <button type="button" class="filter-btn" id="followFilterBtn" onclick="toggleFollowFilter()"><span data-i18n="common.follow">关注</span></button>
+            <button type="button" class="filter-btn" data-user-filter="liked" onclick="toggleUserFilter('liked')"><span data-i18n="common.like">喜爱</span></button>
+            <button type="button" class="filter-btn" data-user-filter="wanted" onclick="toggleUserFilter('wanted')"><span data-i18n="common.want">想要</span></button>
+            <button type="button" class="filter-btn" id="deadlineFilterBtn" onclick="toggleDeadlineFilter()"><span data-i18n="common.deadlineSoon">即将截止</span></button>
+          </div>
           <select id="sortSelect" class="form-input">
             <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
             <option value="default" data-i18n="common.sortDefault">最新上传</option>
@@ -143,7 +142,7 @@
             <option value="wants-asc" data-i18n="common.sortWantsAsc">想要数 ↑</option>
           </select>
           <input type="text" class="search-input" data-i18n-placeholder="common.searchPlaceholder" placeholder="搜索作品..." id="searchInput">
-          <button type="button" class="pill" id="wishlistToggleBtn" onclick="activateWishlist()" data-i18n="home.wishlist">心愿单</button>
+          <button type="button" class="filter-btn" id="wishlistToggleBtn" onclick="activateWishlist()" data-i18n="home.wishlist">心愿单</button>
           <span class="cl-show-count">显示 <b id="worksShowCount">0</b></span>
         </div>
       </div>
@@ -728,27 +727,7 @@
       if (container && (liked.length > 0 || wanted.length > 0 || followed.length > 0 || hasDeadlines)) {
         container.style.display = 'flex';
       }
-      layoutCatalogFilters();
     }
-
-    // 移动端：把「我的」（关注/喜爱/想要/即将截止）移到分类行下方
-    const mqCatalogMobile = window.matchMedia('(max-width: 640px)');
-    function layoutCatalogFilters() {
-      const uf = document.getElementById('userFilters');
-      const catWrap = document.getElementById('categoryFilters');
-      const stWrap = document.getElementById('statusFilters');
-      if (!uf || !catWrap || !stWrap) return;
-      const catRow = catWrap.parentElement;
-      const stRow = stWrap.parentElement;
-      if (!catRow || !stRow) return;
-      if (mqCatalogMobile.matches) {
-        if (uf.parentElement !== catRow) catRow.insertBefore(uf, catWrap.nextSibling);
-      } else if (uf.parentElement !== stRow) {
-        stRow.appendChild(uf);
-      }
-    }
-    if (mqCatalogMobile.addEventListener) mqCatalogMobile.addEventListener('change', layoutCatalogFilters);
-    else if (mqCatalogMobile.addListener) mqCatalogMobile.addListener(layoutCatalogFilters);
 
     // 洗牌并写入 _randomRank，同一会话内筛选/分页保持该顺序
     function shuffleWorksForSession(list) {
@@ -830,8 +809,8 @@
       window._worksPage = 1;
       document.getElementById('searchInput').value = '';
       document.getElementById('sortSelect').value = 'random';
-      document.querySelectorAll('.pill[data-cat]').forEach(b => b.classList.toggle('on', b.dataset.cat === 'all'));
-      document.querySelectorAll('.pill[data-status]').forEach(b => b.classList.toggle('on', b.dataset.status === 'all'));
+      document.querySelectorAll('.filter-btn[data-cat]').forEach(b => b.classList.toggle('active', b.dataset.cat === 'all'));
+      document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.toggle('active', b.dataset.status === 'all'));
       document.querySelectorAll('[data-user-filter]').forEach(b => b.classList.remove('active'));
       document.getElementById('followFilterBtn')?.classList.remove('active');
       document.getElementById('deadlineFilterBtn')?.classList.remove('active');
@@ -845,28 +824,28 @@
       }
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = `<button type="button" class="pill on" data-status="all">${t('common.allStatus')}</button>` +
-        STATUS_ORDERED.map(s => `<button type="button" class="pill" data-status="${s.id}">${tCat(s)}</button>`).join('');
+      statusContainer.innerHTML = `<button type="button" class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
+        STATUS_ORDERED.map(s => `<button type="button" class="filter-btn" data-status="${s.id}">${tCat(s)}</button>`).join('');
 
       // Category filters
       const catContainer = document.getElementById('categoryFilters');
-      catContainer.innerHTML = `<button type="button" class="pill on" data-cat="all">${t('common.all')}</button>` +
-        CATEGORIES_ORDERED.map(c => `<button type="button" class="pill" data-cat="${c.id}">${tCat(c)}</button>`).join('');
+      catContainer.innerHTML = `<button type="button" class="filter-btn active" data-cat="all">${t('common.all')}</button>` +
+        CATEGORIES_ORDERED.map(c => `<button type="button" class="filter-btn" data-cat="${c.id}">${tCat(c)}</button>`).join('');
 
       // Re-bind events
-      document.querySelectorAll('.pill[data-cat]').forEach(btn => {
+      document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.pill[data-cat]').forEach(b => b.classList.remove('on'));
-          btn.classList.add('on');
+          document.querySelectorAll('.filter-btn[data-cat]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
           currentCategory = btn.dataset.cat;
           window._worksPage = 1;
           renderWorks();
         });
       });
-      document.querySelectorAll('.pill[data-status]').forEach(btn => {
+      document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.pill[data-status]').forEach(b => b.classList.remove('on'));
-          btn.classList.add('on');
+          document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
           currentStatus = btn.dataset.status;
           window._worksPage = 1;
           renderWorks();

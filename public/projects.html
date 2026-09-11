@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911y">
+  <link rel="stylesheet" href="/css/style.css?v=20260912a">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -37,12 +37,11 @@
     <div class="cl-toolbar-card">
       <div class="cl-toolbar-row">
         <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
-        <span class="spacer"></span>
-        <button type="button" class="pill" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
+        <span class="cl-toolbar-sep" aria-hidden="true"></span>
+        <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
       </div>
       <div class="cl-toolbar-row">
-        <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
-        <span class="spacer"></span>
+        <button type="button" class="filter-btn" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
         <select class="form-input" id="sortSelect">
           <option value="date-desc" selected data-i18n="common.dateDesc">创建日期 ↓ 新→旧</option>
           <option value="date-asc" data-i18n="common.dateAsc">创建日期 ↑ 旧→新</option>
@@ -80,38 +79,9 @@
     function toggleFollowFilter() {
       currentFollowFilter = !currentFollowFilter;
       const btn = document.getElementById('followFilterBtn');
-      btn.classList.toggle('on', currentFollowFilter);
       btn.classList.toggle('active', currentFollowFilter);
       renderProjects();
     }
-
-    // 移动端：把「关注」移到分类行下方（另起一行）
-    const mqProjectsMobile = window.matchMedia('(max-width: 640px)');
-    function layoutProjectFilters() {
-      const fb = document.getElementById('followFilterBtn');
-      const catWrap = document.getElementById('categoryFilters');
-      const stWrap = document.getElementById('statusFilters');
-      if (!fb || !catWrap || !stWrap) return;
-      const catRow = catWrap.parentElement;
-      const stRow = stWrap.parentElement;
-      if (!catRow || !stRow) return;
-      if (mqProjectsMobile.matches) {
-        if (fb.parentElement !== catRow) {
-          const brk = document.createElement('span');
-          brk.className = 'cl-tb-break';
-          brk.setAttribute('aria-hidden', 'true');
-          catRow.insertBefore(brk, catWrap.nextSibling);
-          catRow.insertBefore(fb, brk.nextSibling);
-        }
-      } else {
-        const brk = catRow.querySelector('.cl-tb-break');
-        if (brk) brk.remove();
-        if (fb.parentElement !== stRow) stRow.appendChild(fb);
-      }
-    }
-    if (mqProjectsMobile.addEventListener) mqProjectsMobile.addEventListener('change', layoutProjectFilters);
-    else if (mqProjectsMobile.addListener) mqProjectsMobile.addListener(layoutProjectFilters);
-    layoutProjectFilters();
 
     async function loadProjects() {
       try {
@@ -258,26 +228,26 @@
     function buildProjectFilterButtons() {
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = `<button type="button" class="pill active on" data-status="all">${t('common.allStatus')}</button>` +
-        PROJECT_STATUS_ORDERED.map(s => `<button type="button" class="pill" data-status="${s.id}">${tCat(s)}</button>`).join('');
+      statusContainer.innerHTML = `<button type="button" class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
+        PROJECT_STATUS_ORDERED.map(s => `<button type="button" class="filter-btn" data-status="${s.id}">${tCat(s)}</button>`).join('');
 
       // Category filters
       const catContainer = document.getElementById('categoryFilters');
-      catContainer.innerHTML = `<button type="button" class="pill on" data-cat="all">${t('common.allCategories')}</button>` +
-        PROJECT_CATEGORIES_ORDERED.map(c => `<button type="button" class="pill" data-cat="${c.id}">${tCat(c)}</button>`).join('');
+      catContainer.innerHTML = `<button type="button" class="filter-btn active" data-cat="all">${t('common.allCategories')}</button>` +
+        PROJECT_CATEGORIES_ORDERED.map(c => `<button type="button" class="filter-btn" data-cat="${c.id}">${tCat(c)}</button>`).join('');
 
       document.querySelectorAll('[data-status]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('on', 'active'));
-          btn.classList.add('on', 'active');
+          document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
           currentStatus = btn.dataset.status;
           renderProjects();
         });
       });
       document.querySelectorAll('[data-cat]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('on', 'active'));
-          btn.classList.add('on', 'active');
+          document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
           currentCategory = btn.dataset.cat;
           renderProjects();
         });

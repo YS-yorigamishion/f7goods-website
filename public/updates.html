@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911l">
+  <link rel="stylesheet" href="/css/style.css?v=20260912a">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -35,12 +35,9 @@
 
   <main class="main-content">
     <div class="cl-toolbar-card">
+      <div class="cl-toolbar-row" id="categoryFilters"></div>
       <div class="cl-toolbar-row">
-        <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
-      </div>
-      <div class="cl-toolbar-row">
-        <button type="button" class="pill" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
-        <span class="spacer"></span>
+        <button type="button" class="filter-btn" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
         <select class="form-input" id="sortSelect">
           <option value="date-desc" selected data-i18n="common.dateDesc">发布日期 ↓ 新→旧</option>
           <option value="date-asc" data-i18n="common.dateAsc">发布日期 ↑ 旧→新</option>
@@ -76,7 +73,6 @@
     function toggleFollowFilter() {
       currentFollowFilter = !currentFollowFilter;
       const btn = document.getElementById('followFilterBtn');
-      btn.classList.toggle('on', currentFollowFilter);
       btn.classList.toggle('active', currentFollowFilter);
       renderUpdates();
     }
@@ -92,14 +88,14 @@
       cats.forEach(c => updateCatLabels[c.id] = tCat(c));
       status.forEach(s => updateStLabels[s.id] = tCat(s));
 
-      // Category pills
+      // Category filters
       const catContainer = document.getElementById('categoryFilters');
-      catContainer.innerHTML = `<button type="button" class="pill on" data-cat="all">${t('common.allCategories')}</button>` +
-        cats.map(c => `<button type="button" class="pill" data-cat="${c.id}">${escapeHtml(tCat(c))}</button>`).join('');
-      catContainer.querySelectorAll('.pill').forEach(btn => {
+      catContainer.innerHTML = `<button type="button" class="filter-btn active" data-cat="all">${t('common.allCategories')}</button>` +
+        cats.map(c => `<button type="button" class="filter-btn" data-cat="${c.id}">${escapeHtml(tCat(c))}</button>`).join('');
+      catContainer.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          catContainer.querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
-          btn.classList.add('on');
+          catContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
           currentUpdateCategory = btn.dataset.cat;
           renderUpdates();
         });

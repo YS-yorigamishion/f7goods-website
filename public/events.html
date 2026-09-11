@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911t">
+  <link rel="stylesheet" href="/css/style.css?v=20260912a">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -37,16 +37,15 @@
     <div class="cl-toolbar-card">
       <div class="cl-toolbar-row">
         <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
-        <span class="spacer"></span>
+        <span class="cl-toolbar-sep" aria-hidden="true"></span>
+        <div id="typeFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+      </div>
+      <div class="cl-toolbar-row">
         <div class="cl-seg" id="viewSeg">
           <button type="button" class="on" data-view="timeline" data-i18n="events.timeline">时间轴</button>
           <button type="button" data-view="calendar" data-i18n="events.calendar">日历</button>
           <button type="button" data-view="grid" data-i18n="events.gridView">多格</button>
         </div>
-      </div>
-      <div class="cl-toolbar-row">
-        <div id="typeFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
-        <span class="spacer"></span>
         <select class="form-input" id="sortSelect">
           <option value="date-desc" selected>时间 ↓ 新→旧</option>
           <option value="date-asc">时间 ↑ 旧→新</option>
@@ -83,29 +82,29 @@
     let currentTypeFilter = 'all';
 
     function buildEventFilterButtons() {
-      // Status pills
+      // Status filters
       const st = document.getElementById('statusFilters');
-      st.innerHTML = `<button type="button" class="pill on" data-status="all">${t('common.allStatus')}</button>` +
-        EVENT_STATUS_ORDERED.map(s => `<button type="button" class="pill" data-status="${s.id}">${escapeHtml(tCat(s))}</button>`).join('');
-      st.querySelectorAll('.pill').forEach(btn => {
+      st.innerHTML = `<button type="button" class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
+        EVENT_STATUS_ORDERED.map(s => `<button type="button" class="filter-btn" data-status="${s.id}">${escapeHtml(tCat(s))}</button>`).join('');
+      st.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          st.querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
-          btn.classList.add('on');
+          st.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
           currentStatusFilter = btn.dataset.status;
           renderEvents();
         });
       });
 
-      // Type pills
+      // Type filters
       const ty = document.getElementById('typeFilters');
       ty.innerHTML =
-        '<button type="button" class="pill on" data-ty="all">全部类型</button>' +
-        '<button type="button" class="pill" data-ty="only">ONLY 专场</button>' +
-        '<button type="button" class="pill" data-ty="normal">综合展会</button>';
-      ty.querySelectorAll('.pill').forEach(btn => {
+        '<button type="button" class="filter-btn active" data-ty="all">全部类型</button>' +
+        '<button type="button" class="filter-btn" data-ty="only">ONLY 专场</button>' +
+        '<button type="button" class="filter-btn" data-ty="normal">综合展会</button>';
+      ty.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          ty.querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
-          btn.classList.add('on');
+          ty.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
           currentTypeFilter = btn.dataset.ty;
           renderEvents();
         });
@@ -118,25 +117,6 @@
       btn.classList.add('on');
       renderEvents();
     }
-
-    // 移动端：视图切换移到状态行上方
-    const mqEventsMobile = window.matchMedia('(max-width: 640px)');
-    function layoutEventFilters() {
-      const seg = document.getElementById('viewSeg');
-      const st = document.getElementById('statusFilters');
-      if (!seg || !st) return;
-      const stRow = st.parentElement;
-      if (!stRow) return;
-
-      if (mqEventsMobile.matches) {
-        if (stRow.firstElementChild !== seg) stRow.insertBefore(seg, stRow.firstElementChild);
-      } else {
-        if (stRow.lastElementChild !== seg) stRow.appendChild(seg);
-      }
-    }
-    if (mqEventsMobile.addEventListener) mqEventsMobile.addEventListener('change', layoutEventFilters);
-    else if (mqEventsMobile.addListener) mqEventsMobile.addListener(layoutEventFilters);
-    layoutEventFilters();
 
     async function loadEvents() {
       try {
