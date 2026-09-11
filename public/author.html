@@ -114,6 +114,10 @@
 
       <div class="mgmt-nav-group">
         <div class="mgmt-nav-label">内容</div>
+        <button type="button" class="mgmt-nav-item" data-tab="overview" onclick="switchMgmtTab('overview')">
+          <svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20v-6M12 20v-11M17 20v-4"/></svg>
+          数据概览
+        </button>
         <button type="button" class="mgmt-nav-item active" data-tab="works" onclick="switchMgmtTab('works')">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
           我的作品
@@ -275,9 +279,8 @@
         </div>
       </div>
 
-      <!-- Works Tab -->
-      <div id="tab-works" class="mgmt-section active">
-        <!-- Stats Overview -->
+      <!-- Overview Tab -->
+      <div id="tab-overview" class="mgmt-section">
         <div id="statsOverview" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.8rem;margin-bottom:1.5rem;">
           <div class="mgmt-card" style="padding:1rem;text-align:center;">
             <div style="font-size:1.5rem;font-weight:700;color:var(--accent);" id="statTotalWorks">0</div>
@@ -292,14 +295,14 @@
             <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">总想要数</div>
           </div>
           <div class="mgmt-card" style="padding:1rem;text-align:center;cursor:pointer;" onclick="window.open('/circle-detail.html?id='+(localStorage.getItem('f7author_actAs')||authorCircleId),'_blank')">
-            <div style="font-size:1.5rem;">👁</div>
+            <div style="font-size:1.5rem;color:var(--accent);display:flex;justify-content:center;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
             <div style="font-size:0.8rem;color:var(--haze);margin-top:0.2rem;">预览主页</div>
           </div>
         </div>
 
         <!-- Statistics Section -->
-        <div class="mgmt-card" style="margin-bottom:1.5rem;">
-          <h3 style="margin-bottom:1rem;">📊 数据统计</h3>
+        <div class="mgmt-card">
+          <h3 style="margin-bottom:1rem;">数据统计</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div>
               <h4 style="font-size:0.85rem;color:var(--haze);margin-bottom:0.5rem;">分类分布</h4>
@@ -311,7 +314,10 @@
             </div>
           </div>
         </div>
+      </div>
 
+      <!-- Works Tab -->
+      <div id="tab-works" class="mgmt-section active">
         <div class="mgmt-toolbar" style="margin-bottom:1rem;">
           <div class="mgmt-toolbar-row" style="justify-content:space-between;">
             <h3 style="margin:0;font-family:'Noto Serif SC',Georgia,serif;">我的作品</h3>
@@ -3497,6 +3503,7 @@
       const section = document.getElementById('tab-' + tab);
       if (section) section.classList.add('active');
       const titles = {
+        overview: '数据概览',
         works: '我的作品',
         'my-events': '我的活动',
         'only-booths': 'ONLY 摊位',
