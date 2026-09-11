@@ -77,7 +77,7 @@
       </div>
 
       <div class="board-grid">
-        <div class="board-panel board-span-8">
+        <div class="board-panel board-span-8" id="boardSalePanel">
           <div class="board-section-head" style="margin-bottom:8px;">
             <h2 data-i18n="home.latestUploads">最新上传</h2>
             <span data-i18n="home.recentGoods">最近上架的周边</span>
@@ -85,7 +85,7 @@
           </div>
           <div class="board-strip" id="boardSaleStrip"></div>
         </div>
-        <div class="board-panel board-span-4">
+        <div class="board-panel board-span-4" id="boardDeadlinePanel">
           <div class="board-section-head" style="margin-bottom:8px;">
             <h2 data-i18n="home.deadline">周边截止</h2>
             <button type="button" class="linkish" onclick="setHomeView('catalog');toggleDeadlineFilter()" data-i18n="common.more">更多</button>
@@ -475,10 +475,23 @@
         .slice(0, 10);
 
       const dl = document.getElementById('boardDeadlineList');
+      const dlPanel = document.getElementById('boardDeadlinePanel');
+      const salePanel = document.getElementById('boardSalePanel');
       if (dl) {
         if (deadlineWorks.length === 0) {
-          dl.innerHTML = `<div style="padding:0.5rem 0;color:var(--haze);font-size:12px;">${t('home.noDeadlineGoods')}</div>`;
+          // Hide the whole deadline panel when nothing is ending soon
+          if (dlPanel) dlPanel.style.display = 'none';
+          if (salePanel) {
+            salePanel.classList.remove('board-span-8');
+            salePanel.classList.add('board-span-12');
+          }
+          dl.innerHTML = '';
         } else {
+          if (dlPanel) dlPanel.style.display = '';
+          if (salePanel) {
+            salePanel.classList.add('board-span-8');
+            salePanel.classList.remove('board-span-12');
+          }
           dl.innerHTML = deadlineWorks.map(w => {
             const days = w.endDate ? Math.max(0, Math.ceil((new Date(w.endDate) - new Date()) / 86400000)) : null;
             const authors = (w.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join(' · ');
