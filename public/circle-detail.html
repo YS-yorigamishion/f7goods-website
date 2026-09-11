@@ -49,6 +49,7 @@
   <script src="/js/main.js?v=20260911b"></script>
   <script>
     let circleWorksData = [];
+    let circleWorksOriginal = [];
     let cwCategory = 'all';
     let cwSearchText = '';
     let cwSortBy = 'random';
@@ -57,10 +58,20 @@
       const arr = list.slice();
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+        const tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
       }
-      arr.forEach((w, idx) => { w._randomRank = idx; });
-      return arr;
+      return arr.map(function (w, idx) {
+        // Keep original object, attach rank for stable filter
+        w._randomRank = idx;
+        return w;
+      });
+    }
+
+    function applyRandomOrder() {
+      // Always re-shuffle on entry / when user picks 随机排序
+      circleWorksData = shuffleCircleWorks(circleWorksOriginal);
     }
 
     function renderCircleWorks() {
@@ -76,9 +87,17 @@
         );
       }
       filtered = filtered.slice();
-      // Sorting — default is random (stable within page via _randomRank)
       if (cwSortBy === 'random') {
-        filtered.sort((a, b) => (a._randomRank ?? 0) - (b._randomRank ?? 0));
+        filtered.sort(function (a, b) {
+          const ra = typeof a._randomRank === 'number' ? a._randomRank : 0;
+          const rb = typeof b._randomRank === 'number' ? b._randomRank : 0;
+          return ra - rb;
+        });
+      } else if (cwSortBy === 'default') {
+        // Restore API / original load order
+        filtered.sort(function (a, b) {
+          return (circleWorksOriginal.indexOf(a) - circleWorksOriginal.indexOf(b));
+        });
       } else if (cwSortBy === 'date-asc') {
         filtered.sort((a, b) => (a.releaseDate || 'z').localeCompare(b.releaseDate || 'z'));
       } else if (cwSortBy === 'date-desc') {
@@ -137,7 +156,8 @@
           F7API.getProjects(),
           fetch('/api/updates').then(r => r.json())
         ]);
-        circleWorksData = shuffleCircleWorks(circleWorks || []);
+        circleWorksOriginal = (circleWorks || []).slice();
+        applyRandomOrder();
         const circleWorkIds = circleWorksData.map(w => w.id);
         const relatedProjects = (allProjects || []).filter(p => (p.circles || []).includes(circle.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedCircles || []).includes(circle.id));
@@ -207,8 +227,8 @@
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
                   <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${t('common.all')}</button>
                   ${catBtns.map(c => `<button class="filter-btn" data-cat="${c.id}" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${tCat(c)}</button>`).join('')}
-                  <select class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="cwSortBy=this.value;renderCircleWorks();">
-                    <option value="random" selected>随机排序</option>
+                  <select class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="cwSortBy=this.value;if(cwSortBy==='random'){applyRandomOrder();}renderCircleWorks();">
+                    <option value="random" selected>${t('common.sortRandom') || '随机排序'}</option>
                     <option value="default">${t('common.sortDefault')}</option>
                     <option value="date-asc">${t('common.sortDateAsc')}</option>
                     <option value="date-desc">${t('common.sortDateDesc')}</option>
