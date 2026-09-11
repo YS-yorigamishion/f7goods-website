@@ -34,6 +34,7 @@
     <div class="filter-bar" style="display:flex;gap:0.5rem;align-items:center;">
       <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
         <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:120px;">
+          <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
           <option value="order" data-i18n="common.sortDefault">默认排序</option>
           <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
         </select>
@@ -69,6 +70,19 @@
     let currentCategory = 'all';
     let currentCircleFilter = 'none'; // 'none', 'followed'
 
+    function shuffleCirclesForSession(list) {
+      if (!Array.isArray(list)) return list;
+      const n = list.length;
+      for (let i = n - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = list[i];
+        list[i] = list[j];
+        list[j] = tmp;
+      }
+      list.forEach(function (c, idx) { c._randomRank = idx; });
+      return list;
+    }
+
     function toggleCircleFilter(type) {
       currentCircleFilter = currentCircleFilter === type ? 'none' : type;
       document.querySelectorAll('[data-circle-filter]').forEach(btn => {
@@ -92,7 +106,7 @@
           F7API.getCircles(),
           F7API.getWorks()
         ]);
-        allCircles = circles;
+        allCircles = shuffleCirclesForSession(circles || []);
         // Build circle -> tags map from their works
         works.forEach(w => {
           (w.circles || []).forEach(cid => {
@@ -163,11 +177,14 @@
       }
 
       // Sorting
-      const sortVal = document.getElementById('sortSelect')?.value || 'order';
+      const sortVal = document.getElementById('sortSelect')?.value || 'random';
       if (sortVal === 'name-asc') {
         filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      } else {
+      } else if (sortVal === 'order') {
         filtered.sort((a, b) => (a.order || 0) - (b.order || 0));
+      } else {
+        // random（默认）
+        filtered.sort((a, b) => (a._randomRank || 0) - (b._randomRank || 0));
       }
 
       if (filtered.length === 0) {
@@ -199,7 +216,7 @@
           F7API.getCircles(),
           F7API.getWorks()
         ]);
-        allCircles = circles;
+        allCircles = shuffleCirclesForSession(circles || []);
         circleTagsMap = {};
         works.forEach(w => {
           (w.circles || []).forEach(cid => {

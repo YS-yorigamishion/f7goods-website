@@ -48,23 +48,9 @@
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260911f"></script>
   <script>
-    let circleWorksData = []; // full list for this author, shuffled once per page load
+    let circleWorksData = [];
     let cwCategory = 'all';
     let cwSearchText = '';
-
-    // Same as home catalog: shuffle once on load, keep order via _randomRank
-    function shuffleCircleWorksForSession(list) {
-      if (!Array.isArray(list)) return [];
-      const n = list.length;
-      for (let i = n - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const tmp = list[i];
-        list[i] = list[j];
-        list[j] = tmp;
-      }
-      list.forEach(function (w, idx) { w._randomRank = idx; });
-      return list;
-    }
 
     function renderCircleWorks() {
       let filtered = circleWorksData.slice();
@@ -79,8 +65,7 @@
         );
       }
 
-      // Apply sorting — identical branches to / index catalog
-      const sortVal = document.getElementById('circleSortSelect')?.value || 'random';
+      const sortVal = document.getElementById('circleSortSelect')?.value || 'default';
       if (sortVal === 'date-asc') {
         filtered.sort((a, b) => (a.releaseDate || 'z').localeCompare(b.releaseDate || 'z'));
       } else if (sortVal === 'date-desc') {
@@ -93,11 +78,9 @@
         filtered.sort((a, b) => (b.wants || 0) - (a.wants || 0));
       } else if (sortVal === 'wants-asc') {
         filtered.sort((a, b) => (a.wants || 0) - (b.wants || 0));
-      } else if (sortVal === 'default') {
-        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       } else {
-        // random（默认）：使用本次进入时洗牌的顺序
-        filtered.sort((a, b) => (a._randomRank || 0) - (b._randomRank || 0));
+        // 最新上传（默认）
+        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       }
 
       const grid = document.getElementById('circleWorksGrid');
@@ -145,7 +128,7 @@
           F7API.getProjects(),
           fetch('/api/updates').then(r => r.json())
         ]);
-        circleWorksData = shuffleCircleWorksForSession(circleWorks || []);
+        circleWorksData = circleWorks || [];
         const circleWorkIds = circleWorksData.map(w => w.id);
         const relatedProjects = (allProjects || []).filter(p => (p.circles || []).includes(circle.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedCircles || []).includes(circle.id));
@@ -216,8 +199,7 @@
                   <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${t('common.all')}</button>
                   ${catBtns.map(c => `<button class="filter-btn" data-cat="${c.id}" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${tCat(c)}</button>`).join('')}
                   <select id="circleSortSelect" class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="renderCircleWorks();">
-                    <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
-                    <option value="default" data-i18n="common.sortDefault">最新上传</option>
+                    <option value="default" selected>最新上传</option>
                     <option value="date-asc" data-i18n="common.sortDateAsc">${t('common.sortDateAsc')}</option>
                     <option value="date-desc" data-i18n="common.sortDateDesc">${t('common.sortDateDesc')}</option>
                     <option value="likes-desc" data-i18n="common.sortLikesDesc">${t('common.sortLikesDesc')}</option>
