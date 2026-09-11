@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>公告 — 重设计预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --muted: #8A8078;
+      --haze: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(34,32,30,.04);
+      --shadow-md: 0 8px 24px rgba(34,32,30,.08);
+      --max: 900px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper); color: var(--ink);
+      font-size: 15px; line-height: 1.75; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .pv {
+      height: 32px; background: #2C3340; color: #F6F2EB;
+      display: flex; align-items: center; justify-content: center;
+      gap: .75rem; font-size: .78rem; padding: 0 .5rem;
+    }
+    .pv strong { color: #fff; }
+
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+
+    /* Masthead */
+    .mast {
+      position: relative; background: var(--card);
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 1.15rem 1.25rem 1rem; margin-bottom: .9rem;
+    }
+    .mast::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: var(--accent); border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .mast-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: .5rem 1rem; }
+    .mast h1 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: clamp(1.35rem, 2.8vw, 1.65rem);
+      font-weight: 700; letter-spacing: -.01em; line-height: 1.2;
+    }
+    .mast .sub { color: var(--muted); font-size: .86rem; margin-top: .25rem; }
+    .count { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+    .count b { font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.2rem; color: var(--ink); font-weight: 700; }
+    .mast-foot {
+      margin-top: .7rem; display: flex; flex-wrap: wrap; align-items: baseline;
+      gap: .5rem; font-size: .8rem; color: var(--muted);
+    }
+    .mast-foot strong { font-family: 'Noto Serif SC', Georgia, serif; font-size: .92rem; color: var(--ink); font-weight: 700; }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: .7rem .85rem;
+      margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center;
+    }
+    .pill {
+      height: 30px; padding: 0 12px; border: 1px solid var(--line);
+      border-radius: 999px; background: var(--card); color: var(--haze);
+      font-size: .78rem; font-weight: 500; display: inline-flex; align-items: center;
+    }
+    .pill:hover { border-color: #D4C8B8; color: var(--ink); }
+    .pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .sp { flex: 1; }
+    .toolbar input[type="search"] {
+      height: 30px; border: 1px solid var(--line); border-radius: 999px;
+      background: var(--paper); font-size: .78rem; padding: 0 .75rem;
+      flex: 1; min-width: 150px; max-width: 220px;
+    }
+    .show-n { font-size: .76rem; color: var(--haze); white-space: nowrap; }
+    .show-n b { color: var(--ink); font-size: .9rem; }
+
+    /* Month separator */
+    .m-sep {
+      display: flex; align-items: center; gap: .6rem; margin: 1.05rem 0 .55rem;
+      font-family: 'Noto Serif SC', Georgia, serif; font-size: .82rem; font-weight: 700;
+    }
+    .m-sep:first-child { margin-top: 0; }
+    .m-sep::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+    /* Notice item */
+    .note {
+      display: flex; gap: .9rem; align-items: flex-start;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: .85rem .95rem;
+      margin-bottom: .6rem; transition: .18s ease;
+      text-decoration: none; color: inherit; width: 100%; text-align: left;
+    }
+    .note:hover { border-color: #D4C8B8; box-shadow: var(--shadow-sm); }
+    .note.pinned { border-color: rgba(217,79,92,.35); border-left: 3px solid var(--accent); }
+    .note-date {
+      flex-shrink: 0; width: 54px; text-align: center;
+      padding: .2rem 0; border-radius: var(--radius-sm);
+      background: var(--paper); border: 1px solid var(--line);
+    }
+    .note-date .m { display: block; font-size: .64rem; color: var(--haze); letter-spacing: .05em; }
+    .note-date .d {
+      display: block; font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.3rem; font-weight: 700; line-height: 1.15; color: var(--ink);
+    }
+    .note-main { flex: 1; min-width: 0; }
+    .note-chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .3rem; }
+    .chip {
+      font-size: .66rem; font-weight: 600; padding: .1rem .45rem;
+      border-radius: 999px; background: var(--paper);
+      border: 1px solid var(--line); color: var(--haze);
+    }
+    .chip.pin { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .chip.pop { color: var(--info); border-color: rgba(74,123,167,.35); background: rgba(74,123,167,.08); }
+    .note-title {
+      display: block;
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1rem; font-weight: 700; line-height: 1.4;
+      margin-bottom: .2rem; word-break: break-word;
+    }
+    .note-exc {
+      font-size: .8rem; color: #4A453F;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .note-more { display: block; font-size: .72rem; color: var(--accent); font-weight: 600; margin-top: .35rem; }
+    .note-chev { flex-shrink: 0; align-self: center; color: var(--haze); font-size: 1.1rem; }
+
+    .empty { text-align: center; color: var(--muted); padding: 2.5rem 1rem; font-size: .88rem; }
+
+    /* Notice modal (paper sheet) */
+    .ov {
+      position: fixed; inset: 0; background: rgba(34,32,30,.5);
+      display: none; align-items: center; justify-content: center; padding: 1rem; z-index: 300;
+    }
+    .ov.open { display: flex; }
+    .sheet {
+      position: relative; background: var(--card);
+      width: min(620px, 100%); max-height: 86vh; overflow-y: auto;
+      border-radius: var(--radius); border: 1px solid var(--line);
+      box-shadow: 0 18px 40px rgba(0,0,0,.16); padding: 1.5rem 1.6rem 1.4rem;
+    }
+    .sheet::before {
+      content: 'NOTICE'; display: block;
+      font-size: .62rem; letter-spacing: .2em; color: var(--accent); font-weight: 700;
+      margin-bottom: .5rem;
+    }
+    .sheet .x {
+      position: absolute; top: .8rem; right: .9rem;
+      width: 32px; height: 32px; border-radius: 50%;
+      color: var(--haze); font-size: 1.15rem; line-height: 1;
+    }
+    .sheet .x:hover { background: var(--paper); color: var(--ink); }
+    .sheet h2 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.2rem; font-weight: 700; line-height: 1.35;
+      margin-bottom: .5rem; padding-right: 2rem; word-break: break-word; text-align: left;
+    }
+    .sheet .meta {
+      display: flex; flex-wrap: wrap; gap: .4rem .7rem; align-items: center;
+      font-size: .76rem; color: var(--haze);
+      padding-bottom: .7rem; margin-bottom: .9rem; border-bottom: 1px solid var(--line);
+    }
+    .sheet .body { font-size: .9rem; line-height: 1.9; color: #33302C; white-space: pre-wrap; word-break: break-word; }
+    .sheet .imgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: .6rem; margin-top: 1rem; }
+    .sheet .imgs button {
+      padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm);
+      overflow: hidden; aspect-ratio: 4/3; cursor: zoom-in;
+      background: linear-gradient(145deg,#EDE6DA,#D5CBBB);
+      display: flex; align-items: center; justify-content: center;
+      color: #6b6560; font-size: .72rem;
+    }
+    .sheet .foot { margin-top: 1.2rem; padding-top: .8rem; border-top: 1px solid var(--line); text-align: right; }
+    .sheet .foot button {
+      height: 34px; padding: 0 18px; border-radius: 999px;
+      background: var(--accent); color: #fff; font-size: .82rem; font-weight: 600;
+    }
+    .sheet .foot button:hover { background: var(--accent-dark); }
+
+    .lb { position: fixed; inset: 0; background: rgba(34,32,30,.82); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 400; }
+    .lb.open { display: flex; }
+    .lb .box { width: min(860px, 92vw); aspect-ratio: 4/3; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: .9rem; }
+
+    @media (max-width: 640px) {
+      .wrap { padding: .75rem .8rem 2rem; }
+      .note { gap: .6rem; padding: .7rem .75rem; }
+      .note-date { width: 46px; }
+      .note-date .d { font-size: 1.1rem; }
+      .note-title { font-size: .92rem; }
+      .note-exc { font-size: .75rem; }
+      .sheet { padding: 1.15rem 1rem 1.1rem; }
+      .sheet .imgs { grid-template-columns: repeat(2, 1fr); }
+      .toolbar input[type="search"] { max-width: none; width: 100%; flex: 1 1 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="pv">
+    <span><strong>预览</strong> · 公告页重设计（刊头 + 置顶区 + 日期存根告示卡 + 纸面弹窗）</span>
+  </div>
+
+  <div class="wrap">
+    <header class="mast">
+      <div class="mast-top">
+        <div>
+          <h1>公告</h1>
+          <p class="sub">了解 f7goods 的最新动态和重要通知</p>
+        </div>
+        <div class="count">共 <b id="totalN">0</b> 条公告</div>
+      </div>
+      <div class="mast-foot">
+        <strong>公告列表</strong>
+        <span>按发布时间倒序排列</span>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <button type="button" class="pill on" data-f="all" onclick="setF(this)">全部</button>
+      <button type="button" class="pill" data-f="pinned" onclick="setF(this)">置顶</button>
+      <button type="button" class="pill" data-f="popup" onclick="setF(this)">弹窗公告</button>
+      <span class="sp"></span>
+      <input type="search" placeholder="搜索公告标题、内容…" oninput="render()">
+      <span class="show-n">显示 <b id="showN">0</b></span>
+    </div>
+
+    <div id="list"></div>
+  </div>
+
+  <div class="ov" id="ov" onclick="if(event.target===this)closeSheet()">
+    <div class="sheet" id="sheet"></div>
+  </div>
+  <div class="lb" id="lb" onclick="this.classList.remove('open')">
+    <div class="box" id="lbBox"></div>
+  </div>
+
+  <script>
+    const AN = [
+      {
+        title: '欢迎各位指挥使访问 f7goods — 永远的7日之都同人 WiKi！',
+        date: '2026-06-28', pinned: true, popup: true, images: 3,
+        content: '本网站旨在为所有指挥使提供最全面的七都周边、活动、企划、动态等信息。\n如有任何建议，欢迎通过「关于我们」页面反馈。\n如需投稿周边，请直接到作者登录页注册账号（建议作者加入 QQ 群：1097642519，以便获取第一时间公告与维护信息）。\n本站不含任何盈利性质，也不接入网页广告；所有周边的购买链接与信息均由作者自行提供，交易请谨慎。\n暂不支持上传非周边相关的纯同人图与同人小说，因已有更专业的平台，后续需求增多再考虑开放。'
+      },
+      {
+        title: '网站升级中',
+        date: '2026-08-31', pinned: false, popup: true, images: 0,
+        content: '升级完成时间待定，作品可正常上传。'
+      },
+      {
+        title: '简易规则',
+        date: '2026-08-06', pinned: false, popup: false, images: 0,
+        content: '网站禁 AI 生成的作品、禁辱骂信息挂人、禁二手出物、禁骗子开团等。\n如您在浏览时看到类似作品或信息，请联系群主处理，万分感谢！'
+      },
+      {
+        title: '关于周边审核时间的说明',
+        date: '2026-07-20', pinned: false, popup: false, images: 0,
+        content: '周边提交后一般会在 1–2 天内完成审核，节假日可能延后。审核通过后会同步出现在作者主页与全部周边列表。'
+      },
+      {
+        title: 'ONLY 专场摊位信息收集',
+        date: '2026-07-02', pinned: false, popup: false, images: 1,
+        content: '参加 ONLY 专场的作者可在作者后台「ONLY 摊位」中填写摊位号、简介与宣传图，满赠信息也请一并配置，方便现场对单。'
+      }
+    ];
+
+    let filter = 'all';
+
+    const pad = n => String(n).padStart(2, '0');
+    function mKey(d) { return d.slice(0, 7); }
+    function mLabel(k) { const [y, m] = k.split('-'); return y + ' 年 ' + Number(m) + ' 月'; }
+
+    function setF(btn) {
+      filter = btn.dataset.f;
+      document.querySelectorAll('.toolbar .pill').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      render();
+    }
+
+    function visible() {
+      const q = (document.querySelector('.toolbar input').value || '').trim().toLowerCase();
+      return AN.filter(a =>
+        (filter === 'all' || (filter === 'pinned' && a.pinned) || (filter === 'popup' && a.popup)) &&
+        (!q || a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q))
+      );
+    }
+
+    function cardHtml(a, isPinned) {
+      const tag = AN.indexOf(a);
+      return `
+        <button type="button" class="note${isPinned ? ' pinned' : ''}" onclick="openSheet(${tag})">
+          <span class="note-date"><span class="m">${Number(a.date.slice(5,7))} 月</span><span class="d">${a.date.slice(8,10)}</span></span>
+          <span class="note-main">
+            <span class="note-chips">
+              ${isPinned ? '<span class="chip pin">置顶</span>' : ''}
+              ${a.popup ? '<span class="chip pop">弹窗公告</span>' : ''}
+              ${a.images ? `<span class="chip">${a.images} 张图</span>` : ''}
+            </span>
+            <span class="note-title">${a.title}</span>
+            <span class="note-exc">${a.content.replace(/\n/g, ' ').slice(0, 78)}${a.content.length > 78 ? '…' : ''}</span>
+            <span class="note-more">点击查看详情 ›</span>
+          </span>
+          <span class="note-chev">›</span>
+        </button>`;
+    }
+
+    function render() {
+      document.getElementById('totalN').textContent = AN.length;
+      const list = visible();
+      document.getElementById('showN').textContent = list.length;
+      const box = document.getElementById('list');
+      if (!list.length) { box.innerHTML = '<div class="empty">没有匹配的公告</div>'; return; }
+
+      const pinned = list.filter(a => a.pinned);
+      const rest = list.filter(a => !a.pinned);
+
+      let html = '';
+      if (pinned.length) {
+        html += '<div class="m-sep">置顶公告</div>';
+        html += pinned.map(a => cardHtml(a, true)).join('');
+      }
+      let last = null;
+      rest.forEach(a => {
+        const k = mKey(a.date);
+        if (k !== last) { html += `<div class="m-sep">${mLabel(k)}</div>`; last = k; }
+        html += cardHtml(a, false);
+      });
+      box.innerHTML = html;
+    }
+
+    function openSheet(i) {
+      const a = AN[i];
+      const chips = [];
+      if (a.pinned) chips.push('<span class="chip pin">置顶</span>');
+      if (a.popup) chips.push('<span class="chip pop">弹窗公告</span>');
+      document.getElementById('sheet').innerHTML = `
+        <button type="button" class="x" onclick="closeSheet()" aria-label="关闭">×</button>
+        <h2>${a.title}</h2>
+        <div class="meta">
+          <span>${a.date}</span>
+          ${chips.length ? '<span>·</span>' + chips.join('') : ''}
+        </div>
+        <div class="body">${a.content}</div>
+        ${a.images ? `<div class="imgs">${Array.from({ length: a.images }).map((_, k) => `<button type="button" onclick="openLb(${i},${k})">公告图片 ${k + 1}</button>`).join('')}</div>` : ''}
+        <div class="foot"><button type="button" onclick="closeSheet()">知道了</button></div>`;
+      document.getElementById('ov').classList.add('open');
+    }
+    function closeSheet() { document.getElementById('ov').classList.remove('open'); }
+    function openLb(i, k) {
+      const box = document.getElementById('lbBox');
+      const hue = [18, 200, 340][k % 3];
+      box.style.background = `linear-gradient(145deg,hsl(${hue} 30% 82%),hsl(${hue} 24% 62%))`;
+      box.textContent = '公告图片 ' + (k + 1);
+      document.getElementById('lb').classList.add('open');
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('lb').classList.contains('open')) document.getElementById('lb').classList.remove('open');
+      else closeSheet();
+    });
+
+    render();
+  </script>
+</body>
+</html>

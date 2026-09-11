@@ -14,118 +14,192 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
-  <style>
-    .announcement-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 1.5rem 2rem;
-      margin-bottom: 1.5rem;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border);
-      transition: var(--transition);
-      cursor: pointer;
-    }
-    .announcement-card:hover {
-      box-shadow: var(--shadow-md);
-    }
-    .announcement-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 0.6rem;
-      gap: 1rem;
-    }
-    .announcement-title {
-      font-family: 'Noto Serif SC', Georgia, serif;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-    .announcement-date {
-      display: inline-block;
-      padding: 0.2rem 0.7rem;
-      background: var(--accent);
-      color: white;
-      border-radius: 100px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .announcement-preview {
-      font-size: 0.9rem;
-      color: var(--haze);
-      line-height: 1.6;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-    .announcement-expand-hint {
-      font-size: 0.75rem;
-      color: var(--haze);
-      margin-top: 0.5rem;
-    }
-    @media (max-width: 768px) {
-      .announcement-card {
-        padding: 1rem 1.2rem;
-      }
-      .announcement-header {
-        flex-direction: column;
-      }
-      .announcement-title {
-        font-size: 1.1rem;
-      }
-      .announcement-preview {
-        font-size: 0.85rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/css/style.css?v=20260911v">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <section class="hero">
-    <h1 id="heroTitle" data-i18n="announcements.heroTitle">📢 公告</h1>
-    <p id="heroSubtitle" data-i18n="announcements.heroSubtitle">了解 f7goods 的最新动态和重要通知</p>
+  <section class="hero cl-list-hero">
+    <div class="cl-list-mast">
+      <div>
+        <h1 id="heroTitle" data-i18n="announcements.heroTitle">公告</h1>
+        <p id="heroSubtitle" data-i18n="announcements.heroSubtitle">了解 f7goods 的最新动态和重要通知</p>
+      </div>
+      <div class="cl-list-count">共 <b id="annTotalCount">0</b> 条公告</div>
+    </div>
+    <div class="cl-list-sub">
+      <strong id="pageTitle" data-i18n="announcements.listTitle">公告列表</strong>
+      <span id="pageSubtitle" data-i18n="announcements.listSubtitle">按发布时间倒序排列</span>
+    </div>
   </section>
 
   <main class="main-content">
-    <div class="page-header">
-      <h2 id="pageTitle" data-i18n="announcements.listTitle">公告列表</h2>
-      <p id="pageSubtitle" data-i18n="announcements.listSubtitle">按发布时间倒序排列</p>
+    <div class="cl-toolbar-card">
+      <div class="cl-toolbar-row">
+        <div id="annFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;">
+          <button type="button" class="pill on" data-f="all">全部</button>
+          <button type="button" class="pill" data-f="pinned">置顶</button>
+          <button type="button" class="pill" data-f="popup">弹窗公告</button>
+        </div>
+        <span class="spacer"></span>
+        <input type="search" class="search-input" id="annSearch" placeholder="搜索公告标题、内容...">
+        <span class="cl-show-count">显示 <b id="annShowCount">0</b></span>
+      </div>
     </div>
 
-    <div id="announcementsContainer">
+    <div id="announcementsContainer" class="cl-an-list">
       <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
     </div>
   </main>
 
+  <div class="cl-an-ov" id="annOverlay" onclick="if(event.target===this)closeAnnouncement()">
+    <div class="cl-an-sheet" id="annSheet"></div>
+  </div>
+
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260911b"></script>
+  <script src="/js/main.js?v=20260911c"></script>
   <script>
     initPage('announcements');
 
-    function showAnnouncement(index) {
-      const a = window._announcements[index];
-      if (!a) return;
-      const overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
-      overlay.innerHTML = `<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;flex:1;">${a.pinned ? '📌 ' : ''}${escapeHtml(a.title)}</h3>
-          <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
-        </div>
-        <div style="font-size:0.8rem;color:var(--haze);margin-bottom:1rem;">${formatDate(a.publishDate)}</div>
-        <div style="line-height:1.8;color:var(--ink);white-space:pre-wrap;">${nl2br(a.content)}</div>
-        ${(a.images && a.images.length > 0) ? '<div style="margin-top:1rem;display:flex;flex-direction:column;gap:0.5rem;">' + a.images.map(url => '<img src="' + url + '" style="width:100%;border-radius:8px;cursor:pointer;" onclick="showImageLightbox(this.src)">').join('') + '</div>' : ''}
-      </div>`;
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-      document.body.appendChild(overlay);
+    let _anns = [];
+    let _annFilter = 'all';
+    let _annQuery = '';
+
+    function annPreview(text) {
+      const s = String(text || '').replace(/\s+/g, ' ').trim();
+      return s.length > 78 ? s.slice(0, 78) + '…' : s;
     }
+    function monOf(d) { return d && d.slice(5, 7) ? Number(d.slice(5, 7)) + ' 月' : ''; }
+    function dayOf(d) { return d && d.slice(8, 10) ? d.slice(8, 10) : '—'; }
+    function monthKeyOf(d) { return String(d || '').slice(0, 7); }
+    function monthLabelOf(k) {
+      const p = k.split('-');
+      if (p.length < 2) return k || '未标日期';
+      return p[0] + ' 年 ' + Number(p[1]) + ' 月';
+    }
+
+    function filteredAnns() {
+      const q = _annQuery.trim().toLowerCase();
+      return _anns.filter(a =>
+        (_annFilter === 'all'
+          || (_annFilter === 'pinned' && a.pinned)
+          || (_annFilter === 'popup' && a.popup))
+        && (!q
+          || String(a.title || '').toLowerCase().includes(q)
+          || String(a.content || '').toLowerCase().includes(q))
+      );
+    }
+
+    function annCardHtml(a, isPinned) {
+      const idx = _anns.indexOf(a);
+      const chips = [];
+      if (isPinned) chips.push('<span class="cl-an-chip pin">置顶</span>');
+      if (a.popup) chips.push('<span class="cl-an-chip pop">弹窗公告</span>');
+      const imgN = (a.images || []).length;
+      if (imgN) chips.push(`<span class="cl-an-chip">${imgN} 张图</span>`);
+      return `
+        <button type="button" class="cl-an-note${isPinned ? ' pinned' : ''}" data-i="${idx}">
+          <span class="cl-an-date"><span class="m">${monOf(a.publishDate)}</span><span class="d">${dayOf(a.publishDate)}</span></span>
+          <span class="cl-an-main">
+            <span class="cl-an-chips">${chips.join('')}</span>
+            <span class="cl-an-title">${escapeHtml(a.title)}</span>
+            <span class="cl-an-exc">${escapeHtml(annPreview(a.content))}</span>
+            <span class="cl-an-more">点击查看详情 ›</span>
+          </span>
+          <span class="cl-an-chev">›</span>
+        </button>`;
+    }
+
+    function renderAnnouncements() {
+      const container = document.getElementById('announcementsContainer');
+      const list = filteredAnns();
+
+      const totalEl = document.getElementById('annTotalCount');
+      if (totalEl) totalEl.textContent = _anns.length;
+      const showEl = document.getElementById('annShowCount');
+      if (showEl) showEl.textContent = list.length;
+
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state"><p data-i18n="announcements.noAnnouncements">暂无公告</p></div>`;
+        return;
+      }
+
+      const pinned = list.filter(a => a.pinned);
+      const rest = list.filter(a => !a.pinned);
+
+      let html = '';
+      if (pinned.length) {
+        html += '<div class="cl-an-month">置顶公告</div>';
+        html += pinned.map(a => annCardHtml(a, true)).join('');
+      }
+      let lastMonth = null;
+      rest.forEach(a => {
+        const mk = monthKeyOf(a.publishDate);
+        if (mk !== lastMonth) {
+          html += `<div class="cl-an-month">${escapeHtml(monthLabelOf(mk))}</div>`;
+          lastMonth = mk;
+        }
+        html += annCardHtml(a, false);
+      });
+
+      container.innerHTML = html;
+      container.querySelectorAll('.cl-an-note').forEach(btn => {
+        btn.addEventListener('click', () => showAnnouncement(Number(btn.dataset.i)));
+      });
+    }
+
+    function showAnnouncement(index) {
+      const a = _anns[index];
+      if (!a) return;
+      const sheet = document.getElementById('annSheet');
+      const images = (a.images || []).filter(Boolean);
+      const chips = [];
+      if (a.pinned) chips.push('<span class="cl-an-chip pin">置顶</span>');
+      if (a.popup) chips.push('<span class="cl-an-chip pop">弹窗公告</span>');
+
+      sheet.innerHTML = `
+        <button type="button" class="x" onclick="closeAnnouncement()" aria-label="关闭">&times;</button>
+        <h2>${escapeHtml(a.title)}</h2>
+        <div class="cl-an-meta">
+          <span>${formatDate(a.publishDate)}</span>
+          ${chips.length ? chips.join('') : ''}
+        </div>
+        <div class="cl-an-body">${escapeHtml(a.content || '')}</div>
+        ${images.length ? `
+          <div class="cl-an-imgs">
+            ${images.map((url, i) => `<button type="button" data-img="${i}"><img src="${escapeHtml(url)}" alt="" loading="lazy"></button>`).join('')}
+          </div>` : ''}
+        <div class="cl-an-foot"><button type="button" onclick="closeAnnouncement()">知道了</button></div>`;
+
+      sheet.querySelectorAll('.cl-an-imgs button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (typeof openLightbox === 'function') openLightbox(images, Number(btn.dataset.img));
+        });
+      });
+      document.getElementById('annOverlay').classList.add('open');
+    }
+
+    function closeAnnouncement() {
+      document.getElementById('annOverlay').classList.remove('open');
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAnnouncement();
+    });
+
+    // 筛选与搜索
+    document.getElementById('annFilters').addEventListener('click', (e) => {
+      const btn = e.target.closest('.pill[data-f]');
+      if (!btn) return;
+      _annFilter = btn.dataset.f;
+      document.querySelectorAll('#annFilters .pill').forEach(b => b.classList.toggle('on', b === btn));
+      renderAnnouncements();
+    });
+    document.getElementById('annSearch').addEventListener('input', (e) => {
+      _annQuery = e.target.value;
+      renderAnnouncements();
+    });
 
     async function loadAnnouncements() {
       try {
@@ -141,31 +215,11 @@
         if (!res.ok) throw new Error('Failed to load');
         const announcements = await res.json();
 
-        const container = document.getElementById('announcementsContainer');
-
-        if (!announcements || announcements.length === 0) {
-          container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><p data-i18n="announcements.noAnnouncements">暂无公告</p></div>';
-          return;
-        }
-
-        // Store announcements data for popup
-        window._announcements = announcements;
-
-        container.innerHTML = announcements.map((a, i) => {
-          const preview = a.content.length > 80 ? a.content.substring(0, 80) + '...' : a.content;
-          return `
-          <div class="announcement-card" ${a.pinned ? 'style="border-left:3px solid var(--accent);"' : ''} onclick="showAnnouncement(${i})">
-            <div class="announcement-header">
-              <h3 class="announcement-title">${a.pinned ? '📌 ' : ''}${escapeHtml(a.title)}</h3>
-              <span class="announcement-date">${formatDate(a.publishDate)}</span>
-            </div>
-            <div class="announcement-preview">${escapeHtml(preview)}</div>
-            <div class="announcement-expand-hint">点击查看详情 ›</div>
-          </div>`;
-        }).join('');
+        _anns = Array.isArray(announcements) ? announcements : [];
+        renderAnnouncements();
       } catch (e) {
         document.getElementById('announcementsContainer').innerHTML =
-          '<div class="empty-state"><div class="icon">⚠️</div><p data-i18n="common.loadFailed">加载失败，请稍后重试</p></div>';
+          '<div class="empty-state"><p data-i18n="common.loadFailed">加载失败，请稍后重试</p></div>';
       }
     }
 
