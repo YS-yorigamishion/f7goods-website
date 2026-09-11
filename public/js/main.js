@@ -4,11 +4,20 @@
 let _lang = localStorage.getItem('f7lang') || 'zh';
 let _i18n = {};
 
+// 语言文件版本：新增/修改词条后递增，避免浏览器缓存旧 JSON
+const F7_LANG_VER = '20260911e';
+
+// 取翻译；若词条缺失（t 会返回 key 本身）则用兜底文案
+function tText(key, fallback) {
+  const v = t(key);
+  return (v && v !== key) ? v : fallback;
+}
+
 async function loadLang(lang, isInit = false) {
   try {
     const oldLang = _lang;
     const _fetchL = typeof fetchWithTimeout === 'function' ? fetchWithTimeout : fetch;
-    const res = await _fetchL('/lang/' + lang + '.json');
+    const res = await _fetchL('/lang/' + lang + '.json?v=' + F7_LANG_VER);
     _i18n = await res.json();
     _lang = lang;
     localStorage.setItem('f7lang', lang);
@@ -469,7 +478,7 @@ function buildNavbar(activePage) {
       <h1 class="app-title" id="appPageTitle">${pageTitle}</h1>
       <div class="app-search">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
-        <input type="search" id="appGlobalSearch" placeholder="${t('common.globalSearch') || t('common.searchPlaceholder')}" title="${t('common.globalSearch')}" autocomplete="off" />
+        <input type="search" id="appGlobalSearch" placeholder="${tText('common.globalSearch', tText('common.searchPlaceholder', '搜索…'))}" title="${tText('common.globalSearch', tText('common.searchPlaceholder', '搜索…'))}" autocomplete="off" />
       </div>
       <div class="app-topbar-right">
         <div class="lang-switcher-nav">
@@ -565,20 +574,13 @@ async function initPage(activePage, itemId) {
           dropdown.classList.remove('open');
         }
       });
-      // Global search routes to works list
+      // 全局搜索：统一进入「搜索结果」页，按类型分组展示
       const gs = document.getElementById('appGlobalSearch');
       if (gs) {
         gs.addEventListener('keydown', (e) => {
           if (e.key !== 'Enter') return;
           const q = (e.target.value || '').trim();
-          if (activePage === 'works' && typeof applyGlobalSearch === 'function') {
-            // 已在首页：清掉当前筛选后按关键词检索
-            applyGlobalSearch(q);
-          } else if (q) {
-            location.href = '/?q=' + encodeURIComponent(q);
-          } else {
-            location.href = '/';
-          }
+          if (q) location.href = '/search.html?q=' + encodeURIComponent(q);
         });
       }
     }

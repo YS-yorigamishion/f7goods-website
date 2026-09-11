@@ -168,7 +168,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260911d"></script>
+  <script src="/js/main.js?v=20260911e"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -197,15 +197,6 @@
     let wishlistItems = {}; // { workId: quantity }
     let homeView = 'board';
     let featuredProjectId = null;
-
-    // 顶栏全局搜索入口：/?q=关键词（或 ?search=）
-    (function () {
-      try {
-        const p = new URLSearchParams(location.search);
-        const q = p.get('q') || p.get('search');
-        if (q) window._pendingGlobalQuery = q;
-      } catch (e) {}
-    })();
 
     function setHomeView(view) {
       homeView = view;
@@ -847,15 +838,6 @@
       renderWorks();
     }
 
-    // 顶栏全局搜索：先清掉当前筛选，再在「全部周边」中检索
-    function applyGlobalSearch(q) {
-      clearFilters();
-      const si = document.getElementById('searchInput');
-      if (si) si.value = q || '';
-      if (typeof setHomeView === 'function') setHomeView('catalog');
-      renderWorks();
-    }
-
     function buildFilterButtons() {
       if (!Array.isArray(STATUS_ORDERED) || STATUS_ORDERED.length === 0 || !Array.isArray(CATEGORIES_ORDERED) || CATEGORIES_ORDERED.length === 0) {
         console.warn('[buildFilterButtons] skipped: STATUS_ORDERED or CATEGORIES_ORDERED not ready');
@@ -947,13 +929,6 @@
     }
 
     function renderWorks() {
-      // 从其他页面用顶栏全局搜索跳转过来：/?q=关键词
-      if (window._pendingGlobalQuery) {
-        const q = window._pendingGlobalQuery;
-        window._pendingGlobalQuery = null;
-        applyGlobalSearch(q);
-        return;
-      }
       const grid = document.getElementById('worksGrid');
       let filtered = [...allWorks];
       if (currentCategory !== 'all') {

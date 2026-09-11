@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>搜索 — f7goods</title>
+  <meta name="description" content="在 f7goods 搜索周边、作者、活动、企划与动态。">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="/css/style.css?v=20260911x">
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <section class="hero cl-list-hero">
+    <div class="cl-list-mast">
+      <div>
+        <h1 id="srTitle">搜索结果</h1>
+        <p id="srSub">正在搜索…</p>
+      </div>
+      <div class="cl-list-count">共 <b id="srTotal">0</b> 条结果</div>
+    </div>
+    <div class="cl-list-sub">
+      <strong>分类结果</strong>
+      <span>按内容类型分组展示</span>
+    </div>
+  </section>
+
+  <main class="main-content">
+    <div class="cl-toolbar-card">
+      <div class="cl-toolbar-row">
+        <div id="srTypes" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+        <span class="spacer"></span>
+        <input type="search" class="search-input" id="srInput" placeholder="搜索周边、作者、活动…" autocomplete="off">
+        <button type="button" class="pill" id="srGo">搜索</button>
+        <span class="cl-show-count">显示 <b id="srShow">0</b></span>
+      </div>
+    </div>
+
+    <div id="srResults">
+      <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js?v=20260911e"></script>
+  <script>
+    initPage('search');
+
+    let SRQ = '';
+    let SR_TYPE = 'all';
+    let SR = { works: [], circles: [], events: [], projects: [], updates: [] };
+    let ALL = { works: [], circles: [], events: [], projects: [], updates: [] };
+    let srCirclesMap = {};
+    let srWorkCount = {};
+    let _loaded = false;
+
+    const TYPE_META = [
+      { key: 'all', label: '全部' },
+      { key: 'works', label: '周边' },
+      { key: 'circles', label: '作者' },
+      { key: 'events', label: '活动' },
+      { key: 'projects', label: '企划' },
+      { key: 'updates', label: '动态' }
+    ];
+
+    // 高亮命中片段（先转义再替换，安全）
+    function hl(text, q) {
+      const safe = escapeHtml(String(text == null ? '' : text));
+      if (!q) return safe;
+      const eq = escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      try {
+        return safe.replace(new RegExp(eq, 'gi'), m => '<mark>' + m + '</mark>');
+      } catch (e) {
+        return safe;
+      }
+    }
+
+    function hay(arr) {
+      return arr.filter(Boolean).join(' ').toLowerCase();
+    }
+
+    function counts() {
+      const c = { works: SR.works.length, circles: SR.circles.length, events: SR.events.length, projects: SR.projects.length, updates: SR.updates.length };
+      c.all = c.works + c.circles + c.events + c.projects + c.updates;
+      return c;
+    }
+
+    function renderTypePills() {
+      const c = counts();
+      const box = document.getElementById('srTypes');
+      box.innerHTML = TYPE_META
+        .filter(t => t.key === 'all' || c[t.key] > 0)
+        .map(t => `<button type="button" class="pill${SR_TYPE === t.key ? ' on' : ''}" data-t="${t.key}">${t.label} ${c[t.key]}</button>`)
+        .join('');
+      box.querySelectorAll('.pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          SR_TYPE = btn.dataset.t;
+          renderTypePills();
+          renderResults();
+        });
+      });
+    }
+
+    function secHead(title, n, moreHref, moreLabel) {
+      return `<div class="cl-sr-head">
+        <h2>${title} <span class="n">${n}</span></h2>
+        ${moreHref ? `<a class="more" href="${moreHref}">${moreLabel} →</a>` : ''}
+      </div>`;
+    }
+
+    function workCardHtml(w) {
+      const cover = (w.images && w.images[0]) || '';
+      const authors = (w.circles || []).map(id => srCirclesMap[id]).filter(Boolean).join('、');
+      const cat = (typeof CATEGORIES !== 'undefined' && CATEGORIES[w.category]) || '';
+      const st = (typeof STATUS_LABELS !== 'undefined' && STATUS_LABELS[w.status]) || '';
+      let stCls = 'cl-w-status';
+      if (/售空|售罄|结束/.test(st)) stCls += '';
+      else if (/预售|预约/.test(st)) stCls += ' pre';
+      else if (/发售|在售/.test(st)) stCls += ' sale';
+      return `
+        <a class="cl-w-card" href="/work-detail.html?id=${encodeURIComponent(w.id)}">
+          <div class="cl-w-cover">
+            ${st ? `<span class="${stCls}">${escapeHtml(st)}</span>` : ''}
+            ${cover ? `<img src="${escapeHtml(cover)}" alt="" loading="lazy">` : `<span>${escapeHtml((w.title || '?').charAt(0))}</span>`}
+          </div>
+          <div class="cl-w-body">
+            <div class="cl-w-title">${hl(w.title, SRQ)}</div>
+            <div class="cl-w-meta">${escapeHtml(authors)}${authors && cat ? ' · ' : ''}${escapeHtml(cat)}</div>
+          </div>
+          <div class="cl-w-foot">
+            <span class="cl-w-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(w.price) : (w.price || ''))}</span>
+            <span class="cl-w-stats"><span title="喜爱">♥ ${w.likes || 0}</span><span title="想要">★ ${w.wants || 0}</span></span>
+          </div>
+        </a>`;
+    }
+
+    function circleCardHtml(c, n) {
+      const cover = c.cardCover || c.logo || '';
+      const cat = (typeof CIRCLE_CATEGORIES !== 'undefined' && CIRCLE_CATEGORIES[c.category]) || '';
+      return `
+        <a class="cl-author-card" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">
+          <div class="cl-author-cover">
+            ${cover ? `<img src="${escapeHtml(cover)}" alt="" loading="lazy">` : `<span style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-family:'Noto Serif SC',Georgia,serif;font-size:1.4rem;">${escapeHtml((c.name || '?').charAt(0))}</span>`}
+          </div>
+          <div class="cl-author-body">
+            <div class="cl-author-avatar">${c.logo ? `<img src="${escapeHtml(c.logo)}" alt="">` : escapeHtml((c.name || '?').charAt(0))}</div>
+            <div class="cl-author-name">${hl(c.name, SRQ)}</div>
+            <div class="cl-author-meta">
+              ${cat ? `<span class="cl-author-chip cat">${escapeHtml(cat)}</span>` : ''}
+              <span class="cl-author-chip">${n} 件作品</span>
+            </div>
+            <div class="cl-author-desc">${escapeHtml(c.description || '')}</div>
+            <div class="cl-author-foot"><span>作者</span><span class="go">查看 →</span></div>
+          </div>
+        </a>`;
+    }
+
+    function rowHtml(href, thumb, title, sub) {
+      return `<a class="cl-u-row" href="${href}">
+        <div class="th">${thumb}</div>
+        <div class="t"><b>${title}</b><small>${sub}</small></div>
+      </a>`;
+    }
+
+    function renderResults() {
+      const box = document.getElementById('srResults');
+      const c = counts();
+
+      document.getElementById('srTotal').textContent = c.all;
+      document.getElementById('srShow').textContent = SR_TYPE === 'all' ? c.all : c[SR_TYPE];
+
+      if (!c.all) {
+        box.innerHTML = `<div class="cl-sr-empty">
+          <p>没有找到与 <span class="q">「${escapeHtml(SRQ)}」</span> 相关的内容</p>
+          <p class="tip">试试更短的关键词，或换成作者名 / 活动名 / 标签</p>
+        </div>`;
+        return;
+      }
+
+      const showAll = SR_TYPE === 'all';
+      let html = '';
+
+      if ((showAll || SR_TYPE === 'works') && c.works) {
+        html += `<section class="cl-sr-sec">
+          ${showAll ? secHead('周边', c.works, '/', '全部周边') : ''}
+          <div class="cl-w-grid">${SR.works.map(workCardHtml).join('')}</div>
+        </section>`;
+      }
+      if ((showAll || SR_TYPE === 'circles') && c.circles) {
+        html += `<section class="cl-sr-sec">
+          ${showAll ? secHead('作者', c.circles, '/circles.html', '全部作者') : ''}
+          <div class="cl-author-grid">${SR.circles.map(x => circleCardHtml(x, srWorkCount[x.id] || 0)).join('')}</div>
+        </section>`;
+      }
+      if ((showAll || SR_TYPE === 'events') && c.events) {
+        html += `<section class="cl-sr-sec">
+          ${showAll ? secHead('活动', c.events, '/events.html', '全部活动') : ''}
+          <div class="cl-sr-list">${SR.events.map(e => rowHtml(
+            '/event-detail.html?id=' + encodeURIComponent(e.id),
+            escapeHtml((e.title || '?').charAt(0)),
+            hl(e.title, SRQ),
+            `${formatDate(e.date)}${e.location ? ' · ' + escapeHtml(e.location) : ''}`
+          )).join('')}</div>
+        </section>`;
+      }
+      if ((showAll || SR_TYPE === 'projects') && c.projects) {
+        html += `<section class="cl-sr-sec">
+          ${showAll ? secHead('企划', c.projects, '/projects.html', '全部企划') : ''}
+          <div class="cl-sr-list">${SR.projects.map(p => rowHtml(
+            '/project-detail.html?id=' + encodeURIComponent(p.id),
+            escapeHtml((p.title || '?').charAt(0)),
+            hl(p.title, SRQ),
+            `${(typeof PROJECT_STATUS_LABELS !== 'undefined' && PROJECT_STATUS_LABELS[p.status]) || ''}${p.startDate ? ' · ' + formatDate(p.startDate) : ''}`
+          )).join('')}</div>
+        </section>`;
+      }
+      if ((showAll || SR_TYPE === 'updates') && c.updates) {
+        html += `<section class="cl-sr-sec">
+          ${showAll ? secHead('动态', c.updates, '/updates.html', '全部动态') : ''}
+          <div class="cl-sr-list">${SR.updates.map(u => rowHtml(
+            '/update-detail.html?id=' + encodeURIComponent(u.id),
+            escapeHtml((u.title || '?').charAt(0)),
+            hl(u.title, SRQ),
+            formatDate(u.publishDate)
+          )).join('')}</div>
+        </section>`;
+      }
+
+      box.innerHTML = html;
+    }
+
+    function doSearch(q, push) {
+      SRQ = (q || '').trim();
+      const url = SRQ ? '/search.html?q=' + encodeURIComponent(SRQ) : '/search.html';
+      if (push !== false) history.replaceState(null, '', url);
+      document.title = SRQ ? `「${SRQ}」的搜索结果 — f7goods` : '搜索 — f7goods';
+      const sub = document.getElementById('srSub');
+      if (sub) sub.textContent = SRQ ? `关键词：${SRQ}` : '输入关键词开始搜索';
+      const input = document.getElementById('srInput');
+      if (input && input.value !== SRQ) input.value = SRQ;
+      if (_loaded) applyFilter();
+    }
+
+    function matchAll() {
+      if (!SRQ) {
+        SR = { works: [], circles: [], events: [], projects: [], updates: [] };
+        return;
+      }
+      const q = SRQ.toLowerCase();
+      const cirName = id => srCirclesMap[id] || '';
+
+      SR.works = ALL.works.filter(w => hay([
+        w.title, (w.tags || []).join(' '),
+        (w.circles || []).map(cirName).join(' '),
+        (typeof CATEGORIES !== 'undefined' && CATEGORIES[w.category]) || ''
+      ]).includes(q));
+
+      SR.circles = ALL.circles.filter(c => hay([
+        c.name, c.description,
+        (typeof CIRCLE_CATEGORIES !== 'undefined' && CIRCLE_CATEGORIES[c.category]) || ''
+      ]).includes(q));
+
+      SR.events = ALL.events.filter(e => hay([
+        e.title, e.location, e.description, e.booth
+      ]).includes(q));
+
+      SR.projects = ALL.projects.filter(p => hay([
+        p.title, p.description, (p.tags || []).join(' '),
+        (typeof PROJECT_CATEGORIES !== 'undefined' && PROJECT_CATEGORIES[p.category]) || ''
+      ]).includes(q));
+
+      SR.updates = ALL.updates.filter(u => hay([u.title, u.content]).includes(q));
+    }
+
+    function applyFilter() {
+      matchAll();
+      renderTypePills();
+      renderResults();
+    }
+
+    async function loadAll() {
+      try {
+        await loadCategoriesFromAPI();
+        const [works, circles, events, projects] = await Promise.all([
+          F7API.getWorks(),
+          F7API.getCircles(),
+          F7API.getEvents(),
+          F7API.getProjects()
+        ]);
+        const updates = await fetch('/api/updates').then(r => r.json()).catch(() => []);
+        ALL.works = works || [];
+        ALL.circles = circles || [];
+        ALL.events = events || [];
+        ALL.projects = projects || [];
+        ALL.updates = Array.isArray(updates) ? updates : (updates.items || []);
+        ALL.circles.forEach(c => { srCirclesMap[c.id] = c.name; });
+        ALL.works.forEach(w => (w.circles || []).forEach(cid => { srWorkCount[cid] = (srWorkCount[cid] || 0) + 1; }));
+        _loaded = true;
+        applyFilter();
+      } catch (e) {
+        document.getElementById('srResults').innerHTML =
+          '<div class="empty-state"><p data-i18n="common.loadFailed">加载失败，请稍后重试</p></div>';
+      }
+    }
+
+    // 页面内搜索（改写关键词后回车或点搜索）
+    document.getElementById('srGo').addEventListener('click', () => doSearch(document.getElementById('srInput').value));
+    document.getElementById('srInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSearch(e.target.value);
+    });
+
+    const p = new URLSearchParams(location.search);
+    doSearch(p.get('q') || p.get('search') || '', false);
+    loadAll();
+  </script>
+</body>
+</html>
