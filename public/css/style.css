@@ -1155,6 +1155,10 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 }
 .cl-w-stats { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: var(--haze); }
 .cl-w-stats > span { display: inline-flex; align-items: center; gap: 0.15rem; }
+/* 与 .like-icon / .like-count 同号，保证爱心与星星大小一致 */
+.cl-w-want { display: inline-flex; align-items: center; gap: 0.15rem; }
+.cl-w-want-icon { font-size: 1rem; line-height: 1; }
+.cl-w-want-count { font-size: 0.75rem; font-weight: 500; color: var(--haze); }
 
 /* wishlist quick control on the cover */
 .cl-w-wish {
