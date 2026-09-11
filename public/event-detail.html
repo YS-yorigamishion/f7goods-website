@@ -92,7 +92,7 @@
             ${authorNames ? `<p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${escapeHtml(authorNames)}</p>` : ''}
           </div>
           <div class="card-footer" style="padding:0.5rem 0.8rem;">
-            <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${escapeHtml(work.price)}</span>
+            <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || ''))}</span>
             ${renderLikeButton(work.id, work.likes)}
           </div>
         </a>`;

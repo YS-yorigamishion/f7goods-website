@@ -1136,7 +1136,7 @@
               <button class="btn-sm" onclick="event.stopPropagation();deleteAuthorWork('${w.id}')" title="删除作品" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">🗑</button>
             </div>
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(w.title)}</h3>
-            <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${w.price || ''}</p>
+            <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(w.price) : (w.price || ''))}</p>
             ${rejectReasonHtml}
             <div class="work-stats">
               <span title="喜爱数">❤️ ${w.likes || 0}</span>

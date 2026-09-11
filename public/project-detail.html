@@ -130,7 +130,7 @@
                       <div class="card-body">
                         <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || ''}</span>
                         <h3 class="card-title" style="font-size:0.95rem;">${escapeHtml(work.title)}</h3>
-                        <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.5rem;">${escapeHtml(work.price)}</p>
+                        <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.5rem;">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || ''))}</p>
                       </div>
                     </a>
                   `).join('')}
