@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911e">
+  <link rel="stylesheet" href="/css/style.css?v=20260911j">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -136,12 +136,14 @@
         document.title = `${circle.name} — f7goods`;
         document.querySelector('meta[property="og:title"]').content = circle.name;
         document.querySelector('meta[property="og:description"]').content = (circle.description || '').substring(0, 160);
-        if (circle.logo) document.querySelector('meta[property="og:image"]').content = circle.logo;
+        if (circle.cardCover || circle.logo) document.querySelector('meta[property="og:image"]').content = circle.cardCover || circle.logo;
 
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('circleDetail');
         const gallery = Array.isArray(circle.images) ? circle.images.filter(Boolean) : [];
-        const cover = gallery[0] || '';
+        // Hero cover: author-chosen card cover, else fall back to avatar (logo)
+        const cover = circle.cardCover || circle.logo || '';
+        const coverIsAvatar = !circle.cardCover && !!circle.logo;
         const totalLikes = circleWorks.reduce((s, w) => s + (w.likes || 0), 0);
         const totalWants = circleWorks.reduce((s, w) => s + (w.wants || 0), 0);
         const follows = circle.follows || 0;
@@ -152,7 +154,7 @@
             <span>›</span>
             <span>${escapeHtml(circle.name)}</span>
           </div>
-          <div class="cl-hero ${cover ? 'has-cover' : ''}">
+          <div class="cl-hero ${cover ? 'has-cover' : ''}${coverIsAvatar ? ' is-avatar' : ''}">
             <div class="cl-hero-line"></div>
             ${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(circle.name)}" loading="eager">` : ''}
           </div>
