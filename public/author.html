@@ -2669,7 +2669,13 @@
         <div class="form-group"><label>摊位号</label><input class="form-input" value="${isEdit ? escapeHtml(booth.code || '') : ''}" disabled></div>
         <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
         `}
-        <div class="form-group"><label>头像 URL（可选）</label><input class="form-input" id="abLogo" value="${isEdit ? escapeHtml(booth.logo || '') : ''}" placeholder="/uploads/..."></div>
+        <div class="form-group">
+          <label>摊位头像（可选，从图片库选择）</label>
+          <div id="abLogoPreview" style="margin-bottom:0.4rem;min-height:20px;">
+            ${isEdit && booth.logo ? `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(booth.logo)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;"><button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
+          </div>
+          <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('abLogoPreview', true)">从图片库选择</button>
+        </div>
         ${canFullEdit ? `
         <div class="form-group">
           <label>挂接摊主（可多选）</label>
@@ -2695,7 +2701,11 @@
           <button class="btn" style="flex:1;background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>
       `;
-      overlay.style.display = 'flex';
+      // Use class open (not inline display) so closeWorkModal can hide it
+      overlay.style.display = '';
+      overlay.classList.add('open');
+      // Booth form is not draft-tracked; stop any leftover tracking so close works
+      if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
     }
 
     function renderAuthorTierRow(t, works, i) {
@@ -2738,7 +2748,7 @@
 
       const payload = {
         title: document.getElementById('abTitle')?.value.trim() || '',
-        logo: document.getElementById('abLogo')?.value.trim() || '',
+        logo: document.querySelector('#abLogoPreview img')?.src || '',
         promoTiers
       };
       if (canFullEdit) {
@@ -3267,12 +3277,23 @@
     // Override closeWorkModal to check for unsaved changes
     const _originalCloseWorkModal = closeWorkModal;
     closeWorkModal = async function() {
-      if (FormDraft.hasChanges()) {
-        const confirmed = await showConfirm('有未保存的修改，确定关闭吗？');
-        if (!confirmed) return;
+      try {
+        if (typeof FormDraft !== 'undefined' && FormDraft.hasChanges()) {
+          let confirmed = false;
+          if (typeof showConfirm === 'function') {
+            confirmed = await showConfirm('有未保存的修改，确定关闭吗？');
+          } else {
+            confirmed = window.confirm('有未保存的修改，确定关闭吗？');
+          }
+          if (!confirmed) return;
+        }
+      } catch (e) {}
+      if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
+      const overlay = document.getElementById('workModalOverlay');
+      if (overlay) {
+        overlay.classList.remove('open');
+        overlay.style.display = '';
       }
-      FormDraft.stopTracking();
-      document.getElementById('workModalOverlay').classList.remove('open');
     };
 
     loadLang(_lang, true).finally(() => checkAuthorAuth());
