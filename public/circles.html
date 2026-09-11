@@ -14,38 +14,43 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260911g">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <section class="hero">
-    <h1 id="heroTitle" class="settings-pending" data-i18n="circles.heroTitle">同人作者</h1>
-    <p id="heroSubtitle" class="settings-pending" data-i18n="circles.heroSubtitle">发现优秀的同人创作者与作者，支持独立创作</p>
+  <section class="hero cl-list-hero">
+    <div class="cl-list-mast">
+      <div>
+        <h1 id="heroTitle" class="settings-pending" data-i18n="circles.heroTitle">同人作者</h1>
+        <p id="heroSubtitle" class="settings-pending" data-i18n="circles.heroSubtitle">发现优秀的同人创作者与作者，支持独立创作</p>
+      </div>
+      <div class="cl-list-count">共 <b id="circleTotalCount">0</b> 位入驻作者</div>
+    </div>
+    <div class="cl-list-sub">
+      <strong id="pageTitle" class="settings-pending" data-i18n="circles.listTitle">入驻作者</strong>
+      <span id="pageSubtitle" class="settings-pending" data-i18n="circles.subtitle">在 f7goods 展示作品的同人作者</span>
+    </div>
   </section>
 
   <main class="main-content">
-    <div class="page-header">
-      <h2 id="pageTitle" class="settings-pending" data-i18n="circles.listTitle">入驻作者</h2>
-      <p id="pageSubtitle" class="settings-pending" data-i18n="circles.subtitle">在 f7goods 展示作品的同人作者</p>
-    </div>
-
-    <div class="filter-bar" id="categoryFilters"></div>
-    <div class="filter-bar" style="display:flex;gap:0.5rem;align-items:center;">
-      <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
-        <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:120px;">
+    <div class="cl-toolbar-card">
+      <div class="cl-toolbar-row" id="categoryFilters"></div>
+      <div class="cl-toolbar-row">
+        <div id="circleUserFilters" style="display:none;">
+          <button class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">关注</button>
+        </div>
+        <select class="form-input" id="sortSelect">
           <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
           <option value="order" data-i18n="common.sortDefault">默认排序</option>
           <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+        <span class="cl-show-count">显示 <b id="circleShowCount">0</b></span>
       </div>
     </div>
-    <div class="filter-bar" id="circleUserFilters" style="display:none;">
-      <button class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">关注</button>
-    </div>
 
-    <div class="cards-grid" id="circlesGrid">
+    <div class="cards-grid cl-author-grid" id="circlesGrid">
       <div id="circlesSkeleton" class="skeleton-grid">
         <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
         <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
@@ -67,8 +72,14 @@
 
     let allCircles = [];
     let circleTagsMap = {};
+    let circleWorksCountMap = {};
     let currentCategory = 'all';
     let currentCircleFilter = 'none'; // 'none', 'followed'
+
+    function getFollowedIds() {
+      try { return JSON.parse(localStorage.getItem('f7followed') || '[]') || []; }
+      catch { return []; }
+    }
 
     function shuffleCirclesForSession(list) {
       if (!Array.isArray(list)) return list;
@@ -83,6 +94,21 @@
       return list;
     }
 
+    function buildWorksMaps(works) {
+      circleTagsMap = {};
+      circleWorksCountMap = {};
+      (works || []).forEach(w => {
+        (w.circles || []).forEach(cid => {
+          if (!circleTagsMap[cid]) circleTagsMap[cid] = [];
+          circleTagsMap[cid].push(...(w.tags || []));
+          circleWorksCountMap[cid] = (circleWorksCountMap[cid] || 0) + 1;
+        });
+      });
+      Object.keys(circleTagsMap).forEach(k => {
+        circleTagsMap[k] = [...new Set(circleTagsMap[k])];
+      });
+    }
+
     function toggleCircleFilter(type) {
       currentCircleFilter = currentCircleFilter === type ? 'none' : type;
       document.querySelectorAll('[data-circle-filter]').forEach(btn => {
@@ -92,7 +118,7 @@
     }
 
     function checkCircleUserFilters() {
-      const followed = JSON.parse(localStorage.getItem('f7followed') || '[]');
+      const followed = getFollowedIds();
       const container = document.getElementById('circleUserFilters');
       if (container && followed.length > 0) {
         container.style.display = 'flex';
@@ -107,17 +133,7 @@
           F7API.getWorks()
         ]);
         allCircles = shuffleCirclesForSession(circles || []);
-        // Build circle -> tags map from their works
-        works.forEach(w => {
-          (w.circles || []).forEach(cid => {
-            if (!circleTagsMap[cid]) circleTagsMap[cid] = [];
-            circleTagsMap[cid].push(...(w.tags || []));
-          });
-        });
-        // Deduplicate tags
-        Object.keys(circleTagsMap).forEach(k => {
-          circleTagsMap[k] = [...new Set(circleTagsMap[k])];
-        });
+        buildWorksMaps(works);
 
         // Apply settings
         const ps = getPageSettings('circles');
@@ -163,8 +179,8 @@
       }
 
       // User filter (followed)
+      const followedIds = getFollowedIds();
       if (currentCircleFilter === 'followed') {
-        const followedIds = JSON.parse(localStorage.getItem('f7followed') || '[]');
         filtered = filtered.filter(c => followedIds.includes(c.id));
       }
 
@@ -177,6 +193,7 @@
       }
 
       // Sorting
+      filtered = filtered.slice();
       const sortVal = document.getElementById('sortSelect')?.value || 'random';
       if (sortVal === 'name-asc') {
         filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -187,21 +204,49 @@
         filtered.sort((a, b) => (a._randomRank || 0) - (b._randomRank || 0));
       }
 
+      const totalEl = document.getElementById('circleTotalCount');
+      if (totalEl) totalEl.textContent = allCircles.length;
+      const showEl = document.getElementById('circleShowCount');
+      if (showEl) showEl.textContent = filtered.length;
+
       if (filtered.length === 0) {
-        grid.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${t('common.noMatchingAuthors')}</p></div>`;
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔍</div><p>${t('common.noMatchingAuthors')}</p></div>`;
         return;
       }
 
-      grid.innerHTML = filtered.map(circle => `
-        <a class="circle-card" href="/circle-detail.html?id=${circle.id}" style="text-decoration:none;color:inherit;">
-          ${circle.logo
-            ? `<div style="width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 1rem;"><img src="${circle.logo}" alt="${escapeHtml(circle.name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></div>`
-            : `<div class="circle-avatar">${escapeHtml(circle.name.charAt(0))}</div>`}
-          <h3 class="circle-name">${escapeHtml(circle.name)}</h3>
-          ${circle.category ? `<p style="font-size:0.8rem;color:var(--accent);margin-bottom:0.3rem;">${CIRCLE_CATEGORIES[circle.category] || escapeHtml(circle.category)}</p>` : ''}
-          <p class="circle-desc">${escapeHtml(circle.description || '')}</p>
+      const followedSet = new Set(followedIds);
+      grid.innerHTML = filtered.map(circle => {
+        const cover = (circle.images && circle.images[0]) || circle.coverImage || '';
+        const workCount = circleWorksCountMap[circle.id] || 0;
+        const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || circle.category) : '';
+        const isFollowed = followedSet.has(circle.id);
+        return `
+        <a class="cl-author-card" href="/circle-detail.html?id=${encodeURIComponent(circle.id)}">
+          <div class="cl-author-cover">
+            ${cover
+              ? `<img src="${escapeHtml(cover)}" alt="" loading="lazy">`
+              : `<div style="width:100%;height:100%;background:linear-gradient(145deg,#EDE6DA,#D5CBBB);"></div>`}
+          </div>
+          <div class="cl-author-body">
+            <div class="cl-author-avatar">
+              ${circle.logo
+                ? `<img src="${escapeHtml(circle.logo)}" alt="${escapeHtml(circle.name)}" loading="lazy">`
+                : escapeHtml((circle.name || '?').charAt(0))}
+            </div>
+            <div class="cl-author-name">${escapeHtml(circle.name)}</div>
+            <div class="cl-author-meta">
+              ${catLabel ? `<span class="cl-author-chip cat">${escapeHtml(catLabel)}</span>` : ''}
+              <span class="cl-author-chip">${workCount} 件作品</span>
+            </div>
+            <div class="cl-author-desc">${escapeHtml(circle.description || '')}</div>
+            <div class="cl-author-foot">
+              <span>${isFollowed ? '已关注' : '作者'}</span>
+              <span class="go">查看 →</span>
+            </div>
+          </div>
         </a>
-      `).join('');
+      `;
+      }).join('');
     }
 
     document.getElementById('searchInput').addEventListener('input', debounce(renderCircles));
@@ -217,13 +262,7 @@
           F7API.getWorks()
         ]);
         allCircles = shuffleCirclesForSession(circles || []);
-        circleTagsMap = {};
-        works.forEach(w => {
-          (w.circles || []).forEach(cid => {
-            if (!circleTagsMap[cid]) circleTagsMap[cid] = [];
-            circleTagsMap[cid].push(...(w.tags || []));
-          });
-        });
+        buildWorksMaps(works);
         renderCircles();
       }
     });
