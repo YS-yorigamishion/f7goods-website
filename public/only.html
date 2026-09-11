@@ -257,6 +257,27 @@
     }
     .only-allgoods-search:focus { border-color: var(--accent); }
     .only-allgoods-meta { font-size:12px; color:var(--muted); margin-bottom:0.55rem; }
+    .only-owners-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:8px; }
+    .only-owner-card {
+      display:flex; gap:10px; align-items:flex-start; text-decoration:none; color:inherit;
+      background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px;
+      transition:border-color .15s ease;
+    }
+    .only-owner-card:hover { border-color:var(--accent); }
+    .only-owner-avatar {
+      width:44px; height:44px; border-radius:12px; flex-shrink:0; overflow:hidden;
+      background:linear-gradient(145deg,#EDE6DA,#D9D0C2);
+      display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px;
+    }
+    .only-owner-avatar img { width:100%; height:100%; object-fit:cover; }
+    .only-owner-body { flex:1; min-width:0; }
+    .only-owner-name { font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .only-owner-meta { font-size:11px; color:var(--muted); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .only-owner-desc {
+      font-size:12px; color:var(--ink); margin-top:6px; line-height:1.4;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .only-owner-go { font-size:11px; color:var(--accent); font-weight:600; align-self:center; flex-shrink:0; }
     .claim-chip {
       display: inline-flex; align-items: center; gap: 3px;
       font-size: 10px; font-weight: 600; font-family: inherit; line-height: 1.5;
@@ -558,10 +579,12 @@
         <div class="only-tabs" id="onlyTabs">
           <button type="button" class="on" data-t="all">全部摊位</button>
           <button type="button" data-t="goods">全部周边</button>
+          <button type="button" data-t="owners">全部摊主</button>
           <button type="button" data-t="ov">活动概况</button>
         </div>
         <div id="onlyListPane"></div>
         <div id="onlyGoodsPane" style="display:none;"></div>
+        <div id="onlyOwnersPane" style="display:none;"></div>
         <div id="onlyOvPane" style="display:none;">
           <div class="only-ov">
             <h4>整体情况</h4>
@@ -576,7 +599,7 @@
         </div>
       `;
 
-      window._only = { event, boothModels, relatedWorks };
+      window._only = { event, boothModels, relatedWorks, circleMap };
       window._onlyCart = loadOnlyCart(event.id);
 
       document.getElementById('onlyTabs').addEventListener('click', e => {
@@ -836,26 +859,101 @@
       });
     }
 
+    function onlyEventOwners() {
+      const map = window._only?.circleMap || {};
+      const related = window._only?.relatedWorks || [];
+      const booths = window._only?.boothModels || [];
+      const event = window._only?.event || {};
+      const ids = new Set();
+      booths.forEach(b => (b.circleIds || []).forEach(id => ids.add(id)));
+      (event.relatedCircles || []).forEach(id => ids.add(id));
+      const worksByCircle = {};
+      related.forEach(w => {
+        (w.circles || []).forEach(cid => {
+          worksByCircle[cid] = (worksByCircle[cid] || 0) + 1;
+        });
+      });
+      const boothNamesByCircle = {};
+      booths.forEach(b => {
+        if (b.id === '_unassigned') return;
+        (b.circleIds || []).forEach(cid => {
+          if (!boothNamesByCircle[cid]) boothNamesByCircle[cid] = [];
+          boothNamesByCircle[cid].push(boothLabel(b));
+        });
+      });
+      return [...ids]
+        .map(id => map[id])
+        .filter(Boolean)
+        .map(c => ({
+          ...c,
+          workCount: worksByCircle[c.id] || 0,
+          booths: boothNamesByCircle[c.id] || []
+        }))
+        .sort((a, z) => String(a.name || '').localeCompare(String(z.name || ''), 'zh'));
+    }
+
+    function renderOnlyOwnersPane() {
+      const pane = document.getElementById('onlyOwnersPane');
+      if (!pane) return;
+      const owners = onlyEventOwners();
+      if (!owners.length) {
+        pane.innerHTML = `<div class="only-booth" style="color:var(--muted);font-size:13px;text-align:center;">暂无关联摊主</div>`;
+        return;
+      }
+      pane.innerHTML = `
+        <div class="only-allgoods-meta" style="margin-bottom:0.65rem;">共 <b>${owners.length}</b> 位关联摊主</div>
+        <div class="only-owners-grid">
+          ${owners.map(c => {
+            const cover = c.cardCover || c.logo || '';
+            return `
+            <a class="only-owner-card" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">
+              <div class="only-owner-avatar">
+                ${c.logo ? `<img src="${esc(c.logo)}" alt="" loading="lazy">` : esc((c.name || '?').charAt(0))}
+              </div>
+              <div class="only-owner-body">
+                <div class="only-owner-name">${esc(c.name || '')}</div>
+                <div class="only-owner-meta">${c.workCount} 件本活动周边${c.booths.length ? ' · ' + esc(c.booths.join('、')) : ''}</div>
+                <div class="only-owner-desc">${esc(String(c.description || '').slice(0, 60))}</div>
+              </div>
+              <div class="only-owner-go">查看 →</div>
+            </a>`;
+          }).join('')}
+        </div>
+      `;
+    }
+
     function renderOnlyBooths(filter) {
       const listPane = document.getElementById('onlyListPane');
       const ovPane = document.getElementById('onlyOvPane');
       const goodsPane = document.getElementById('onlyGoodsPane');
+      const ownersPane = document.getElementById('onlyOwnersPane');
       if (!listPane) return;
       if (filter === 'ov') {
         listPane.style.display = 'none';
         if (goodsPane) goodsPane.style.display = 'none';
+        if (ownersPane) ownersPane.style.display = 'none';
         ovPane.style.display = 'block';
         return;
       }
       if (filter === 'goods') {
         listPane.style.display = 'none';
         ovPane.style.display = 'none';
+        if (ownersPane) ownersPane.style.display = 'none';
         if (goodsPane) goodsPane.style.display = 'block';
         renderOnlyGoodsPane();
         return;
       }
+      if (filter === 'owners') {
+        listPane.style.display = 'none';
+        ovPane.style.display = 'none';
+        if (goodsPane) goodsPane.style.display = 'none';
+        if (ownersPane) ownersPane.style.display = 'block';
+        renderOnlyOwnersPane();
+        return;
+      }
       listPane.style.display = 'block';
       if (goodsPane) goodsPane.style.display = 'none';
+      if (ownersPane) ownersPane.style.display = 'none';
       ovPane.style.display = 'none';
       const booths = window._only?.boothModels || [];
       if (!booths.length) {
