@@ -2925,7 +2925,7 @@
       const pack = _onlyBoothData.find(p => p.event.id === eventId);
       if (!pack) return;
       const isEdit = !!booth;
-      const works = pack.works || [];
+      const giftWorks = ownEventWorks(pack);
       const circles = pack.circles || [];
       const selectedOwners = new Set(booth?.circleIds || []);
       const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: '', giftWorkIds: [], text: '' }];
@@ -2974,9 +2974,9 @@
         </div>
         ` : ''}
         <div class="form-group">
-          <label>满额赠品档（可多档 · 一档可多作品）</label>
+          <label>满额赠品档（可多档 · 一档可多作品 · 仅可选我的周边）</label>
           <div id="abTierList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
-            ${tiers.map((t, i) => renderAuthorTierRow(t, works, i)).join('')}
+            ${tiers.map((t, i) => renderAuthorTierRow(t, giftWorks, i)).join('')}
           </div>
           <button type="button" class="btn-sm btn-edit" onclick="addAuthorTierRow('${eventId}')">+ 添加一档</button>
         </div>
@@ -2990,6 +2990,11 @@
       overlay.classList.add('open');
       // Booth form is not draft-tracked; stop any leftover tracking so close works
       if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
+    }
+
+    function ownEventWorks(pack) {
+      const me = localStorage.getItem('f7author_actAs') || authorCircleId;
+      return (pack?.works || []).filter(w => (w.circles || []).includes(me));
     }
 
     function renderAuthorTierRow(t, works, i) {
@@ -3006,14 +3011,14 @@
               <input type="checkbox" class="ab-tier-gift" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''}>
               ${escapeHtml(w.title)}
             </label>
-          `).join('') : '<span style="font-size:0.72rem;color:var(--haze);">暂无关联作品</span>'}
+          `).join('') : '<span style="font-size:0.72rem;color:var(--haze);">暂无我的周边（需先关联到本活动）</span>'}
         </div>
       </div>`;
     }
 
     function addAuthorTierRow(eventId) {
       const pack = _onlyBoothData.find(p => p.event.id === eventId);
-      const works = pack?.works || [];
+      const works = ownEventWorks(pack);
       const list = document.getElementById('abTierList');
       if (!list) return;
       list.insertAdjacentHTML('beforeend', renderAuthorTierRow({ minAmount: '', giftWorkIds: [], text: '' }, works, Date.now()));
