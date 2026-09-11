@@ -618,7 +618,7 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   const old = { ...circles[index] };
 
   // Only allow updating specific fields
-  const allowed = ['name', 'description', 'category', 'logo', 'images', 'socialLinks'];
+  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -632,6 +632,7 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   if (updates.name && updates.name !== old.name) changes.push('修改了名称');
   if (updates.description !== undefined && updates.description !== old.description) changes.push('修改了简介');
   if (updates.logo && updates.logo !== old.logo) changes.push('更新了头像');
+  if (updates.cardCover !== undefined && updates.cardCover !== old.cardCover) changes.push('更新了卡片封面');
   if (updates.images) {
     const oldCount = (old.images || []).length;
     const newCount = (updates.images || []).length;
@@ -3628,7 +3629,7 @@ app.post('/api/admin/circles', authMiddleware, async (req, res) => {
   const circles = readJSON('circles.json');
   const maxOrder = circles.reduce((max, c) => Math.max(max, c.order ?? 0), 0);
   // Whitelist allowed fields - NEVER allow passwordHash, username, authorStatus
-  const allowedFields = ['name', 'description', 'category', 'logo', 'images', 'socialLinks', 'editableBy'];
+  const allowedFields = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'editableBy'];
   const circleData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) circleData[field] = req.body[field];
@@ -3649,7 +3650,7 @@ app.put('/api/admin/circles/:id', authMiddleware, async (req, res) => {
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
   // Whitelist allowed fields - NEVER allow passwordHash, username, authorStatus to be set directly
-  const allowedFields = ['name', 'description', 'category', 'logo', 'images', 'socialLinks', 'order', 'editableBy'];
+  const allowedFields = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'order', 'editableBy'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];

@@ -216,7 +216,8 @@
 
       const followedSet = new Set(followedIds);
       grid.innerHTML = filtered.map(circle => {
-        const cover = (circle.images && circle.images[0]) || circle.coverImage || '';
+        // Card cover: author-chosen cover, else fall back to avatar (logo)
+        const cover = circle.cardCover || circle.logo || '';
         const workCount = circleWorksCountMap[circle.id] || 0;
         const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || circle.category) : '';
         const isFollowed = followedSet.has(circle.id);
@@ -225,7 +226,7 @@
           <div class="cl-author-cover">
             ${cover
               ? `<img src="${escapeHtml(cover)}" alt="" loading="lazy">`
-              : `<div style="width:100%;height:100%;background:linear-gradient(145deg,#EDE6DA,#D5CBBB);"></div>`}
+              : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-family:'Noto Serif SC',Georgia,serif;font-size:1.4rem;">${escapeHtml((circle.name || '?').charAt(0))}</div>`}
           </div>
           <div class="cl-author-body">
             <div class="cl-author-avatar">

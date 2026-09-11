@@ -494,8 +494,6 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 .cl-list-sub {
   max-width: var(--max-width);
   margin: 0.7rem auto 0;
-  padding-top: 0.6rem;
-  border-top: 1px dashed var(--line);
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -528,7 +526,6 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 }
 .cl-toolbar-row + .cl-toolbar-row {
   padding-top: 0.55rem;
-  border-top: 1px solid var(--line);
 }
 .cl-toolbar-card .spacer { flex: 1; }
 .cl-toolbar-card select,
@@ -631,8 +628,7 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 }
 .cl-author-foot {
   display: flex; align-items: center; justify-content: space-between;
-  margin-top: 0.55rem; padding-top: 0.5rem;
-  border-top: 1px dashed var(--line);
+  margin-top: 0.55rem;
   font-size: 0.72rem; color: var(--haze);
 }
 .cl-author-foot .go { color: var(--accent); font-weight: 600; font-size: 0.75rem; }
