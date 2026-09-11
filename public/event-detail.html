@@ -87,7 +87,7 @@
               : '<span class="placeholder-icon">🎨</span>'}
           </div>
           <div class="card-body" style="padding:0.8rem;">
-            <span class="card-tag ${work.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${STATUS_LABELS[work.status] || work.status}</span>
+            <span class="card-tag ${work.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">${STATUS_LABELS[work.status] || ''}</span>
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(work.title)}</h3>
             ${authorNames ? `<p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${escapeHtml(authorNames)}</p>` : ''}
           </div>
@@ -168,7 +168,7 @@
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('eventDetail');
         const dateText = formatDate(event.date) + (event.endDate && event.endDate !== event.date ? ' ~ ' + formatDate(event.endDate) : '');
-        const statusLabel = event.status ? (EVENT_STATUS_LABELS[event.status] || event.status) : '';
+        const statusLabel = event.status ? (EVENT_STATUS_LABELS[event.status] || '') : '';
         const cover = event.coverImage || '';
         const isOnly = event.type === 'only';
         container.innerHTML = `
@@ -286,7 +286,7 @@
                       : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">📋</div>`}
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
-                      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${PROJECT_STATUS_LABELS[p.status] || p.status}</div>
+                      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${PROJECT_STATUS_LABELS[p.status] || ''}</div>
                     </div>
                   </a>
                 `).join('')}

@@ -92,7 +92,7 @@
         const mainImg = (work.images && work.images[0]) || '';
         const galleryImages = (work.images || []).concat(work.moreImages || []);
         const authorLine = workCircles.map(c => escapeHtml(c.name)).filter(Boolean).join(' · ');
-        const catLabel = CATEGORIES[work.category] || work.category || '';
+        const catLabel = CATEGORIES[work.category] || '';
         container.innerHTML = `
           <div class="exhibit-stage">
             <div class="exhibit-crumb">
@@ -114,7 +114,7 @@
                 ` : ''}
               </div>
               <div class="exhibit-plaque">
-                <div class="exhibit-status">${STATUS_LABELS[work.status] || work.status || ''}</div>
+                <div class="exhibit-status">${STATUS_LABELS[work.status] || ''}</div>
                 <h1 class="exhibit-title">${escapeHtml(work.title)}${isDeadlineSoon(work.endDate) ? ' <span class="deadline-badge" style="position:static;font-size:0.7rem;vertical-align:middle;">即将截止</span>' : ''}</h1>
                 <div class="exhibit-subtitle">${authorLine}${catLabel ? (authorLine ? ' · ' : '') + escapeHtml(catLabel) : ''}</div>
                 <div class="exhibit-rule"></div>
@@ -190,7 +190,7 @@
                 <a href="/project-detail.html?id=${p.id}" class="detail-link" style="display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--line);">
                   <div>
                     <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
-                    <span class="card-tag ${p.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-top:0.2rem;display:inline-block;">${PROJECT_STATUS_LABELS[p.status] || p.status}</span>
+                    <span class="card-tag ${p.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-top:0.2rem;display:inline-block;">${PROJECT_STATUS_LABELS[p.status] || ''}</span>
                   </div>
                 </a>
               `).join('')}

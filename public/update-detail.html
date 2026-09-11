@@ -77,8 +77,9 @@
         const container = document.getElementById('updateDetail');
 
         const d = String(update.publishDate || '');
-        const catLabel = (typeof UPDATE_CATEGORIES !== 'undefined' && UPDATE_CATEGORIES[update.category]) || update.category || '';
-        const stLabel = (typeof UPDATE_STATUS_LABELS !== 'undefined' && UPDATE_STATUS_LABELS[update.status]) || update.status || '';
+        // 仅当配置里能查到中文名时才显示；查不到不显示原始 id（避免出现拼音）
+        const catLabel = (typeof UPDATE_CATEGORIES !== 'undefined' && UPDATE_CATEGORIES[update.category]) || '';
+        const stLabel = (typeof UPDATE_STATUS_LABELS !== 'undefined' && UPDATE_STATUS_LABELS[update.status]) || '';
         let stCls = 'cl-u-chip';
         if (stLabel) {
           if (/结束|完成|下架/.test(stLabel)) stCls += ' done';
@@ -147,6 +148,11 @@
                   <span class="info-label">分类</span>
                   <span class="info-value">${escapeHtml(catLabel)}</span>
                 </div>` : ''}
+                ${stLabel ? `
+                <div class="info-row">
+                  <span class="info-label">状态</span>
+                  <span class="info-value">${escapeHtml(stLabel)}</span>
+                </div>` : ''}
                 <div class="info-row">
                   <span class="info-label">${t('common.imageCount')}</span>
                   <span class="info-value">${images.length} ${t('common.images')}</span>
@@ -185,7 +191,7 @@
                     <div class="th">${p.coverImage ? `<img src="${escapeHtml(p.coverImage)}" alt="">` : 'P'}</div>
                     <div class="t">
                       <b>${escapeHtml(p.title)}</b>
-                      ${p.status ? `<small>${escapeHtml(PROJECT_STATUS_LABELS[p.status] || p.status)}</small>` : ''}
+                      ${PROJECT_STATUS_LABELS[p.status] ? `<small>${escapeHtml(PROJECT_STATUS_LABELS[p.status])}</small>` : ''}
                     </div>
                   </a>
                 `).join('')}

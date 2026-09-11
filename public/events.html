@@ -205,7 +205,7 @@
     }
 
     function eventChipHtml(event) {
-      const stLabel = EVENT_STATUS_LABELS[event.status] || event.status || '';
+      const stLabel = EVENT_STATUS_LABELS[event.status] || '';
       let cls = 'cl-ev-chip';
       if (event.status === 'jinxingzhong') cls += ' now';
       else if (event.status === 'jijiangkaiqi') cls += ' soon';

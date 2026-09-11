@@ -258,7 +258,7 @@
       const slides = [];
       const recruiting = allProjects.filter(isProjectRecruiting);
       recruiting.slice(0, 5).forEach(p => {
-        const catLabel = (typeof PROJECT_CATEGORIES !== 'undefined' && PROJECT_CATEGORIES[p.category]) || p.category || '';
+        const catLabel = (typeof PROJECT_CATEGORIES !== 'undefined' && PROJECT_CATEGORIES[p.category]) || '';
         const start = p.startDate ? formatDate(p.startDate) : '';
         const end = p.endDate ? formatDate(p.endDate) : '';
         const period = start && end ? `${start} → ${end}` : (start || end || '');
@@ -276,7 +276,7 @@
         .filter(isEventOngoing)
         .sort((a, b) => String(a.date || a.startDate || 'z').localeCompare(String(b.date || b.startDate || 'z')));
       activeEvents.slice(0, 5).forEach(e => {
-        const stLabel = (typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || e.status || '';
+        const stLabel = (typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || '';
         const loc = e.location || '';
         slides.push({
           key: 'e:' + e.id,
@@ -452,7 +452,7 @@
                 ? `<div class="board-thumb"><img src="${cover}" alt="" loading="lazy"></div>`
                 : `<div class="board-thumb">📅</div>`}
               <div class="t"><b>${escapeHtml(e.title)}</b><small>${escapeHtml(e.location || '')}</small></div>
-              <span class="card-tag in_progress" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml((typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || e.status || '')}</span>
+              <span class="card-tag in_progress" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml((typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || '')}</span>
             </a>`;
           }).join('');
         }
@@ -508,7 +508,7 @@
                 ${w.images && w.images[0] ? `<img src="${w.images[0]}" alt="${escapeHtml(w.title)}" loading="lazy">` : '<span class="placeholder-icon">🎨</span>'}
               </div>
               <div class="card-body">
-                <span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || w.status || ''}</span>
+                <span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || ''}</span>
                 <h3 class="card-title">${escapeHtml(w.title)}</h3>
               </div>
               <div class="card-footer">
@@ -679,7 +679,7 @@
           '<div style="font-weight:600;margin-bottom:0.3rem;">' + escapeHtml(work.title) + ' <span style="color:var(--haze);font-weight:400;font-size:0.85rem;">×' + qty + '</span></div>' +
           '<div style="font-size:0.8rem;color:var(--haze);line-height:1.6;">' +
           '作者: ' + escapeHtml(authorNames) + '<br>' +
-          '状态: ' + (STATUS_LABELS[work.status] || work.status) + '<br>' +
+          '状态: ' + (STATUS_LABELS[work.status] || '未设置') + '<br>' +
           (contactType ? (contactType + ': ' + escapeHtml(contactValue) + '<br>') : '') +
           '</div>' +
           '<div style="text-align:right;font-weight:600;color:var(--accent);margin-top:0.3rem;">¥' + subtotal.toFixed(2) + '</div>' +
@@ -1002,9 +1002,9 @@
       const pageWorks = filtered.slice(0, currentPage * pageSize);
 
       grid.innerHTML = pageWorks.map(work => {
-        const statusLabel = STATUS_LABELS[work.status] || work.status || '';
+        const statusLabel = STATUS_LABELS[work.status] || '';
         const authors = (work.circles || []).map(cid => circlesMap[cid]).filter(Boolean).join('、');
-        const catLabel = CATEGORIES[work.category] || work.category || '';
+        const catLabel = CATEGORIES[work.category] || '';
         const qty = wishlistItems[work.id] || 0;
         const wishHtml = (wishlistMode && qty > 0)
           ? `<span class="cl-w-wish on">

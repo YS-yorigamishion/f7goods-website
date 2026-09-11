@@ -219,7 +219,7 @@
         // Card cover: author-chosen cover, else fall back to avatar (logo)
         const cover = circle.cardCover || circle.logo || '';
         const workCount = circleWorksCountMap[circle.id] || 0;
-        const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || circle.category) : '';
+        const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || '') : '';
         const isFollowed = followedSet.has(circle.id);
         return `
         <a class="cl-author-card" href="/circle-detail.html?id=${encodeURIComponent(circle.id)}">

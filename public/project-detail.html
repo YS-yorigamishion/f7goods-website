@@ -77,8 +77,8 @@
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('projectDetail');
         const cover = project.coverImage || '';
-        const statusLabel = project.status ? (PROJECT_STATUS_LABELS[project.status] || project.status) : '';
-        const catLabel = PROJECT_CATEGORIES[project.category] || project.category || '';
+        const statusLabel = project.status ? (PROJECT_STATUS_LABELS[project.status] || '') : '';
+        const catLabel = PROJECT_CATEGORIES[project.category] || '';
         const dateText = project.startDate
           ? formatDate(project.startDate) + (project.endDate && project.endDate !== project.startDate ? ' ~ ' + formatDate(project.endDate) : '')
           : '';
@@ -128,7 +128,7 @@
                           : '<span class="placeholder-icon">🎨</span>'}
                       </div>
                       <div class="card-body">
-                        <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || work.status}</span>
+                        <span class="card-tag ${work.status}">${STATUS_LABELS[work.status] || ''}</span>
                         <h3 class="card-title" style="font-size:0.95rem;">${escapeHtml(work.title)}</h3>
                         <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.5rem;">${escapeHtml(work.price)}</p>
                       </div>
@@ -142,11 +142,11 @@
                 <h3>${t('projects.projectInfo')}</h3>
                 <div class="info-row">
                   <span class="info-label">${t('works.status')}</span>
-                  <span class="info-value">${PROJECT_STATUS_LABELS[project.status] || project.status}</span>
+                  <span class="info-value">${PROJECT_STATUS_LABELS[project.status] || '-'}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">${t('common.category')}</span>
-                  <span class="info-value">${PROJECT_CATEGORIES[project.category] || project.category}</span>
+                  <span class="info-value">${PROJECT_CATEGORIES[project.category] || '-'}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">${t('projects.startDate')}</span>

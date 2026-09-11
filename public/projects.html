@@ -183,8 +183,8 @@
 
       grid.innerHTML = filtered.map(project => {
         const cover = project.coverImage || (project.images && project.images[0]) || '';
-        const statusLabel = PROJECT_STATUS_LABELS[project.status] || project.status || '';
-        const catLabel = PROJECT_CATEGORIES[project.category] || project.category || '';
+        const statusLabel = PROJECT_STATUS_LABELS[project.status] || '';
+        const catLabel = PROJECT_CATEGORIES[project.category] || '';
         const authorN = (project.circles || []).length;
         const prog = projectProgress(project);
         const fillCls = statusClassOf(project.status, statusLabel);
