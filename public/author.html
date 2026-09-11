@@ -64,7 +64,7 @@
     <div class="mgmt-sidebar-overlay" id="mgmtSideOverlay" onclick="toggleMgmtSidebar(false)"></div>
 
     <div class="mgmt-brand">
-      <div class="mgmt-brand-mark">f7</div>
+      <a href="/" class="mgmt-brand-mark" id="mgmtBrandMark" aria-label="f7goods">f7</a>
       <div class="mgmt-brand-text">f7goods<span>作者管理</span></div>
     </div>
 
@@ -464,9 +464,8 @@
 
       <!-- ONLY Booths Tab -->
       <div id="tab-only-booths" class="mgmt-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <h3 style="margin:0;">ONLY 摊位管理</h3>
-          <p style="margin:0;font-size:0.78rem;color:var(--haze);">活动管理员可管理全部摊位；摊位作者仅可管理自己的摊位</p>
         </div>
         <div id="onlyBoothsList"></div>
       </div>
@@ -616,6 +615,26 @@
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
+
+    // Site logo in shell brand (same source as public navbar)
+    async function applyMgmtBrandLogo() {
+      try {
+        if (typeof loadSettingsFromAPI === 'function') await loadSettingsFromAPI();
+        const site = (typeof getSiteSettings === 'function') ? getSiteSettings() : {};
+        const mark = document.getElementById('mgmtBrandMark');
+        if (!mark) return;
+        const brandName = site.brandName || 'f7goods';
+        const logoText = site.logoText || 'f7';
+        const favicon = site.favicon;
+        mark.setAttribute('aria-label', brandName);
+        if (favicon) {
+          mark.innerHTML = '<img src="' + favicon.replace(/"/g, '&quot;') + '" alt="' + brandName.replace(/"/g, '&quot;') + '" onerror="this.replaceWith(document.createTextNode(\'' + logoText.replace(/'/g, '') + '\'))">';
+        } else {
+          mark.textContent = logoText;
+        }
+      } catch (e) {}
+    }
+    applyMgmtBrandLogo();
 
     let authorToken = localStorage.getItem('f7author_token');
     let authorCircleId = localStorage.getItem('f7author_circleId');

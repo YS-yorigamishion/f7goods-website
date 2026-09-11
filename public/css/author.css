@@ -55,6 +55,15 @@
   font-size: 0.7rem;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
+  text-decoration: none;
+  line-height: 1;
+}
+.mgmt-brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .mgmt-brand-text {
   font-family: 'Noto Serif SC', Georgia, serif;
