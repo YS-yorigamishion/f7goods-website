@@ -1105,6 +1105,7 @@
       const event = window._only.event;
       const entries = Object.values(window._onlyCart || {});
       const claims = entries.filter(e => !e.isGift && e.claim);
+      const claimBooths = [...new Set(claims.map(e => e.boothName))];
       const imgs = await Promise.all(entries.map(e => loadImg(resolveEntryImg(e))));
 
       // receipt proportions — logical size, rendered at 2x for crisp export
@@ -1115,7 +1116,7 @@
       const rowH = 58;
       const headerH = 118;
       const giftH = gifts.length * 24;
-      const claimH = claims.length * 18;
+      const claimH = claimBooths.length * 18;
       const footerH = 78;
       const bodyH = entries.length * rowH;
       const totalH = 64;
@@ -1258,19 +1259,16 @@
         });
       }
 
-      // 条件领取备注
-      if (claims.length) {
+      // 条件领取备注（按摊位去重，不打印条件文案）
+      if (claimBooths.length) {
         y += 18;
         dashLine(ctx, paperX + padX, paperX + paperW - padX, y);
         y += 18;
-        claims.forEach(c => {
+        claimBooths.forEach(name => {
           ctx.fillStyle = '#C48A2A';
           ctx.font = '11px "Noto Sans SC", sans-serif';
-          const cond = String(c.claim).length > 18 ? String(c.claim).slice(0, 17) + '…' : String(c.claim);
-          ctx.fillText(`※ 条件领取(不计入满赠) ${c.boothName}`, paperX + padX, y);
-          ctx.textAlign = 'right';
-          ctx.fillText(cond, paperX + paperW - padX, y);
-          ctx.textAlign = 'left';
+          const label = String(name).length > 28 ? String(name).slice(0, 27) + '…' : String(name);
+          ctx.fillText(`※ 条件领取(不计入满赠) ${label}`, paperX + padX, y);
           y += 18;
         });
       }
