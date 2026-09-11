@@ -48,34 +48,26 @@
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260911b"></script>
   <script>
-    let circleWorksData = [];
-    let circleWorksOriginal = [];
+    let circleWorksData = []; // full list for this author, shuffled once per page load
     let cwCategory = 'all';
     let cwSearchText = '';
-    let cwSortBy = 'random';
 
-    function shuffleCircleWorks(list) {
-      const arr = list.slice();
-      for (let i = arr.length - 1; i > 0; i--) {
+    // Same as home catalog: shuffle once on load, keep order via _randomRank
+    function shuffleCircleWorksForSession(list) {
+      if (!Array.isArray(list)) return [];
+      const n = list.length;
+      for (let i = n - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        const tmp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = tmp;
+        const tmp = list[i];
+        list[i] = list[j];
+        list[j] = tmp;
       }
-      return arr.map(function (w, idx) {
-        // Keep original object, attach rank for stable filter
-        w._randomRank = idx;
-        return w;
-      });
-    }
-
-    function applyRandomOrder() {
-      // Always re-shuffle on entry / when user picks 随机排序
-      circleWorksData = shuffleCircleWorks(circleWorksOriginal);
+      list.forEach(function (w, idx) { w._randomRank = idx; });
+      return list;
     }
 
     function renderCircleWorks() {
-      let filtered = circleWorksData;
+      let filtered = circleWorksData.slice();
       if (cwCategory !== 'all') {
         filtered = filtered.filter(w => w.category === cwCategory);
       }
@@ -86,31 +78,28 @@
           (w.tags || []).some(t => t.toLowerCase().includes(q))
         );
       }
-      filtered = filtered.slice();
-      if (cwSortBy === 'random') {
-        filtered.sort(function (a, b) {
-          const ra = typeof a._randomRank === 'number' ? a._randomRank : 0;
-          const rb = typeof b._randomRank === 'number' ? b._randomRank : 0;
-          return ra - rb;
-        });
-      } else if (cwSortBy === 'default') {
-        // Restore API / original load order
-        filtered.sort(function (a, b) {
-          return (circleWorksOriginal.indexOf(a) - circleWorksOriginal.indexOf(b));
-        });
-      } else if (cwSortBy === 'date-asc') {
+
+      // Apply sorting — identical branches to / index catalog
+      const sortVal = document.getElementById('circleSortSelect')?.value || 'random';
+      if (sortVal === 'date-asc') {
         filtered.sort((a, b) => (a.releaseDate || 'z').localeCompare(b.releaseDate || 'z'));
-      } else if (cwSortBy === 'date-desc') {
+      } else if (sortVal === 'date-desc') {
         filtered.sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
-      } else if (cwSortBy === 'likes-desc') {
+      } else if (sortVal === 'likes-desc') {
         filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-      } else if (cwSortBy === 'likes-asc') {
+      } else if (sortVal === 'likes-asc') {
         filtered.sort((a, b) => (a.likes || 0) - (b.likes || 0));
-      } else if (cwSortBy === 'wants-desc') {
+      } else if (sortVal === 'wants-desc') {
         filtered.sort((a, b) => (b.wants || 0) - (a.wants || 0));
-      } else if (cwSortBy === 'wants-asc') {
+      } else if (sortVal === 'wants-asc') {
         filtered.sort((a, b) => (a.wants || 0) - (b.wants || 0));
+      } else if (sortVal === 'default') {
+        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      } else {
+        // random（默认）：使用本次进入时洗牌的顺序
+        filtered.sort((a, b) => (a._randomRank || 0) - (b._randomRank || 0));
       }
+
       const grid = document.getElementById('circleWorksGrid');
       const count = document.getElementById('circleWorksCount');
       if (count) count.textContent = `(${filtered.length})`;
@@ -156,8 +145,7 @@
           F7API.getProjects(),
           fetch('/api/updates').then(r => r.json())
         ]);
-        circleWorksOriginal = (circleWorks || []).slice();
-        applyRandomOrder();
+        circleWorksData = shuffleCircleWorksForSession(circleWorks || []);
         const circleWorkIds = circleWorksData.map(w => w.id);
         const relatedProjects = (allProjects || []).filter(p => (p.circles || []).includes(circle.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedCircles || []).includes(circle.id));
@@ -227,15 +215,15 @@
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
                   <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${t('common.all')}</button>
                   ${catBtns.map(c => `<button class="filter-btn" data-cat="${c.id}" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${tCat(c)}</button>`).join('')}
-                  <select class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="cwSortBy=this.value;if(cwSortBy==='random'){applyRandomOrder();}renderCircleWorks();">
-                    <option value="random" selected>${t('common.sortRandom') || '随机排序'}</option>
-                    <option value="default">${t('common.sortDefault')}</option>
-                    <option value="date-asc">${t('common.sortDateAsc')}</option>
-                    <option value="date-desc">${t('common.sortDateDesc')}</option>
-                    <option value="likes-desc">${t('common.sortLikesDesc')}</option>
-                    <option value="likes-asc">${t('common.sortLikesAsc')}</option>
-                    <option value="wants-desc">${t('common.sortWantsDesc')}</option>
-                    <option value="wants-asc">${t('common.sortWantsAsc')}</option>
+                  <select id="circleSortSelect" class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="renderCircleWorks();">
+                    <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
+                    <option value="default" data-i18n="common.sortDefault">最新上传</option>
+                    <option value="date-asc" data-i18n="common.sortDateAsc">${t('common.sortDateAsc')}</option>
+                    <option value="date-desc" data-i18n="common.sortDateDesc">${t('common.sortDateDesc')}</option>
+                    <option value="likes-desc" data-i18n="common.sortLikesDesc">${t('common.sortLikesDesc')}</option>
+                    <option value="likes-asc" data-i18n="common.sortLikesAsc">${t('common.sortLikesAsc')}</option>
+                    <option value="wants-desc" data-i18n="common.sortWantsDesc">${t('common.sortWantsDesc')}</option>
+                    <option value="wants-asc" data-i18n="common.sortWantsAsc">${t('common.sortWantsAsc')}</option>
                   </select>
                   <input type="text" class="search-input" placeholder="${t('common.searchWorks')}" style="max-width:200px;" oninput="cwSearchText=this.value;renderCircleWorks();">
                 </div>
