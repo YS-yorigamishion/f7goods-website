@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911c">
+  <link rel="stylesheet" href="/css/style.css?v=20260911d">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -155,12 +155,6 @@
             </div>
             <div class="exhibit-caption">f7goods · ${escapeHtml(work.title)}</div>
           </div>
-          <div class="exhibit-sharebar">
-            <button type="button" class="exhibit-share-btn" id="shareImageBtn" onclick="shareWorkImage()">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17.5l5-4.5 3.5 3 3-2.5 4.5 4"/></svg>
-              ${t('works.shareImage')}
-            </button>
-          </div>
           <div class="exhibit-side">
             ${work.socialLinks && Object.keys(work.socialLinks).filter(k => work.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
               <div class="detail-info-card">
@@ -211,6 +205,12 @@
             </div>
             ` : ''}
           </div>
+          <div class="exhibit-sharebar">
+            <button type="button" class="exhibit-share-btn" id="shareImageBtn" onclick="shareWorkImage()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17.5l5-4.5 3.5 3 3-2.5 4.5 4"/></svg>
+              ${t('works.shareImage')}
+            </button>
+          </div>
         `;
         window._detailGallery = galleryImages;
         window._workDetail = { work, workCircles, catLabel, authorLine };
@@ -237,6 +237,7 @@
     const SHARE_SCALE = 2;
     const SHARE_SANS = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
     const SHARE_SERIF = '"Noto Serif SC", Georgia, serif';
+    const TITLE_TRACK = '-0.6px';   // 对应页面 .exhibit-title 的 -0.02em（30px）
     let shareBusy = false;
 
     function shareRoundRect(ctx, x, y, w, h, r) {
@@ -302,8 +303,11 @@
 
       const m = document.createElement('canvas').getContext('2d');
       const statusText = (typeof STATUS_LABELS !== 'undefined' && STATUS_LABELS[work.status]) || '';
+      // 标题按页面 .exhibit-title 的 letter-spacing 收紧，量宽时一并计入
+      m.letterSpacing = TITLE_TRACK;
       m.font = `600 30px ${SHARE_SERIF}`;
       const titleLines = shareWrapText(m, work.title || '', plaqueW);
+      m.letterSpacing = '0px';
       const subText = `${authorLine}${catLabel ? (authorLine ? ' · ' : '') + catLabel : ''}`;
       m.font = `13px ${SHARE_SANS}`;
       const subLines = shareWrapText(m, subText, plaqueW);
@@ -407,7 +411,10 @@
       }
       ctx.fillStyle = '#22201E';
       ctx.font = `600 30px ${SHARE_SERIF}`;
+      ctx.save();
+      ctx.letterSpacing = TITLE_TRACK;
       titleLines.forEach((line, i) => ctx.fillText(line, px, top + L.titleY + i * TITLE_LH + 26));
+      ctx.restore();
       ctx.fillStyle = '#8A8078';
       ctx.font = `13px ${SHARE_SANS}`;
       subLines.forEach((line, i) => ctx.fillText(line, px, top + L.subY + i * SUB_LH + 15));
@@ -444,8 +451,8 @@
       ctx.fillStyle = '#8A8078';
       ctx.font = `11px ${SHARE_SANS}`;
       ctx.save();
-      ctx.letterSpacing = '0.7px';
-      ctx.fillText(`f7goods · ${work.title || ''}`, SHARE_W / 2, capTop + 25);
+      ctx.letterSpacing = '0.66px';
+      ctx.fillText(`f7goods.com · ${work.title || ''}`, SHARE_W / 2, capTop + 25);
       ctx.restore();
 
       return canvas;

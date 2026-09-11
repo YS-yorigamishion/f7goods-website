@@ -3075,39 +3075,45 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 /* 作品详情 · 分享图片 */
 .exhibit-sharebar {
   max-width: 1000px;
-  margin: 0 auto 1rem;
+  margin: 1.75rem auto 0.5rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
 }
 .exhibit-share-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 12px 30px;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--ink);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
   font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.exhibit-share-btn:hover { border-color: var(--accent); color: var(--accent); }
-.exhibit-share-btn:disabled { opacity: 0.55; cursor: default; }
+.exhibit-share-btn:hover {
+  background: var(--accent-dark, #C44552);
+  border-color: var(--accent-dark, #C44552);
+  box-shadow: 0 4px 12px rgba(217, 79, 92, 0.25);
+}
+.exhibit-share-btn:active { transform: scale(0.99); }
+.exhibit-share-btn:disabled { opacity: 0.6; cursor: default; }
 .exhibit-share-btn svg {
   width: 15px;
   height: 15px;
-  stroke: currentColor;
+  stroke: #fff;
   fill: none;
-  stroke-width: 1.6;
+  stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 @media (max-width: 900px) {
-  .exhibit-sharebar { justify-content: center; }
+  .exhibit-sharebar { margin-top: 1.25rem; }
+  .exhibit-share-btn { width: 100%; max-width: 320px; justify-content: center; }
 }
 @media (max-width: 900px) {
   .exhibit { grid-template-columns: 1fr; gap: 20px; }
