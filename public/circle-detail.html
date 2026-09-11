@@ -51,7 +51,17 @@
     let circleWorksData = [];
     let cwCategory = 'all';
     let cwSearchText = '';
-    let cwSortBy = 'default';
+    let cwSortBy = 'random';
+
+    function shuffleCircleWorks(list) {
+      const arr = list.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      arr.forEach((w, idx) => { w._randomRank = idx; });
+      return arr;
+    }
 
     function renderCircleWorks() {
       let filtered = circleWorksData;
@@ -65,8 +75,11 @@
           (w.tags || []).some(t => t.toLowerCase().includes(q))
         );
       }
-      // Sorting
-      if (cwSortBy === 'date-asc') {
+      filtered = filtered.slice();
+      // Sorting — default is random (stable within page via _randomRank)
+      if (cwSortBy === 'random') {
+        filtered.sort((a, b) => (a._randomRank ?? 0) - (b._randomRank ?? 0));
+      } else if (cwSortBy === 'date-asc') {
         filtered.sort((a, b) => (a.releaseDate || 'z').localeCompare(b.releaseDate || 'z'));
       } else if (cwSortBy === 'date-desc') {
         filtered.sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
@@ -99,7 +112,7 @@
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(work.title)}</h3>
           </div>
           <div class="card-footer" style="padding:0.5rem 0.8rem;">
-            <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${escapeHtml(work.price)}</span>
+            <span class="card-price" style="color:var(--accent);font-weight:700;font-size:0.9rem;">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || ''))}</span>
             <div style="display:flex;align-items:center;gap:0.5rem;">
               ${(work.wants || 0) > 0 ? `<span style="font-size:0.72rem;color:var(--info);">${t('common.wants')} ${work.wants}</span>` : ''}
               ${renderLikeButton(work.id, work.likes)}
@@ -124,8 +137,8 @@
           F7API.getProjects(),
           fetch('/api/updates').then(r => r.json())
         ]);
-        circleWorksData = circleWorks;
-        const circleWorkIds = circleWorks.map(w => w.id);
+        circleWorksData = shuffleCircleWorks(circleWorks || []);
+        const circleWorkIds = circleWorksData.map(w => w.id);
         const relatedProjects = (allProjects || []).filter(p => (p.circles || []).includes(circle.id));
         const relatedUpdates = (allUpdates || []).filter(u => (u.relatedCircles || []).includes(circle.id));
 
@@ -195,6 +208,7 @@
                   <button class="filter-btn active" onclick="cwCategory='all';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${t('common.all')}</button>
                   ${catBtns.map(c => `<button class="filter-btn" data-cat="${c.id}" onclick="cwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn[data-cat]').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderCircleWorks();">${tCat(c)}</button>`).join('')}
                   <select class="form-input" style="margin-left:auto;padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;" onchange="cwSortBy=this.value;renderCircleWorks();">
+                    <option value="random" selected>随机排序</option>
                     <option value="default">${t('common.sortDefault')}</option>
                     <option value="date-asc">${t('common.sortDateAsc')}</option>
                     <option value="date-desc">${t('common.sortDateDesc')}</option>
