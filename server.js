@@ -1485,6 +1485,197 @@ app.delete('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) =
   res.json({ success: true });
 });
 
+// ===== Author: ONLY booth management =====
+function isEventBoothAdmin(event, circleId) {
+  if (!event || !circleId) return false;
+  return event.submittedBy === circleId || (event.editableBy || []).includes(circleId);
+}
+function isBoothOwnerOf(booth, circleId) {
+  return !!(booth && (booth.circleIds || []).includes(circleId));
+}
+function tierGiftIdsOf(t) {
+  if (!t) return [];
+  if (Array.isArray(t.giftWorkIds) && t.giftWorkIds.some(Boolean)) return t.giftWorkIds.filter(Boolean);
+  return t.giftWorkId ? [t.giftWorkId] : [];
+}
+function sanitizePromoTiers(tiers) {
+  if (!Array.isArray(tiers)) return [];
+  return tiers
+    .filter(t => t && (t.minAmount != null || tierGiftIdsOf(t).length || t.text))
+    .map(t => {
+      const ids = tierGiftIdsOf(t);
+      return { minAmount: Number(t.minAmount) || 0, giftWorkId: ids[0] || '', giftWorkIds: ids, text: String(t.text || '') };
+    });
+}
+
+// List ONLY events + booths the author can manage
+app.get('/api/author/only-booths', authorAuthMiddleware, (req, res) => {
+  const circleId = req.author.circleId;
+  const events = readJSON('events.json').filter(e => e.type === 'only');
+  const circles = readJSON('circles.json');
+  const works = readJSON('works.json');
+  const circleMap = Object.fromEntries(circles.map(c => [c.id, c]));
+
+  const result = [];
+  for (const event of events) {
+    const canManageAll = isEventBoothAdmin(event, circleId);
+    const relatedIds = new Set(event.relatedWorks || []);
+    const relatedWorks = works
+      .filter(w => relatedIds.has(w.id))
+      .map(w => ({ id: w.id, title: w.title, images: w.images || [], price: w.price, circles: w.circles || [] }));
+
+    const booths = (event.booths || []).map(b => {
+      const owned = isBoothOwnerOf(b, circleId);
+      return {
+        ...b,
+        isOwner: owned,
+        canEdit: canManageAll || owned,
+        canFullEdit: canManageAll
+      };
+    });
+    const visibleBooths = canManageAll ? booths : booths.filter(b => b.canEdit);
+    if (!canManageAll && !visibleBooths.length) continue;
+
+    result.push({
+      event: {
+        id: event.id,
+        title: event.title,
+        date: event.date,
+        location: event.location,
+        type: event.type,
+        relatedWorks: event.relatedWorks || [],
+        editableBy: event.editableBy || [],
+        submittedBy: event.submittedBy || ''
+      },
+      canManageAll,
+      works: relatedWorks,
+      circles: Object.values(circleMap)
+        .filter(c => !c.authorStatus || c.authorStatus === 'approved' || c.authorStatus === 'active')
+        .map(c => ({ id: c.id, name: c.name, logo: c.logo || '' })),
+      booths: visibleBooths
+    });
+  }
+  res.json(result);
+});
+
+function findOnlyEventForAuthor(eventId, circleId) {
+  const events = readJSON('events.json');
+  const index = events.findIndex(e => e.id === eventId && e.type === 'only');
+  if (index === -1) return null;
+  return { events, index, event: events[index], canManageAll: isEventBoothAdmin(events[index], circleId) };
+}
+
+// Event admin: create booth
+app.post('/api/author/only-booths/:eventId', authorAuthMiddleware, async (req, res) => {
+  const pack = findOnlyEventForAuthor(req.params.eventId, req.author.circleId);
+  if (!pack) return res.status(404).json({ error: 'ONLY 活动未找到' });
+  if (!pack.canManageAll) return res.status(403).json({ error: '仅活动管理员可新增摊位' });
+
+  const booths = Array.isArray(pack.event.booths) ? pack.event.booths : [];
+  const booth = {
+    id: 'b' + Date.now() + Math.random().toString(36).slice(2, 6),
+    code: String(req.body.code || '').trim(),
+    title: String(req.body.title || '').trim(),
+    logo: String(req.body.logo || ''),
+    order: booths.length,
+    circleIds: Array.isArray(req.body.circleIds) ? req.body.circleIds.filter(Boolean) : [],
+    goodsOrder: [],
+    promoTiers: sanitizePromoTiers(req.body.promoTiers)
+  };
+  if (!booth.code) return res.status(400).json({ error: '请填写摊位号' });
+  booths.push(booth);
+  pack.events[pack.index].booths = booths;
+  await writeJSON('events.json', pack.events);
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '新增摊位', pack.event.title, booth.code);
+  res.json(booth);
+});
+
+// Update booth — event admin: full; booth owner: own booth limited fields
+app.put('/api/author/only-booths/:eventId/:boothId', authorAuthMiddleware, async (req, res) => {
+  const circleId = req.author.circleId;
+  const pack = findOnlyEventForAuthor(req.params.eventId, circleId);
+  if (!pack) return res.status(404).json({ error: 'ONLY 活动未找到' });
+  const booths = Array.isArray(pack.event.booths) ? pack.event.booths : [];
+  const bi = booths.findIndex(b => b.id === req.params.boothId);
+  if (bi === -1) return res.status(404).json({ error: '摊位未找到' });
+  const booth = booths[bi];
+  const owned = isBoothOwnerOf(booth, circleId);
+  if (!pack.canManageAll && !owned) return res.status(403).json({ error: '无权编辑该摊位' });
+
+  if (pack.canManageAll) {
+    if (req.body.code !== undefined) booth.code = String(req.body.code || '').trim();
+    if (req.body.title !== undefined) booth.title = String(req.body.title || '').trim();
+    if (req.body.logo !== undefined) booth.logo = String(req.body.logo || '');
+    if (req.body.circleIds !== undefined) booth.circleIds = Array.isArray(req.body.circleIds) ? req.body.circleIds.filter(Boolean) : [];
+    if (req.body.promoTiers !== undefined) booth.promoTiers = sanitizePromoTiers(req.body.promoTiers);
+    if (req.body.goodsOrder !== undefined) booth.goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
+  } else {
+    // Booth owner: only title / logo / promoTiers / goodsOrder
+    if (req.body.title !== undefined) booth.title = String(req.body.title || '').trim();
+    if (req.body.logo !== undefined) booth.logo = String(req.body.logo || '');
+    if (req.body.promoTiers !== undefined) booth.promoTiers = sanitizePromoTiers(req.body.promoTiers);
+    if (req.body.goodsOrder !== undefined) booth.goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
+  }
+  if (!booth.code) booth.code = booth.code || '摊位';
+  pack.events[pack.index].booths = booths;
+  await writeJSON('events.json', pack.events);
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === circleId);
+  logEdit(circle?.name || '作者', pack.canManageAll ? '编辑摊位' : '编辑自有摊位', pack.event.title, booth.code);
+  res.json(booth);
+});
+
+// Event admin: delete booth
+app.delete('/api/author/only-booths/:eventId/:boothId', authorAuthMiddleware, async (req, res) => {
+  const pack = findOnlyEventForAuthor(req.params.eventId, req.author.circleId);
+  if (!pack) return res.status(404).json({ error: 'ONLY 活动未找到' });
+  if (!pack.canManageAll) return res.status(403).json({ error: '仅活动管理员可删除摊位' });
+  const booths = Array.isArray(pack.event.booths) ? pack.event.booths : [];
+  const next = booths.filter(b => b.id !== req.params.boothId);
+  if (next.length === booths.length) return res.status(404).json({ error: '摊位未找到' });
+  next.forEach((b, i) => { b.order = i; });
+  pack.events[pack.index].booths = next;
+  await writeJSON('events.json', pack.events);
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === req.author.circleId);
+  logEdit(circle?.name || '作者', '删除摊位', pack.event.title, req.params.boothId);
+  res.json({ success: true });
+});
+
+// Event admin: reorder booths
+app.post('/api/author/only-booths/:eventId/reorder', authorAuthMiddleware, async (req, res) => {
+  const pack = findOnlyEventForAuthor(req.params.eventId, req.author.circleId);
+  if (!pack) return res.status(404).json({ error: 'ONLY 活动未找到' });
+  if (!pack.canManageAll) return res.status(403).json({ error: '仅活动管理员可调整摊位顺序' });
+  const order = Array.isArray(req.body.order) ? req.body.order : [];
+  const booths = Array.isArray(pack.event.booths) ? pack.event.booths : [];
+  const map = new Map(booths.map(b => [b.id, b]));
+  const next = order.map(id => map.get(id)).filter(Boolean);
+  booths.forEach(b => { if (!next.includes(b)) next.push(b); });
+  next.forEach((b, i) => { b.order = i; });
+  pack.events[pack.index].booths = next;
+  await writeJSON('events.json', pack.events);
+  res.json({ success: true, booths: next });
+});
+
+// Event admin or booth owner: reorder goods inside a booth
+app.post('/api/author/only-booths/:eventId/:boothId/goods-order', authorAuthMiddleware, async (req, res) => {
+  const circleId = req.author.circleId;
+  const pack = findOnlyEventForAuthor(req.params.eventId, circleId);
+  if (!pack) return res.status(404).json({ error: 'ONLY 活动未找到' });
+  const booths = Array.isArray(pack.event.booths) ? pack.event.booths : [];
+  const bi = booths.findIndex(b => b.id === req.params.boothId);
+  if (bi === -1) return res.status(404).json({ error: '摊位未找到' });
+  const owned = isBoothOwnerOf(booths[bi], circleId);
+  if (!pack.canManageAll && !owned) return res.status(403).json({ error: '无权调整该摊位作品顺序' });
+  booths[bi].goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
+  pack.events[pack.index].booths = booths;
+  await writeJSON('events.json', pack.events);
+  res.json({ success: true, goodsOrder: booths[bi].goodsOrder });
+});
+
 // Author: get own projects
 app.get('/api/author/my-projects', authorAuthMiddleware, (req, res) => {
   const projects = readJSON('projects.json');

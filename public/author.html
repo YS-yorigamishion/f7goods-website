@@ -81,6 +81,7 @@
         <div class="mgmt-tab active" onclick="switchMgmtTab('profile')">作者资料</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('works')">我的作品</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('my-events')">我的活动</div>
+        <div class="mgmt-tab" onclick="switchMgmtTab('only-booths')">ONLY摊位</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('my-projects')">我的企划</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('my-updates')">我的动态</div>
         <div class="mgmt-tab" onclick="switchMgmtTab('events')">活动关联</div>
@@ -335,6 +336,15 @@
           <button class="btn btn-primary" onclick="openMyEventForm()">+ 提交活动</button>
         </div>
         <div id="myEventsGrid" class="works-grid"></div>
+      </div>
+
+      <!-- ONLY Booths Tab -->
+      <div id="tab-only-booths" class="mgmt-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+          <h3 style="margin:0;">ONLY 摊位管理</h3>
+          <p style="margin:0;font-size:0.78rem;color:var(--haze);">活动管理员可管理全部摊位；摊位作者仅可管理自己的摊位</p>
+        </div>
+        <div id="onlyBoothsList"></div>
       </div>
 
       <!-- My Projects Tab -->
@@ -2477,6 +2487,284 @@
       }).join('');
     }
 
+    // ===== Author ONLY Booths =====
+    let _onlyBoothData = [];
+
+    async function loadAuthorOnlyBooths() {
+      const list = document.getElementById('onlyBoothsList');
+      list.innerHTML = '<p style="color:var(--haze);font-size:0.85rem;">加载中…</p>';
+      _onlyBoothData = await authorAPI('GET', '/api/author/only-booths') || [];
+      if (!_onlyBoothData.length) {
+        list.innerHTML = '<div class="mgmt-card"><p style="color:var(--haze);margin:0;font-size:0.85rem;">暂无你可管理的 ONLY 摊位。若你是摊位作者，请联系活动管理员将你挂接到摊位；若你是活动管理员，请在站内后台配置 editableBy 或在活动创建时提交。</p></div>';
+        return;
+      }
+      list.innerHTML = _onlyBoothData.map(pack => {
+        const ev = pack.event;
+        const role = pack.canManageAll ? '<span style="background:rgba(217,79,92,0.12);color:var(--accent);padding:0.15rem 0.45rem;border-radius:999px;font-size:0.7rem;font-weight:600;">活动管理员</span>' : '';
+        return `
+        <div class="mgmt-card" style="margin-bottom:1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+            <div>
+              <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+                <strong style="font-size:0.95rem;">${escapeHtml(ev.title || '')}</strong>
+                ${role}
+              </div>
+              <p style="margin:0.25rem 0 0;font-size:0.75rem;color:var(--haze);">${ev.date || ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''} · 摊位 ${pack.booths.length} 个</p>
+            </div>
+            ${pack.canManageAll ? `<button class="btn-sm btn-edit" onclick="openAuthorBoothForm('${ev.id}')">+ 新增摊位</button>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.55rem;">
+            ${pack.booths.map((b, bi) => `
+              <div style="border:1px solid var(--border);border-radius:10px;padding:0.65rem 0.75rem;background:var(--bg);">
+                <div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;align-items:flex-start;">
+                  <div style="min-width:0;">
+                    <div style="font-weight:600;font-size:0.88rem;">
+                      ${escapeHtml(b.code || '摊位')}${b.title ? ' · ' + escapeHtml(b.title) : ''}
+                      ${b.isOwner && !b.canFullEdit ? '<span style="font-size:0.7rem;color:var(--haze);margin-left:0.35rem;">我的摊位</span>' : ''}
+                    </div>
+                    <div style="font-size:0.72rem;color:var(--haze);margin-top:0.15rem;">
+                      摊主 ${(b.circleIds || []).length} 人 · 作品顺序 ${Array.isArray(b.goodsOrder) ? b.goodsOrder.length : 0} 项已设
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:0.25rem;flex-wrap:wrap;">
+                    ${pack.canManageAll ? `
+                      <button class="btn-sm" onclick="authorMoveBooth('${ev.id}','${b.id}',-1)" ${bi === 0 ? 'disabled style="opacity:0.4;font-size:0.7rem;padding:0.15rem 0.4rem;"' : 'style="font-size:0.7rem;padding:0.15rem 0.4rem;"'}>↑</button>
+                      <button class="btn-sm" onclick="authorMoveBooth('${ev.id}','${b.id}',1)" ${bi === pack.booths.length - 1 ? 'disabled style="opacity:0.4;font-size:0.7rem;padding:0.15rem 0.4rem;"' : 'style="font-size:0.7rem;padding:0.15rem 0.4rem;"'}>↓</button>
+                    ` : ''}
+                    <button class="btn-sm btn-edit" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick='openAuthorBoothForm(${escapeHtml(JSON.stringify({ eventId: ev.id, booth: b, canFullEdit: !!pack.canManageAll }))})'>编辑</button>
+                    ${pack.canManageAll ? `<button class="btn-sm btn-delete" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick="authorDeleteBooth('${ev.id}','${b.id}')">删除</button>` : ''}
+                  </div>
+                </div>
+                <div id="authorGoods-${ev.id}-${b.id}" style="margin-top:0.5rem;"></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+      }).join('');
+
+      // Render goods lists after DOM insert
+      _onlyBoothData.forEach(pack => {
+        pack.booths.forEach(b => {
+          renderAuthorBoothGoods(pack, b);
+        });
+      });
+    }
+
+    function authorBoothGoods(pack, booth) {
+      const related = pack.works || [];
+      const owners = new Set(booth.circleIds || []);
+      let goods = related.filter(w => (w.circles || []).some(cid => owners.has(cid)));
+      const order = Array.isArray(booth.goodsOrder) ? booth.goodsOrder : [];
+      const rank = new Map(order.map((id, i) => [id, i]));
+      return goods.slice().sort((a, z) => {
+        const ra = rank.has(a.id) ? rank.get(a.id) : Number.MAX_SAFE_INTEGER;
+        const rz = rank.has(z.id) ? rank.get(z.id) : Number.MAX_SAFE_INTEGER;
+        if (ra !== rz) return ra - rz;
+        return String(a.title || '').localeCompare(String(z.title || ''));
+      });
+    }
+
+    function renderAuthorBoothGoods(pack, booth) {
+      const el = document.getElementById(`authorGoods-${pack.event.id}-${booth.id}`);
+      if (!el) return;
+      const goods = authorBoothGoods(pack, booth);
+      if (!goods.length) {
+        el.innerHTML = '<div style="font-size:0.75rem;color:var(--haze);">该摊位暂无关联作品</div>';
+        return;
+      }
+      el.innerHTML = `
+        <div style="font-size:0.72rem;color:var(--haze);margin-bottom:0.3rem;">作品顺序（↑↓）</div>
+        <div style="display:flex;flex-direction:column;gap:0.25rem;">
+          ${goods.map((g, gi) => `
+            <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;padding:0.25rem 0.35rem;border-radius:6px;background:var(--card-bg);">
+              <span style="color:var(--haze);width:1.1rem;text-align:right;">${gi + 1}.</span>
+              ${g.images && g.images[0]
+                ? `<img src="${escapeHtml(g.images[0])}" alt="" style="width:24px;height:24px;border-radius:4px;object-fit:cover;flex-shrink:0;">`
+                : `<div style="width:24px;height:24px;border-radius:4px;background:linear-gradient(145deg,#EDE6DA,#D9D0C2);flex-shrink:0;"></div>`}
+              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+              <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === 0 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',-1)" ${gi === 0 ? 'disabled' : ''}>↑</button>
+              <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === goods.length - 1 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',1)" ${gi === goods.length - 1 ? 'disabled' : ''}>↓</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    async function authorMoveBooth(eventId, boothId, dir) {
+      const pack = _onlyBoothData.find(p => p.event.id === eventId);
+      if (!pack || !pack.canManageAll) return;
+      const booths = pack.booths.slice();
+      const i = booths.findIndex(b => b.id === boothId);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= booths.length) return;
+      const tmp = booths[i]; booths[i] = booths[j]; booths[j] = tmp;
+      const result = await authorAPI('POST', `/api/author/only-booths/${eventId}/reorder`, { order: booths.map(b => b.id) });
+      if (result && result.success) {
+        showToast('摊位顺序已保存', 'success');
+        loadAuthorOnlyBooths();
+      }
+    }
+
+    async function authorDeleteBooth(eventId, boothId) {
+      if (!confirm('确定删除该摊位？')) return;
+      const result = await authorAPI('DELETE', `/api/author/only-booths/${eventId}/${boothId}`);
+      if (result && result.success) {
+        showToast('已删除', 'success');
+        loadAuthorOnlyBooths();
+      } else if (result && result.error) {
+        showToast(result.error, 'error');
+      }
+    }
+
+    async function authorMoveGood(eventId, boothId, workId, dir) {
+      const pack = _onlyBoothData.find(p => p.event.id === eventId);
+      if (!pack) return;
+      const booth = pack.booths.find(b => b.id === boothId);
+      if (!booth) return;
+      const goods = authorBoothGoods(pack, booth);
+      const i = goods.findIndex(g => g.id === workId);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= goods.length) return;
+      const ids = goods.map(g => g.id);
+      const tmp = ids[i]; ids[i] = ids[j]; ids[j] = tmp;
+      const result = await authorAPI('POST', `/api/author/only-booths/${eventId}/${boothId}/goods-order`, { goodsOrder: ids });
+      if (result && result.success) {
+        booth.goodsOrder = ids;
+        renderAuthorBoothGoods(pack, booth);
+        showToast('作品顺序已保存', 'success');
+      } else if (result && result.error) {
+        showToast(result.error, 'error');
+      }
+    }
+
+    function openAuthorBoothForm(arg) {
+      // arg: eventId for create, or { eventId, booth, canFullEdit } for edit
+      let eventId, booth = null, canFullEdit = false;
+      if (typeof arg === 'string') {
+        eventId = arg;
+        const pack = _onlyBoothData.find(p => p.event.id === eventId);
+        canFullEdit = !!(pack && pack.canManageAll);
+      } else {
+        eventId = arg.eventId;
+        booth = arg.booth;
+        canFullEdit = !!arg.canFullEdit;
+      }
+      const pack = _onlyBoothData.find(p => p.event.id === eventId);
+      if (!pack) return;
+      const isEdit = !!booth;
+      const works = pack.works || [];
+      const circles = pack.circles || [];
+      const selectedOwners = new Set(booth?.circleIds || []);
+      const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: '', giftWorkIds: [], text: '' }];
+      const overlay = document.getElementById('workModalOverlay');
+      const body = document.getElementById('workModalBody');
+      document.getElementById('workModalTitle').textContent = isEdit ? (canFullEdit ? '编辑摊位' : '编辑我的摊位') : '新增摊位';
+      body.innerHTML = `
+        ${canFullEdit ? `
+        <div class="form-row">
+          <div class="form-group"><label>摊位号 <span style="color:var(--accent)">*</span></label><input class="form-input" id="abCode" value="${isEdit ? escapeHtml(booth.code || '') : ''}"></div>
+          <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
+        </div>
+        ` : `
+        <div class="form-group"><label>摊位号</label><input class="form-input" value="${isEdit ? escapeHtml(booth.code || '') : ''}" disabled></div>
+        <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
+        `}
+        <div class="form-group"><label>头像 URL（可选）</label><input class="form-input" id="abLogo" value="${isEdit ? escapeHtml(booth.logo || '') : ''}" placeholder="/uploads/..."></div>
+        ${canFullEdit ? `
+        <div class="form-group">
+          <label>挂接摊主（可多选）</label>
+          <div style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:140px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
+            ${circles.map(c => `
+              <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.2rem 0.5rem;cursor:pointer;">
+                <input type="checkbox" class="ab-circle" value="${c.id}" ${selectedOwners.has(c.id) ? 'checked' : ''}>
+                ${escapeHtml(c.name)}
+              </label>
+            `).join('') || '<span style="font-size:0.75rem;color:var(--haze);">暂无作者</span>'}
+          </div>
+        </div>
+        ` : ''}
+        <div class="form-group">
+          <label>满额赠品档（可多档 · 一档可多作品）</label>
+          <div id="abTierList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
+            ${tiers.map((t, i) => renderAuthorTierRow(t, works, i)).join('')}
+          </div>
+          <button type="button" class="btn-sm btn-edit" onclick="addAuthorTierRow('${eventId}')">+ 添加一档</button>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+          <button class="btn btn-primary" style="flex:1;" onclick="saveAuthorBooth('${eventId}', ${isEdit ? `'${booth.id}'` : 'null'}, ${canFullEdit})">保存</button>
+          <button class="btn" style="flex:1;background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
+        </div>
+      `;
+      overlay.style.display = 'flex';
+    }
+
+    function renderAuthorTierRow(t, works, i) {
+      const selected = new Set(Array.isArray(t.giftWorkIds) && t.giftWorkIds.length ? t.giftWorkIds : (t.giftWorkId ? [t.giftWorkId] : []));
+      return `<div class="ab-tier-row" data-i="${i}" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.55rem;display:flex;flex-direction:column;gap:0.35rem;">
+        <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
+          <input class="form-input ab-tier-min" type="number" min="0" style="width:90px;" placeholder="满额" value="${t.minAmount ?? ''}">
+          <input class="form-input ab-tier-text" style="flex:1;min-width:100px;" placeholder="备注文案" value="${escapeHtml(t.text || '')}">
+          <button type="button" class="btn-sm btn-delete" onclick="this.closest('.ab-tier-row').remove()">删</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.25rem;max-height:100px;overflow:auto;">
+          ${works.length ? works.map(w => `
+            <label style="font-size:0.72rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.45rem;cursor:pointer;">
+              <input type="checkbox" class="ab-tier-gift" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''}>
+              ${escapeHtml(w.title)}
+            </label>
+          `).join('') : '<span style="font-size:0.72rem;color:var(--haze);">暂无关联作品</span>'}
+        </div>
+      </div>`;
+    }
+
+    function addAuthorTierRow(eventId) {
+      const pack = _onlyBoothData.find(p => p.event.id === eventId);
+      const works = pack?.works || [];
+      const list = document.getElementById('abTierList');
+      if (!list) return;
+      list.insertAdjacentHTML('beforeend', renderAuthorTierRow({ minAmount: '', giftWorkIds: [], text: '' }, works, Date.now()));
+    }
+
+    async function saveAuthorBooth(eventId, boothId, canFullEdit) {
+      const pack = _onlyBoothData.find(p => p.event.id === eventId);
+      if (!pack) return;
+      const promoTiers = [...document.querySelectorAll('#abTierList .ab-tier-row')].map(row => {
+        const minAmount = Number(row.querySelector('.ab-tier-min')?.value) || 0;
+        const giftWorkIds = [...row.querySelectorAll('.ab-tier-gift:checked')].map(i => i.value);
+        const text = row.querySelector('.ab-tier-text')?.value.trim() || '';
+        if (!giftWorkIds.length && !text) return null;
+        return { minAmount, giftWorkId: giftWorkIds[0] || '', giftWorkIds, text };
+      }).filter(Boolean);
+
+      const payload = {
+        title: document.getElementById('abTitle')?.value.trim() || '',
+        logo: document.getElementById('abLogo')?.value.trim() || '',
+        promoTiers
+      };
+      if (canFullEdit) {
+        payload.code = document.getElementById('abCode')?.value.trim() || '';
+        payload.circleIds = [...document.querySelectorAll('.ab-circle:checked')].map(i => i.value);
+        if (!boothId && !payload.code) {
+          showToast('请填写摊位号', 'error');
+          return;
+        }
+      }
+
+      let result;
+      if (boothId) {
+        result = await authorAPI('PUT', `/api/author/only-booths/${eventId}/${boothId}`, payload);
+      } else {
+        result = await authorAPI('POST', `/api/author/only-booths/${eventId}`, payload);
+      }
+      if (result && !result.error) {
+        showToast('摊位已保存', 'success');
+        closeWorkModal();
+        loadAuthorOnlyBooths();
+      } else if (result && result.error) {
+        showToast(result.error, 'error');
+      }
+    }
+
     async function openMyEventForm(eventData = null) {
       const isEdit = !!eventData;
       const overlay = document.getElementById('workModalOverlay');
@@ -2850,6 +3138,7 @@
       if (tab === 'notifications') loadAuthorNotifications();
       if (tab === 'author-announcements') loadAuthorAnnouncementsList();
       if (tab === 'my-events') loadMyEvents();
+      if (tab === 'only-booths') loadAuthorOnlyBooths();
       if (tab === 'my-projects') loadMyProjects();
       if (tab === 'my-updates') loadMyUpdates();
     }
