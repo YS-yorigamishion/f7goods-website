@@ -1621,13 +1621,23 @@
 
     // Check for popup announcements on page load
     async function checkAaPopup() {
+      const scope = localStorage.getItem('f7author_actAs') || authorCircleId || 'me';
+      const storeKey = 'f7aaShown:' + scope;
+      let shown = [];
+      try { shown = JSON.parse(localStorage.getItem(storeKey) || '[]') || []; } catch { shown = []; }
+      if (!Array.isArray(shown)) shown = [];
+
       try {
         const announcements = await authorAPI('GET', '/api/author/announcements/popup');
-        if (announcements && announcements.length > 0) {
-          const a = announcements[0];
-          openAaPopup(a.title, a.content);
-          await authorAPI('PUT', `/api/author/announcements/${a.id}/read`);
+        if (!announcements || announcements.length === 0) return;
+        const fresh = announcements.filter(a => a && a.id && !shown.includes(a.id));
+        if (fresh.length === 0) return;
+        openAaPopup(fresh[0].title, fresh[0].content);
+        for (const a of fresh) {
+          if (!shown.includes(a.id)) shown.push(a.id);
+          try { await authorAPI('PUT', `/api/author/announcements/${a.id}/read`); } catch (e) {}
         }
+        localStorage.setItem(storeKey, JSON.stringify(shown.slice(-100)));
       } catch (e) {}
     }
 
@@ -2287,16 +2297,6 @@
         </div>
         <div class="form-group">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-            <input type="checkbox" id="wfConditionalClaim" ${w.claimCondition ? 'checked' : ''} onchange="document.getElementById('claimConditionGroup').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--accent);">
-            条件领取（ONLY 现场按条件领取）
-          </label>
-        </div>
-        <div class="form-group" id="claimConditionGroup" style="display:${w.claimCondition ? 'block' : 'none'};">
-          <label>领取条件</label>
-          <input class="form-input" id="wfClaimCondition" value="${escapeHtml(w.claimCondition || '')}" placeholder="如：购满 50 元可领取 / 凭票领取">
-        </div>
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
             <input type="checkbox" id="wfIsCommissioned" ${w.isCommissioned ? 'checked' : ''} onchange="document.getElementById('commissionedByGroup').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--accent);">
             约稿作品
           </label>
@@ -2401,9 +2401,6 @@
       const selectedProjectIds = [...document.querySelectorAll('.wf-project-cb:checked')].map(cb => cb.value);
 
       const isCommissioned = document.getElementById('wfIsCommissioned').checked;
-      const claimCondition = document.getElementById('wfConditionalClaim')?.checked
-        ? (document.getElementById('wfClaimCondition')?.value.trim() || '')
-        : '';
       const priceRaw = document.getElementById('wfPrice').value.trim();
       const priceFormatted = (!priceRaw || priceRaw === '无料' || priceRaw === '免费') ? priceRaw : (/^[¥￥]/.test(priceRaw) ? priceRaw : (/^\d/.test(priceRaw) ? '¥' + priceRaw : priceRaw));
       const data = {
@@ -2421,8 +2418,7 @@
         relatedProjects: selectedProjectIds,
         relatedEvents: selectedEventIds,
         isCommissioned,
-        commissionedBy: isCommissioned ? document.getElementById('wfCommissionedBy').value : '',
-        claimCondition
+        commissionedBy: isCommissioned ? document.getElementById('wfCommissionedBy').value : ''
       };
 
       if (!data.title) { showToast('请填写标题', 'error'); document.getElementById('wfTitle').focus(); return; }
@@ -2872,6 +2868,7 @@
       const el = document.getElementById(`authorGoods-${pack.event.id}-${booth.id}`);
       if (!el) return;
       const goods = authorBoothGoods(pack, booth);
+      const claimMap = (booth.claimConditions && typeof booth.claimConditions === 'object' && !Array.isArray(booth.claimConditions)) ? booth.claimConditions : {};
       if (!goods.length) {
         el.innerHTML = '<div style="font-size:0.75rem;color:var(--haze);">该摊位暂无关联作品</div>';
         return;
@@ -2886,6 +2883,7 @@
                 ? `<img src="${escapeHtml(g.images[0])}" alt="" style="width:24px;height:24px;border-radius:4px;object-fit:cover;flex-shrink:0;">`
                 : `<div style="width:24px;height:24px;border-radius:4px;background:linear-gradient(145deg,#EDE6DA,#D9D0C2);flex-shrink:0;"></div>`}
               <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+              ${claimMap[g.id] ? `<span title="条件领取：${escapeHtml(claimMap[g.id])}" style="flex-shrink:0;font-size:0.66rem;font-weight:600;color:var(--warning);border:1px solid rgba(196,138,42,.4);background:rgba(196,138,42,.12);border-radius:999px;padding:0 6px;">条件领取</span>` : ''}
               <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === 0 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',-1)" ${gi === 0 ? 'disabled' : ''}>↑</button>
               <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === goods.length - 1 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',1)" ${gi === goods.length - 1 ? 'disabled' : ''}>↓</button>
             </div>
@@ -2960,6 +2958,11 @@
       const circles = pack.circles || [];
       const selectedOwners = new Set(booth?.circleIds || []);
       const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: '', giftWorkIds: [], text: '' }];
+      const claimMap = (booth?.claimConditions && typeof booth.claimConditions === 'object' && !Array.isArray(booth.claimConditions)) ? booth.claimConditions : {};
+      // 活动管理员可设置本摊全部作品；普通摊主只设置自己的作品
+      const claimGoods = isEdit
+        ? authorBoothGoods(pack, booth).filter(w => canFullEdit || (w.circles || []).includes(activeCircleId()))
+        : [];
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? (canFullEdit ? '编辑摊位' : '编辑我的摊位') : '新增摊位';
@@ -3011,6 +3014,20 @@
           </div>
           <button type="button" class="btn-sm btn-edit" onclick="addAuthorTierRow('${eventId}')">+ 添加一档</button>
         </div>
+        <div class="form-group">
+          <label>条件领取（可选 · 按本摊位作品设置）</label>
+          ${claimGoods.length ? `
+            <div id="abClaimList" style="display:flex;flex-direction:column;gap:0.35rem;">
+              ${claimGoods.map(g => `
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                  <span style="flex:0 0 38%;font-size:0.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+                  <input class="form-input ab-claim" data-work="${g.id}" style="flex:1;font-size:0.78rem;padding:0.3rem 0.55rem;" placeholder="留空为无条件，如：购满 50 元可领取" value="${escapeHtml(claimMap[g.id] || '')}">
+                </div>
+              `).join('')}
+            </div>
+            <div style="font-size:0.72rem;color:var(--haze);margin-top:0.35rem;">填了条件的周边在前台显示「条件领取」按钮，点击可查看条件；同一作品挂在不同摊位可分别设置。</div>
+          ` : `<div style="font-size:0.75rem;color:var(--haze);">保存摊位并挂接摊主后，可在此按作品设置条件领取。</div>`}
+        </div>
         <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
           <button class="btn btn-primary" style="flex:1;" onclick="saveAuthorBooth('${eventId}', ${isEdit ? `'${booth.id}'` : 'null'}, ${canFullEdit})">保存</button>
           <button class="btn" style="flex:1;background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
@@ -3023,8 +3040,12 @@
       if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
     }
 
+    function activeCircleId() {
+      return localStorage.getItem('f7author_actAs') || authorCircleId;
+    }
+
     function ownEventWorks(pack) {
-      const me = localStorage.getItem('f7author_actAs') || authorCircleId;
+      const me = activeCircleId();
       return (pack?.works || []).filter(w => (w.circles || []).includes(me));
     }
 
@@ -3073,6 +3094,14 @@
         images: [...document.querySelectorAll('#abImagesPreview img')].map(img => img.src),
         promoTiers
       };
+      // 仅在渲染了条件领取区块时提交，避免误清空其他摊主设置的条件
+      if (document.getElementById('abClaimList')) {
+        const claimConditions = {};
+        document.querySelectorAll('#abClaimList .ab-claim').forEach(inp => {
+          claimConditions[inp.dataset.work] = inp.value.trim();
+        });
+        payload.claimConditions = claimConditions;
+      }
       if (canFullEdit) {
         payload.code = document.getElementById('abCode')?.value.trim() || '';
         payload.circleIds = [...document.querySelectorAll('.ab-circle:checked')].map(i => i.value);

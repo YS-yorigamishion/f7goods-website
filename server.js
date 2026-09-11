@@ -894,7 +894,7 @@ app.put('/api/author/works/batch', authorAuthMiddleware, async (req, res) => {
 
   const circleId = req.author.circleId;
   const idSet = new Set(ids);
-  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy', 'claimCondition'];
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
   const updates = {};
   allowed.forEach(field => {
     if (data[field] !== undefined) updates[field] = data[field];
@@ -957,7 +957,7 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   const oldMoreImages = works[index].moreImages || [];
 
   // Only allow updating specific fields
-  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy', 'claimCondition'];
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -1032,7 +1032,7 @@ app.post('/api/author/works/batch-create', authorAuthMiddleware, async (req, res
   const globalRequireApproval = settings.site?.requireWorkApproval !== false;
   const requireApproval = authorRequireApproval && globalRequireApproval;
 
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'claimCondition', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
   const created = [];
   const now = new Date().toISOString();
 
@@ -1084,7 +1084,7 @@ app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
   const globalRequireApproval = settings.site?.requireWorkApproval !== false;
   const requireApproval = authorRequireApproval && globalRequireApproval;
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'claimCondition', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
   const workData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) workData[field] = req.body[field];
@@ -1526,6 +1526,45 @@ function sanitizeBoothImages(images) {
   if (!Array.isArray(images)) return undefined;
   return images.filter(u => u != null && String(u).trim() !== '').map(u => String(u));
 }
+// 条件领取：按「摊位 × 作品」存，只接受该摊位关联作品的 key
+function sanitizeClaimConditions(input, booth, event) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  const works = readJSON('works.json');
+  const ownerIds = new Set(booth.circleIds || []);
+  const relatedIds = new Set(event?.relatedWorks || []);
+  const valid = new Set(
+    works
+      .filter(w => (w.circles || []).some(cid => ownerIds.has(cid)) && (relatedIds.size === 0 || relatedIds.has(w.id)))
+      .map(w => w.id)
+  );
+  const out = {};
+  for (const [workId, raw] of Object.entries(input)) {
+    if (!valid.has(workId)) continue;
+    const text = String(raw == null ? '' : raw).trim().slice(0, 200);
+    if (text) out[workId] = text;
+  }
+  return out;
+}
+
+// 后台整体保存摊位数组时，清理条件领取里的空值与超长文本
+function sanitizeBoothsClaimFields(booths) {
+  if (!Array.isArray(booths)) return booths;
+  return booths.map(b => {
+    if (!b || typeof b !== 'object') return b;
+    const raw = b.claimConditions;
+    if (raw === undefined) return b;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      const { claimConditions, ...rest } = b;
+      return rest;
+    }
+    const clean = {};
+    for (const [workId, value] of Object.entries(raw)) {
+      const text = String(value == null ? '' : value).trim().slice(0, 200);
+      if (text) clean[workId] = text;
+    }
+    return { ...b, claimConditions: clean };
+  });
+}
 
 // List ONLY events + booths the author can manage
 app.get('/api/author/only-booths', authorAuthMiddleware, (req, res) => {
@@ -1601,6 +1640,7 @@ app.post('/api/author/only-booths/:eventId', authorAuthMiddleware, async (req, r
     order: booths.length,
     circleIds: Array.isArray(req.body.circleIds) ? req.body.circleIds.filter(Boolean) : [],
     goodsOrder: [],
+    claimConditions: {},
     promoTiers: sanitizePromoTiers(req.body.promoTiers)
   };
   if (!booth.code) return res.status(400).json({ error: '请填写摊位号' });
@@ -1648,6 +1688,23 @@ app.put('/api/author/only-booths/:eventId/:boothId', authorAuthMiddleware, async
     }
     if (req.body.promoTiers !== undefined) booth.promoTiers = sanitizePromoTiers(req.body.promoTiers);
     if (req.body.goodsOrder !== undefined) booth.goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
+  }
+  // 条件领取：按摊位作品设置；非摊位管理员只影响自己提交的 key，避免覆盖其他摊主
+  if (req.body.claimConditions !== undefined) {
+    const incoming = req.body.claimConditions;
+    if (incoming && typeof incoming === 'object' && !Array.isArray(incoming)) {
+      const cleaned = sanitizeClaimConditions(incoming, booth, pack.event) || {};
+      if (pack.canManageAll) {
+        booth.claimConditions = cleaned;
+      } else {
+        const current = (booth.claimConditions && typeof booth.claimConditions === 'object') ? { ...booth.claimConditions } : {};
+        for (const key of Object.keys(incoming)) {
+          if (cleaned[key]) current[key] = cleaned[key];
+          else delete current[key];
+        }
+        booth.claimConditions = current;
+      }
+    }
   }
   if (!booth.code) booth.code = booth.code || '摊位';
   pack.events[pack.index].booths = booths;
@@ -3148,6 +3205,7 @@ app.get('/api/author/announcements', authorAuthMiddleware, (req, res) => {
 
 // Author: get popup announcements
 app.get('/api/author/announcements/popup', authorAuthMiddleware, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   let announcements = [];
   try { announcements = readJSON('author-announcements.json'); } catch {}
 
@@ -3155,21 +3213,22 @@ app.get('/api/author/announcements/popup', authorAuthMiddleware, (req, res) => {
   const reads = getAuthorAnnouncementReads();
 
   const popupAnnouncements = announcements
-    .filter(a => a.popup && !(reads[a.id] || []).includes(circleId));
+    .filter(a => a.popup && (a.sentTo || []).includes(circleId) && !(reads[a.id] || []).includes(circleId));
 
   popupAnnouncements.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
   res.json(popupAnnouncements);
 });
 
 // Author: mark announcement as read
-app.put('/api/author/announcements/:id/read', authorAuthMiddleware, (req, res) => {
+app.put('/api/author/announcements/:id/read', authorAuthMiddleware, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   const circleId = req.author.circleId;
   const reads = getAuthorAnnouncementReads();
 
   if (!reads[req.params.id]) reads[req.params.id] = [];
   if (!reads[req.params.id].includes(circleId)) {
     reads[req.params.id].push(circleId);
-    saveAuthorAnnouncementReads(reads);
+    await saveAuthorAnnouncementReads(reads);
   }
 
   res.json({ success: true });
@@ -3244,7 +3303,7 @@ app.post('/api/admin/works', authMiddleware, async (req, res) => {
   const works = readJSON('works.json');
   const maxOrder = works.reduce((max, w) => Math.max(max, w.order ?? 0), 0);
   // Whitelist allowed fields
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'isCommissioned', 'commissionedBy', 'claimCondition', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'isCommissioned', 'commissionedBy', 'socialLinks'];
   const workData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) workData[field] = req.body[field];
@@ -3376,7 +3435,7 @@ app.put('/api/admin/works/:id', authMiddleware, async (req, res) => {
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
   const oldTitle = works[index].title;
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'likes', 'wants', 'order', 'isCommissioned', 'commissionedBy', 'claimCondition', 'socialLinks', 'approvalStatus', 'rejectReason', 'submittedBy'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'likes', 'wants', 'order', 'isCommissioned', 'commissionedBy', 'socialLinks', 'approvalStatus', 'rejectReason', 'submittedBy'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -3442,6 +3501,7 @@ app.post('/api/admin/events', authMiddleware, async (req, res) => {
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) eventData[field] = req.body[field];
   });
+  if (eventData.booths !== undefined) eventData.booths = sanitizeBoothsClaimFields(eventData.booths);
   const event = {
     id: 'e' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...eventData,
@@ -3500,6 +3560,7 @@ app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
+  if (updates.booths !== undefined) updates.booths = sanitizeBoothsClaimFields(updates.booths);
   events[index] = { ...events[index], ...updates };
   await writeJSON('events.json', events);
   res.json(events[index]);

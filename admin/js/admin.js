@@ -2040,16 +2040,6 @@ function openWorkModal(work = null, returnToCircleId = null) {
         <input type="date" class="form-input" id="wEndDate" value="${work?.endDate || ''}">
       </div>
     </div>
-    <div class="form-group">
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-        <input type="checkbox" id="wConditionalClaim" ${work?.claimCondition ? 'checked' : ''} onchange="document.getElementById('wClaimConditionGroup').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--accent);">
-        条件领取（ONLY 现场按条件领取）
-      </label>
-    </div>
-    <div class="form-group" id="wClaimConditionGroup" style="display:${work?.claimCondition ? 'block' : 'none'};">
-      <label>领取条件</label>
-      <input class="form-input" id="wClaimCondition" value="${escapeHtml(work?.claimCondition || '')}" placeholder="如：购满 50 元可领取 / 凭票领取">
-    </div>
     ${isEdit ? `<div class="form-row">
       <div class="form-group">
         <label>点赞数</label>
@@ -2157,9 +2147,6 @@ function openWorkModal(work = null, returnToCircleId = null) {
       price: document.getElementById('wPrice').value,
       releaseDate: document.getElementById('wReleaseDate').value,
       endDate: document.getElementById('wEndDate').value,
-      claimCondition: document.getElementById('wConditionalClaim')?.checked
-        ? (document.getElementById('wClaimCondition')?.value.trim() || '')
-        : '',
       circles: [...document.querySelectorAll('#wCirclesTags .circle-tag')].map(el => el.dataset.cid),
       tags: document.getElementById('wTags').value.split(',').map(t => t.trim()).filter(Boolean),
       description: document.getElementById('wDesc').value,
@@ -6859,6 +6846,7 @@ function renderBoothsList() {
                     ? `<img src="${escapeHtml(g.images[0])}" alt="" style="width:28px;height:28px;border-radius:4px;object-fit:cover;flex-shrink:0;">`
                     : `<div style="width:28px;height:28px;border-radius:4px;background:linear-gradient(145deg,#EDE6DA,#D9D0C2);flex-shrink:0;"></div>`}
                   <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+                  ${(b.claimConditions || {})[g.id] ? `<span title="条件领取：${escapeHtml(b.claimConditions[g.id])}" style="flex-shrink:0;font-size:0.68rem;font-weight:600;color:var(--warning);border:1px solid rgba(196,138,42,.4);background:rgba(196,138,42,.12);border-radius:999px;padding:0 6px;">条件领取</span>` : ''}
                   <button class="btn-sm" title="作品上移" onclick="moveBoothGood('${b.id}','${g.id}',-1)" ${gi === 0 ? 'disabled style="opacity:0.35;padding:0.15rem 0.4rem;"' : 'style="padding:0.15rem 0.4rem;"'}>↑</button>
                   <button class="btn-sm" title="作品下移" onclick="moveBoothGood('${b.id}','${g.id}',1)" ${gi === b.goods.length - 1 ? 'disabled style="opacity:0.35;padding:0.15rem 0.4rem;"' : 'style="padding:0.15rem 0.4rem;"'}>↓</button>
                 </div>
@@ -6905,6 +6893,7 @@ function normalizeBooths(booths) {
     order: b.order ?? i,
     circleIds: b.circleIds || [],
     goodsOrder: Array.isArray(b.goodsOrder) ? b.goodsOrder.filter(Boolean) : [],
+    claimConditions: (b.claimConditions && typeof b.claimConditions === 'object' && !Array.isArray(b.claimConditions)) ? { ...b.claimConditions } : {},
     promoTiers: Array.isArray(b.promoTiers)
       ? b.promoTiers
           .filter(t => t && (t.minAmount != null || tierGiftIds(t).length || t.text))
@@ -6933,6 +6922,8 @@ function openBoothModal(boothId = null) {
   const relatedWorks = works.filter(w => (event.relatedWorks || []).includes(w.id));
   const selectedOwners = new Set(booth?.circleIds || []);
   const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: 50, giftWorkId: '', giftWorkIds: [], text: '' }];
+  const claimGoods = booth ? boothGoodsList(booth, relatedWorks, circles) : [];
+  const claimMap = (booth?.claimConditions && typeof booth.claimConditions === 'object' && !Array.isArray(booth.claimConditions)) ? booth.claimConditions : {};
 
   document.getElementById('modalTitle').textContent = booth ? '编辑摊位' : '新增摊位';
   document.getElementById('modalBody').innerHTML = `
@@ -6994,6 +6985,20 @@ function openBoothModal(boothId = null) {
       <button type="button" class="btn-sm" onclick="addBoothTierRow()">+ 添加一档</button>
       <div style="font-size:0.75rem;color:var(--haze);margin-top:0.35rem;">到额后现场清单会自动加入该档勾选的全部赠品作品（各 ×1，金额 0）。</div>
     </div>
+    <div class="form-group">
+      <label>条件领取（可选 · 按本摊位作品设置）</label>
+      ${claimGoods.length ? `
+        <div id="boothClaimList" style="display:flex;flex-direction:column;gap:0.4rem;">
+          ${claimGoods.map(g => `
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <span style="flex:0 0 38%;font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+              <input class="form-input booth-claim" data-work="${g.id}" style="flex:1;padding:0.35rem 0.6rem;font-size:0.82rem;" placeholder="留空为无条件，如：购满 50 元可领取" value="${escapeHtml(claimMap[g.id] || '')}">
+            </div>
+          `).join('')}
+        </div>
+        <div style="font-size:0.75rem;color:var(--haze);margin-top:0.35rem;">前台在该周边旁显示「条件领取」按钮，点击查看条件；同一作品在不同摊位可分别设置。</div>
+      ` : `<div style="font-size:0.8rem;color:var(--haze);">先保存摊位并挂接摊主，可在此按作品设置条件领取。</div>`}
+    </div>
   `;
   document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
     const code = document.getElementById('boothCode').value.trim();
@@ -7017,6 +7022,14 @@ function openBoothModal(boothId = null) {
       images: [...document.querySelectorAll('#boothImagesPreview img')].map(img => img.src),
       goodsOrder: Array.isArray(booth?.goodsOrder) ? booth.goodsOrder.slice() : []
     };
+    if (document.getElementById('boothClaimList')) {
+      payload.claimConditions = {};
+      document.querySelectorAll('#boothClaimList .booth-claim').forEach(inp => {
+        payload.claimConditions[inp.dataset.work] = inp.value.trim();
+      });
+    } else {
+      payload.claimConditions = booth?.claimConditions || {};
+    }
     if (booth) {
       const idx = next.findIndex(b => b.id === booth.id);
       if (idx >= 0) {

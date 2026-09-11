@@ -238,15 +238,42 @@
     /* 条件领取 */
     .only-g.is-claim { border-color: rgba(196,138,42,.45); }
     .claim-chip {
-      display: inline-block; font-size: 10px; font-weight: 600;
-      margin-left: 4px; padding: 0 5px; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 600; font-family: inherit; line-height: 1.5;
+      margin-left: 4px; padding: 1px 7px; border-radius: 999px;
       background: rgba(196,138,42,.12); color: var(--warning);
-      border: 1px solid rgba(196,138,42,.35); vertical-align: middle;
+      border: 1px solid rgba(196,138,42,.45); vertical-align: middle;
+      cursor: pointer;
     }
-    .claim-note {
-      font-size: 11px; color: var(--warning); line-height: 1.45;
-      margin: 2px 0 4px;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    .claim-chip:hover { background: rgba(196,138,42,.22); }
+    .claim-chip svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+    .only-claim-overlay {
+      position: fixed; inset: 0; background: rgba(34,32,30,.45); z-index: 120;
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .only-claim-overlay.open { display: flex; }
+    .only-claim-card {
+      width: 100%; max-width: 360px; background: var(--card); border: 1px solid var(--line);
+      border-radius: 14px; padding: 16px 16px 14px; box-shadow: 0 12px 40px rgba(0,0,0,.18);
+    }
+    .only-claim-card .h {
+      display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+      margin-bottom: 8px; color: var(--ink, #22201E);
+    }
+    .only-claim-card .h .tag {
+      font-size: 10px; font-weight: 600; color: var(--warning); flex-shrink: 0;
+      border: 1px solid rgba(196,138,42,.45); background: rgba(196,138,42,.12);
+      border-radius: 999px; padding: 1px 6px;
+    }
+    .only-claim-card .h .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .only-claim-card .c {
+      font-size: 13px; line-height: 1.75; color: var(--ink, #22201E);
+      white-space: pre-wrap; word-break: break-word; max-height: 46vh; overflow: auto;
+    }
+    .only-claim-card .ok {
+      margin-top: 14px; width: 100%; border: none; background: var(--accent); color: #fff;
+      border-radius: 999px; padding: 10px; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
     }
     .only-ci .claim-tag {
       display: inline-block; font-size: 10px; background: rgba(196,138,42,.12);
@@ -328,6 +355,14 @@
     </div>
   </div>
   <div id="onlyShotCanvasWrap"></div>
+
+  <div class="only-claim-overlay" id="claimOverlay">
+    <div class="only-claim-card" role="dialog" aria-modal="true" aria-labelledby="claimText">
+      <div class="h"><span class="tag">条件领取</span><span class="nm" id="claimWorkName"></span></div>
+      <div class="c" id="claimText"></div>
+      <button type="button" class="ok" id="claimClose">知道了</button>
+    </div>
+  </div>
 
   <script src="/js/api.js"></script>
   <script src="/js/main.js?v=20260911e"></script>
@@ -441,6 +476,7 @@
           circleIds: raw.circleIds || [],
           owners,
           goods,
+          claimConditions: (raw.claimConditions && typeof raw.claimConditions === 'object' && !Array.isArray(raw.claimConditions)) ? raw.claimConditions : {},
           promoTiers,
           promo: raw.promo || null
         };
@@ -544,6 +580,14 @@
           setOnlyBoothQty(bulk.dataset.booth, Number(bulk.dataset.bulk));
           return;
         }
+        // 条件领取按钮：弹窗展示领取条件
+        const claimBtn = e.target.closest('[data-claim]');
+        if (claimBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          openClaimDialog(claimBtn.dataset.claim);
+          return;
+        }
         // Expand / collapse booth card
         const head = e.target.closest('[data-booth-toggle]');
         if (head && !e.target.closest('a,button,input,select,textarea')) {
@@ -566,10 +610,41 @@
         }
       });
 
+      const claimOverlay = document.getElementById('claimOverlay');
+      document.getElementById('claimClose').addEventListener('click', closeClaimDialog);
+      claimOverlay.addEventListener('click', e => { if (e.target === claimOverlay) closeClaimDialog(); });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && claimOverlay.classList.contains('open')) closeClaimDialog();
+      });
+
       renderOnlyBooths('all');
       renderOnlyCartUI();
       document.getElementById('onlyCartBar').style.display = 'flex';
       document.body.classList.add('has-only-cart');
+    }
+
+    function findClaimEntry(workId) {
+      let hit = null;
+      (window._only?.boothModels || []).forEach(b => {
+        if (hit) return;
+        const cond = String((b.claimConditions || {})[workId] || '').trim();
+        if (!cond) return;
+        hit = { cond, work: (b.goods || []).find(g => g.id === workId) };
+      });
+      return hit;
+    }
+
+    function openClaimDialog(workId) {
+      const hit = findClaimEntry(workId);
+      const overlay = document.getElementById('claimOverlay');
+      if (!hit || !overlay) return;
+      document.getElementById('claimWorkName').textContent = hit.work?.title || '';
+      document.getElementById('claimText').textContent = hit.cond;
+      overlay.classList.add('open');
+    }
+
+    function closeClaimDialog() {
+      document.getElementById('claimOverlay')?.classList.remove('open');
     }
 
     function onlyGoodsIndex() {
@@ -642,13 +717,12 @@
                   ${b.goods.length ? b.goods.map(g => {
                     const q = cart[g.id]?.qty || 0;
                     const img = (g.images && g.images[0]) || '';
-                    const claim = String(g.claimCondition || '').trim();
+                    const claim = String((b.claimConditions || {})[g.id] || '').trim();
                     return `<a class="only-g${claim ? ' is-claim' : ''}" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
                       <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
                       <div class="body">
                         <div class="name">${esc(g.title)}</div>
-                        <div class="price">${esc(formatPriceLabel(g.price))}${claim ? '<span class="claim-chip">条件领取</span>' : ''}</div>
-                        ${claim ? `<div class="claim-note" title="${esc(claim)}">${esc(claim)}</div>` : ''}
+                        <div class="price">${esc(formatPriceLabel(g.price))}${claim ? `<button type="button" class="claim-chip" data-claim="${esc(g.id)}" aria-label="查看领取条件">条件领取<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg></button>` : ''}</div>
                         <div class="only-qtyrow" data-work-qty="${esc(g.id)}">
                           <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
                           <span class="q">${q}</span>
@@ -708,7 +782,7 @@
             img: (g.images && g.images[0]) || '',
             qty: next,
             isGift: false,
-            claim: String(g.claimCondition || '').trim()
+            claim: String((booth.claimConditions || {})[g.id] || '').trim()
           };
         }
       });
@@ -739,7 +813,7 @@
           img: (pack.work.images && pack.work.images[0]) || '',
           qty: next,
           isGift: false,
-          claim: String(pack.work.claimCondition || '').trim()
+          claim: String((pack.booth.claimConditions || {})[pack.work.id] || '').trim()
         };
       }
       applyOnlyGifts();
