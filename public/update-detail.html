@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911q">
+  <link rel="stylesheet" href="/css/style.css?v=20260911w">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -87,6 +87,10 @@
         }
         const images = Array.isArray(update.images) ? update.images.filter(Boolean) : [];
         const authors = relatedCircles.map(c => c.name).join('、');
+        // 作者名可点击进入作者页（多个作者以 、 分隔）
+        const authorLinks = relatedCircles
+          .map(c => `<a class="au" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.name)}</a>`)
+          .join('、');
 
         container.innerHTML = `
           <div class="detail-breadcrumb">
@@ -112,7 +116,7 @@
               <h1 class="cl-u-title">${escapeHtml(update.title)}</h1>
               <div class="cl-u-meta">
                 <span>${formatDate(update.publishDate)}</span>
-                ${authors ? `<span class="sep">/</span><span>${t('works.author')} <span class="au">${escapeHtml(authors)}</span></span>` : ''}
+                ${authors ? `<span class="sep">/</span><span>${t('works.author')} ${authorLinks}</span>` : ''}
                 ${images.length ? `<span class="sep">/</span><span>${images.length} ${t('common.images')}</span>` : ''}
                 <button type="button" class="share"
                   data-share-title="${encodeURIComponent(update.title)}"
@@ -141,7 +145,7 @@
                 </div>
                 <div class="info-row">
                   <span class="info-label">${t('works.author')}</span>
-                  <span class="info-value">${authors ? escapeHtml(authors) : '-'}</span>
+                  <span class="info-value">${relatedCircles.length ? relatedCircles.map(c => `<a class="au" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.name)}</a>`).join('、') : '-'}</span>
                 </div>
                 ${catLabel ? `
                 <div class="info-row">

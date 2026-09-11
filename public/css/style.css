@@ -1282,7 +1282,12 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   font-size: 0.78rem; color: var(--haze);
 }
 .cl-u-meta .sep { color: var(--line); }
-.cl-u-meta .au { color: var(--accent); font-weight: 500; }
+.cl-u-meta .au { color: var(--accent); font-weight: 500; text-decoration: none; }
+.cl-u-meta .au:hover { text-decoration: underline; }
+.cl-u-meta span a + a { margin-left: 0.1rem; }
+/* 侧栏「作者」行内的作者链接 */
+.sidebar-card .info-value .au { color: var(--accent); font-weight: 500; text-decoration: none; }
+.sidebar-card .info-value .au:hover { text-decoration: underline; }
 .cl-u-meta .share {
   margin-left: auto; height: 30px; padding: 0 14px;
   border-radius: 999px; border: 1px solid var(--line);
