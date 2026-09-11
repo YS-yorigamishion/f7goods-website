@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260911q">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -75,31 +75,59 @@
 
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('updateDetail');
+
+        const d = String(update.publishDate || '');
+        const catLabel = (typeof UPDATE_CATEGORIES !== 'undefined' && UPDATE_CATEGORIES[update.category]) || update.category || '';
+        const stLabel = (typeof UPDATE_STATUS_LABELS !== 'undefined' && UPDATE_STATUS_LABELS[update.status]) || update.status || '';
+        let stCls = 'cl-u-chip';
+        if (stLabel) {
+          if (/结束|完成|下架/.test(stLabel)) stCls += ' done';
+          else stCls += ' now';
+        }
+        const images = Array.isArray(update.images) ? update.images.filter(Boolean) : [];
+        const authors = relatedCircles.map(c => c.name).join('、');
+
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/updates.html">${t('nav.updates')}</a>
             <span>›</span>
             <span>${escapeHtml(update.title)}</span>
           </div>
-          <div class="detail-header">
-            ${update.coverImage ? `<img src="${update.coverImage}" alt="${escapeHtml(update.title)}" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px;margin-bottom:1rem;cursor:pointer;" class="clickable-img" onclick="openLightbox(['${escapeHtml(update.coverImage).replace(/'/g, '&#39;')}'], 0)">` : ''}
-            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
-              <h1 style="flex:1;">${update.pinned ? '📌 ' : ''}${escapeHtml(update.title)}</h1>
-              ${renderShareButton(update.title, location.href)}
+          ${update.coverImage ? `
+          <div class="cl-u-cover" onclick="openLightbox(['${escapeHtml(update.coverImage).replace(/'/g, '&#39;')}'], 0)" role="button" tabindex="0">
+            <img src="${escapeHtml(update.coverImage)}" alt="${escapeHtml(update.title)}">
+          </div>` : ''}
+          <div class="cl-u-head">
+            <div class="cl-u-date">
+              <span class="m">${d.slice(5, 7) ? Number(d.slice(5, 7)) + ' 月' : ''}</span>
+              <span class="d">${d.slice(8, 10) || '—'}</span>
             </div>
-            <div class="detail-meta">
-              <span>${formatDate(update.publishDate)}</span>
+            <div class="cl-u-main">
+              <div class="cl-u-chips">
+                ${update.pinned ? `<span class="cl-u-chip pin">${t('updates.pinned')}</span>` : ''}
+                ${catLabel ? `<span class="cl-u-chip cat">${escapeHtml(catLabel)}</span>` : ''}
+                ${stLabel ? `<span class="${stCls}">${escapeHtml(stLabel)}</span>` : ''}
+              </div>
+              <h1 class="cl-u-title">${escapeHtml(update.title)}</h1>
+              <div class="cl-u-meta">
+                <span>${formatDate(update.publishDate)}</span>
+                ${authors ? `<span class="sep">/</span><span>${t('works.author')} <span class="au">${escapeHtml(authors)}</span></span>` : ''}
+                ${images.length ? `<span class="sep">/</span><span>${images.length} ${t('common.images')}</span>` : ''}
+                <button type="button" class="share"
+                  data-share-title="${encodeURIComponent(update.title)}"
+                  data-share-url="${encodeURIComponent(location.href)}"
+                  onclick="sharePage(decodeURIComponent(this.dataset.shareTitle),decodeURIComponent(this.dataset.shareUrl))">${t('common.share')}</button>
+              </div>
             </div>
           </div>
           <div class="detail-content">
             <div class="detail-main">
-              <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('updates.content')}</h3>
-              <p style="line-height:1.8;color:var(--ink);">${nl2br(update.content)}</p>
-
-              ${update.images && update.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('updates.images')}</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
-                  ${update.images.map((img, i) => `<img src="${img}" alt="${escapeHtml(update.title)}" class="clickable-img" style="width:100%;border-radius:8px;" onclick="openLightbox(${JSON.stringify(update.images).replace(/"/g, '&quot;')}, ${i})">`).join('')}
+              <div class="cl-u-body">
+                <p>${nl2br(update.content)}</p>
+              </div>
+              ${images.length ? `
+                <div class="cl-u-gallery">
+                  ${images.map((img, i) => `<button type="button" onclick="openLightbox(${JSON.stringify(images).replace(/"/g, '&quot;')}, ${i})"><img src="${escapeHtml(img)}" alt="" loading="lazy"></button>`).join('')}
                 </div>
               ` : ''}
             </div>
@@ -112,25 +140,25 @@
                 </div>
                 <div class="info-row">
                   <span class="info-label">${t('works.author')}</span>
-                  <span class="info-value">${relatedCircles.length > 0 ? escapeHtml(relatedCircles.map(c => c.name).join('、')) : '-'}</span>
+                  <span class="info-value">${authors ? escapeHtml(authors) : '-'}</span>
                 </div>
+                ${catLabel ? `
+                <div class="info-row">
+                  <span class="info-label">分类</span>
+                  <span class="info-value">${escapeHtml(catLabel)}</span>
+                </div>` : ''}
                 <div class="info-row">
                   <span class="info-label">${t('common.imageCount')}</span>
-                  <span class="info-value">${(update.images || []).length} ${t('common.images')}</span>
+                  <span class="info-value">${images.length} ${t('common.images')}</span>
                 </div>
               </div>
               ${relatedCircles.length > 0 ? `
               <div class="sidebar-card">
                 <h3>${t('updates.relatedAuthors')}</h3>
                 ${relatedCircles.map(c => `
-                  <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
-                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    ${c.logo
-                      ? `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${c.logo}" alt="${escapeHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">${escapeHtml(c.name.charAt(0))}</div>`}
-                    <div>
-                      <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(c.name)}</div>
-                    </div>
+                  <a class="cl-u-row" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">
+                    <div class="th round">${c.logo ? `<img src="${escapeHtml(c.logo)}" alt="">` : escapeHtml((c.name || '?').charAt(0))}</div>
+                    <div class="t"><b>${escapeHtml(c.name)}</b></div>
                   </a>
                 `).join('')}
               </div>
@@ -139,10 +167,12 @@
               <div class="sidebar-card">
                 <h3>${t('updates.relatedEvents')}</h3>
                 ${relatedEvents.map(e => `
-                  <a href="/event-detail.html?id=${e.id}" style="display:block;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
-                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(e.title)}</div>
-                    <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' · ' + escapeHtml(e.location) : ''}</div>
+                  <a class="cl-u-row" href="/event-detail.html?id=${encodeURIComponent(e.id)}">
+                    <div class="th">${e.coverImage ? `<img src="${escapeHtml(e.coverImage)}" alt="">` : 'A'}</div>
+                    <div class="t">
+                      <b>${escapeHtml(e.title)}</b>
+                      <small>${formatDate(e.date)}${e.location ? ' · ' + escapeHtml(e.location) : ''}</small>
+                    </div>
                   </a>
                 `).join('')}
               </div>
@@ -151,14 +181,11 @@
               <div class="sidebar-card">
                 <h3>${t('updates.relatedProjects')}</h3>
                 ${relatedProjects.map(p => `
-                  <a href="/project-detail.html?id=${p.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
-                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    ${p.coverImage
-                      ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${p.coverImage}" alt="${escapeHtml(p.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">📋</div>`}
-                    <div>
-                      <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
-                      <span class="card-tag ${p.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-top:0.2rem;display:inline-block;">${PROJECT_STATUS_LABELS[p.status] || p.status}</span>
+                  <a class="cl-u-row" href="/project-detail.html?id=${encodeURIComponent(p.id)}">
+                    <div class="th">${p.coverImage ? `<img src="${escapeHtml(p.coverImage)}" alt="">` : 'P'}</div>
+                    <div class="t">
+                      <b>${escapeHtml(p.title)}</b>
+                      ${p.status ? `<small>${escapeHtml(PROJECT_STATUS_LABELS[p.status] || p.status)}</small>` : ''}
                     </div>
                   </a>
                 `).join('')}

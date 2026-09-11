@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>动态详情 — 重设计预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --muted: #8A8078;
+      --haze: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(34,32,30,.04);
+      --shadow-md: 0 8px 24px rgba(34,32,30,.08);
+      --max: 1120px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper); color: var(--ink);
+      font-size: 15px; line-height: 1.75; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .preview-bar {
+      height: 32px; background: #2C3340; color: #F6F2EB;
+      display: flex; align-items: center; justify-content: center;
+      gap: .75rem; font-size: .78rem; padding: 0 .5rem;
+    }
+    .preview-bar strong { color: #fff; }
+
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+
+    .crumb {
+      display: flex; align-items: center; gap: .4rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: .85rem;
+    }
+    .crumb a:hover { color: var(--accent); }
+    .crumb .here { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46vw; }
+
+    /* Cover banner */
+    .cover {
+      position: relative; width: 100%; aspect-ratio: 16 / 7;
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, #EDE6DA, #D5CBBB);
+      margin-bottom: 1rem; cursor: zoom-in;
+      display: flex; align-items: center; justify-content: center;
+      color: #6b6560; font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.6rem;
+    }
+    .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cover::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: var(--accent); z-index: 2;
+    }
+
+    /* Article head */
+    .a-head {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 1.15rem 1.25rem 1rem;
+      margin-bottom: 1.1rem;
+      display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .a-date {
+      flex-shrink: 0; width: 62px; text-align: center;
+      padding: .35rem 0; border-radius: var(--radius-sm);
+      background: var(--paper); border: 1px solid var(--line);
+    }
+    .a-date .m { display: block; font-size: .68rem; color: var(--haze); letter-spacing: .05em; }
+    .a-date .d {
+      display: block; font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.5rem; font-weight: 700; line-height: 1.15; color: var(--ink);
+    }
+    .a-main { flex: 1; min-width: 0; }
+    .a-chips { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; margin-bottom: .45rem; }
+    .chip {
+      font-size: .68rem; font-weight: 600;
+      padding: .12rem .5rem; border-radius: 999px;
+      background: var(--paper); border: 1px solid var(--line); color: var(--haze);
+    }
+    .chip.cat { color: var(--ink); border-color: #D4C8B8; }
+    .chip.pin { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .chip.now { color: var(--accent); border-color: rgba(217,79,92,.35); background: rgba(217,79,92,.07); }
+    .chip.done { color: var(--success); border-color: rgba(61,139,110,.3); background: rgba(61,139,110,.07); }
+    .a-title {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: clamp(1.35rem, 3vw, 1.85rem);
+      font-weight: 700; line-height: 1.3; letter-spacing: -.01em;
+      margin-bottom: .5rem; word-break: break-word;
+    }
+    .a-meta {
+      display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .7rem;
+      padding-top: .55rem; border-top: 1px solid var(--line);
+      font-size: .78rem; color: var(--haze);
+    }
+    .a-meta .sep { color: var(--line); }
+    .a-meta .au { color: var(--accent); font-weight: 500; }
+    .a-meta .share {
+      margin-left: auto; height: 30px; padding: 0 14px;
+      border-radius: 999px; border: 1px solid var(--line);
+      background: var(--card); font-size: .78rem; color: var(--ink);
+    }
+    .a-meta .share:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Layout */
+    .layout {
+      display: grid; grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 1.1rem; align-items: start;
+    }
+    .panel {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 1.3rem 1.4rem;
+    }
+    .panel + .panel { margin-top: 1.1rem; }
+    .panel h2 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1rem; font-weight: 700; margin-bottom: .8rem;
+      display: flex; align-items: baseline; gap: .4rem;
+    }
+    .panel h2 small { font-family: 'Noto Sans SC',system-ui,sans-serif; font-size: .72rem; font-weight: 500; color: var(--haze); }
+
+    .body p { margin-bottom: 1.05rem; line-height: 1.9; color: #33302C; }
+    .body p:last-child { margin-bottom: 0; }
+    .body .lead { font-size: 1.02rem; color: var(--ink); }
+
+    .gallery {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: .8rem; margin-top: 1.4rem;
+    }
+    .gallery button {
+      padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm);
+      overflow: hidden; cursor: zoom-in; aspect-ratio: 4/3;
+      background: linear-gradient(145deg,#EDE6DA,#D5CBBB);
+    }
+    .gallery img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Sidebar */
+    .side { position: sticky; top: 12px; display: flex; flex-direction: column; gap: .8rem; }
+    .side .panel { padding: .95rem 1.05rem; margin: 0; }
+    .side .panel h3 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: .92rem; font-weight: 700; margin-bottom: .6rem;
+      padding-bottom: .45rem; border-bottom: 1px solid var(--line);
+    }
+    .kv { display: flex; justify-content: space-between; gap: .75rem; font-size: .82rem; padding: .28rem 0; }
+    .kv .k { color: var(--haze); }
+    .kv .v { text-align: right; word-break: break-word; }
+    .row {
+      display: flex; align-items: center; gap: .65rem;
+      padding: .5rem 0; border-bottom: 1px solid var(--line);
+    }
+    .row:last-child { border-bottom: none; padding-bottom: 0; }
+    .row:first-child { padding-top: 0; }
+    .row .th {
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(145deg,#EDE6DA,#D9CFC0); overflow: hidden;
+      display: flex; align-items: center; justify-content: center; font-size: .75rem;
+    }
+    .row .th.round { border-radius: 50%; }
+    .row .th img { width: 100%; height: 100%; object-fit: cover; }
+    .row .t { min-width: 0; flex: 1; }
+    .row .t b { display: block; font-size: .85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .t small { font-size: .72rem; color: var(--haze); }
+    .row:hover .t b { color: var(--accent); }
+
+    /* Lightbox */
+    .lb {
+      position: fixed; inset: 0; background: rgba(34,32,30,.8);
+      display: none; align-items: center; justify-content: center; padding: 20px; z-index: 200;
+    }
+    .lb.open { display: flex; }
+    .lb img { max-width: min(900px, 92vw); max-height: 86vh; border-radius: 10px; display: block; }
+    .lb .x {
+      position: absolute; top: 16px; right: 20px; width: 36px; height: 36px;
+      border-radius: 50%; background: rgba(255,252,247,.9); border: 1px solid var(--line); font-size: 1rem;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { position: static; }
+    }
+    @media (max-width: 640px) {
+      .wrap { padding: .75rem .8rem 2rem; }
+      .cover { aspect-ratio: 16 / 9; }
+      .a-head { gap: .75rem; padding: .9rem .85rem .8rem; }
+      .a-date { width: 52px; }
+      .a-date .d { font-size: 1.25rem; }
+      .a-title { font-size: 1.2rem; }
+      .panel { padding: 1rem .9rem; }
+      .gallery { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+      .a-meta .share { margin-left: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span><strong>预览</strong> · 动态详情重设计（公告式文章头 + 日期存根 + 正文/侧栏）</span>
+  </div>
+
+  <div class="wrap">
+    <div class="crumb">
+      <a href="#">同人动态</a><span>›</span>
+      <span class="here">2027 七都新春宴投稿通道开启</span>
+    </div>
+
+    <div class="cover" onclick="openLb(0)">
+      <span style="position:absolute;inset:0;background:linear-gradient(145deg,hsl(18 30% 88%),hsl(18 24% 74%))"></span>
+      <span style="position:relative;z-index:1">春</span>
+    </div>
+
+    <div class="a-head">
+      <div class="a-date"><span class="m">09 月</span><span class="d">08</span></div>
+      <div class="a-main">
+        <div class="a-chips">
+          <span class="chip pin">置顶</span>
+          <span class="chip cat">活动</span>
+          <span class="chip now">进行中</span>
+        </div>
+        <h1 class="a-title">2027 七都新春宴投稿通道开启</h1>
+        <div class="a-meta">
+          <span>2026-09-08</span>
+          <span class="sep">/</span>
+          <span>作者 <span class="au">七都企划组</span></span>
+          <span class="sep">/</span>
+          <span>3 张图</span>
+          <button type="button" class="share" onclick="alert('预览：分享')">分享</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="main">
+        <div class="panel">
+          <div class="body">
+            <p class="lead">新春宴视频企划正式开始收稿，短片、合唱、手书均可投稿，截止日期为 2027 年 1 月 10 日。</p>
+            <p>今年新增「一分钟单元」，欢迎第一次参与的朋友先从短片入手。稿件请以站内联系方式提交，注明参与类型与预计时长。</p>
+            <p>收稿后会统一整理排期，并在动态里同步进度。合唱部分会另行公布曲目与分工。</p>
+          </div>
+          <div class="gallery">
+            <button type="button" onclick="openLb(0)"><span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:#6b6560;font-size:.75rem;background:linear-gradient(145deg,hsl(18 30% 88%),hsl(18 24% 76%))">投稿说明</span></button>
+            <button type="button" onclick="openLb(1)"><span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:#6b6560;font-size:.75rem;background:linear-gradient(145deg,hsl(200 28% 88%),hsl(200 22% 76%))">往届回顾</span></button>
+            <button type="button" onclick="openLb(2)"><span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:#6b6560;font-size:.75rem;background:linear-gradient(145deg,hsl(340 28% 90%),hsl(340 22% 80%))">视觉素材</span></button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <h3>动态信息</h3>
+          <div class="kv"><span class="k">发布日期</span><span class="v">2026-09-08</span></div>
+          <div class="kv"><span class="k">作者</span><span class="v">七都企划组</span></div>
+          <div class="kv"><span class="k">图片数</span><span class="v">3 张</span></div>
+          <div class="kv"><span class="k">分类</span><span class="v">活动</span></div>
+        </div>
+
+        <div class="panel">
+          <h3>相关作者</h3>
+          <a class="row" href="#">
+            <div class="th round">七</div>
+            <div class="t"><b>七都企划组</b><small>活动主办</small></div>
+          </a>
+        </div>
+
+        <div class="panel">
+          <h3>相关活动</h3>
+          <a class="row" href="#">
+            <div class="th">A</div>
+            <div class="t"><b>2027 七都新春宴</b><small>2027-01-10 · 线上</small></div>
+          </a>
+        </div>
+
+        <div class="panel">
+          <h3>相关企划</h3>
+          <a class="row" href="#">
+            <div class="th">P</div>
+            <div class="t"><b>2027七都新春宴</b><small>招募中</small></div>
+          </a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="lb" id="lb" onclick="if(event.target===this)closeLb()">
+    <button class="x" onclick="closeLb()">×</button>
+    <div id="lbBox" style="width:min(900px,92vw);aspect-ratio:4/3;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.9rem;"></div>
+  </div>
+
+  <script>
+    const HUES = [18, 200, 340];
+    const LABELS = ['投稿说明', '往届回顾', '视觉素材'];
+    function openLb(i) {
+      const box = document.getElementById('lbBox');
+      box.style.background = `linear-gradient(145deg,hsl(${HUES[i]} 30% 82%),hsl(${HUES[i]} 24% 62%))`;
+      box.textContent = LABELS[i];
+      document.getElementById('lb').classList.add('open');
+    }
+    function closeLb() { document.getElementById('lb').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
+  </script>
+</body>
+</html>
