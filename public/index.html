@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911o">
+  <link rel="stylesheet" href="/css/style.css?v=20260911p">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -168,7 +168,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260911b"></script>
+  <script src="/js/main.js?v=20260911c"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -893,6 +893,16 @@
       if (!wishlistItems[workId]) renderWorks();
     }
 
+    // 卡片星星＝「我想要」：未想要走弹窗，已想要则确认取消（与详情页一致）
+    function onWantStarClick(workId, e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const w = (allWorks || []).find(x => x.id === workId);
+      const count = (w && w.wants) || 0;
+      if (isWanted(workId)) confirmUnwant(workId, count);
+      else openWantModal(workId, count);
+    }
+
     function renderWorks() {
       const grid = document.getElementById('worksGrid');
       let filtered = [...allWorks];
@@ -1021,9 +1031,9 @@
             <span class="cl-w-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || ''))}</span>
             <span class="cl-w-stats">
               ${renderLikeButton(work.id, work.likes)}
-              <span class="cl-w-want" title="${t('common.wants')}">
+              <button type="button" class="cl-w-want${isWanted(work.id) ? ' on' : ''}" data-wid="${work.id}" title="${isWanted(work.id) ? t('common.cancel') : t('common.want')}" onclick="onWantStarClick('${work.id}',event)">
                 <span class="cl-w-want-icon">★</span><span class="cl-w-want-count">${(work.wants || 0) > 0 ? work.wants : ''}</span>
-              </span>
+              </button>
             </span>
           </div>
         </a>`;

@@ -865,6 +865,13 @@ function updateWantButtons(workId, wanted, count) {
   document.querySelectorAll('.want-btn[data-work-id="' + workId + '"]').forEach(function(b) {
     b.outerHTML = renderWantButton(workId, count);
   });
+  // Catalog card star (想要) mirrors the same state/count
+  document.querySelectorAll('.cl-w-want[data-wid="' + workId + '"]').forEach(function(el) {
+    el.classList.toggle('on', !!wanted);
+    var c = el.querySelector('.cl-w-want-count');
+    if (c) c.textContent = count > 0 ? count : '';
+    el.title = wanted ? t('common.cancel') : t('common.want');
+  });
 }
 
 function openWantModal(workId, currentCount) {
