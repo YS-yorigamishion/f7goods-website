@@ -469,7 +469,7 @@ function buildNavbar(activePage) {
       <h1 class="app-title" id="appPageTitle">${pageTitle}</h1>
       <div class="app-search">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
-        <input type="search" id="appGlobalSearch" placeholder="${t('common.searchPlaceholder')}" autocomplete="off" />
+        <input type="search" id="appGlobalSearch" placeholder="${t('common.globalSearch') || t('common.searchPlaceholder')}" title="${t('common.globalSearch')}" autocomplete="off" />
       </div>
       <div class="app-topbar-right">
         <div class="lang-switcher-nav">
@@ -571,13 +571,9 @@ async function initPage(activePage, itemId) {
         gs.addEventListener('keydown', (e) => {
           if (e.key !== 'Enter') return;
           const q = (e.target.value || '').trim();
-          if (activePage === 'works' && typeof renderWorks === 'function') {
-            const input = document.getElementById('searchInput');
-            if (input) {
-              input.value = q;
-              if (typeof setHomeView === 'function') setHomeView('catalog');
-              else renderWorks();
-            }
+          if (activePage === 'works' && typeof applyGlobalSearch === 'function') {
+            // 已在首页：清掉当前筛选后按关键词检索
+            applyGlobalSearch(q);
           } else if (q) {
             location.href = '/?q=' + encodeURIComponent(q);
           } else {

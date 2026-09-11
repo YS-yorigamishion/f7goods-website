@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ONLY 摊位详情 — 布局预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --muted: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(34,32,30,.04);
+      --shadow-md: 0 8px 24px rgba(34,32,30,.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.65;
+      min-height: 100vh;
+      padding-bottom: 88px;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .preview-bar {
+      height: 32px;
+      background: #2C3340;
+      color: #F6F2EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      font-size: 0.78rem;
+      flex-wrap: wrap;
+      padding: 0 0.5rem;
+    }
+    .preview-bar strong { color: #fff; }
+
+    .wrap { max-width: 860px; margin: 0 auto; padding: 1rem 1rem 2rem; }
+
+    .hero {
+      background:
+        radial-gradient(700px 200px at 8% 0, rgba(217,79,92,.07), transparent 55%),
+        var(--card);
+      border: 1px solid var(--line);
+      border-top: 2px solid var(--accent);
+      border-radius: 16px;
+      padding: 1.15rem 1.15rem 1rem;
+      margin-bottom: 1rem;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; letter-spacing: .1em;
+      background: rgba(217,79,92,.1); color: var(--accent);
+      padding: 2px 10px; border-radius: 999px; margin-bottom: 8px;
+    }
+    .hero h1 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: clamp(1.35rem, 3vw, 1.7rem); font-weight: 600;
+      margin: 0 0 6px; line-height: 1.25;
+    }
+    .hero .meta { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 10px; }
+
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
+    .stat {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 12px 8px; text-align: center;
+    }
+    .stat b { display: block; font-size: 1.25rem; color: var(--accent); font-weight: 700; line-height: 1.2; }
+    .stat span { font-size: 11px; color: var(--muted); }
+
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      margin-bottom: 0.85rem;
+    }
+    .pill {
+      height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px;
+      background: var(--card); color: var(--muted); font-size: 12px; font-weight: 500;
+    }
+    .pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .toolbar .hint { margin-left: auto; font-size: 12px; color: var(--muted); }
+
+    /* Booth card */
+    .booth {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      margin-bottom: 10px; overflow: hidden;
+      transition: border-color .18s ease;
+    }
+    .booth.open { border-color: #D4C8B8; box-shadow: var(--shadow-sm); }
+    .booth-head {
+      display: flex; gap: 10px; align-items: center;
+      padding: 14px; cursor: pointer; user-select: none;
+      transition: background .15s ease;
+    }
+    .booth-head:hover { background: rgba(246,242,235,.7); }
+    .avatar {
+      width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(145deg,#EDE6DA,#D9D0C2);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem; overflow: hidden;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .booth-head .info { flex: 1; min-width: 0; text-align: left; }
+    .booth-head .info h3 {
+      margin: 0 0 2px; font-size: 0.95rem; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .booth-head .info .sub { font-size: 11px; color: var(--muted); }
+    .chev {
+      width: 20px; height: 20px; stroke: var(--muted); fill: none; stroke-width: 1.8;
+      flex-shrink: 0; transition: transform .2s ease;
+    }
+    .booth.open .chev { transform: rotate(180deg); }
+
+    .booth-body {
+      display: none;
+      border-top: 1px solid var(--line);
+      padding: 0 14px 14px;
+      animation: fadeIn .22s ease;
+    }
+    .booth.open .booth-body { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section {
+      padding-top: 12px;
+    }
+    .section + .section { margin-top: 4px; }
+    .section-label {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; letter-spacing: .1em; color: var(--muted);
+      font-weight: 600; margin-bottom: 8px;
+    }
+    .intro {
+      font-size: 13px; line-height: 1.75; color: #4A453F;
+      background: var(--paper); border: 1px solid var(--line);
+      border-radius: var(--radius-sm); padding: 10px 12px;
+      white-space: pre-wrap;
+    }
+    .intro.empty { color: var(--muted); font-style: normal; }
+
+    /* Promo images — horizontal strip under booth header */
+    .banners {
+      display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory;
+      padding-bottom: 2px; margin: 0 -2px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .banners::-webkit-scrollbar { height: 4px; }
+    .banners::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+    .banner {
+      flex: 0 0 auto;
+      width: min(220px, 72%);
+      aspect-ratio: 16 / 10;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, #EDE6DA, #D9CFC0);
+      scroll-snap-align: start;
+      cursor: pointer;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 11px;
+    }
+    .banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .banner .idx {
+      position: absolute; right: 6px; bottom: 6px;
+      background: rgba(34,32,30,.55); color: #fff;
+      font-size: 10px; padding: 1px 6px; border-radius: 999px;
+    }
+
+    /* Lightbox */
+    .lb {
+      position: fixed; inset: 0; background: rgba(34,32,30,.72); z-index: 400;
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .lb.open { display: flex; }
+    .lb .frame {
+      position: relative; max-width: min(880px, 100%); max-height: 86vh;
+      background: var(--card); border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--line);
+    }
+    .lb .frame img {
+      display: block; max-width: 100%; max-height: 86vh; object-fit: contain;
+      background: #EDE6DA;
+    }
+    .lb .cap {
+      padding: 8px 12px; font-size: 12px; color: var(--muted);
+      border-top: 1px solid var(--line); background: var(--card);
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    }
+    .lb .nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,252,247,.92); border: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink); font-size: 16px;
+    }
+    .lb .nav.prev { left: 10px; }
+    .lb .nav.next { right: 10px; }
+    .lb .closex {
+      position: absolute; top: 10px; right: 12px;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,252,247,.92); border: 1px solid var(--line);
+      color: var(--ink); font-size: 16px; line-height: 1;
+    }
+
+    /* Goods */
+    .goods { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
+    .g {
+      border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden;
+      background: var(--paper); display: flex; flex-direction: column;
+    }
+    .g .img {
+      height: 78px; background: linear-gradient(160deg,#EDE6DA,#E2D9CB);
+      display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted);
+    }
+    .g .img img { width: 100%; height: 100%; object-fit: cover; }
+    .g .body { padding: 8px; display: flex; flex-direction: column; flex: 1; }
+    .g .name {
+      font-size: 12px; font-weight: 600; line-height: 1.35; margin-bottom: 2px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .g .price { font-size: 12px; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+    .qtyrow { display: flex; align-items: center; gap: 6px; margin-top: auto; }
+    .qtyrow button.qb {
+      width: 28px; height: 28px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--card); font-size: 14px; line-height: 1; color: var(--ink);
+    }
+    .qtyrow button.qb:hover { border-color: var(--accent); color: var(--accent); }
+    .qtyrow button.qb:disabled { opacity: .35; cursor: default; }
+    .qtyrow .q { min-width: 18px; text-align: center; font-size: 12px; font-weight: 600; }
+    .qtyrow .add {
+      margin-left: auto; border: 1px solid var(--accent); background: transparent;
+      color: var(--accent); border-radius: 999px; padding: 5px 10px; font-size: 11px;
+    }
+    .qtyrow .add.in { background: var(--accent); color: #fff; }
+
+    /* Promo */
+    .promo {
+      background: rgba(61,139,110,.06); border: 1px solid rgba(61,139,110,.2);
+      border-radius: var(--radius-sm); padding: 8px 10px; font-size: 11.5px; color: #2f6b55;
+      line-height: 1.55;
+    }
+    .promo b { color: var(--success); }
+    .promo .tier { padding: 3px 0; }
+    .promo .tier.met { font-weight: 600; }
+    .promo .tier.met::before { content: '✓ '; }
+
+    .bulk {
+      display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap;
+    }
+    .bulk button {
+      border: 1px solid var(--line); background: var(--card); color: var(--muted);
+      border-radius: 999px; padding: 4px 10px; font-size: 11px;
+    }
+    .bulk button:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Cart bar */
+    .cartbar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
+      background: var(--card); border-top: 2px solid var(--accent);
+      padding: 10px 14px; display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 -4px 16px rgba(0,0,0,.06);
+    }
+    .cartbar .l { flex: 1; min-width: 0; font-size: 12.5px; text-align: center; }
+    .cartbar .l b { color: var(--accent); }
+    .cartbar .hintline { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .cartbar .hintline.ok { color: var(--success); font-weight: 600; }
+    .cartbar .barbtns { display: flex; gap: 8px; flex-shrink: 0; }
+    .cartbar button {
+      border: none; background: var(--accent); color: #fff; border-radius: 999px;
+      padding: 10px 14px; font-size: 13px; font-weight: 600;
+    }
+    .cartbar button.ghost {
+      background: transparent; border: 1px solid var(--line); color: var(--ink); font-weight: 500;
+    }
+
+    /* Drawer */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(34,32,30,.4); z-index: 200;
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .overlay.open { display: flex; }
+    .drawer {
+      background: #FFFCF7; width: min(420px, 100%); max-height: 82vh;
+      border-radius: 10px; padding: 22px 18px 20px; overflow-y: auto;
+      box-shadow: 0 18px 40px rgba(0,0,0,.14); border: 1px solid var(--line);
+      position: relative; font-feature-settings: 'tnum';
+    }
+    .drawer::before {
+      content: 'ONLY · SHOPPING LIST';
+      display: block; text-align: center; font-size: 10px; letter-spacing: .18em;
+      color: var(--accent); font-weight: 600; margin-bottom: 10px;
+    }
+    .drawer h3 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.05rem; margin: 0 0 8px; text-align: center;
+    }
+    .drawer .closebtn {
+      position: absolute; top: 10px; right: 12px;
+      font-size: 18px; color: var(--muted); line-height: 1;
+    }
+    .ci {
+      display: flex; gap: 10px; align-items: center; padding: 10px 0;
+      border-bottom: 1px dashed #C9C2B6; font-size: 13px;
+    }
+    .ci .thumb {
+      width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex-shrink: 0;
+      background: linear-gradient(160deg,#EDE6DA,#E2D9CB);
+    }
+    .ci .n { flex: 1; min-width: 0; }
+    .ci .n small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .ci .gift-tag {
+      display: inline-block; font-size: 10px; background: rgba(61,139,110,.12);
+      color: var(--success); border-radius: 999px; padding: 1px 6px; margin-left: 4px;
+    }
+    .only-qty { display: flex; align-items: center; gap: 6px; }
+    .only-qty button {
+      width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line);
+      background: var(--card); font-size: 14px;
+    }
+    .empty { color: var(--muted); font-size: 12.5px; padding: 24px 0; text-align: center; }
+    .sumrow { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; }
+    .sumrow.total {
+      font-weight: 700; font-size: 15px; border-top: 1px dashed #C9C2B6;
+      margin-top: 6px; padding-top: 10px;
+    }
+    .sumrow.total .v { color: var(--accent); }
+    .sumrow.gift { color: var(--success); font-size: 12px; }
+    .drawer .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+    .drawer .go {
+      width: 100%; border: none; background: var(--accent); color: #fff;
+      border-radius: 999px; padding: 12px; font-size: 14px; font-weight: 600;
+    }
+    .drawer .go.alt {
+      background: transparent; border: 1px solid var(--line); color: var(--ink); font-weight: 500;
+    }
+
+    .toast {
+      position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%) translateY(12px);
+      background: var(--ink); color: var(--paper); padding: 0.5rem 1rem;
+      border-radius: 999px; font-size: 0.82rem; z-index: 300; opacity: 0;
+      transition: .22s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 520px) {
+      .goods { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+      .stats { grid-template-columns: repeat(3, 1fr); }
+      .toolbar .hint { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span><strong>预览</strong> · ONLY 摊位可展开详情（宣传图 / 简介 / 周边 / 满赠 / 购物清单）</span>
+  </div>
+
+  <div class="wrap">
+    <div class="hero">
+      <div class="badge">ONLY 专场 · 预览</div>
+      <h1>永远的7日之都 ONLY 2026</h1>
+      <div class="meta">
+        <span>2026-04-12</span>
+        <span>上海 · XX 展厅</span>
+        <span>点击摊位卡片展开详情</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>3</b><span>摊位</span></div>
+      <div class="stat"><b>12</b><span>周边</span></div>
+      <div class="stat"><b id="statCart">0</b><span>清单件数</span></div>
+    </div>
+
+    <div class="toolbar">
+      <button type="button" class="pill on" onclick="expandAll(true)">全部展开</button>
+      <button type="button" class="pill" onclick="expandAll(false)">全部收起</button>
+      <span class="hint">点宣传图可放大查看</span>
+    </div>
+
+    <div id="boothList"></div>
+  </div>
+
+  <div class="cartbar" id="cartBar" style="display:none;">
+    <div class="l">
+      <div>清单 <b id="ocCount">0</b> 件 · <b id="ocTotal">¥0</b></div>
+      <div class="hintline" id="ocHint"></div>
+    </div>
+    <div class="barbtns">
+      <button type="button" class="ghost" id="ocOpen">清单</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="drawer">
+      <button type="button" class="closebtn" id="ocClose">×</button>
+      <h3>现场购物清单</h3>
+      <div id="ocList"></div>
+      <div id="ocSum"></div>
+      <div class="actions">
+        <button type="button" class="go" id="ocCopy">复制文本清单</button>
+        <button type="button" class="go alt" id="ocClear">一键清空</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lb" id="lb" role="dialog" aria-modal="true">
+    <button type="button" class="closex" onclick="closeLb()" aria-label="关闭">×</button>
+    <button type="button" class="nav prev" onclick="lbNav(-1)" aria-label="上一张">‹</button>
+    <div class="frame">
+      <div id="lbPh" style="display:none;align-items:center;justify-content:center;color:#6b6560;font-size:13px;"></div>
+      <img id="lbImg" alt="" style="display:none;">
+      <div class="cap"><span id="lbCap"></span><span id="lbNum"></span></div>
+    </div>
+    <button type="button" class="nav next" onclick="lbNav(1)" aria-label="下一张">›</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Mock data — aligns with events.booths shape
+    const BOOTHS = [
+      {
+        id: 'b1',
+        code: 'A-01',
+        title: '春日手作社',
+        logo: '',
+        // booth.images — promotional banners
+        images: [
+          { hue: 12, label: '摊位主视觉' },
+          { hue: 200, label: '现场布置' },
+          { hue: 320, label: '限定特典' }
+        ],
+        description: '专注永远的7日之都徽章与纸品。\n摊位有试玩明信片盖章，欢迎来玩～',
+        promoTiers: [
+          { minAmount: 80, text: '满 80 赠限定贴纸' },
+          { minAmount: 150, text: '满 150 赠亚克力小立牌' }
+        ],
+        goods: [
+          { id: 'w1', title: '春日徽章套装', price: 25 },
+          { id: 'w2', title: '七日明信片组', price: 18 },
+          { id: 'w3', title: '角色贴纸包', price: 12 },
+          { id: 'w4', title: '中央庭挂件', price: 32 }
+        ]
+      },
+      {
+        id: 'b2',
+        code: 'A-02',
+        title: '夜巡工作室',
+        logo: '',
+        images: [
+          { hue: 210, label: '立牌海报' },
+          { hue: 280, label: '挂件一览' }
+        ],
+        description: '亚克力立牌与挂件为主，现场有样品可试看。',
+        promoTiers: [
+          { minAmount: 100, text: '满 100 赠随机小卡' }
+        ],
+        goods: [
+          { id: 'w5', title: '神使亚克力立牌', price: 68 },
+          { id: 'w6', title: '夜色挂件', price: 28 },
+          { id: 'w7', title: '双人钥匙扣', price: 35 }
+        ]
+      },
+      {
+        id: 'b3',
+        code: 'B-05',
+        title: '都市档案组',
+        logo: '',
+        images: [],
+        description: '',
+        promoTiers: [],
+        goods: [
+          { id: 'w8', title: '城市印象帆布袋', price: 78 },
+          { id: 'w9', title: '档案夹 A5', price: 22 }
+        ]
+      }
+    ];
+
+    const cart = new Map(); // workId -> { boothId, title, price, qty, gift? }
+    const openBooths = new Set(['b1']);
+
+    function money(n) {
+      return (Number.isInteger(n) ? '¥' + n : '¥' + n.toFixed(2));
+    }
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function boothLabel(b) {
+      return b.title ? `${b.code} · ${b.title}` : (b.code || '摊位');
+    }
+
+    function boothTotals(boothId) {
+      let amount = 0, count = 0;
+      cart.forEach(item => {
+        if (item.boothId === boothId && !item.gift) {
+          amount += item.price * item.qty;
+          count += item.qty;
+        }
+      });
+      return { amount, count };
+    }
+
+    function metTiers(booth) {
+      const { amount } = boothTotals(booth.id);
+      return (booth.promoTiers || []).filter(t => amount >= (t.minAmount || 0) && t.text);
+    }
+
+    function renderBooths() {
+      const root = document.getElementById('boothList');
+      root.innerHTML = BOOTHS.map(b => {
+        const open = openBooths.has(b.id);
+        const { amount, count } = boothTotals(b.id);
+        const tiers = (b.promoTiers || []).filter(t => t.text);
+        const goodsHtml = b.goods.map(g => {
+          const item = cart.get(g.id);
+          const q = item && !item.gift ? item.qty : 0;
+          return `
+          <div class="g">
+            <div class="img">◻</div>
+            <div class="body">
+              <div class="name">${esc(g.title)}</div>
+              <div class="price">${money(g.price)}</div>
+              <div class="qtyrow">
+                <button type="button" class="qb" onclick="setQty('${b.id}','${g.id}',-1)" ${q ? '' : 'disabled'}>−</button>
+                <span class="q">${q}</span>
+                <button type="button" class="qb" onclick="setQty('${b.id}','${g.id}',1)">+</button>
+                <button type="button" class="add ${q ? 'in' : ''}" onclick="setQty('${b.id}','${g.id}',1)">${q ? '已在清单' : '加入'}</button>
+              </div>
+            </div>
+          </div>`;
+        }).join('') || '<div class="empty">暂无周边</div>';
+
+        const promoHtml = tiers.length
+          ? `<div class="promo">${tiers.map(t => {
+              const met = amount >= (t.minAmount || 0);
+              return `<div class="tier${met ? ' met' : ''}">${met ? '' : '· '}${esc(t.text)}${met ? '' : '（还差 ' + money(Math.max(0, (t.minAmount || 0) - amount)) + '）'}</div>`;
+            }).join('')}</div>`
+          : '';
+
+        const images = Array.isArray(b.images) ? b.images : [];
+        const bannersHtml = images.length
+          ? `<div class="section">
+              <div class="section-label"><span>宣传图</span><span style="font-weight:500;letter-spacing:0;">${images.length} 张 · 点击放大</span></div>
+              <div class="banners">
+                ${images.map((img, i) => {
+                  const src = typeof img === 'string' ? img : '';
+                  const hue = typeof img === 'object' && img && img.hue != null ? img.hue : (40 + i * 47);
+                  const label = (typeof img === 'object' && img && img.label) || ('宣传图 ' + (i + 1));
+                  const inner = src
+                    ? `<img src="${esc(src)}" alt="${esc(label)}">`
+                    : `<span style="background:linear-gradient(145deg,hsl(${hue} 28% 88%),hsl(${hue} 22% 78%));width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-size:12px;">${esc(label)}</span>`;
+                  return `<button type="button" class="banner" onclick="event.stopPropagation();openLb('${b.id}',${i})" aria-label="查看${esc(label)}">
+                    ${inner}
+                    <span class="idx">${i + 1}/${images.length}</span>
+                  </button>`;
+                }).join('')}
+              </div>
+            </div>`
+          : '';
+
+        return `
+        <article class="booth${open ? ' open' : ''}" id="booth-${b.id}">
+          <div class="booth-head" onclick="toggleBooth('${b.id}')" role="button" tabindex="0"
+               onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleBooth('${b.id}')}">
+            <div class="avatar">${esc((b.title || '摊').slice(0, 1))}</div>
+            <div class="info">
+              <h3>${esc(boothLabel(b))}</h3>
+              <div class="sub">${images.length ? images.length + ' 张宣传图 · ' : ''}${b.goods.length} 件周边${count ? ' · 清单 ' + count + ' 件' : ''}${tiers.length ? ' · 满赠 ' + tiers.length + ' 档' : ''}</div>
+            </div>
+            <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="booth-body">
+            ${bannersHtml}
+            <div class="section">
+              <div class="section-label"><span>摊位简介</span></div>
+              <div class="intro${b.description ? '' : ' empty'}">${b.description ? esc(b.description) : '（暂未填写简介）'}</div>
+            </div>
+            <div class="section">
+              <div class="section-label"><span>周边</span><span style="font-weight:500;letter-spacing:0;">本摊 ${money(amount)}</span></div>
+              <div class="goods">${goodsHtml}</div>
+              <div class="bulk">
+                <button type="button" onclick="setBoothQty('${b.id}',-1)">全部 −1</button>
+                <button type="button" onclick="setBoothQty('${b.id}',1)">全部 +1</button>
+              </div>
+            </div>
+            ${promoHtml ? `<div class="section"><div class="section-label"><span>满赠</span></div>${promoHtml}</div>` : ''}
+          </div>
+        </article>`;
+      }).join('');
+      updateCartUI();
+    }
+
+    // Lightbox for promo images
+    let lbBoothId = null;
+    let lbIndex = 0;
+
+    function lbImages(boothId) {
+      const b = BOOTHS.find(x => x.id === boothId);
+      return (b && Array.isArray(b.images)) ? b.images : [];
+    }
+
+    function openLb(boothId, index) {
+      lbBoothId = boothId;
+      lbIndex = index || 0;
+      paintLb();
+      document.getElementById('lb').classList.add('open');
+    }
+
+    function closeLb() {
+      document.getElementById('lb').classList.remove('open');
+      lbBoothId = null;
+    }
+
+    function lbNav(dir) {
+      const imgs = lbImages(lbBoothId);
+      if (!imgs.length) return;
+      lbIndex = (lbIndex + dir + imgs.length) % imgs.length;
+      paintLb();
+    }
+
+    function paintLb() {
+      const imgs = lbImages(lbBoothId);
+      const img = imgs[lbIndex];
+      if (!img) return;
+      const booth = BOOTHS.find(b => b.id === lbBoothId);
+      const src = typeof img === 'string' ? img : '';
+      const hue = typeof img === 'object' && img && img.hue != null ? img.hue : 40;
+      const label = (typeof img === 'object' && img && img.label) || ('宣传图 ' + (lbIndex + 1));
+      const el = document.getElementById('lbImg');
+      const ph = document.getElementById('lbPh');
+      if (src) {
+        ph.style.display = 'none';
+        el.style.display = 'block';
+        el.src = src;
+        el.alt = label;
+      } else {
+        el.style.display = 'none';
+        el.removeAttribute('src');
+        ph.style.display = 'flex';
+        ph.style.width = 'min(640px, 86vw)';
+        ph.style.height = 'min(400px, 56vh)';
+        ph.style.background = `linear-gradient(145deg, hsl(${hue} 28% 88%), hsl(${hue} 22% 74%))`;
+        ph.textContent = label;
+      }
+      document.getElementById('lbCap').textContent = (booth ? boothLabel(booth) + ' · ' : '') + label;
+      document.getElementById('lbNum').textContent = (lbIndex + 1) + ' / ' + imgs.length;
+    }
+
+    document.addEventListener('keydown', e => {
+      const lb = document.getElementById('lb');
+      if (!lb.classList.contains('open')) return;
+      if (e.key === 'Escape') closeLb();
+      if (e.key === 'ArrowLeft') lbNav(-1);
+      if (e.key === 'ArrowRight') lbNav(1);
+    });
+    document.getElementById('lb').addEventListener('click', e => {
+      if (e.target.id === 'lb') closeLb();
+    });
+
+    function toggleBooth(id) {
+      if (openBooths.has(id)) openBooths.delete(id);
+      else openBooths.add(id);
+      const el = document.getElementById('booth-' + id);
+      if (el) el.classList.toggle('open', openBooths.has(id));
+    }
+
+    function expandAll(open) {
+      openBooths.clear();
+      if (open) BOOTHS.forEach(b => openBooths.add(b.id));
+      renderBooths();
+      document.querySelectorAll('.toolbar .pill').forEach((p, i) => {
+        p.classList.toggle('on', open ? i === 0 : i === 1);
+      });
+    }
+
+    function setQty(boothId, workId, delta) {
+      const booth = BOOTHS.find(b => b.id === boothId);
+      const good = booth && booth.goods.find(g => g.id === workId);
+      if (!good) return;
+      const cur = cart.get(workId);
+      const next = Math.max(0, (cur ? cur.qty : 0) + delta);
+      if (next === 0) cart.delete(workId);
+      else cart.set(workId, { boothId, title: good.title, price: good.price, qty: next });
+      renderBooths();
+    }
+
+    function setBoothQty(boothId, delta) {
+      const booth = BOOTHS.find(b => b.id === boothId);
+      if (!booth) return;
+      booth.goods.forEach(g => {
+        const cur = cart.get(g.id);
+        const next = Math.max(0, (cur ? cur.qty : 0) + delta);
+        if (next === 0) cart.delete(g.id);
+        else cart.set(g.id, { boothId, title: g.title, price: g.price, qty: next });
+      });
+      renderBooths();
+    }
+
+    function allTotals() {
+      let amount = 0, count = 0;
+      cart.forEach(item => {
+        if (!item.gift) {
+          amount += item.price * item.qty;
+          count += item.qty;
+        }
+      });
+      return { amount, count };
+    }
+
+    function giftLines() {
+      const lines = [];
+      BOOTHS.forEach(b => {
+        const { amount } = boothTotals(b.id);
+        (b.promoTiers || []).forEach(t => {
+          if (t.text && amount >= (t.minAmount || 0)) {
+            lines.push({ booth: b, text: t.text, minAmount: t.minAmount });
+          }
+        });
+      });
+      return lines;
+    }
+
+    function updateCartUI() {
+      const { amount, count } = allTotals();
+      const bar = document.getElementById('cartBar');
+      bar.style.display = count > 0 ? 'flex' : 'none';
+      document.getElementById('ocCount').textContent = count;
+      document.getElementById('ocTotal').textContent = money(amount);
+      document.getElementById('statCart').textContent = count;
+
+      const gifts = giftLines();
+      const hint = document.getElementById('ocHint');
+      if (gifts.length) {
+        hint.textContent = '已达成 ' + gifts.length + ' 档满赠';
+        hint.classList.add('ok');
+      } else {
+        hint.textContent = '';
+        hint.classList.remove('ok');
+      }
+
+      if (document.getElementById('overlay').classList.contains('open')) renderDrawer();
+    }
+
+    function renderDrawer() {
+      const list = document.getElementById('ocList');
+      const sum = document.getElementById('ocSum');
+      const entries = [...cart.entries()];
+
+      if (!entries.length) {
+        list.innerHTML = '<div class="empty">清单是空的，去摊位加点周边吧</div>';
+        sum.innerHTML = '';
+        return;
+      }
+
+      // Group by booth for gift calc display
+      const byBooth = new Map();
+      entries.forEach(([id, item]) => {
+        if (!byBooth.has(item.boothId)) byBooth.set(item.boothId, []);
+        byBooth.get(item.boothId).push([id, item]);
+      });
+
+      let html = '';
+      byBooth.forEach((items, boothId) => {
+        const booth = BOOTHS.find(b => b.id === boothId);
+        if (!booth) return;
+        html += `<div style="font-size:11px;color:var(--muted);letter-spacing:.06em;margin:10px 0 2px;">${esc(boothLabel(booth))}</div>`;
+        items.forEach(([id, item]) => {
+          html += `
+          <div class="ci">
+            <div class="thumb"></div>
+            <div class="n">
+              ${esc(item.title)}
+              ${item.gift ? '<span class="gift-tag">满赠</span>' : ''}
+              <small>${money(item.price)} × ${item.qty} = ${money(item.price * item.qty)}</small>
+            </div>
+            ${item.gift ? '' : `
+            <div class="only-qty">
+              <button type="button" onclick="setQty('${boothId}','${id}',-1)">−</button>
+              <span style="min-width:16px;text-align:center;font-size:12px;">${item.qty}</span>
+              <button type="button" onclick="setQty('${boothId}','${id}',1)">+</button>
+            </div>`}
+          </div>`;
+        });
+      });
+      list.innerHTML = html;
+
+      const { amount, count } = allTotals();
+      const gifts = giftLines();
+      sum.innerHTML = `
+        <div class="sumrow"><span class="k">件数</span><span class="v">${count}</span></div>
+        <div class="sumrow total"><span>合计</span><span class="v">${money(amount)}</span></div>
+        ${gifts.map(g => `<div class="sumrow gift"><span>${esc(boothLabel(g.booth))}</span><span>已满赠：${esc(g.text)}</span></div>`).join('')}
+      `;
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(showToast._tm);
+      showToast._tm = setTimeout(() => t.classList.remove('show'), 1600);
+    }
+
+    document.getElementById('ocOpen').addEventListener('click', () => {
+      document.getElementById('overlay').classList.add('open');
+      renderDrawer();
+    });
+    document.getElementById('ocClose').addEventListener('click', () => {
+      document.getElementById('overlay').classList.remove('open');
+    });
+    document.getElementById('overlay').addEventListener('click', e => {
+      if (e.target.id === 'overlay') e.currentTarget.classList.remove('open');
+    });
+    document.getElementById('ocClear').addEventListener('click', () => {
+      cart.clear();
+      renderBooths();
+      renderDrawer();
+      showToast('清单已清空');
+    });
+    document.getElementById('ocCopy').addEventListener('click', async () => {
+      const { amount, count } = allTotals();
+      const gifts = giftLines();
+      const lines = ['【现场购物清单】'];
+      BOOTHS.forEach(b => {
+        const items = [...cart.entries()].filter(([, it]) => it.boothId === b.id);
+        if (!items.length) return;
+        lines.push('', boothLabel(b));
+        items.forEach(([, it]) => {
+          lines.push(`  ${it.title} × ${it.qty}  ${money(it.price * it.qty)}`);
+        });
+      });
+      if (gifts.length) {
+        lines.push('', '满赠达成：');
+        gifts.forEach(g => lines.push(`  ${boothLabel(g.booth)}：${g.text}`));
+      }
+      lines.push('', `合计 ${count} 件 / ${money(amount)}`);
+      const text = lines.join('\n');
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('已复制清单');
+      } catch {
+        showToast('复制失败，请手动选择');
+      }
+    });
+
+    renderBooths();
+  </script>
+</body>
+</html>

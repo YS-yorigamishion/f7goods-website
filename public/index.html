@@ -168,7 +168,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260911c"></script>
+  <script src="/js/main.js?v=20260911d"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -197,6 +197,15 @@
     let wishlistItems = {}; // { workId: quantity }
     let homeView = 'board';
     let featuredProjectId = null;
+
+    // 顶栏全局搜索入口：/?q=关键词（或 ?search=）
+    (function () {
+      try {
+        const p = new URLSearchParams(location.search);
+        const q = p.get('q') || p.get('search');
+        if (q) window._pendingGlobalQuery = q;
+      } catch (e) {}
+    })();
 
     function setHomeView(view) {
       homeView = view;
@@ -824,12 +833,26 @@
     function clearFilters() {
       currentCategory = 'all';
       currentStatus = 'all';
+      currentUserFilter = 'none';
+      currentFollowFilter = false;
+      currentDeadlineFilter = false;
+      window._worksPage = 1;
       document.getElementById('searchInput').value = '';
       document.getElementById('sortSelect').value = 'random';
-      document.querySelectorAll('.filter-btn[data-cat]').forEach(b => b.classList.remove('active'));
-      document.querySelector('.filter-btn[data-cat="all"]')?.classList.add('active');
-      document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
-      document.querySelector('.filter-btn[data-status="all"]')?.classList.add('active');
+      document.querySelectorAll('.pill[data-cat]').forEach(b => b.classList.toggle('on', b.dataset.cat === 'all'));
+      document.querySelectorAll('.pill[data-status]').forEach(b => b.classList.toggle('on', b.dataset.status === 'all'));
+      document.querySelectorAll('[data-user-filter]').forEach(b => b.classList.remove('active'));
+      document.getElementById('followFilterBtn')?.classList.remove('active');
+      document.getElementById('deadlineFilterBtn')?.classList.remove('active');
+      renderWorks();
+    }
+
+    // 顶栏全局搜索：先清掉当前筛选，再在「全部周边」中检索
+    function applyGlobalSearch(q) {
+      clearFilters();
+      const si = document.getElementById('searchInput');
+      if (si) si.value = q || '';
+      if (typeof setHomeView === 'function') setHomeView('catalog');
       renderWorks();
     }
 
@@ -924,6 +947,13 @@
     }
 
     function renderWorks() {
+      // 从其他页面用顶栏全局搜索跳转过来：/?q=关键词
+      if (window._pendingGlobalQuery) {
+        const q = window._pendingGlobalQuery;
+        window._pendingGlobalQuery = null;
+        applyGlobalSearch(q);
+        return;
+      }
       const grid = document.getElementById('worksGrid');
       let filtered = [...allWorks];
       if (currentCategory !== 'all') {
