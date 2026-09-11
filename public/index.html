@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911p">
+  <link rel="stylesheet" href="/css/style.css?v=20260911s">
   <style>
     .wishlist-qty-group { display:inline-flex; align-items:center; gap:0.1rem; }
     .wishlist-add-btn { position:relative; background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0.1rem 0.3rem; color:var(--accent); transition:transform 0.15s; line-height:1; }
@@ -728,7 +728,27 @@
       if (container && (liked.length > 0 || wanted.length > 0 || followed.length > 0 || hasDeadlines)) {
         container.style.display = 'flex';
       }
+      layoutCatalogFilters();
     }
+
+    // 移动端：把「我的」（关注/喜爱/想要/即将截止）移到分类行下方
+    const mqCatalogMobile = window.matchMedia('(max-width: 640px)');
+    function layoutCatalogFilters() {
+      const uf = document.getElementById('userFilters');
+      const catWrap = document.getElementById('categoryFilters');
+      const stWrap = document.getElementById('statusFilters');
+      if (!uf || !catWrap || !stWrap) return;
+      const catRow = catWrap.parentElement;
+      const stRow = stWrap.parentElement;
+      if (!catRow || !stRow) return;
+      if (mqCatalogMobile.matches) {
+        if (uf.parentElement !== catRow) catRow.insertBefore(uf, catWrap.nextSibling);
+      } else if (uf.parentElement !== stRow) {
+        stRow.appendChild(uf);
+      }
+    }
+    if (mqCatalogMobile.addEventListener) mqCatalogMobile.addEventListener('change', layoutCatalogFilters);
+    else if (mqCatalogMobile.addListener) mqCatalogMobile.addListener(layoutCatalogFilters);
 
     // 洗牌并写入 _randomRank，同一会话内筛选/分页保持该顺序
     function shuffleWorksForSession(list) {

@@ -1201,6 +1201,10 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 .cl-w-more button:hover { border-color: var(--accent); color: var(--accent); }
 .cl-w-more .prog { display: block; margin-top: 0.5rem; font-size: 0.72rem; color: var(--haze); }
 
+@media (max-width: 640px) {
+  /* 「我的」筛选在移动端占满一行，位于分类行下方 */
+  .cl-toolbar-card #userFilters { flex: 1 1 100%; }
+}
 @media (max-width: 480px) {
   .cl-w-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 0.6rem; }
   .cl-w-cover { aspect-ratio: 1 / 1; }
