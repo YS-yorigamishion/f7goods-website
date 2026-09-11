@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同人企划 — 重设计预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --muted: #8A8078;
+      --line: #E5DDD1;
+      --success: #3D8B6E;
+      --warning: #C48A2A;
+      --info: #4A7BA7;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(34,32,30,.04);
+      --max: 1120px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.7;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .preview-bar {
+      height: 32px;
+      background: #2C3340;
+      color: #F6F2EB;
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.75rem; font-size: 0.78rem; padding: 0 0.5rem;
+    }
+    .preview-bar strong { color: #fff; }
+
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+
+    /* Masthead (mirrors circles list) */
+    .mast {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.25rem 1rem;
+      margin-bottom: 0.9rem;
+    }
+    .mast::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: var(--accent);
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .mast-top {
+      display: flex; flex-wrap: wrap; align-items: flex-end;
+      justify-content: space-between; gap: 0.5rem 1rem;
+    }
+    .mast h1 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: clamp(1.35rem, 2.8vw, 1.65rem);
+      font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
+    }
+    .mast .sub { color: var(--muted); font-size: 0.86rem; margin-top: 0.25rem; }
+    .count-chip {
+      font-size: 0.78rem; color: var(--muted); white-space: nowrap;
+    }
+    .count-chip b {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.2rem; color: var(--ink); font-weight: 700;
+    }
+    .mast-foot {
+      margin-top: 0.7rem;
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem;
+      font-size: 0.8rem; color: var(--muted);
+    }
+    .mast-foot strong {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 0.92rem; color: var(--ink); font-weight: 700;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.7rem 0.85rem;
+      margin-bottom: 1rem;
+      display: flex; flex-direction: column; gap: 0.55rem;
+    }
+    .trow { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+    .trow + .trow { padding-top: 0.55rem; }
+    .pill {
+      height: 30px; padding: 0 12px;
+      border: 1px solid var(--line); border-radius: 999px;
+      background: var(--card); color: var(--muted);
+      font-size: 0.78rem; font-weight: 500; transition: .15s ease;
+    }
+    .pill:hover { border-color: #D4C8B8; color: var(--ink); }
+    .pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .spacer { flex: 1; }
+    select, input[type="search"] {
+      height: 30px;
+      border: 1px solid var(--line); border-radius: 999px;
+      background: var(--paper); font: inherit; font-size: 0.78rem;
+      padding: 0 0.75rem; color: var(--ink);
+    }
+    select { min-width: 130px; }
+    input[type="search"] { min-width: 160px; flex: 1; max-width: 230px; }
+    .show-n { font-size: 0.76rem; color: var(--muted); white-space: nowrap; }
+    .show-n b { color: var(--ink); font-size: 0.9rem; }
+
+    /* Project grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 0.9rem;
+    }
+    .p-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: .18s ease;
+      text-decoration: none; color: inherit;
+      min-width: 0;
+    }
+    .p-card, .p-card * { text-decoration: none; }
+    .p-card:hover {
+      border-color: #D4C8B8;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .p-cover {
+      height: 132px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(145deg, #EDE6DA, #D5CBBB);
+      display: flex; align-items: center; justify-content: center;
+      color: #6b6560;
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.6rem;
+    }
+    .p-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .p-cover::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(34,30,28,.12) 0%, transparent 45%, rgba(34,30,28,.28) 100%);
+      pointer-events: none;
+    }
+    .p-status {
+      position: absolute; top: 8px; left: 8px; z-index: 2;
+      font-size: 0.68rem; font-weight: 600;
+      padding: 0.12rem 0.5rem; border-radius: 999px;
+      background: rgba(255,252,247,.92);
+      border: 1px solid rgba(34,32,30,.08);
+    }
+    .p-status.recruiting { color: var(--accent); }
+    .p-status.open { color: var(--warning); }
+    .p-status.stopped { color: var(--muted); }
+    .p-status.done { color: var(--success); }
+
+    .p-body { padding: 0.75rem 0.9rem 0.35rem; flex: 1; display: flex; flex-direction: column; }
+    .p-title {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1rem; font-weight: 700;
+      line-height: 1.35; margin-bottom: 0.2rem;
+      word-break: break-word;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .p-sub { font-size: 0.74rem; color: var(--muted); margin-bottom: 0.45rem; }
+    .p-desc {
+      font-size: 0.79rem; color: #4A453F; line-height: 1.6;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      flex: 1; min-height: 2.4em;
+    }
+    .p-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem; }
+    .p-tag {
+      font-size: 0.66rem; color: var(--muted);
+      padding: 0.08rem 0.42rem; border-radius: 999px;
+      background: var(--paper); border: 1px solid var(--line);
+    }
+
+    /* Signature: timeline progress from start → end date */
+    .p-timeline { padding: 0 0.9rem 0.6rem; }
+    .tl-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 0.68rem; color: var(--muted); margin-bottom: 0.25rem;
+    }
+    .tl-head .now { color: var(--ink); font-weight: 600; }
+    .tl-bar {
+      position: relative; height: 4px; border-radius: 999px;
+      background: var(--paper); border: 1px solid var(--line); overflow: hidden;
+    }
+    .tl-fill {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      background: var(--accent); border-radius: 999px 0 0 999px;
+    }
+    .tl-fill.done { background: var(--success); }
+    .tl-fill.stopped { background: var(--muted); }
+
+    .p-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 0.9rem 0.75rem;
+      font-size: 0.72rem; color: var(--muted);
+    }
+    .p-foot .go { color: var(--accent); font-weight: 600; font-size: 0.75rem; }
+
+    .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 2.5rem 1rem; font-size: 0.88rem; }
+
+    @media (max-width: 768px) {
+      .wrap { padding: 0.75rem 1rem 2rem; }
+      input[type="search"] { max-width: none; width: 100%; flex: 1 1 100%; }
+      select { flex: 1; min-width: 0; }
+    }
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: 1fr; gap: 0.7rem; }
+      .p-cover { height: 140px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span><strong>预览</strong> · 同人企划列表重设计（刊头 + 统一工具条 + 进度时间轴卡片）</span>
+  </div>
+
+  <div class="wrap">
+    <header class="mast">
+      <div class="mast-top">
+        <div>
+          <h1>同人企划</h1>
+          <p class="sub">发现正在进行的同人企划，加入创作团队</p>
+        </div>
+        <div class="count-chip">共 <b id="totalN">0</b> 个企划</div>
+      </div>
+      <div class="mast-foot">
+        <strong>企划列表</strong>
+        <span>正在进行或招募中的同人企划项目</span>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="trow" id="statusRow">
+        <button type="button" class="pill on" data-st="all" onclick="setStatus(this)">全部状态</button>
+        <button type="button" class="pill" data-st="weikaiiqi" onclick="setStatus(this)">未开启</button>
+        <button type="button" class="pill" data-st="zhaomuzhong" onclick="setStatus(this)">招募中</button>
+        <button type="button" class="pill" data-st="tingzhizhaomu" onclick="setStatus(this)">停止招募</button>
+        <button type="button" class="pill" data-st="yiwancheng" onclick="setStatus(this)">已完成</button>
+        <span class="spacer"></span>
+        <button type="button" class="pill" id="followBtn" onclick="toggleFollow()">关注</button>
+      </div>
+      <div class="trow" id="catRow">
+        <button type="button" class="pill on" data-cat="all" onclick="setCat(this)">全部分类</button>
+        <button type="button" class="pill" data-cat="youxi" onclick="setCat(this)">游戏</button>
+        <button type="button" class="pill" data-cat="shoushu" onclick="setCat(this)">手书</button>
+        <button type="button" class="pill" data-cat="yinyue" onclick="setCat(this)">音乐</button>
+        <button type="button" class="pill" data-cat="shipin" onclick="setCat(this)">视频</button>
+        <span class="spacer"></span>
+        <select id="sortSel" onchange="render()">
+          <option value="date-desc" selected>创建日期 ↓ 新→旧</option>
+          <option value="date-asc">创建日期 ↑ 旧→新</option>
+          <option value="name-asc">名称 A→Z</option>
+          <option value="progress-desc">进度 ↓</option>
+        </select>
+        <input type="search" id="searchIn" placeholder="搜索企划…" oninput="render()">
+        <span class="show-n">显示 <b id="showN">0</b></span>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script>
+    const STATUS = { weikaiiqi: '未开启', zhaomuzhong: '招募中', tingzhizhaomu: '停止招募', yiwancheng: '已完成' };
+    const STATUS_CLS = { weikaiiqi: 'open', zhaomuzhong: 'recruiting', tingzhizhaomu: 'stopped', yiwancheng: 'done' };
+    const CAT = { youxi: '游戏', shoushu: '手书', yinyue: '音乐', shipin: '视频' };
+
+    const PROJECTS = [
+      { id:'p1', title:'2027七都新春宴', status:'zhaomuzhong', cat:'shipin', authors:2, tags:['视频','新春宴'],
+        desc:'七都新春宴视频企划，欢迎同人创作者参与投稿，含短片与合唱片段。',
+        start:'2026-08-01', end:'2027-01-10', createdAt:'2026-06-01', hue:18, followed:true },
+      { id:'p2', title:'七日角色歌合辑', status:'zhaomuzhong', cat:'yinyue', authors:4, tags:['音乐','合唱'],
+        desc:'收录七日之都角色歌同人翻唱与原创，招募歌手与混音。',
+        start:'2026-05-10', end:'2026-12-20', createdAt:'2026-05-10', hue:300, followed:false },
+      { id:'p3', title:'城市手书企划', status:'tingzhizhaomu', cat:'shoushu', authors:3, tags:['手书','动画'],
+        desc:'以七日之都城市印象为主题的手书接力，招募已完成。',
+        start:'2026-03-01', end:'2026-11-30', createdAt:'2026-03-01', hue:200, followed:true },
+      { id:'p4', title:'同人游戏《第七日》', status:'weikaiiqi', cat:'youxi', authors:1, tags:['游戏','剧情'],
+        desc:'剧情向同人小游戏，筹备中，预计明年开放招募。',
+        start:'2026-10-01', end:'2027-06-30', createdAt:'2026-07-15', hue:160, followed:false },
+      { id:'p5', title:'2026夏日祭画集', status:'yiwancheng', cat:'youxi', authors:6, tags:['画集','夏日祭'],
+        desc:'夏日祭主题合志画集，已完成印制与线上发布。',
+        start:'2026-01-05', end:'2026-07-20', createdAt:'2026-01-05', hue:40, followed:false },
+      { id:'p6', title:'神使主题明信片企划', status:'zhaomuzhong', cat:'shoushu', authors:2, tags:['明信片','插画'],
+        desc:'神使主题明信片联名，招募插画与排版。',
+        start:'2026-06-20', end:'2027-02-28', createdAt:'2026-06-20', hue:340, followed:false }
+    ];
+
+    const TODAY = new Date('2026-09-11');
+
+    let curStatus = 'all';
+    let curCat = 'all';
+    let followOnly = false;
+
+    function progressOf(p) {
+      const s = new Date(p.start), e = new Date(p.end);
+      if (isNaN(s) || isNaN(e) || e <= s) return { pct: 0, label: '—' };
+      const total = e - s;
+      const passed = TODAY - s;
+      const pct = Math.max(0, Math.min(100, Math.round(passed / total * 100)));
+      let label;
+      if (TODAY < s) label = '尚未开始';
+      else if (TODAY > e) label = '已结束';
+      else label = '进行中 · 剩余 ' + Math.max(0, Math.ceil((e - TODAY) / 86400000)) + ' 天';
+      return { pct, label };
+    }
+
+    function setStatus(btn) {
+      curStatus = btn.dataset.st;
+      document.querySelectorAll('#statusRow .pill[data-st]').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      render();
+    }
+    function setCat(btn) {
+      curCat = btn.dataset.cat;
+      document.querySelectorAll('#catRow .pill[data-cat]').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      render();
+    }
+    function toggleFollow() {
+      followOnly = !followOnly;
+      document.getElementById('followBtn').classList.toggle('on', followOnly);
+      render();
+    }
+
+    function render() {
+      document.getElementById('totalN').textContent = PROJECTS.length;
+      const q = (document.getElementById('searchIn').value || '').trim().toLowerCase();
+      const sort = document.getElementById('sortSel').value;
+
+      let list = PROJECTS.filter(p =>
+        (curStatus === 'all' || p.status === curStatus) &&
+        (curCat === 'all' || p.cat === curCat) &&
+        (!followOnly || p.followed)
+      );
+      if (q) list = list.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        p.desc.toLowerCase().includes(q) ||
+        p.tags.some(t => t.toLowerCase().includes(q))
+      );
+
+      list = list.slice();
+      if (sort === 'date-asc') list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      else if (sort === 'name-asc') list.sort((a, b) => a.title.localeCompare(b.title));
+      else if (sort === 'progress-desc') list.sort((a, b) => progressOf(b).pct - progressOf(a).pct);
+      else list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      document.getElementById('showN').textContent = list.length;
+      const grid = document.getElementById('grid');
+      if (!list.length) {
+        grid.innerHTML = '<div class="empty">没有匹配的企划</div>';
+        return;
+      }
+      grid.innerHTML = list.map(p => {
+        const { pct, label } = progressOf(p);
+        const fillCls = p.status === 'yiwancheng' ? 'done' : (p.status === 'tingzhizhaomu' ? 'stopped' : '');
+        return `
+        <a class="p-card" href="#" onclick="event.preventDefault()">
+          <div class="p-cover">
+            <span class="p-status ${STATUS_CLS[p.status]}">${STATUS[p.status]}</span>
+            <div style="position:absolute;inset:0;background:linear-gradient(145deg,hsl(${p.hue} 30% 88%),hsl(${p.hue} 24% 74%))"></div>
+            <span style="position:relative;z-index:1">${p.title.charAt(0)}</span>
+          </div>
+          <div class="p-body">
+            <div class="p-title">${p.title}</div>
+            <div class="p-sub">${CAT[p.cat]} · 参与作者 ${p.authors} 人</div>
+            <div class="p-desc">${p.desc}</div>
+            <div class="p-tags">${p.tags.map(t => `<span class="p-tag">#${t}</span>`).join('')}</div>
+          </div>
+          <div class="p-timeline">
+            <div class="tl-head">
+              <span>${p.start.slice(0, 7)} → ${p.end.slice(0, 7)}</span>
+              <span class="now">${label}</span>
+            </div>
+            <div class="tl-bar"><div class="tl-fill ${fillCls}" style="width:${pct}%"></div></div>
+          </div>
+          <div class="p-foot">
+            <span>${p.followed ? '已关注作者' : '企划'}</span>
+            <span class="go">查看 →</span>
+          </div>
+        </a>`;
+      }).join('');
+    }
+
+    render();
+  </script>
+</body>
+</html>

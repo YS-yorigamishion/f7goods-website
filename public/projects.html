@@ -14,44 +14,48 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260911i">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <section class="hero">
-    <h1 id="heroTitle" class="settings-pending" data-i18n="projects.heroTitle">同人企划</h1>
-    <p id="heroSubtitle" class="settings-pending" data-i18n="projects.heroSubtitle">发现正在进行的同人企划，加入创作团队</p>
+  <section class="hero cl-list-hero">
+    <div class="cl-list-mast">
+      <div>
+        <h1 id="heroTitle" class="settings-pending" data-i18n="projects.heroTitle">同人企划</h1>
+        <p id="heroSubtitle" class="settings-pending" data-i18n="projects.heroSubtitle">发现正在进行的同人企划，加入创作团队</p>
+      </div>
+      <div class="cl-list-count">共 <b id="projectTotalCount">0</b> 个企划</div>
+    </div>
+    <div class="cl-list-sub">
+      <strong id="pageTitle" class="settings-pending" data-i18n="projects.listTitle">企划列表</strong>
+      <span id="pageSubtitle" class="settings-pending" data-i18n="projects.listSubtitle">正在进行或招募中的同人企划项目</span>
+    </div>
   </section>
 
   <main class="main-content">
-    <div class="page-header">
-      <h2 id="pageTitle" class="settings-pending" data-i18n="projects.listTitle">企划列表</h2>
-      <p id="pageSubtitle" class="settings-pending" data-i18n="projects.listSubtitle">正在进行或招募中的同人企划项目</p>
-    </div>
-
-    <div class="filter-bar" id="statusFilters">
-      <button class="filter-btn active" data-status="all" data-i18n="common.allStatus">全部状态</button>
-    </div>
-    <div class="filter-bar" id="categoryFilters">
-      <button class="filter-btn active" data-cat="all" data-i18n="common.allCategories">全部分类</button>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
-        <select class="form-input" id="sortSelect" style="padding:0.35rem 0.6rem;font-size:0.85rem;border-radius:100px;min-width:140px;">
-          <option value="date-desc" data-i18n="common.dateDesc">创建日期 ↓ 新→旧</option>
+    <div class="cl-toolbar-card">
+      <div class="cl-toolbar-row">
+        <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+        <span class="spacer"></span>
+        <button type="button" class="pill" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
+      </div>
+      <div class="cl-toolbar-row">
+        <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
+        <span class="spacer"></span>
+        <select class="form-input" id="sortSelect">
+          <option value="date-desc" selected data-i18n="common.dateDesc">创建日期 ↓ 新→旧</option>
           <option value="date-asc" data-i18n="common.dateAsc">创建日期 ↑ 旧→新</option>
           <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
+          <option value="progress-desc">进度 ↓</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索企划..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+        <span class="cl-show-count">显示 <b id="projectShowCount">0</b></span>
       </div>
     </div>
-    <div class="filter-bar">
-      <button class="filter-btn" onclick="toggleFollowFilter()" id="followFilterBtn" data-i18n="common.follow">关注</button>
-    </div>
 
-    <div class="cards-grid" id="projectsGrid">
+    <div class="cards-grid cl-proj-grid" id="projectsGrid">
       <div id="projectsSkeleton" class="skeleton-grid">
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
         <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
         <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
         <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
@@ -75,7 +79,9 @@
 
     function toggleFollowFilter() {
       currentFollowFilter = !currentFollowFilter;
-      document.getElementById('followFilterBtn').classList.toggle('active', currentFollowFilter);
+      const btn = document.getElementById('followFilterBtn');
+      btn.classList.toggle('on', currentFollowFilter);
+      btn.classList.toggle('active', currentFollowFilter);
       renderProjects();
     }
 
@@ -101,6 +107,29 @@
         document.getElementById('projectsGrid').innerHTML =
           `<div class="empty-state"><div class="icon">!</div><p>${t('common.loadFailed')}</p></div>`;
       }
+    }
+
+    // 企划时间轴进度：startDate → endDate
+    function projectProgress(p) {
+      const s = new Date(p.startDate || p.createdAt || 0);
+      const e = new Date(p.endDate || 0);
+      if (isNaN(s.getTime()) || isNaN(e.getTime()) || e <= s) return null;
+      const now = new Date();
+      const total = e - s;
+      const pct = Math.max(0, Math.min(100, Math.round((now - s) / total * 100)));
+      let label;
+      if (now < s) label = '尚未开始';
+      else if (now > e) label = '已结束';
+      else label = '剩余 ' + Math.max(0, Math.ceil((e - now) / 86400000)) + ' 天';
+      return { pct, label };
+    }
+
+    function statusClassOf(statusId, label) {
+      const name = String(label || '');
+      if (/完成/.test(name)) return 'done';
+      if (/停止|取消|暂停/.test(name)) return 'stopped';
+      if (/招募/.test(name)) return '';
+      return 'open';
     }
 
     function renderProjects() {
@@ -130,70 +159,90 @@
       }
 
       // Sorting
+      filtered = filtered.slice();
       const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
       if (sortVal === 'date-asc') {
         filtered.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
       } else if (sortVal === 'name-asc') {
         filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      } else if (sortVal === 'progress-desc') {
+        filtered.sort((a, b) => (projectProgress(b)?.pct || 0) - (projectProgress(a)?.pct || 0));
       } else {
         filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       }
 
+      const totalEl = document.getElementById('projectTotalCount');
+      if (totalEl) totalEl.textContent = allProjects.length;
+      const showEl = document.getElementById('projectShowCount');
+      if (showEl) showEl.textContent = filtered.length;
+
       if (filtered.length === 0) {
-        grid.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${t('common.noMatchingProjects')}</p></div>`;
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔍</div><p>${t('common.noMatchingProjects')}</p></div>`;
         return;
       }
 
-      grid.innerHTML = filtered.map(project => `
-        <a class="card" href="/project-detail.html?id=${project.id}" style="text-decoration:none;color:inherit;">
-          <div class="card-image" style="${(project.coverImage || (project.images && project.images.length > 0)) ? '' : 'background:linear-gradient(135deg,var(--accent-alt),var(--ink));'}">
-            ${project.coverImage
-              ? `<img src="${project.coverImage}" alt="${escapeHtml(project.title)}" loading="lazy">`
-              : (project.images && project.images.length > 0
-                ? `<img src="${project.images[0]}" alt="${escapeHtml(project.title)}" loading="lazy">`
-                : '<span class="placeholder-icon" style="color:white;">📋</span>')}
+      grid.innerHTML = filtered.map(project => {
+        const cover = project.coverImage || (project.images && project.images[0]) || '';
+        const statusLabel = PROJECT_STATUS_LABELS[project.status] || project.status || '';
+        const catLabel = PROJECT_CATEGORIES[project.category] || project.category || '';
+        const authorN = (project.circles || []).length;
+        const prog = projectProgress(project);
+        const fillCls = statusClassOf(project.status, statusLabel);
+        const tags = (project.tags || []).slice(0, 3);
+        return `
+        <a class="cl-proj-card" href="/project-detail.html?id=${encodeURIComponent(project.id)}">
+          <div class="cl-proj-cover">
+            ${statusLabel ? `<span class="cl-proj-status ${fillCls === 'open' ? 'open' : fillCls}">${escapeHtml(statusLabel)}</span>` : ''}
+            ${cover
+              ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(project.title)}" loading="lazy">`
+              : `<span style="position:relative;z-index:1;">${escapeHtml((project.title || '?').charAt(0))}</span>`}
           </div>
-          <div class="card-body">
-            <span class="card-tag ${project.status}">${PROJECT_STATUS_LABELS[project.status] || escapeHtml(project.status)}</span>
-            <h3 class="card-title">${escapeHtml(project.title)}</h3>
-            <p class="card-subtitle">${PROJECT_CATEGORIES[project.category] || escapeHtml(project.category)}</p>
+          <div class="cl-proj-body">
+            <div class="cl-proj-title">${escapeHtml(project.title)}</div>
+            <div class="cl-proj-sub">${escapeHtml(catLabel)}${authorN ? ' · 参与作者 ' + authorN + ' 人' : ''}</div>
+            <div class="cl-proj-desc">${escapeHtml(project.description || '')}</div>
+            ${tags.length ? `<div class="cl-proj-tags">${tags.map(tg => `<span class="cl-proj-tag">#${escapeHtml(tg)}</span>`).join('')}</div>` : ''}
           </div>
-          <div class="card-footer">
-            <div class="tag-list" style="flex:1;">
-              ${(project.tags || []).slice(0, 3).map(t => `<span class="tag" style="text-decoration:none;cursor:pointer;" onclick="event.preventDefault();event.stopPropagation();location.href='/?tag=${encodeURIComponent(t)}'">${escapeHtml(t)}</span>`).join('')}
+          ${prog ? `
+          <div class="cl-proj-timeline">
+            <div class="cl-tl-head">
+              <span>${formatDate(project.startDate)} → ${formatDate(project.endDate)}</span>
+              <span class="now">${prog.label}</span>
             </div>
-            <span class="card-date">${formatDate(project.startDate)}</span>
+            <div class="cl-tl-bar"><div class="cl-tl-fill ${fillCls}" style="width:${prog.pct}%"></div></div>
+          </div>` : ''}
+          <div class="cl-proj-foot">
+            <span>${formatDate(project.startDate)}</span>
+            <span class="go">查看 →</span>
           </div>
         </a>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function buildProjectFilterButtons() {
       // Status filters
       const statusContainer = document.getElementById('statusFilters');
-      statusContainer.innerHTML = `<button class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
-        PROJECT_STATUS_ORDERED.map(s => `<button class="filter-btn" data-status="${s.id}">${tCat(s)}</button>`).join('');
+      statusContainer.innerHTML = `<button type="button" class="pill active on" data-status="all">${t('common.allStatus')}</button>` +
+        PROJECT_STATUS_ORDERED.map(s => `<button type="button" class="pill" data-status="${s.id}">${tCat(s)}</button>`).join('');
 
       // Category filters
       const catContainer = document.getElementById('categoryFilters');
-      const rightSide = catContainer.querySelector('div[style*="margin-left:auto"]');
-      catContainer.innerHTML = `<button class="filter-btn active" data-cat="all">${t('common.allCategories')}</button>` +
-        PROJECT_CATEGORIES_ORDERED.map(c => `<button class="filter-btn" data-cat="${c.id}">${tCat(c)}</button>`).join('');
-      if (rightSide) catContainer.appendChild(rightSide);
+      catContainer.innerHTML = `<button type="button" class="pill on" data-cat="all">${t('common.allCategories')}</button>` +
+        PROJECT_CATEGORIES_ORDERED.map(c => `<button type="button" class="pill" data-cat="${c.id}">${tCat(c)}</button>`).join('');
 
-      // Re-bind events
-      document.querySelectorAll('.filter-btn[data-status]').forEach(btn => {
+      document.querySelectorAll('[data-status]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.filter-btn[data-status]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
+          document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('on', 'active'));
+          btn.classList.add('on', 'active');
           currentStatus = btn.dataset.status;
           renderProjects();
         });
       });
-      document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
+      document.querySelectorAll('[data-cat]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.filter-btn[data-cat]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
+          document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('on', 'active'));
+          btn.classList.add('on', 'active');
           currentCategory = btn.dataset.cat;
           renderProjects();
         });
