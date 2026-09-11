@@ -129,18 +129,32 @@
       renderEvents();
     }
 
-    // 移动端：把视图切换（时间轴/日历/多格）移到状态筛选上方
+    // 移动端：视图切换移到状态行上方；「关注」移到「全部类型」下方
     const mqEventsMobile = window.matchMedia('(max-width: 640px)');
     function layoutEventFilters() {
       const seg = document.getElementById('viewSeg');
       const st = document.getElementById('statusFilters');
-      if (!seg || !st) return;
+      const fb = document.getElementById('followFilterBtn');
+      const ty = document.getElementById('typeFilters');
+      if (!seg || !st || !fb || !ty) return;
       const stRow = st.parentElement;
-      if (!stRow) return;
+      const tyRow = ty.parentElement;
+      if (!stRow || !tyRow) return;
+
       if (mqEventsMobile.matches) {
         if (stRow.firstElementChild !== seg) stRow.insertBefore(seg, stRow.firstElementChild);
-      } else if (stRow.lastElementChild !== seg) {
-        stRow.appendChild(seg);
+        if (fb.parentElement !== tyRow) {
+          const brk = document.createElement('span');
+          brk.className = 'cl-tb-break';
+          brk.setAttribute('aria-hidden', 'true');
+          tyRow.insertBefore(brk, ty.nextSibling);
+          tyRow.insertBefore(fb, brk.nextSibling);
+        }
+      } else {
+        if (stRow.lastElementChild !== seg) stRow.appendChild(seg);
+        const brk = tyRow.querySelector('.cl-tb-break');
+        if (brk) brk.remove();
+        if (fb.parentElement !== stRow) stRow.insertBefore(fb, seg);
       }
     }
     if (mqEventsMobile.addEventListener) mqEventsMobile.addEventListener('change', layoutEventFilters);
