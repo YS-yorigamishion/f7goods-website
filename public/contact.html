@@ -16,90 +16,468 @@
   <link rel="stylesheet" href="/css/style.css?v=20260911b">
   <style>
     .settings-pending { visibility: hidden; }
-    .about-section { max-width: 800px; margin: 0 auto; }
-    .about-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 2.5rem;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border);
-      margin-bottom: 2rem;
+
+    /* ===== Editorial about shell ===== */
+    .about-shell {
+      max-width: 920px;
+      margin: 0 auto;
     }
-    .about-card h3 {
-      font-family: 'Noto Serif SC', Georgia, serif;
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-      color: var(--ink);
+
+    /* Hero — paper title block */
+    .about-hero {
+      position: relative;
+      margin: 0 0 1.75rem;
+      padding: 2rem 0 1.5rem;
     }
-    .about-card p {
-      color: #555;
-      line-height: 1.9;
-      margin-bottom: 1rem;
-    }
-    .about-card p:last-child { margin-bottom: 0; }
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-      margin: 2rem 0;
-    }
-    .feature-item {
-      text-align: center;
-      padding: 1.5rem 1rem;
-    }
-    .feature-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
+    .about-hero-rule {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 1.6rem;
-      margin: 0 auto 0.8rem;
+      gap: 12px;
+      margin-bottom: 1.1rem;
     }
-    .feature-item h4 {
+    .about-hero-rule::before,
+    .about-hero-rule::after {
+      content: '';
+      height: 1px;
+      background: var(--line);
+      flex: 1;
+    }
+    .about-hero-rule span {
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .about-hero h1 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: clamp(1.7rem, 3.6vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      text-align: center;
+      margin: 0 0 0.55rem;
+      color: var(--ink);
+    }
+    .about-hero p {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 420px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+    .about-hero-mark {
+      position: absolute;
+      right: 0;
+      top: 1.2rem;
+      writing-mode: vertical-rl;
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      color: rgba(34, 32, 30, 0.18);
+      font-weight: 600;
+      user-select: none;
+      pointer-events: none;
+    }
+    @media (max-width: 720px) {
+      .about-hero-mark { display: none; }
+    }
+
+    /* Story — long-form card */
+    .about-story {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 2rem 2rem 1.85rem;
+      margin-bottom: 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .about-story::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--accent), rgba(217,79,92,0.15));
+    }
+    .about-story-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 0.85rem;
+    }
+    .about-story-label i {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: block;
+    }
+    .about-story h3 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin: 0 0 1rem;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    .about-story-body p {
+      color: #4A453F;
+      line-height: 1.95;
+      margin: 0 0 0.95rem;
+      font-size: 0.95rem;
+    }
+    .about-story-body p:last-child { margin-bottom: 0; }
+
+    /* Principle chips */
+    .about-principles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin: 1.5rem 0 0.25rem;
+    }
+    .about-principle {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem 0.9rem 0.95rem;
+      text-align: left;
+    }
+    .about-principle .ico {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
       font-size: 1rem;
-      margin-bottom: 0.4rem;
+      margin-bottom: 0.55rem;
+      background: rgba(217,79,92,0.08);
     }
-    .feature-item p {
-      font-size: 0.85rem;
-      color: var(--haze);
+    .about-principle h4 {
+      font-size: 0.92rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+      color: var(--ink);
+    }
+    .about-principle p {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.55;
       margin: 0;
     }
-    @media (max-width: 768px) {
-      .features-grid { grid-template-columns: 1fr; }
+    @media (max-width: 720px) {
+      .about-principles { grid-template-columns: 1fr; }
+      .about-story { padding: 1.4rem 1.2rem 1.3rem; }
     }
+
+    /* Section head */
+    .about-section-head {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin: 2.25rem 0 1rem;
+    }
+    .about-section-head h3 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--ink);
+    }
+    .about-section-head span {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .about-section-head::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+      align-self: center;
+    }
+
+    /* Contact channels */
+    .about-channels-lead {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 0 1rem;
+      line-height: 1.7;
+    }
+    .about-channels {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .about-channel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1.1rem 1rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      min-height: 96px;
+    }
+    .about-channel:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    .about-channel .tag {
+      font-size: 10.5px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .about-channel .label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink);
+      word-break: break-all;
+      line-height: 1.4;
+    }
+    .about-channel .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: auto;
+    }
+    /* fallback when settings inject plain .social-link */
+    .about-channels .social-link {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1.1rem 1rem;
+      text-decoration: none;
+      color: var(--ink);
+      font-weight: 500;
+      transition: border-color 0.18s ease;
+      justify-content: center;
+      min-height: 96px;
+    }
+    .about-channels .social-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    @media (max-width: 720px) {
+      .about-channels { grid-template-columns: 1fr; }
+    }
+
+    /* Letter form */
+    .about-letter {
+      background: #FFFCF7;
+      border: 1px solid var(--line);
+      border-radius: 4px 4px 12px 12px;
+      padding: 1.75rem 1.6rem 1.6rem;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+    .about-letter::before {
+      content: 'LETTER';
+      display: block;
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .about-letter-head {
+      text-align: center;
+      margin-bottom: 1.35rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px dashed #C9C2B6;
+    }
+    .about-letter-head h4 {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 0.3rem;
+      color: var(--ink);
+    }
+    .about-letter-head p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .about-letter .form-group { margin-bottom: 1rem; }
+    .about-letter label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.02em;
+    }
+    .about-letter .form-input {
+      width: 100%;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.92rem;
+      color: var(--ink);
+      font-family: inherit;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      outline: none;
+    }
+    .about-letter .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(217,79,92,0.1);
+    }
+    .about-letter .form-input::placeholder { color: #B0A89C; }
+    .about-letter textarea.form-input {
+      resize: vertical;
+      min-height: 120px;
+      line-height: 1.7;
+    }
+    .about-letter .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+    @media (max-width: 560px) {
+      .about-letter .form-row { grid-template-columns: 1fr; }
+    }
+    .about-letter-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+      flex-wrap: wrap;
+    }
+    .about-letter .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    .about-letter .btn-primary:hover { background: var(--accent-dark); }
+    .about-letter .btn-primary:active { transform: scale(0.98); }
+    .about-letter .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: default;
+      transform: none;
+    }
+    .about-letter-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 220px;
+    }
+    @media (max-width: 560px) {
+      .about-letter-note { max-width: none; }
+    }
+
+    /* Soft footer strip */
+    .about-closing {
+      margin: 1.75rem 0 0.5rem;
+      text-align: center;
+      padding: 1.25rem 1rem 0.5rem;
+      border-top: 1px dashed #C9C2B6;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.7;
+    }
+    .about-closing strong {
+      color: var(--ink);
+      font-weight: 600;
+      font-family: 'Noto Serif SC', Georgia, serif;
+    }
+
+    /* Hide legacy site-wide styles that clash */
+    .about-shell .hero { display: none; }
   </style>
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <section class="hero">
+  <!-- Keep hidden original hero nodes for settings API hooks -->
+  <section class="hero" style="display:none;" aria-hidden="true">
     <h1 id="heroTitle" class="settings-pending" data-i18n="contact.heroTitle">关于 f7goods</h1>
     <p id="heroSubtitle" class="settings-pending" data-i18n="contact.heroSubtitle">连接创作者与爱好者的同人周边展示平台</p>
   </section>
 
   <main class="main-content">
-    <div class="about-section">
+    <div class="about-shell">
 
-      <div class="about-card">
+      <header class="about-hero">
+        <div class="about-hero-mark">ABOUT · CONTACT</div>
+        <div class="about-hero-rule"><span>F7GOODS</span></div>
+        <h1 id="aboutDisplayTitle">关于 f7goods</h1>
+        <p id="aboutDisplaySubtitle">连接创作者与爱好者的同人周边展示平台</p>
+      </header>
+
+      <article class="about-story">
+        <div class="about-story-label"><i></i> OUR STORY</div>
         <h3 id="storyTitle" class="settings-pending">我们的故事</h3>
-        <div id="storyContent" class="settings-pending">
+        <div id="storyContent" class="about-story-body settings-pending">
           <p>f7goods 诞生于对同人创作的热爱。我们相信，每一件同人作品背后都凝聚着创作者的心血与才华——从精心雕琢的手办到反复打磨的音乐编曲，从细腻动人的同人漫画到独具匠心的周边设计。</p>
           <p>我们建立这个平台，是为了让更多优秀的作品被看见，让创作者与爱好者之间建立更紧密的联系。无论你是资深收藏家还是刚刚踏入同人世界的新朋友，这里都有值得你探索的精彩。</p>
         </div>
+
+        <div class="about-principles" aria-label="平台原则">
+          <div class="about-principle">
+            <div class="ico" aria-hidden="true">✦</div>
+            <h4>看见作品</h4>
+            <p>把同人创作认真陈列，而不是埋在信息流里。</p>
+          </div>
+          <div class="about-principle">
+            <div class="ico" aria-hidden="true">◎</div>
+            <h4>连接双方</h4>
+            <p>作者与爱好者之间，建立清晰、可信任的通路。</p>
+          </div>
+          <div class="about-principle">
+            <div class="ico" aria-hidden="true">⌁</div>
+            <h4>现场友好</h4>
+            <p>ONLY 专场、购物清单，为展会现场准备。</p>
+          </div>
+        </div>
+      </article>
+
+      <div class="about-section-head">
+        <h3 id="contactTitle" class="settings-pending" data-i18n="contact.title">联系我们</h3>
+        <span>REACH US</span>
+      </div>
+      <p id="contactContent" class="about-channels-lead settings-pending" data-i18n="contact.subtitle">有任何问题、合作意向或建议，欢迎通过以下方式联系我们：</p>
+      <div class="about-channels settings-pending" id="contactLinksContainer">
+        <a href="#" class="about-channel" target="_blank" rel="noopener noreferrer">
+          <span class="tag">SOCIAL</span>
+          <span class="label">🐦 Twitter / X</span>
+          <span class="hint">动态与公告</span>
+        </a>
+        <a href="#" class="about-channel" target="_blank" rel="noopener noreferrer">
+          <span class="tag">EMAIL</span>
+          <span class="label">📧 support@f7goods.com</span>
+          <span class="hint">合作与反馈</span>
+        </a>
+        <a href="#" class="about-channel" target="_blank" rel="noopener noreferrer">
+          <span class="tag">WECHAT</span>
+          <span class="label">💬 WeChat: f7goods</span>
+          <span class="hint">日常沟通</span>
+        </a>
       </div>
 
-      <div class="about-card">
-        <h3 id="contactTitle" class="settings-pending" data-i18n="contact.title">联系我们</h3>
-        <p id="contactContent" class="settings-pending" data-i18n="contact.subtitle">有任何问题、合作意向或建议，欢迎通过以下方式联系我们：</p>
-        <div class="social-links settings-pending" id="contactLinksContainer" style="justify-content:flex-start;margin-top:1rem;">
-          <a href="#" class="social-link">🐦 Twitter / X</a>
-          <a href="#" class="social-link">📧 support@f7goods.com</a>
-          <a href="#" class="social-link">💬 WeChat: f7goods</a>
+      <section class="about-letter" aria-label="留言表单">
+        <div class="about-letter-head">
+          <h4>写一封信给我们</h4>
+          <p>咨询、合作、建议都可以。带 * 为必填。</p>
         </div>
-
-        <form id="contactForm" style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+        <form id="contactForm">
           <div class="form-row">
             <div class="form-group">
               <label data-i18n="contact.name">昵称</label>
@@ -116,12 +494,20 @@
           </div>
           <div class="form-group">
             <label data-i18n="contact.message">消息内容 <span style="color:var(--accent)">*</span></label>
-            <textarea class="form-input" id="contactMessage" required placeholder="请输入您想说的话..." style="min-height:120px;" maxlength="1000" oninput="updateCharCount()" data-i18n-placeholder="contact.messagePlaceholder"></textarea>
+            <textarea class="form-input" id="contactMessage" required placeholder="请输入您想说的话..." maxlength="1000" oninput="updateCharCount()" data-i18n-placeholder="contact.messagePlaceholder"></textarea>
             <div id="charCount" style="text-align:right;font-size:0.8rem;color:var(--haze);margin-top:0.3rem;">0 / 1000</div>
           </div>
-          <button type="submit" class="btn btn-primary" data-i18n="contact.submitBtn">发送消息</button>
+          <div class="about-letter-foot">
+            <button type="submit" class="btn-primary" data-i18n="contact.submitBtn">发送消息</button>
+            <p class="about-letter-note">我们会在方便时尽快回复。请勿提交支付、账号等敏感信息。</p>
+          </div>
         </form>
-      </div>
+      </section>
+
+      <p class="about-closing">
+        <strong>f7goods</strong><br>
+        愿每一件同人作品，都被认真对待。
+      </p>
 
     </div>
   </main>
@@ -143,8 +529,14 @@
     async function loadAboutPage() {
       await loadSettingsFromAPI();
       const ps = getPageSettings('about');
-      if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
-      if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
+      if (ps.heroTitle) {
+        document.getElementById('heroTitle').textContent = ps.heroTitle;
+        document.getElementById('aboutDisplayTitle').textContent = ps.heroTitle;
+      }
+      if (ps.heroSubtitle) {
+        document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
+        document.getElementById('aboutDisplaySubtitle').textContent = ps.heroSubtitle;
+      }
       applyHeroBg('about');
       if (ps.storyTitle) document.getElementById('storyTitle').textContent = ps.storyTitle;
       if (ps.storyContent) {
@@ -156,15 +548,23 @@
       document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
       document.querySelectorAll('.hero, .page-header').forEach(el => el.style.visibility = '');
 
-      // Render contact links
+      // Render contact links as channel cards
       if (ps.contactLinks && ps.contactLinks.length > 0) {
         const container = document.getElementById('contactLinksContainer');
-        container.innerHTML = ps.contactLinks.map(link => {
+        container.innerHTML = ps.contactLinks.map((link, i) => {
           let url = link.url || '#';
           if (url && url !== '#' && !url.startsWith('http') && !url.startsWith('mailto:') && !url.startsWith('#')) {
             url = 'https://' + url;
           }
-          return `<a href="${url}" class="social-link" target="_blank" rel="noopener noreferrer">${link.icon || ''} ${link.text}</a>`;
+          const tags = ['SOCIAL', 'EMAIL', 'WECHAT'];
+          const hints = ['动态与公告', '合作与反馈', '日常沟通'];
+          const tag = tags[i] || 'LINK';
+          const hint = hints[i] || '打开链接';
+          return `<a href="${url}" class="about-channel" target="_blank" rel="noopener noreferrer">
+            <span class="tag">${tag}</span>
+            <span class="label">${link.icon || ''} ${escapeHtml(link.text)}</span>
+            <span class="hint">${hint}</span>
+          </a>`;
         }).join('');
       }
     }
@@ -193,6 +593,7 @@
         if (data.success) {
           showToast('消息已发送，感谢您的反馈！', 'success');
           e.target.reset();
+          updateCharCount();
         } else {
           showToast(data.error || '发送失败，请重试', 'error');
         }
