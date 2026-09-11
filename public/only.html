@@ -88,7 +88,7 @@
     }
     .only-banners {
       display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory;
-      padding-bottom: 2px; margin-bottom: 10px;
+      padding-bottom: 2px; margin: 10px 0;
       -webkit-overflow-scrolling: touch;
     }
     .only-banners::-webkit-scrollbar { height: 4px; }
@@ -605,8 +605,8 @@
               </div>
               <svg class="only-booth-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
             </div>
+            ${bannersHtml}
             <div class="only-booth-body">
-              ${bannersHtml}
               ${introHtml}
               <div class="only-sec">
                 <div class="only-sec-label">周边</div>
