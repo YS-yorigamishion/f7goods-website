@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods �?作者管�?/title>
-  <meta name="description" content="f7goods 作者管理平台，管理您的同人作品、活动、企划和动态�?>
+  <title>f7goods — 作者管理</title>
+  <meta name="description" content="f7goods 作者管理平台，管理您的同人作品、活动、企划和动态。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911c">
+  <link rel="stylesheet" href="/css/style.css?v=20260912b">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
 </head>
 <body>
@@ -16,7 +16,7 @@
   <div id="authScreen" class="auth-page">
     <div class="auth-card">
       <h1>f7goods</h1>
-      <p class="subtitle">作者管�?/p>
+      <p class="subtitle">作者管理</p>
       <div class="auth-tabs">
         <div class="auth-tab active" onclick="switchAuthTab('login')">登录</div>
         <div class="auth-tab" onclick="switchAuthTab('register')">注册</div>
@@ -30,12 +30,12 @@
       <!-- Login Form -->
       <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label>用户�?/label>
+          <label>用户名</label>
           <input type="text" class="form-input" name="username" required placeholder="请输入用户名">
         </div>
         <div class="form-group">
           <label>密码</label>
-          <input type="password" class="form-input" name="password" required placeholder="请输入密�?>
+          <input type="password" class="form-input" name="password" required placeholder="请输入密码">
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;">登录</button>
       </form>
@@ -43,19 +43,19 @@
       <!-- Register Form -->
       <form id="registerForm" style="display:none;" onsubmit="handleRegister(event)">
         <div class="form-group">
-          <label>作者名�?<span style="color:var(--accent)">*</span></label>
-          <input type="text" class="form-input" name="authorName" id="regAuthorName" required placeholder="输入你的作�?社团名称">
+          <label>作者名称 <span style="color:var(--accent)">*</span></label>
+          <input type="text" class="form-input" name="authorName" id="regAuthorName" required placeholder="输入你的作者/社团名称">
         </div>
         <div class="form-group">
-          <label>用户�?<span style="color:var(--accent)">*</span></label>
-          <input type="text" class="form-input" name="username" id="regUsername" required placeholder="设置登录用户�?>
+          <label>用户名 <span style="color:var(--accent)">*</span></label>
+          <input type="text" class="form-input" name="username" id="regUsername" required placeholder="设置登录用户名">
         </div>
         <div class="form-group">
           <label>密码 <span style="color:var(--accent)">*</span></label>
-          <input type="password" class="form-input" name="password" required placeholder="至少8�? minlength="8">
+          <input type="password" class="form-input" name="password" required placeholder="至少8位" minlength="8">
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;">注册</button>
-        <p style="margin-top:0.75rem;font-size:0.75rem;color:var(--muted);text-align:center;line-height:1.5;">注册后即可登录上传作品；作品需管理员审核通过后才会在前台展示�?/p>
+        <p style="margin-top:0.75rem;font-size:0.75rem;color:var(--muted);text-align:center;line-height:1.5;">注册后即可登录上传作品；作品需管理员审核通过后才会在前台展示。</p>
       </form>
     </div>
   </div>
@@ -66,16 +66,16 @@
 
     <div class="mgmt-brand">
       <a href="/" class="mgmt-brand-mark" id="mgmtBrandMark" aria-label="f7goods">f7</a>
-      <div class="mgmt-brand-text">f7goods<span>作者管�?/span></div>
+      <div class="mgmt-brand-text">f7goods<span>作者管理</span></div>
     </div>
 
     <header class="mgmt-header">
       <div class="mgmt-header-left">
-        <button type="button" class="mgmt-icon-btn mgmt-menu-toggle" id="mgmtMenuToggle" onclick="toggleMgmtSidebar()" aria-label="展开或收起菜�? aria-expanded="false">
+        <button type="button" class="mgmt-icon-btn mgmt-menu-toggle" id="mgmtMenuToggle" onclick="toggleMgmtSidebar()" aria-label="展开或收起菜单" aria-expanded="false">
           <svg class="bars" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
           <svg class="xmark" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
-        <h2 id="mgmtTitle">作者管�?/h2>
+        <h2 id="mgmtTitle">作者管理</h2>
       </div>
       <div class="mgmt-header-right">
         <button type="button" class="mgmt-icon-btn" onclick="showNotifications()" title="通知" aria-label="通知">
@@ -85,10 +85,10 @@
         <div class="mgmt-account" id="accountSwitcher">
           <select id="accountSelect" onchange="switchAuthorAccount(this.value)" aria-label="切换管理账号"></select>
           <button type="button" class="mgmt-account-chip" onclick="toggleMgmtDropdown('acctMenu')" aria-haspopup="true" aria-label="切换管理账号">
-            <span class="mgmt-avatar" id="acctAvatar">�?/span>
+            <span class="mgmt-avatar" id="acctAvatar">作</span>
             <span class="mgmt-account-meta">
-              <span class="nm" id="mgmtAuthorName">作�?/span>
-              <span class="sub" id="acctSub">本账�?/span>
+              <span class="nm" id="mgmtAuthorName">作者</span>
+              <span class="sub" id="acctSub">本账号</span>
             </span>
             <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
           </button>
@@ -96,9 +96,9 @@
             <div class="head" id="acctMenuHead">可管理的账号</div>
             <div id="acctList"></div>
             <div class="divider"></div>
-            <button type="button" onclick="switchMgmtTab('profile');toggleMgmtDropdown('acctMenu')">作者资�?/button>
+            <button type="button" onclick="switchMgmtTab('profile');toggleMgmtDropdown('acctMenu')">作者资料</button>
             <button type="button" onclick="switchMgmtTab('password');toggleMgmtDropdown('acctMenu')">修改密码</button>
-            <button type="button" onclick="authorLogout()">退出登�?/button>
+            <button type="button" onclick="authorLogout()">退出登录</button>
           </div>
         </div>
       </div>
@@ -132,7 +132,7 @@
         </button>
         <button type="button" class="mgmt-nav-item" data-tab="my-updates" onclick="switchMgmtTab('my-updates')">
           <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg>
-          我的动�?
+          我的动态
         </button>
         <button type="button" class="mgmt-nav-item" data-tab="overview" onclick="switchMgmtTab('overview')">
           <svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20v-6M12 20v-11M17 20v-4"/></svg>
@@ -177,7 +177,7 @@
         <div class="mgmt-nav-label">账号</div>
         <button type="button" class="mgmt-nav-item" data-tab="profile" onclick="switchMgmtTab('profile')">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
-          作者资�?
+          作者资料
         </button>
         <button type="button" class="mgmt-nav-item" data-tab="password" onclick="switchMgmtTab('password')">
           <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
@@ -196,33 +196,33 @@
         </button>
         <button type="button" class="mgmt-side-action danger" onclick="authorLogout()">
           <svg viewBox="0 0 24 24"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
-          退出登�?
+          退出登录
         </button>
       </div>
     </nav>
 
     <div class="mgmt-content">
       <div class="mgmt-actas" id="actasBanner">
-        <span>正在管理 <strong id="actasName">�?/strong>（非本账号）</span>
-        <button type="button" onclick="switchAuthorAccount(authorCircleId)">切回本账�?/button>
+        <span>正在管理 <strong id="actasName">—</strong>（非本账号）</span>
+        <button type="button" onclick="switchAuthorAccount(authorCircleId)">切回本账号</button>
       </div>
 
       <!-- Profile Tab -->
       <div id="tab-profile" class="mgmt-section">
         <div class="mgmt-card">
-          <h3 style="margin-bottom:1rem;">作者资�?/h3>
+          <h3 style="margin-bottom:1rem;">作者资料</h3>
           <div class="form-group">
-            <label>作者名�?/label>
+            <label>作者名称</label>
             <input class="form-input" id="pName">
           </div>
           <div class="form-group">
             <label>分类</label>
             <select class="form-input" id="pCategory">
-              <option value="">未分�?/option>
+              <option value="">未分类</option>
             </select>
           </div>
           <div class="form-group">
-            <label>简�?/label>
+            <label>简介</label>
             <textarea class="form-input" id="pDesc" style="min-height:100px;"></textarea>
           </div>
           <div class="form-row">
@@ -230,11 +230,11 @@
               <label>联系方式类型</label>
               <select class="form-input" id="pContactType">
                 <option value="qq">QQ</option>
-                <option value="qqGroup">QQ�?/option>
+                <option value="qqGroup">QQ群</option>
                 <option value="wechat">微信</option>
                 <option value="weibo">微博</option>
-                <option value="bilibili">B�?/option>
-                <option value="custom">自定义链�?/option>
+                <option value="bilibili">B站</option>
+                <option value="custom">自定义链接</option>
               </select>
             </div>
             <div class="form-group">
@@ -244,7 +244,7 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>联系显示�?/label>
+              <label>联系显示名</label>
               <input class="form-input" id="pContactLabel" placeholder="如：QQ联系">
             </div>
             <div class="form-group">
@@ -253,7 +253,7 @@
             </div>
           </div>
           <div class="form-group">
-            <label>网站显示�?/label>
+            <label>网站显示名</label>
             <input class="form-input" id="pWebsiteLabel" placeholder="如：访问官网">
           </div>
           <div class="form-group">
@@ -262,16 +262,16 @@
             <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('pLogoPreview', true)">从图片库选择</button>
           </div>
           <div class="form-group">
-            <label>卡片封面�?/label>
-            <p style="margin:0 0 0.4rem;font-size:0.75rem;color:var(--haze);">用于作者列表页卡片顶部；仅可选自己图片库中的图片，不设置则默认使用头像�?/p>
+            <label>卡片封面图</label>
+            <p style="margin:0 0 0.4rem;font-size:0.75rem;color:var(--haze);">用于作者列表页卡片顶部；仅可选自己图片库中的图片，不设置则默认使用头像。</p>
             <div id="pCardCoverPreview" style="margin-bottom:0.5rem;"></div>
             <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
               <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('pCardCoverPreview', true)">从图片库选择</button>
-              <button type="button" class="btn-sm" style="background:var(--border);color:var(--ink);" onclick="document.getElementById('pCardCoverPreview').innerHTML=''">清除（用头像�?/button>
+              <button type="button" class="btn-sm" style="background:var(--border);color:var(--ink);" onclick="document.getElementById('pCardCoverPreview').innerHTML=''">清除（用头像）</button>
             </div>
           </div>
           <div class="form-group">
-            <label>作者图�?/label>
+            <label>作者图片</label>
             <div id="pImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;"></div>
             <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('pImagesPreview')">从图片库选择</button>
           </div>
@@ -309,7 +309,7 @@
               <div id="categoryStats" style="font-size:0.8rem;"></div>
             </div>
             <div>
-              <h4 style="font-size:0.85rem;color:var(--haze);margin-bottom:0.5rem;">状态分�?/h4>
+              <h4 style="font-size:0.85rem;color:var(--haze);margin-bottom:0.5rem;">状态分布</h4>
               <div id="statusStats" style="font-size:0.8rem;"></div>
             </div>
           </div>
@@ -338,32 +338,32 @@
           </div>
           <input type="file" id="authorWorksImportInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importWorksFromExcel(this)">
           <div id="authorBatchBar" class="mgmt-batch-bar">
-            <span class="count" id="authorBatchCount">已�?0 �?/span>
+            <span class="count" id="authorBatchCount">已选 0 项</span>
             <button id="authorBatchEditBtn" class="btn" style="background:var(--accent-alt);color:white;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openAuthorBatchEdit()">批量编辑</button>
             <button id="authorBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="batchDeleteWorks()">批量删除</button>
             <span style="flex:1"></span>
             <button type="button" class="btn" style="background:transparent;border:none;color:var(--muted);font-size:0.8rem;" onclick="clearAuthorWorkSelection()">取消选择</button>
           </div>
         </div>
-        <!-- 分类筛�?-->
+        <!-- 分类筛选 -->
         <div id="authorCategoryFilters" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.8rem;"></div>
-        <!-- 状态筛�?-->
+        <!-- 状态筛选 -->
         <div id="authorStatusFilters" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.8rem;"></div>
-        <!-- 搜索、排序、全�?-->
+        <!-- 搜索、排序、全选 -->
         <div style="display:flex;gap:0.8rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
-          <input type="text" class="form-input" id="authorWorksSearch" placeholder="搜索标题、标签、描�?.." oninput="filterAuthorWorks()" style="flex:1;min-width:180px;font-size:0.85rem;padding:0.35rem 0.6rem;">
+          <input type="text" class="form-input" id="authorWorksSearch" placeholder="搜索标题、标签、描述..." oninput="filterAuthorWorks()" style="flex:1;min-width:180px;font-size:0.85rem;padding:0.35rem 0.6rem;">
           <select class="form-input" id="authorWorksSort" onchange="sortAuthorWorks()" style="width:auto;font-size:0.85rem;padding:0.35rem 0.6rem;min-width:120px;">
-            <option value="date-desc" selected>最新上�?/option>
-            <option value="date-asc">发售时间 �?/option>
-            <option value="default">自定义排�?/option>
-            <option value="likes-desc">喜爱�?�?/option>
-            <option value="likes-asc">喜爱�?�?/option>
-            <option value="wants-desc">想要�?�?/option>
-            <option value="wants-asc">想要�?�?/option>
+            <option value="date-desc" selected>最新上传</option>
+            <option value="date-asc">发售时间 ↑</option>
+            <option value="default">自定义排序</option>
+            <option value="likes-desc">喜爱数 ↓</option>
+            <option value="likes-asc">喜爱数 ↑</option>
+            <option value="wants-desc">想要数 ↓</option>
+            <option value="wants-asc">想要数 ↑</option>
           </select>
           <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;white-space:nowrap;">
             <input type="checkbox" id="selectAllAuthorWorks" onchange="toggleSelectAllAuthorWorks()" style="width:16px;height:16px;accent-color:var(--accent);">
-            全�?
+            全选
           </label>
         </div>
         <div id="worksGrid" class="works-grid"></div>
@@ -381,18 +381,18 @@
             <div class="form-group">
               <label>分类</label>
               <select class="form-input" id="batchCategory">
-                <option value="">�?不修�?�?/option>
+                <option value="">— 不修改 —</option>
               </select>
             </div>
             <div class="form-group">
-              <label>状�?/label>
+              <label>状态</label>
               <select class="form-input" id="batchStatus">
-                <option value="">�?不修�?�?/option>
+                <option value="">— 不修改 —</option>
               </select>
             </div>
             <div class="form-group">
               <label>价格</label>
-              <input class="form-input" id="batchPrice" placeholder="留空不修�?>
+              <input class="form-input" id="batchPrice" placeholder="留空不修改">
             </div>
             <div class="form-group">
               <label>发售日期</label>
@@ -403,29 +403,29 @@
               <input type="date" class="form-input" id="batchEndDate">
             </div>
             <div class="form-group">
-              <label>标签（英文逗号分隔，留空不修改�?/label>
+              <label>标签（英文逗号分隔，留空不修改）</label>
               <input class="form-input" id="batchTags" placeholder="标签1, 标签2">
             </div>
             <div class="form-group">
-              <label>描述（留空不修改�?/label>
-              <textarea class="form-input" id="batchDescription" style="min-height:60px;" placeholder="留空不修�?></textarea>
+              <label>描述（留空不修改）</label>
+              <textarea class="form-input" id="batchDescription" style="min-height:60px;" placeholder="留空不修改"></textarea>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label>联系方式类型</label>
                 <select class="form-input" id="batchContactType">
-                  <option value="">�?不修�?�?/option>
+                  <option value="">— 不修改 —</option>
                   <option value="qq">QQ</option>
-                  <option value="qqGroup">QQ�?/option>
+                  <option value="qqGroup">QQ群</option>
                   <option value="wechat">微信</option>
                   <option value="weibo">微博</option>
-                  <option value="bilibili">B�?/option>
-                  <option value="custom">自定义链�?/option>
+                  <option value="bilibili">B站</option>
+                  <option value="custom">自定义链接</option>
                 </select>
               </div>
               <div class="form-group">
                 <label>联系方式</label>
-                <input class="form-input" id="batchContactValue" placeholder="留空不修�?>
+                <input class="form-input" id="batchContactValue" placeholder="留空不修改">
               </div>
             </div>
             <div class="form-group">
@@ -435,19 +435,19 @@
               </label>
             </div>
             <div class="form-group" id="batchCommissionedByGroup" style="display:none;">
-              <label>约稿作�?/label>
-              <input class="form-input" id="batchCommissionedBy" placeholder="约稿作者名�?>
+              <label>约稿作者</label>
+              <input class="form-input" id="batchCommissionedBy" placeholder="约稿作者名字">
             </div>
             <div class="form-group">
               <label>关联活动</label>
               <div id="batchEventsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;font-size:0.85rem;">
-                <p style="color:var(--haze);">加载�?..</p>
+                <p style="color:var(--haze);">加载中...</p>
               </div>
             </div>
             <div class="form-group">
               <label>关联企划</label>
               <div id="batchProjectsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;font-size:0.85rem;">
-                <p style="color:var(--haze);">加载�?..</p>
+                <p style="color:var(--haze);">加载中...</p>
               </div>
             </div>
             <div style="display:flex;gap:0.5rem;margin-top:1rem;">
@@ -498,8 +498,8 @@
       <!-- My Updates Tab -->
       <div id="tab-my-updates" class="mgmt-section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;">我的动�?/h3>
-          <button class="btn btn-primary" onclick="openMyUpdateForm()">+ 发布动�?/button>
+          <h3 style="margin:0;">我的动态</h3>
+          <button class="btn btn-primary" onclick="openMyUpdateForm()">+ 发布动态</button>
         </div>
         <div id="myUpdatesGrid" class="works-grid"></div>
       </div>
@@ -508,7 +508,7 @@
       <div id="tab-events" class="mgmt-section">
         <div class="mgmt-card">
           <h3 style="margin-bottom:1rem;">活动关联</h3>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">勾选要关联的活动，取消勾选可解除关联�?/p>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">勾选要关联的活动，取消勾选可解除关联。</p>
           <div id="eventsList"></div>
         </div>
       </div>
@@ -517,7 +517,7 @@
       <div id="tab-projects" class="mgmt-section">
         <div class="mgmt-card">
           <h3 style="margin-bottom:1rem;">企划关联</h3>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">勾选要关联的企划，取消勾选可解除关联�?/p>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">勾选要关联的企划，取消勾选可解除关联。</p>
           <div id="projectsList"></div>
         </div>
       </div>
@@ -526,7 +526,7 @@
       <div id="tab-images" class="mgmt-section">
         <div class="mgmt-card">
           <h3 style="margin-bottom:1rem;">图片管理</h3>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">管理您上传的所有图片。点击图片可复制链接。超�?MB的图片在批量上传时会被跳过�?/p>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">管理您上传的所有图片。点击图片可复制链接。超过5MB的图片在批量上传时会被跳过。</p>
           <div style="display:flex;gap:0.5rem;margin-bottom:1rem;align-items:center;flex-wrap:wrap;">
             <input type="file" id="batchUploadInput" accept="image/*" multiple style="font-size:0.85rem;">
             <button class="btn btn-primary" onclick="batchUploadAuthorImages()">批量上传</button>
@@ -542,16 +542,16 @@
         <!-- Unused Images -->
         <div class="mgmt-card" style="margin-top:1.5rem;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-            <h3 style="margin:0;">未使用图片清�?/h3>
+            <h3 style="margin:0;">未使用图片清理</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;">
               <label id="selectAllUnusedWrap" style="display:none;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;">
-                <input type="checkbox" id="selectAllUnused" onchange="toggleSelectAllUnused()" style="width:14px;height:14px;accent-color:var(--accent);"> 全�?
+                <input type="checkbox" id="selectAllUnused" onchange="toggleSelectAllUnused()" style="width:14px;height:14px;accent-color:var(--accent);"> 全选
               </label>
-              <button class="btn" onclick="loadUnusedAuthorImages()" style="font-size:0.85rem;">刷新检�?/button>
+              <button class="btn" onclick="loadUnusedAuthorImages()" style="font-size:0.85rem;">刷新检测</button>
               <button class="btn" id="cleanupUnusedBtn" onclick="cleanupUnusedAuthorImages()" style="display:none;background:var(--accent);color:white;font-size:0.85rem;">清理选中</button>
             </div>
           </div>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:0.8rem;">检测您上传的图片中未被任何作品、活动、企划、动态引用的图片。清理前请确认不再需要这些图片�?/p>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:0.8rem;">检测您上传的图片中未被任何作品、活动、企划、动态引用的图片。清理前请确认不再需要这些图片。</p>
           <div id="unusedImageCount"></div>
           <div id="unusedImageGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.8rem;margin-top:0.8rem;"></div>
         </div>
@@ -564,15 +564,15 @@
           <div id="pwError" class="auth-error"></div>
           <div id="pwSuccess" class="auth-success"></div>
           <div class="form-group">
-            <label>旧密�?/label>
+            <label>旧密码</label>
             <input type="password" class="form-input" id="pwOld" required>
           </div>
           <div class="form-group">
-            <label>新密�?/label>
-            <input type="password" class="form-input" id="pwNew" required minlength="6" placeholder="至少6�?>
+            <label>新密码</label>
+            <input type="password" class="form-input" id="pwNew" required minlength="6" placeholder="至少6位">
           </div>
           <div class="form-group">
-            <label>确认新密�?/label>
+            <label>确认新密码</label>
             <input type="password" class="form-input" id="pwConfirm" required>
           </div>
           <button class="btn btn-primary" onclick="changeAuthorPassword()">修改密码</button>
@@ -583,9 +583,9 @@
       <div id="tab-notifications" class="mgmt-section">
         <div class="mgmt-card">
           <h3 style="margin-bottom:1rem;">审核通知</h3>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看您的作品/活动/企划/动态的审核结果�?/p>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看您的作品/活动/企划/动态的审核结果。</p>
           <div id="authorNotificationsContainer" style="max-height:500px;overflow-y:auto;">
-            <p style="color:var(--haze);text-align:center;padding:2rem;">加载�?..</p>
+            <p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>
           </div>
         </div>
       </div>
@@ -594,9 +594,9 @@
       <div id="tab-author-announcements" class="mgmt-section">
         <div class="mgmt-card">
           <h3 style="margin-bottom:1rem;">管理公告</h3>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看管理员发送的公告通知�?/p>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看管理员发送的公告通知。</p>
           <div id="authorAnnouncementsContainer" style="max-height:500px;overflow-y:auto;">
-            <p style="color:var(--haze);text-align:center;padding:2rem;">加载�?..</p>
+            <p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>
           </div>
         </div>
       </div>
@@ -608,7 +608,7 @@
           <h3 id="aaPopupTitle" style="margin-bottom:1rem;"></h3>
           <div id="aaPopupContent" style="white-space:pre-wrap;line-height:1.8;"></div>
           <div style="text-align:right;margin-top:1.5rem;">
-            <button class="btn btn-primary" onclick="closeAaPopup()">知道�?/button>
+            <button class="btn btn-primary" onclick="closeAaPopup()">知道了</button>
           </div>
         </div>
       </div>
@@ -617,9 +617,9 @@
       <div id="tab-history" class="mgmt-section">
         <div class="mgmt-card">
           <h3 style="margin-bottom:1rem;">操作日志</h3>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看您的最近操作记录�?/p>
+          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看您的最近操作记录。</p>
           <div id="authorHistoryContainer" style="max-height:500px;overflow-y:auto;">
-            <p style="color:var(--haze);text-align:center;padding:2rem;">加载�?..</p>
+            <p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>
           </div>
         </div>
       </div>
@@ -627,7 +627,7 @@
   </div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260912a"></script>
+  <script src="/js/main.js?v=20260912b"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -733,7 +733,7 @@
       successEl.style.display = 'none';
 
       if (!form.authorName.value.trim()) {
-        errEl.textContent = '请输入作者名�?;
+        errEl.textContent = '请输入作者名称';
         errEl.style.display = 'block';
         return;
       }
@@ -754,7 +754,7 @@
           errEl.style.display = 'block';
           return;
         }
-        successEl.textContent = data.message || '注册成功，现在即可登录。上传的作品需管理员审核后才会展示�?;
+        successEl.textContent = data.message || '注册成功，现在即可登录。上传的作品需管理员审核后才会展示。';
         successEl.style.display = 'block';
         form.reset();
         setTimeout(() => switchAuthTab('login'), 1200);
@@ -775,11 +775,11 @@
 
     function setAvatarHtml(el, name, logo) {
       if (!el) return;
-      const letter = escapeHtml((name || '�?).slice(0, 1));
+      const letter = escapeHtml((name || '作').slice(0, 1));
       if (logo) {
         el.innerHTML = '<img src="' + escapeHtml(logo) + '" alt="" onerror="this.replaceWith(document.createTextNode(\'' + letter.replace(/'/g, '') + '\'))">';
       } else {
-        el.textContent = (name || '�?).slice(0, 1);
+        el.textContent = (name || '作').slice(0, 1);
       }
     }
 
@@ -798,7 +798,7 @@
       const activeLogo = (cur && cur.logo) || (authorProfile && authorProfile.logo) || '';
 
       if (!cur) {
-        if (nameEl) nameEl.textContent = authorProfile?.name || '作�?;
+        if (nameEl) nameEl.textContent = authorProfile?.name || '作者';
         setAvatarHtml(avatarEl, authorProfile?.name, authorProfile?.logo || '');
         return;
       }
@@ -809,10 +809,10 @@
       }
       if (subEl) {
         if (actAs && authorCircleId && actAs !== authorCircleId) {
-          subEl.textContent = '代管�?;
+          subEl.textContent = '代管中';
           subEl.classList.add('actas');
         } else {
-          subEl.textContent = cur.isOwner ? '本账�? : '可编�?;
+          subEl.textContent = cur.isOwner ? '本账号' : '可编辑';
           subEl.classList.remove('actas');
         }
       }
@@ -830,15 +830,15 @@
         list.innerHTML = accessibleAccounts.map(a => {
           const isActive = a.id === currentId;
           const logo = a.logo || (isActive ? activeLogo : '');
-          const letter = escapeHtml((a.name || '�?).slice(0, 1));
+          const letter = escapeHtml((a.name || '作').slice(0, 1));
           const av = logo
             ? '<span class="mgmt-avatar"><img src="' + escapeHtml(logo) + '" alt="" onerror="this.replaceWith(document.createTextNode(\'' + letter.replace(/'/g, '') + '\'))"></span>'
             : '<span class="mgmt-avatar">' + letter + '</span>';
           return `<button type="button" class="acct-item${isActive ? ' current' : ''}" onclick="switchAuthorAccount('${escapeAttr(a.id)}');toggleMgmtDropdown('acctMenu')">
             ${av}
             <span class="info">
-              <span class="nm">${escapeHtml(a.name)}<span class="tag ${a.isOwner ? 'owner' : 'delegate'}">${a.isOwner ? '本账�? : '可编�?}</span></span>
-              <span class="hint">${a.isOwner ? '登录的主账号' : '已授权编辑此作者后�?}</span>
+              <span class="nm">${escapeHtml(a.name)}<span class="tag ${a.isOwner ? 'owner' : 'delegate'}">${a.isOwner ? '本账号' : '可编辑'}</span></span>
+              <span class="hint">${a.isOwner ? '登录的主账号' : '已授权编辑此作者后台'}</span>
             </span>
             <svg class="check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
           </button>`;
@@ -879,7 +879,7 @@
         const select = document.getElementById('accountSelect');
         if (select) {
           select.innerHTML = accessibleAccounts.map(a =>
-            `<option value="${a.id}" ${a.isActive ? 'selected' : ''}>${escapeHtml(a.name)}${a.isOwner ? ' (本账�?' : ''}</option>`
+            `<option value="${a.id}" ${a.isActive ? 'selected' : ''}>${escapeHtml(a.name)}${a.isOwner ? ' (本账号)' : ''}</option>`
           ).join('');
         }
         renderAccountChrome();
@@ -937,7 +937,7 @@
       if (body) opts.body = JSON.stringify(body);
       let res = await fetch(path, opts);
 
-      // Token过期时尝试刷�?
+      // Token过期时尝试刷新
       if (res.status === 401) {
         const refreshRes = await fetch('/api/author/refresh-token', {
           method: 'POST',
@@ -958,7 +958,7 @@
       if (res.status === 403) {
         const data = await res.json();
         if (data.needReapply) {
-          alert('您的作者账号已被管理员删除，请重新申请�?);
+          alert('您的作者账号已被管理员删除，请重新申请。');
           authorLogout();
           return null;
         }
@@ -980,7 +980,7 @@
       // Load categories
       await loadCategoriesFromAPI();
       const catSelect = document.getElementById('pCategory');
-      catSelect.innerHTML = '<option value="">未分�?/option>';
+      catSelect.innerHTML = '<option value="">未分类</option>';
       Object.entries(CIRCLE_CATEGORIES).forEach(([k, v]) => {
         catSelect.innerHTML += '<option value="' + k + '"' + (authorProfile.category === k ? ' selected' : '') + '>' + v + '</option>';
       });
@@ -1043,12 +1043,12 @@
           acc.logo = result.logo || '';
         }
         renderAccountChrome();
-        showToast('资料已保�?, 'success');
+        showToast('资料已保存', 'success');
       }
     }
 
     // Loading state helpers
-    function showLoading(message = '加载�?..') {
+    function showLoading(message = '加载中...') {
       const overlay = document.createElement('div');
       overlay.id = 'globalLoading';
       overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);z-index:9999;display:flex;align-items:center;justify-content:center;';
@@ -1087,7 +1087,7 @@
       if (categoryStats) {
         const categories = {};
         authorWorksData.forEach(w => {
-          const cat = CATEGORIES[w.category] || w.category || '未分�?;
+          const cat = CATEGORIES[w.category] || w.category || '未分类';
           categories[cat] = (categories[cat] || 0) + 1;
         });
         categoryStats.innerHTML = Object.entries(categories)
@@ -1101,7 +1101,7 @@
       if (statusStats) {
         const statuses = {};
         authorWorksData.forEach(w => {
-          const status = STATUS_LABELS[w.status] || w.status || '未设�?;
+          const status = STATUS_LABELS[w.status] || w.status || '未设置';
           statuses[status] = (statuses[status] || 0) + 1;
         });
         statusStats.innerHTML = Object.entries(statuses)
@@ -1114,20 +1114,20 @@
     function renderAuthorWorks(works) {
       const grid = document.getElementById('worksGrid');
       if (!works || works.length === 0) {
-        grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无作品，点击上方按钮创�?/p>';
+        grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无作品，点击上方按钮创建</p>';
         return;
       }
       grid.innerHTML = works.map((w, i) => {
         const hasImg = w.images && w.images.length > 0;
-        const approvalBadge = w.approvalStatus === 'approved' ? '<span style="position:absolute;top:8px;left:8px;background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;z-index:2;">�?已批�?/span>'
-          : w.approvalStatus === 'rejected' ? '<span style="position:absolute;top:8px;left:8px;background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;z-index:2;">已拒�?/span>'
-          : w.approvalStatus === 'pending' ? '<span style="position:absolute;top:8px;left:8px;background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;z-index:2;">待审�?/span>'
+        const approvalBadge = w.approvalStatus === 'approved' ? '<span style="position:absolute;top:8px;left:8px;background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;z-index:2;">✓ 已批准</span>'
+          : w.approvalStatus === 'rejected' ? '<span style="position:absolute;top:8px;left:8px;background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;z-index:2;">已拒绝</span>'
+          : w.approvalStatus === 'pending' ? '<span style="position:absolute;top:8px;left:8px;background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;z-index:2;">待审核</span>'
           : '';
         const rejectReasonHtml = w.approvalStatus === 'rejected' && w.rejectReason
           ? `<p style="color:var(--accent);font-size:0.7rem;margin-top:0.2rem;background:rgba(233,69,96,0.1);padding:0.2rem;border-radius:3px;">拒绝原因: ${escapeHtml(w.rejectReason)}</p>` : '';
         return `
         <div class="card" draggable="true" data-id="${w.id}" data-category="${w.category || ''}" data-status="${w.status || ''}" data-date="${w.releaseDate || ''}" data-likes="${w.likes || 0}" data-wants="${w.wants || 0}" data-order="${w.order || i}" data-title="${escapeHtml(w.title)}" data-tags="${(w.tags||[]).join(',')}" data-desc="${escapeHtml(w.description || '')}" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
-          <div class="drag-handle" style="position:absolute;top:8px;right:8px;cursor:grab;font-size:1.2rem;color:var(--haze);z-index:2;" onclick="event.stopPropagation()">�?/div>
+          <div class="drag-handle" style="position:absolute;top:8px;right:8px;cursor:grab;font-size:1.2rem;color:var(--haze);z-index:2;" onclick="event.stopPropagation()">⠿</div>
           ${approvalBadge}
           <input type="checkbox" class="author-work-cb" data-id="${w.id}" onchange="updateAuthorBatchBtn()" onclick="event.stopPropagation()">
           <div class="card-image" style="height:160px;${hasImg ? '' : 'background:var(--accent);'}" onclick="openWorkEditModal('${w.id}')">
@@ -1145,8 +1145,8 @@
             <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(w.price) : (w.price || ''))}</p>
             ${rejectReasonHtml}
             <div class="work-stats">
-              <span title="喜爱�?>❤️ ${w.likes || 0}</span>
-              <span title="想要�?>�?${w.wants || 0}</span>
+              <span title="喜爱数">❤️ ${w.likes || 0}</span>
+              <span title="想要数">⭐ ${w.wants || 0}</span>
             </div>
           </div>
         </div>`;
@@ -1204,7 +1204,7 @@
       const cards = [...document.querySelectorAll('#worksGrid .card')];
       const orderedIds = cards.map(c => c.dataset.id);
       await authorAPI('POST', '/api/author/works/reorder', { orderedIds });
-      showToast('排序已保�?, 'success');
+      showToast('排序已保存', 'success');
     }
 
     // Quick status change
@@ -1236,7 +1236,7 @@
 
       const result = await authorAPI('POST', '/api/author/works', newWork);
       if (result) {
-        showToast('作品已复�?, 'success');
+        showToast('作品已复制', 'success');
         loadAuthorWorks();
       }
     }
@@ -1249,7 +1249,7 @@
 
       const result = await authorAPI('DELETE', '/api/author/works/' + workId);
       if (result && result.success) {
-        showToast('作品已删�?, 'success');
+        showToast('作品已删除', 'success');
         loadAuthorWorks();
       } else {
         alert(result?.error || '删除失败');
@@ -1258,7 +1258,7 @@
 
     // Export works to Excel
     async function exportWorksToExcel() {
-      if (authorWorksData.length === 0) { showToast('没有作品可导�?, 'error'); return; }
+      if (authorWorksData.length === 0) { showToast('没有作品可导出', 'error'); return; }
       try {
         const res = await fetch('/api/author/works/export', {
           headers: { 'Authorization': 'Bearer ' + authorToken }
@@ -1285,16 +1285,16 @@
     const FORMAT_FIELDS = [
       { key: 'title', label: '标题', getValue: w => w.title || '' },
       { key: 'category', label: '分类', getValue: w => CATEGORIES[w.category] || w.category || '' },
-      { key: 'status', label: '状�?, getValue: w => STATUS_LABELS[w.status] || w.status || '' },
+      { key: 'status', label: '状态', getValue: w => STATUS_LABELS[w.status] || w.status || '' },
       { key: 'price', label: '价格', getValue: w => w.price || '' },
-      { key: 'releaseDate', label: '发售�?, getValue: w => w.releaseDate || '' },
-      { key: 'endDate', label: '截止�?, getValue: w => w.endDate || '' },
+      { key: 'releaseDate', label: '发售日', getValue: w => w.releaseDate || '' },
+      { key: 'endDate', label: '截止日', getValue: w => w.endDate || '' },
       { key: 'tags', label: '标签', getValue: w => (w.tags || []).join(', ') },
       { key: 'description', label: '描述', getValue: w => { const d = w.description || ''; return d.length > 60 ? d.substring(0, 60) + '...' : d; } },
-      { key: 'commissioned', label: '约稿作品 + 约稿作�?, getValue: w => w.isCommissioned ? '�?(' + (w.commissionedBy || '未填') + ')' : '�? },
-      { key: 'socialLinks', label: '联系方式', getValue: w => { const sl = w.socialLinks || {}; const keys = Object.keys(sl).filter(k => sl[k]); return keys.length ? keys.map(k => k + ': ' + sl[k]).join(', ') : '(�?'; } },
-      { key: 'relatedEvents', label: '关联活动', getValue: (w, events) => { if (!events || events.length === 0) return '(无活�?'; const related = events.filter(e => (e.relatedCircles || []).includes(authorCircleId)); return related.length ? related.map(e => e.title).join(', ') : '(�?'; } },
-      { key: 'relatedProjects', label: '关联企划', getValue: (w, events, projects) => { if (!projects || projects.length === 0) return '(无企�?'; const ids = w._relatedProjects || []; const related = projects.filter(p => ids.includes(p.id)); return related.length ? related.map(p => p.title).join(', ') : '(�?'; } }
+      { key: 'commissioned', label: '约稿作品 + 约稿作者', getValue: w => w.isCommissioned ? '是 (' + (w.commissionedBy || '未填') + ')' : '否' },
+      { key: 'socialLinks', label: '联系方式', getValue: w => { const sl = w.socialLinks || {}; const keys = Object.keys(sl).filter(k => sl[k]); return keys.length ? keys.map(k => k + ': ' + sl[k]).join(', ') : '(无)'; } },
+      { key: 'relatedEvents', label: '关联活动', getValue: (w, events) => { if (!events || events.length === 0) return '(无活动)'; const related = events.filter(e => (e.relatedCircles || []).includes(authorCircleId)); return related.length ? related.map(e => e.title).join(', ') : '(无)'; } },
+      { key: 'relatedProjects', label: '关联企划', getValue: (w, events, projects) => { if (!projects || projects.length === 0) return '(无企划)'; const ids = w._relatedProjects || []; const related = projects.filter(p => ids.includes(p.id)); return related.length ? related.map(p => p.title).join(', ') : '(无)'; } }
     ];
     async function openBatchCreateFromImages() {
       const images = await authorAPI('GET', '/api/author/images');
@@ -1305,7 +1305,7 @@
       overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
       overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">选择图片批量创建作品</h3><button onclick="document.getElementById(\'batchCreateImgLibOverlay\').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">×</button></div>' +
-        '<p id="batchCreateImgHint" style="font-size:0.85rem;color:var(--haze);margin-bottom:0.8rem;">点击图片选中，每张图片将创建一个作品。已�? 0 �?/p>' +
+        '<p id="batchCreateImgHint" style="font-size:0.85rem;color:var(--haze);margin-bottom:0.8rem;">点击图片选中，每张图片将创建一个作品。已选: 0 张</p>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.5rem;" id="batchCreateImgGrid">' +
         images.map(img => {
           const sizeMB = img.size ? (img.size / 1024 / 1024).toFixed(2) : '?';
@@ -1314,7 +1314,7 @@
             '<div style="padding:0.2rem 0.3rem;"><div style="font-size:0.6rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+img.name+'">'+img.name+'</div></div></div>';
         }).join('') +
         '</div>' +
-        '<button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmBatchCreateImgSelect()">下一�? 设置作品信息</button></div>';
+        '<button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmBatchCreateImgSelect()">下一步: 设置作品信息</button></div>';
       document.body.appendChild(overlay);
     }
 
@@ -1322,12 +1322,12 @@
       el.classList.toggle('selected');
       el.style.outline = el.classList.contains('selected') ? '3px solid var(--accent)' : 'none';
       const count = document.querySelectorAll('.bcimg-pick.selected').length;
-      document.getElementById('batchCreateImgHint').textContent = '点击图片选中，每张图片将创建一个作品。已�? ' + count + ' �?;
+      document.getElementById('batchCreateImgHint').textContent = '点击图片选中，每张图片将创建一个作品。已选: ' + count + ' 张';
     }
 
     function confirmBatchCreateImgSelect() {
       const selected = [...document.querySelectorAll('.bcimg-pick.selected')].map(el => el.dataset.url);
-      if (selected.length === 0) { showToast('请至少选择一张图�?, 'error'); return; }
+      if (selected.length === 0) { showToast('请至少选择一张图片', 'error'); return; }
       _batchCreateSelectedImages = selected;
       document.getElementById('batchCreateImgLibOverlay').remove();
       openBatchCreateConfigModal();
@@ -1342,19 +1342,19 @@
       overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
       overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:420px;width:100%;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">批量创建作品</h3><button onclick="document.getElementById(\'batchCreateConfigOverlay\').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">×</button></div>' +
-        '<p style="font-size:0.85rem;color:var(--haze);margin-bottom:1rem;">将根据已选的 '+count+' 张图片创�?'+count+' 个作品�?/p>' +
-        '<div class="form-group"><label>标题前缀 <span style="color:var(--accent)">*</span></label><input class="form-input" id="batchCreatePrefix" placeholder="例如: 手办" value="作品"><p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">作品标题将自动生成为: '+ '"标题 1"�?标题 2"...</p></div>' +
+        '<p style="font-size:0.85rem;color:var(--haze);margin-bottom:1rem;">将根据已选的 '+count+' 张图片创建 '+count+' 个作品。</p>' +
+        '<div class="form-group"><label>标题前缀 <span style="color:var(--accent)">*</span></label><input class="form-input" id="batchCreatePrefix" placeholder="例如: 手办" value="作品"><p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">作品标题将自动生成为: '+ '"标题 1"、"标题 2"...</p></div>' +
         '<div class="form-group"><label>分类</label><select class="form-input" id="batchCreateCategory">'+catOptions+'</select></div>' +
-        '<div class="form-group"><label>状�?/label><select class="form-input" id="batchCreateStatus">'+statusOptions+'</select></div>' +
+        '<div class="form-group"><label>状态</label><select class="form-input" id="batchCreateStatus">'+statusOptions+'</select></div>' +
         '<div class="form-group"><button class="btn" style="background:#6c5ce7;color:white;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="openUseFormatForBatchCreate()">使用格式</button></div>' +
         '<div id="batchCreateFormatIndicator"></div>' +
-        '<button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" id="batchCreateSubmitBtn" onclick="submitBatchCreate()">确认创建 '+count+' 个作�?/button></div>';
+        '<button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" id="batchCreateSubmitBtn" onclick="submitBatchCreate()">确认创建 '+count+' 个作品</button></div>';
       document.body.appendChild(overlay);
       updateBatchCreateFormatIndicator();
     }
 
     async function openUseFormatForBatchCreate() {
-      if (!authorWorksData || authorWorksData.length === 0) { showToast('暂无可选作品作为模�?, 'error'); return; }
+      if (!authorWorksData || authorWorksData.length === 0) { showToast('暂无可选作品作为模板', 'error'); return; }
       document.getElementById('batchCreateConfigOverlay').remove();
       renderWorkPickerModal([], 'batchCreate');
     }
@@ -1365,9 +1365,9 @@
       const status = document.getElementById('batchCreateStatus').value;
       const btn = document.getElementById('batchCreateSubmitBtn');
       btn.disabled = true;
-      btn.textContent = '创建�?..';
+      btn.textContent = '创建中...';
 
-      // 构建所有作品数�?
+      // 构建所有作品数据
       const worksToCreate = _batchCreateSelectedImages.map((imgUrl, i) => {
         const body = {
           title: prefix + ' ' + (i + 1),
@@ -1375,7 +1375,7 @@
           category: category,
           status: status
         };
-        // 合并模板字段 (跳过表单已有�?title/category/status)
+        // 合并模板字段 (跳过表单已有的 title/category/status)
         if (_useFormatTemplateFields) {
           for (const [k, v] of Object.entries(_useFormatTemplateFields)) {
             if (k === 'title' || k === 'category' || k === 'status') continue;
@@ -1386,7 +1386,7 @@
       });
 
       try {
-        // 单次请求批量创建所有作�?
+        // 单次请求批量创建所有作品
         const result = await authorAPI('POST', '/api/author/works/batch-create', { works: worksToCreate });
         const createdWorkIds = (result?.works || []).map(w => w.id);
 
@@ -1415,7 +1415,7 @@
         }
 
         document.getElementById('batchCreateConfigOverlay').remove();
-        showToast('成功创建 ' + (result?.created || 0) + ' 个作�?, 'success');
+        showToast('成功创建 ' + (result?.created || 0) + ' 个作品', 'success');
       } catch (e) {
         document.getElementById('batchCreateConfigOverlay').remove();
         showToast('批量创建失败: ' + e.message, 'error');
@@ -1435,7 +1435,7 @@
       formData.append('file', file);
 
       try {
-        showToast('导入�?..', 'info');
+        showToast('导入中...', 'info');
         const res = await fetch('/api/author/works/import', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + authorToken },
@@ -1445,7 +1445,7 @@
         if (result.error) {
           alert('导入失败: ' + result.error);
         } else {
-          showToast(`导入完成：新�?${result.added || 0}，更�?${result.updated || 0}`, 'success');
+          showToast(`导入完成：新增 ${result.added || 0}，更新 ${result.updated || 0}`, 'success');
           loadAuthorWorks();
         }
       } catch (e) {
@@ -1528,10 +1528,10 @@
         </div>
         ${notifications.length === 0 ? '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无新通知</p>' :
           notifications.map(n => `<div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
-            <span style="font-size:1.5rem;">${n.type === 'like' ? '❤️' : '�?}</span>
+            <span style="font-size:1.5rem;">${n.type === 'like' ? '❤️' : '⭐'}</span>
             <div style="flex:1;">
               <div style="font-weight:600;">${escapeHtml(n.workTitle)}</div>
-              <div style="font-size:0.75rem;color:var(--haze);">新增 ${n.increase} �?{n.type === 'like' ? '喜爱' : '想要'}</div>
+              <div style="font-size:0.75rem;color:var(--haze);">新增 ${n.increase} 次${n.type === 'like' ? '喜爱' : '想要'}</div>
             </div>
           </div>`).join('')}
       </div>`;
@@ -1553,18 +1553,18 @@
           container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无审核通知</p>';
           return;
         }
-        const typeLabels = { work: '作品', event: '活动', project: '企划', update: '动�? };
+        const typeLabels = { work: '作品', event: '活动', project: '企划', update: '动态' };
         container.innerHTML = notifications.map(n => {
           const time = new Date(n.createdAt).toLocaleString('zh-CN');
           const isApproved = n.message.includes('通过');
           const statusColor = isApproved ? '#2ecc71' : 'var(--accent)';
-          const statusIcon = isApproved ? '�? : '�?;
+          const statusIcon = isApproved ? '✓' : '✗';
           return `<div style="display:flex;gap:0.8rem;padding:0.8rem 0;border-bottom:1px solid var(--border);${!n.read ? 'background:rgba(52,152,219,0.05);' : ''}" onclick="markNotifRead('${n.id}', this)">
             <div style="width:24px;height:24px;border-radius:50%;background:${statusColor};color:white;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;">${statusIcon}</div>
             <div style="flex:1;">
               <div style="font-size:0.85rem;margin-bottom:0.2rem;">
                 <span style="color:var(--accent-alt);font-weight:500;">${typeLabels[n.type] || n.type}</span>
-                <span style="font-weight:600;">�?{escapeHtml(n.title)}�?/span>
+                <span style="font-weight:600;">「${escapeHtml(n.title)}」</span>
                 <span style="color:${statusColor};">${escapeHtml(n.message)}</span>
               </div>
               ${n.rejectReason ? `<div style="font-size:0.8rem;color:var(--accent);background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;margin-top:0.3rem;">拒绝原因: ${escapeHtml(n.rejectReason)}</div>` : ''}
@@ -1712,7 +1712,7 @@
       const container = document.getElementById('authorStatusFilters');
       const usedStatuses = new Set(authorWorksData.map(w => w.status).filter(Boolean));
       const statuses = STATUS_ORDERED.filter(s => usedStatuses.has(s.id));
-      container.innerHTML = '<button class="filter-btn active" data-status="all">全部状�?/button>' +
+      container.innerHTML = '<button class="filter-btn active" data-status="all">全部状态</button>' +
         statuses.map(s => `<button class="filter-btn" data-status="${s.id}">${s.name}</button>`).join('');
 
       container.querySelectorAll('.filter-btn').forEach(btn => {
@@ -1790,7 +1790,7 @@
       const formatBtn = document.getElementById('authorUseFormatBtn');
       const n = checked.length;
       if (bar) bar.classList.toggle('show', n > 0);
-      if (count) count.textContent = `已�?${n} 项`;
+      if (count) count.textContent = `已选 ${n} 项`;
       if (editBtn) {
         editBtn.style.display = n > 1 ? 'inline-flex' : 'none';
         editBtn.textContent = `批量编辑`;
@@ -1815,19 +1815,19 @@
     // Batch delete works
     async function batchDeleteWorks() {
       const checked = document.querySelectorAll('.author-work-cb:checked');
-      if (checked.length === 0) { alert('请至少选择1个作�?); return; }
+      if (checked.length === 0) { alert('请至少选择1个作品'); return; }
 
       const workIds = [...checked].map(cb => cb.dataset.id);
       const selectedWorks = authorWorksData.filter(w => workIds.includes(w.id));
-      const titles = selectedWorks.map(w => w.title).join('�?);
+      const titles = selectedWorks.map(w => w.title).join('、');
 
       if (!await showConfirm(`确定删除以下 ${selectedWorks.length} 个作品？\n${titles}\n\n此操作不可撤销。`, { danger: true })) return;
 
-      showLoading('删除�?..');
+      showLoading('删除中...');
       try {
         const result = await authorAPI('DELETE', '/api/author/works', { ids: workIds });
         if (result && result.success) {
-          showToast(`已删�?${result.deleted} 个作品`, 'success');
+          showToast(`已删除 ${result.deleted} 个作品`, 'success');
         } else {
           showToast('删除失败: ' + (result?.error || '未知错误'), 'error');
         }
@@ -1841,7 +1841,7 @@
     async function openUseFormatFlow() {
       const checked = document.querySelectorAll('.author-work-cb:checked');
       if (checked.length === 0) { showToast('请先选择作品', 'error'); return; }
-      if (!authorWorksData || authorWorksData.length === 0) { showToast('暂无可选作品作为模�?, 'error'); return; }
+      if (!authorWorksData || authorWorksData.length === 0) { showToast('暂无可选作品作为模板', 'error'); return; }
       const workIds = [...checked].map(cb => cb.dataset.id);
       renderWorkPickerModal(workIds, 'batchEdit');
     }
@@ -1854,7 +1854,7 @@
       overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1001;display:flex;align-items:center;justify-content:center;padding:1rem;';
       const works = authorWorksData.filter(w => !excludeIds.includes(w.id));
       if (works.length === 0) {
-        showToast('没有其他作品可作为模�?, 'error');
+        showToast('没有其他作品可作为模板', 'error');
         return;
       }
       overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;display:flex;flex-direction:column;">' +
@@ -1865,7 +1865,7 @@
           const img = (w.images && w.images[0]) || '';
           const catName = CATEGORIES[w.category] || w.category || '';
           return '<div class="work-pick-card" data-title="' + escapeHtml(w.title) + '" data-id="' + w.id + '" onclick="selectTemplateWork(\'' + w.id + '\',\'' + source + '\')" style="border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:border-color 0.2s;" onmouseenter="this.style.borderColor=\'var(--accent)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">' +
-            (img ? '<img src="' + img + '" style="width:100%;height:90px;object-fit:cover;display:block;">' : '<div style="width:100%;height:90px;background:var(--border);display:flex;align-items:center;justify-content:center;color:var(--haze);font-size:0.8rem;">无图�?/div>') +
+            (img ? '<img src="' + img + '" style="width:100%;height:90px;object-fit:cover;display:block;">' : '<div style="width:100%;height:90px;background:var(--border);display:flex;align-items:center;justify-content:center;color:var(--haze);font-size:0.8rem;">无图片</div>') +
             '<div style="padding:0.4rem;"><div style="font-size:0.75rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(w.title) + '">' + escapeHtml(w.title) + '</div>' +
             '<div style="font-size:0.65rem;color:var(--haze);">' + escapeHtml(catName) + '</div></div></div>';
         }).join('') +
@@ -1883,7 +1883,7 @@
 
     async function selectTemplateWork(workId, source) {
       const templateWork = authorWorksData.find(w => w.id === workId);
-      if (!templateWork) { showToast('模板作品不存�?, 'error'); return; }
+      if (!templateWork) { showToast('模板作品不存在', 'error'); return; }
       document.getElementById('useFormatPickerOverlay').remove();
       let allEvents = null, allProjects = null;
       try {
@@ -1909,17 +1909,17 @@
       const fieldsHTML = FORMAT_FIELDS.map(f => {
         let val = '';
         if (f.key === 'relatedEvents') {
-          val = templateRelatedEvents.length ? templateRelatedEvents.map(e => escapeHtml(e.title)).join(', ') : '(�?';
+          val = templateRelatedEvents.length ? templateRelatedEvents.map(e => escapeHtml(e.title)).join(', ') : '(无)';
         } else if (f.key === 'relatedProjects') {
-          val = templateRelatedProjects.length ? templateRelatedProjects.map(p => escapeHtml(p.title)).join(', ') : '(�?';
+          val = templateRelatedProjects.length ? templateRelatedProjects.map(p => escapeHtml(p.title)).join(', ') : '(无)';
         } else {
           val = escapeHtml(f.getValue(templateWork));
         }
-        const hasValue = val && val !== '(�?' && val !== '�? && val !== '(无活�?' && val !== '(无企�?';
+        const hasValue = val && val !== '(无)' && val !== '否' && val !== '(无活动)' && val !== '(无企划)';
         return '<label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.5rem;border-bottom:1px solid var(--border);cursor:pointer;">' +
           '<input type="checkbox" class="ufield-cb" data-key="' + f.key + '" ' + (hasValue ? 'checked' : '') + ' style="width:16px;height:16px;accent-color:var(--accent);margin-top:2px;flex-shrink:0;">' +
           '<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:0.85rem;">' + f.label + '</div>' +
-          '<div style="font-size:0.75rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + val.replace(/"/g, '"') + '">' + (val || '(�?') + '</div></div></label>';
+          '<div style="font-size:0.75rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + val.replace(/"/g, '"') + '">' + (val || '(空)') + '</div></div></label>';
       }).join('');
 
       overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column;">' +
@@ -1927,8 +1927,8 @@
         '<div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.8rem;">模板: ' + escapeHtml(templateWork.title) + ' · ' + escapeHtml(CATEGORIES[templateWork.category] || templateWork.category || '') + ' · ' + escapeHtml(STATUS_LABELS[templateWork.status] || templateWork.status || '') + '</div>' +
         '<div style="overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:1rem;">' + fieldsHTML + '</div>' +
         '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
-        '<button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;flex:1;" onclick="toggleAllFormatFields(true)">全�?/button>' +
-        '<button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;flex:1;" onclick="toggleAllFormatFields(false)">全不�?/button>' +
+        '<button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;flex:1;" onclick="toggleAllFormatFields(true)">全选</button>' +
+        '<button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;flex:1;" onclick="toggleAllFormatFields(false)">全不选</button>' +
         '<button class="btn btn-primary" style="font-size:0.85rem;flex:2;" onclick="confirmUseFormat(\'' + templateWork.id + '\',\'' + source + '\')">确认应用</button>' +
         '</div></div>';
       document.body.appendChild(overlay);
@@ -1940,9 +1940,9 @@
 
     async function confirmUseFormat(templateWorkId, source) {
       const templateWork = authorWorksData.find(w => w.id === templateWorkId);
-      if (!templateWork) { showToast('模板作品不存�?, 'error'); return; }
+      if (!templateWork) { showToast('模板作品不存在', 'error'); return; }
       const selectedKeys = [...document.querySelectorAll('.ufield-cb:checked')].map(cb => cb.dataset.key);
-      if (selectedKeys.length === 0) { showToast('请至少选择一个字�?, 'error'); return; }
+      if (selectedKeys.length === 0) { showToast('请至少选择一个字段', 'error'); return; }
       document.getElementById('useFormatFieldOverlay').remove();
 
       if (source === 'batchEdit') {
@@ -1979,7 +1979,7 @@
       const hasEventSync = selectedKeys.includes('relatedEvents');
       const hasProjectSync = selectedKeys.includes('relatedProjects');
 
-      showLoading('应用格式�?..');
+      showLoading('应用格式中...');
       try {
         // 批量更新作品基本字段 + 企划关联 (单次请求)
         if (hasBasicChanges || hasProjectSync) {
@@ -2011,7 +2011,7 @@
               .filter(evt => !templateEventIds.includes(evt.id) && (evt.relatedCircles || []).includes(authorCircleId))
               .map(e => e.id);
 
-            // 合并需�?toggle 的活�?
+            // 合并需要 toggle 的活动
             const eventsToToggle = [...new Set([...eventsToAdd, ...eventsToRemove])];
 
             if (eventsToToggle.length > 0) {
@@ -2020,7 +2020,7 @@
           }
         }
 
-        showToast(`已将格式应用�?${workIds.length} 个作品`, 'success');
+        showToast(`已将格式应用到 ${workIds.length} 个作品`, 'success');
         loadAuthorWorks();
       } catch (e) {
         showToast('应用格式失败: ' + e.message, 'error');
@@ -2061,7 +2061,7 @@
             break;
         }
       }
-      showToast('格式已选择，创建时将应�?, 'success');
+      showToast('格式已选择，创建时将应用', 'success');
       openBatchCreateConfigModal();
     }
 
@@ -2082,7 +2082,7 @@
       if (_useFormatTemplateEvents) fieldNames.push('关联活动');
       if (_useFormatTemplateProjects) fieldNames.push('关联企划');
       indicator.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:rgba(108,92,231,0.1);border-radius:var(--radius-sm);font-size:0.8rem;color:#6c5ce7;">' +
-        '<span>已使用格�? ' + fieldNames.join(', ') + '</span>' +
+        '<span>已使用格式: ' + fieldNames.join(', ') + '</span>' +
         '<button onclick="clearBatchCreateFormat()" style="background:none;border:1px solid #6c5ce7;color:#6c5ce7;border-radius:4px;padding:0.1rem 0.5rem;cursor:pointer;font-size:0.75rem;">清除</button></div>';
     }
 
@@ -2096,22 +2096,22 @@
     // Open batch edit
     async function openAuthorBatchEdit() {
       const checked = document.querySelectorAll('.author-work-cb:checked');
-      if (checked.length < 2) { alert('请至少选择2个作�?); return; }
+      if (checked.length < 2) { alert('请至少选择2个作品'); return; }
 
       const workIds = [...checked].map(cb => cb.dataset.id);
       const selectedWorks = authorWorksData.filter(w => workIds.includes(w.id));
 
       document.getElementById('batchSelectedWorks').innerHTML =
-        `已选择 ${selectedWorks.length} 个作品：` + selectedWorks.map(w => escapeHtml(w.title)).join('�?);
+        `已选择 ${selectedWorks.length} 个作品：` + selectedWorks.map(w => escapeHtml(w.title)).join('、');
 
       // Populate category dropdown
       const catSelect = document.getElementById('batchCategory');
-      catSelect.innerHTML = '<option value="">�?不修�?�?/option>' +
+      catSelect.innerHTML = '<option value="">— 不修改 —</option>' +
         CATEGORIES_ORDERED.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
       // Populate status dropdown
       const statusSelect = document.getElementById('batchStatus');
-      statusSelect.innerHTML = '<option value="">�?不修�?�?/option>' +
+      statusSelect.innerHTML = '<option value="">— 不修改 —</option>' +
         Object.entries(STATUS_LABELS).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
 
       document.getElementById('batchPrice').value = '';
@@ -2194,19 +2194,19 @@
         ? allEvents.filter(e => (e.relatedCircles || []).includes(authorCircleId)).map(e => e.id)
         : [];
 
-      // 需要添加关联的活动：用户勾选但当前未关�?
+      // 需要添加关联的活动：用户勾选但当前未关联
       const eventsToAdd = selectedEventIds.filter(id => !currentEventIds.includes(id));
-      // 需要移除关联的活动：当前已关联但用户未勾�?
+      // 需要移除关联的活动：当前已关联但用户未勾选
       const eventsToRemove = currentEventIds.filter(id => !selectedEventIds.includes(id));
-      // 合并需�?toggle 的活�?
+      // 合并需要 toggle 的活动
       const eventsToToggle = [...new Set([...eventsToAdd, ...eventsToRemove])];
 
       if (!hasBasicChanges && !hasProjectChanges && eventsToToggle.length === 0) {
-        alert('请至少修改一个字�?);
+        alert('请至少修改一个字段');
         return;
       }
 
-      showLoading('保存�?..');
+      showLoading('保存中...');
       try {
         // 批量更新作品 (单次请求)
         if (hasBasicChanges || hasProjectChanges) {
@@ -2220,7 +2220,7 @@
           await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToToggle });
         }
 
-        showToast(`已更�?${workIds.length} 个作品`, 'success');
+        showToast(`已更新 ${workIds.length} 个作品`, 'success');
         closeBatchEdit();
         loadAuthorWorks();
       } finally {
@@ -2242,12 +2242,12 @@
       const body = document.getElementById('workModalBody');
       const title = document.getElementById('workModalTitle');
       title.textContent = '编辑作品';
-      body.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">加载�?..</p>';
+      body.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>';
       overlay.classList.add('open');
 
       const works = await authorAPI('GET', '/api/author/works');
       const work = works.find(w => w.id === workId);
-      if (!work) { body.innerHTML = '<p>作品未找�?/p>'; return; }
+      if (!work) { body.innerHTML = '<p>作品未找到</p>'; return; }
 
       const [allEvents, allProjects] = await Promise.all([
         authorAPI('GET', '/api/author/events'),
@@ -2264,7 +2264,7 @@
       const body = document.getElementById('workModalBody');
       const title = document.getElementById('workModalTitle');
       title.textContent = '新增作品';
-      body.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">加载�?..</p>';
+      body.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>';
       overlay.classList.add('open');
       body.innerHTML = await buildWorkFormHTML({});
 
@@ -2294,12 +2294,12 @@
         <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="wfTitle" value="${escapeHtml(w.title || '')}"></div>
         <div class="form-row">
           <div class="form-group"><label>分类</label><select class="form-input" id="wfCategory">${Object.entries(CATEGORIES).map(([k,v]) => '<option value="'+k+'"'+(w.category===k?' selected':'')+'>'+v+'</option>').join('')}</select></div>
-          <div class="form-group"><label>状�?/label><select class="form-input" id="wfStatus">${Object.entries(STATUS_LABELS).map(([k,v]) => '<option value="'+k+'"'+(w.status===k?' selected':'')+'>'+v+'</option>').join('')}</select></div>
+          <div class="form-group"><label>状态</label><select class="form-input" id="wfStatus">${Object.entries(STATUS_LABELS).map(([k,v]) => '<option value="'+k+'"'+(w.status===k?' selected':'')+'>'+v+'</option>').join('')}</select></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>价格</label><input class="form-input" id="wfPrice" value="${escapeHtml(w.price || '')}" placeholder="¥0"></div>
-          <div class="form-group"><label>发售�?/label><input type="date" class="form-input" id="wfReleaseDate" value="${w.releaseDate || ''}"></div>
-          <div class="form-group"><label>截止�?/label><input type="date" class="form-input" id="wfEndDate" value="${w.endDate || ''}"></div>
+          <div class="form-group"><label>发售日</label><input type="date" class="form-input" id="wfReleaseDate" value="${w.releaseDate || ''}"></div>
+          <div class="form-group"><label>截止日</label><input type="date" class="form-input" id="wfEndDate" value="${w.endDate || ''}"></div>
         </div>
         <div class="form-group">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
@@ -2308,20 +2308,20 @@
           </label>
         </div>
         <div class="form-group" id="commissionedByGroup" style="display:${w.isCommissioned ? 'block' : 'none'};">
-          <label>约稿作�?/label>
-          <input class="form-input" id="wfCommissionedBy" value="${escapeHtml(w.commissionedBy || '')}" placeholder="请输入约稿作者名�?>
+          <label>约稿作者</label>
+          <input class="form-input" id="wfCommissionedBy" value="${escapeHtml(w.commissionedBy || '')}" placeholder="请输入约稿作者名字">
         </div>
-        <div class="form-group"><label>标签（英文逗号分隔�?/label><input class="form-input" id="wfTags" value="${(w.tags||[]).join(', ')}" placeholder="角色名字,作品形式"></div>
+        <div class="form-group"><label>标签（英文逗号分隔）</label><input class="form-input" id="wfTags" value="${(w.tags||[]).join(', ')}" placeholder="角色名字,作品形式"></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="wfDesc" style="min-height:80px;">${w.description || ''}</textarea></div>
         <div class="form-row">
-          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup && !w.socialLinks?.wechat && !w.socialLinks?.weibo && !w.socialLinks?.bilibili && !w.socialLinks?.custom ? 'selected' : ''}>�?/option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ�?/option><option value="wechat" ${w.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${w.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${w.socialLinks?.bilibili ? 'selected' : ''}>B�?/option><option value="custom" ${w.socialLinks?.custom ? 'selected' : ''}>自定义链�?/option></select></div>
+          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup && !w.socialLinks?.wechat && !w.socialLinks?.weibo && !w.socialLinks?.bilibili && !w.socialLinks?.custom ? 'selected' : ''}>无</option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${w.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${w.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${w.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${w.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
           <div class="form-group"><label>联系方式</label><input class="form-input" id="wfContactValue" value="${w.socialLinks?.qq || w.socialLinks?.qqGroup || w.socialLinks?.wechat || w.socialLinks?.weibo || w.socialLinks?.bilibili || w.socialLinks?.custom || ''}" placeholder="账号、群号或链接"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>联系显示�?/label><input class="form-input" id="wfContactLabel" value="${w.socialLinks?.contactLabel || ''}"></div>
+          <div class="form-group"><label>联系显示名</label><input class="form-input" id="wfContactLabel" value="${w.socialLinks?.contactLabel || ''}"></div>
           <div class="form-group"><label>网站链接</label><input class="form-input" id="wfWebsite" value="${w.socialLinks?.website || ''}" placeholder="https://..."></div>
         </div>
-        <div class="form-group"><label>网站显示�?/label><input class="form-input" id="wfWebsiteLabel" value="${w.socialLinks?.websiteLabel || ''}"></div>
+        <div class="form-group"><label>网站显示名</label><input class="form-input" id="wfWebsiteLabel" value="${w.socialLinks?.websiteLabel || ''}"></div>
         <div class="form-group">
           <label>展示图片</label>
           <div id="wfImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
@@ -2363,7 +2363,7 @@
       overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
       overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:var(--radius);padding:1.5rem;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">选择图片</h3><button onclick="document.getElementById(\'authorImageLibOverlay\').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button></div>' +
-        '<p style="font-size:0.85rem;color:var(--haze);margin-bottom:0.8rem;">点击图片选中，然后点击确定�?/p>' +
+        '<p style="font-size:0.85rem;color:var(--haze);margin-bottom:0.8rem;">点击图片选中，然后点击确定。</p>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.5rem;" id="authorImageLibGrid">' +
         images.map(img => {
           const sizeMB = img.size ? (img.size / 1024 / 1024).toFixed(2) : '?';
@@ -2378,7 +2378,7 @@
 
     function confirmAuthorImageLib(previewId, singleSelect) {
       const selected = [...document.querySelectorAll('.aimg-pick.selected')].map(el => el.dataset.url);
-      if (selected.length === 0) { alert('请至少选择一张图�?); return; }
+      if (selected.length === 0) { alert('请至少选择一张图片'); return; }
       const preview = document.getElementById(previewId);
       if (singleSelect) {
         preview.innerHTML = '<div style="position:relative;display:inline-block;"><img src="'+selected[0]+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>';
@@ -2427,10 +2427,10 @@
         commissionedBy: isCommissioned ? document.getElementById('wfCommissionedBy').value : ''
       };
 
-      if (!data.title) { showToast('请填写标�?, 'error'); document.getElementById('wfTitle').focus(); return; }
+      if (!data.title) { showToast('请填写标题', 'error'); document.getElementById('wfTitle').focus(); return; }
       if (!data.category) { showToast('请选择分类', 'error'); return; }
 
-      showLoading('保存�?..');
+      showLoading('保存中...');
       try {
         let result;
         if (workId) {
@@ -2456,7 +2456,7 @@
         }
         if (result) {
           FormDraft.clear('work');
-          showToast('作品已保�?, 'success');
+          showToast('作品已保存', 'success');
           closeWorkModal();
           loadAuthorWorks();
         }
@@ -2487,12 +2487,12 @@
       if (e.target.classList.contains('event-cb')) {
         const eventId = e.target.dataset.id;
         const result = await authorAPI('PUT', '/api/author/events/' + eventId + '/toggle');
-        if (result) showToast(e.target.checked ? '已关联活�? : '已取消关�?, 'success');
+        if (result) showToast(e.target.checked ? '已关联活动' : '已取消关联', 'success');
       }
       if (e.target.classList.contains('project-cb')) {
         const projectId = e.target.dataset.id;
         const result = await authorAPI('PUT', '/api/author/projects/' + projectId + '/toggle');
-        if (result) showToast(e.target.checked ? '已关联企�? : '已取消关�?, 'success');
+        if (result) showToast(e.target.checked ? '已关联企划' : '已取消关联', 'success');
       }
     });
 
@@ -2521,11 +2521,11 @@
       const batchBtn = document.getElementById('batchDeleteBtn');
       if (batchBtn) batchBtn.style.display = 'none';
       if (!images || images.length === 0) {
-        grid.innerHTML = '<p style="color:var(--haze);grid-column:1/-1;text-align:center;padding:2rem;">暂无上传的图�?/p>';
+        grid.innerHTML = '<p style="color:var(--haze);grid-column:1/-1;text-align:center;padding:2rem;">暂无上传的图片</p>';
         if (count) count.textContent = '';
         return;
       }
-      if (count) count.textContent = '�?' + images.length + ' �?;
+      if (count) count.textContent = '共 ' + images.length + ' 张';
       grid.innerHTML = images.map(img => {
         const sizeMB = img.size ? (img.size / 1024 / 1024).toFixed(2) : '?';
         const date = img.uploadedAt ? new Date(img.uploadedAt).toLocaleDateString('zh-CN') : '';
@@ -2541,7 +2541,7 @@
           '</div></div>';
       }).join('');
 
-      // 同步加载未使用图片检�?
+      // 同步加载未使用图片检测
       loadUnusedAuthorImages();
     }
 
@@ -2550,20 +2550,20 @@
       const btn = document.getElementById('batchDeleteBtn');
       if (btn) {
         btn.style.display = checked.length > 0 ? 'inline-flex' : 'none';
-        btn.textContent = checked.length > 0 ? '删除 ' + checked.length + ' �? : '批量删除';
+        btn.textContent = checked.length > 0 ? '删除 ' + checked.length + ' 张' : '批量删除';
       }
     }
 
     async function batchDeleteAuthorImages() {
       const checked = document.querySelectorAll('.author-img-cb:checked');
       if (checked.length === 0) return;
-      if (!await showConfirm('确定删除选中�?' + checked.length + ' 张图片？', { danger: true })) return;
+      if (!await showConfirm('确定删除选中的 ' + checked.length + ' 张图片？', { danger: true })) return;
       let deleted = 0;
       for (const cb of checked) {
         const result = await authorAPI('DELETE', '/api/author/images/' + cb.dataset.name);
         if (result && result.success) deleted++;
       }
-      showToast('已删�?' + deleted + ' 张图�?, 'success');
+      showToast('已删除 ' + deleted + ' 张图片', 'success');
       loadAuthorImages();
     }
 
@@ -2577,7 +2577,7 @@
       const skipped = [];
       const toUpload = [];
 
-      // 预检查文件大�?
+      // 预检查文件大小
       for (const file of files) {
         if (file.size > MAX_SIZE) {
           skipped.push(file.name);
@@ -2586,9 +2586,9 @@
         }
       }
 
-      // 提醒跳过的文�?
+      // 提醒跳过的文件
       if (skipped.length > 0) {
-        showToast(`以下图片超过5MB已跳过：${skipped.join('�?)}，请自行压缩后上传`, 'warning', 5000);
+        showToast(`以下图片超过5MB已跳过：${skipped.join('、')}，请自行压缩后上传`, 'warning', 5000);
       }
 
       if (toUpload.length === 0) {
@@ -2602,7 +2602,7 @@
       const errors = [];
       const compressed = [];
       const actAs = localStorage.getItem('f7author_actAs');
-      showLoading('上传�?..');
+      showLoading('上传中...');
       for (const file of toUpload) {
         const formData = new FormData();
         formData.append('image', file);
@@ -2615,7 +2615,7 @@
           uploaded++;
           // 检查是否被压缩
           if (data.originalSize && data.compressedSize && data.originalSize > data.compressedSize) {
-            compressed.push(`${file.name}: ${(data.originalSize/1024).toFixed(0)}KB �?${(data.compressedSize/1024).toFixed(0)}KB`);
+            compressed.push(`${file.name}: ${(data.originalSize/1024).toFixed(0)}KB → ${(data.compressedSize/1024).toFixed(0)}KB`);
           }
         } else {
           const data = await res.json().catch(() => ({}));
@@ -2626,11 +2626,11 @@
 
       // 显示结果
       let msg = `成功上传 ${uploaded} 张图片`;
-      if (skipped.length > 0) msg += `，跳�?${skipped.length} 张（超过5MB）`;
-      if (errors.length > 0) msg += `，失�?${errors.length} 张`;
+      if (skipped.length > 0) msg += `，跳过 ${skipped.length} 张（超过5MB）`;
+      if (errors.length > 0) msg += `，失败 ${errors.length} 张`;
       showToast(msg, uploaded > 0 ? 'success' : 'error', 5000);
       if (compressed.length > 0) {
-        showToast(`已压�? ${compressed.join('�?)}`, 'info', 8000);
+        showToast(`已压缩: ${compressed.join('、')}`, 'info', 8000);
       }
 
       input.value = '';
@@ -2648,7 +2648,7 @@
       const countEl = document.getElementById('unusedImageCount');
       const gridEl = document.getElementById('unusedImageGrid');
 
-      countEl.innerHTML = `<p style="color:var(--haze);font-size:0.85rem;">�?${result.total} 张图片，其中 ${result.unused} 张未被使�?/p>`;
+      countEl.innerHTML = `<p style="color:var(--haze);font-size:0.85rem;">共 ${result.total} 张图片，其中 ${result.unused} 张未被使用</p>`;
 
       if (unusedImagesData.length === 0) {
         gridEl.innerHTML = '<p style="color:var(--haze);text-align:center;padding:1rem;">没有未使用的图片</p>';
@@ -2657,7 +2657,7 @@
         return;
       }
 
-      // 显示全选复选框，重置状�?
+      // 显示全选复选框，重置状态
       document.getElementById('selectAllUnusedWrap').style.display = 'flex';
       document.getElementById('selectAllUnused').checked = false;
 
@@ -2685,7 +2685,7 @@
       const checked = document.querySelectorAll('.unused-img-cb:checked');
       const total = document.querySelectorAll('.unused-img-cb').length;
       document.getElementById('cleanupUnusedBtn').style.display = checked.length > 0 ? 'inline-block' : 'none';
-      // 同步全选状�?
+      // 同步全选状态
       const selectAll = document.getElementById('selectAllUnused');
       if (selectAll) selectAll.checked = total > 0 && checked.length === total;
     }
@@ -2694,9 +2694,9 @@
       const fullUrl = location.origin + url;
       if (navigator.clipboard) {
         navigator.clipboard.writeText(fullUrl);
-        showToast('链接已复�?, 'success');
+        showToast('链接已复制', 'success');
       } else {
-        prompt('复制链接�?, fullUrl);
+        prompt('复制链接：', fullUrl);
       }
     }
 
@@ -2713,16 +2713,16 @@
         if (result && result.success) deleted++;
       }
 
-      showToast(`已删�?${deleted} 张图片`, 'success');
+      showToast(`已删除 ${deleted} 张图片`, 'success');
       loadUnusedAuthorImages();
       loadAuthorImages();
     }
 
     async function deleteAuthorImage(filename) {
-      if (!await showConfirm('确定删除图片 ' + filename + '�?, { danger: true })) return;
+      if (!await showConfirm('确定删除图片 ' + filename + '？', { danger: true })) return;
       const result = await authorAPI('DELETE', '/api/author/images/' + filename);
       if (result && result.success) {
-        showToast('已删�?, 'success');
+        showToast('已删除', 'success');
         loadAuthorImages();
       } else {
         alert(result?.error || '删除失败');
@@ -2731,7 +2731,7 @@
 
     function copyAuthorImgUrl(url) {
       const fullUrl = location.origin + url;
-      navigator.clipboard.writeText(fullUrl).then(() => showToast('链接已复�?, 'success')).catch(() => prompt('复制此链�?', fullUrl));
+      navigator.clipboard.writeText(fullUrl).then(() => showToast('链接已复制', 'success')).catch(() => prompt('复制此链接:', fullUrl));
     }
 
     // Change password
@@ -2745,7 +2745,7 @@
       successEl.style.display = 'none';
 
       if (newPw !== confirmPw) {
-        errEl.textContent = '两次输入的密码不一�?;
+        errEl.textContent = '两次输入的密码不一致';
         errEl.style.display = 'block';
         return;
       }
@@ -2768,13 +2768,13 @@
       const events = await authorAPI('GET', '/api/author/my-events');
       const grid = document.getElementById('myEventsGrid');
       if (!events || events.length === 0) {
-        grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无活动，点击上方按钮提�?/p>';
+        grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无活动，点击上方按钮提交</p>';
         return;
       }
       grid.innerHTML = events.map(e => {
-        const statusBadge = e.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批�?/span>'
-          : e.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒�?/span>'
-          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审�?/span>';
+        const statusBadge = e.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+          : e.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
         const rejectReasonHtml = e.approvalStatus === 'rejected' && e.rejectReason
           ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(e.rejectReason)}</p>` : '';
         return `
@@ -2798,15 +2798,15 @@
 
     async function loadAuthorOnlyBooths() {
       const list = document.getElementById('onlyBoothsList');
-      list.innerHTML = '<p style="color:var(--haze);font-size:0.85rem;">加载中�?/p>';
+      list.innerHTML = '<p style="color:var(--haze);font-size:0.85rem;">加载中…</p>';
       _onlyBoothData = await authorAPI('GET', '/api/author/only-booths') || [];
       if (!_onlyBoothData.length) {
-        list.innerHTML = '<div class="mgmt-card"><p style="color:var(--haze);margin:0;font-size:0.85rem;">暂无你可管理�?ONLY 摊位。若你是摊位作者，请联系活动管理员将你挂接到摊位；若你是活动管理员，请在站内后台配�?editableBy 或在活动创建时提交�?/p></div>';
+        list.innerHTML = '<div class="mgmt-card"><p style="color:var(--haze);margin:0;font-size:0.85rem;">暂无你可管理的 ONLY 摊位。若你是摊位作者，请联系活动管理员将你挂接到摊位；若你是活动管理员，请在站内后台配置 editableBy 或在活动创建时提交。</p></div>';
         return;
       }
       list.innerHTML = _onlyBoothData.map(pack => {
         const ev = pack.event;
-        const role = pack.canManageAll ? '<span style="background:rgba(217,79,92,0.12);color:var(--accent);padding:0.15rem 0.45rem;border-radius:999px;font-size:0.7rem;font-weight:600;">活动管理�?/span>' : '';
+        const role = pack.canManageAll ? '<span style="background:rgba(217,79,92,0.12);color:var(--accent);padding:0.15rem 0.45rem;border-radius:999px;font-size:0.7rem;font-weight:600;">活动管理员</span>' : '';
         return `
         <div class="mgmt-card" style="margin-bottom:1rem;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
@@ -2815,7 +2815,7 @@
                 <strong style="font-size:0.95rem;">${escapeHtml(ev.title || '')}</strong>
                 ${role}
               </div>
-              <p style="margin:0.25rem 0 0;font-size:0.75rem;color:var(--haze);">${ev.date || ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''} · 摊位 ${pack.booths.length} �?/p>
+              <p style="margin:0.25rem 0 0;font-size:0.75rem;color:var(--haze);">${ev.date || ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''} · 摊位 ${pack.booths.length} 个</p>
             </div>
             ${pack.canManageAll ? `<button class="btn-sm btn-edit" onclick="openAuthorBoothForm('${ev.id}')">+ 新增摊位</button>` : ''}
           </div>
@@ -2829,13 +2829,13 @@
                       ${b.isOwner && !b.canFullEdit ? '<span style="font-size:0.7rem;color:var(--haze);margin-left:0.35rem;">我的摊位</span>' : ''}
                     </div>
                     <div style="font-size:0.72rem;color:var(--haze);margin-top:0.15rem;">
-                      摊主 ${(b.circleIds || []).length} �?· 作品顺序 ${Array.isArray(b.goodsOrder) ? b.goodsOrder.length : 0} 项已�?
+                      摊主 ${(b.circleIds || []).length} 人 · 作品顺序 ${Array.isArray(b.goodsOrder) ? b.goodsOrder.length : 0} 项已设
                     </div>
                   </div>
                   <div style="display:flex;gap:0.25rem;flex-wrap:wrap;">
                     ${pack.canManageAll ? `
-                      <button class="btn-sm" onclick="authorMoveBooth('${ev.id}','${b.id}',-1)" ${bi === 0 ? 'disabled style="opacity:0.4;font-size:0.7rem;padding:0.15rem 0.4rem;"' : 'style="font-size:0.7rem;padding:0.15rem 0.4rem;"'}>�?/button>
-                      <button class="btn-sm" onclick="authorMoveBooth('${ev.id}','${b.id}',1)" ${bi === pack.booths.length - 1 ? 'disabled style="opacity:0.4;font-size:0.7rem;padding:0.15rem 0.4rem;"' : 'style="font-size:0.7rem;padding:0.15rem 0.4rem;"'}>�?/button>
+                      <button class="btn-sm" onclick="authorMoveBooth('${ev.id}','${b.id}',-1)" ${bi === 0 ? 'disabled style="opacity:0.4;font-size:0.7rem;padding:0.15rem 0.4rem;"' : 'style="font-size:0.7rem;padding:0.15rem 0.4rem;"'}>↑</button>
+                      <button class="btn-sm" onclick="authorMoveBooth('${ev.id}','${b.id}',1)" ${bi === pack.booths.length - 1 ? 'disabled style="opacity:0.4;font-size:0.7rem;padding:0.15rem 0.4rem;"' : 'style="font-size:0.7rem;padding:0.15rem 0.4rem;"'}>↓</button>
                     ` : ''}
                     <button class="btn-sm btn-edit" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick='openAuthorBoothForm(${escapeHtml(JSON.stringify({ eventId: ev.id, booth: b, canFullEdit: !!pack.canManageAll }))})'>编辑</button>
                     ${pack.canManageAll ? `<button class="btn-sm btn-delete" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick="authorDeleteBooth('${ev.id}','${b.id}')">删除</button>` : ''}
@@ -2876,7 +2876,7 @@
       const goods = authorBoothGoods(pack, booth);
       const claimMap = (booth.claimConditions && typeof booth.claimConditions === 'object' && !Array.isArray(booth.claimConditions)) ? booth.claimConditions : {};
       if (!goods.length) {
-        el.innerHTML = '<div style="font-size:0.75rem;color:var(--haze);">该摊位暂无关联作�?/div>';
+        el.innerHTML = '<div style="font-size:0.75rem;color:var(--haze);">该摊位暂无关联作品</div>';
         return;
       }
       el.innerHTML = `
@@ -2889,9 +2889,9 @@
                 ? `<img src="${escapeHtml(g.images[0])}" alt="" style="width:24px;height:24px;border-radius:4px;object-fit:cover;flex-shrink:0;">`
                 : `<div style="width:24px;height:24px;border-radius:4px;background:linear-gradient(145deg,#EDE6DA,#D9D0C2);flex-shrink:0;"></div>`}
               <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
-              ${claimMap[g.id] ? `<span title="条件领取�?{escapeHtml(claimMap[g.id])}" style="flex-shrink:0;font-size:0.66rem;font-weight:600;color:var(--warning);border:1px solid rgba(196,138,42,.4);background:rgba(196,138,42,.12);border-radius:999px;padding:0 6px;">条件领取</span>` : ''}
-              <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === 0 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',-1)" ${gi === 0 ? 'disabled' : ''}>�?/button>
-              <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === goods.length - 1 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',1)" ${gi === goods.length - 1 ? 'disabled' : ''}>�?/button>
+              ${claimMap[g.id] ? `<span title="条件领取：${escapeHtml(claimMap[g.id])}" style="flex-shrink:0;font-size:0.66rem;font-weight:600;color:var(--warning);border:1px solid rgba(196,138,42,.4);background:rgba(196,138,42,.12);border-radius:999px;padding:0 6px;">条件领取</span>` : ''}
+              <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === 0 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',-1)" ${gi === 0 ? 'disabled' : ''}>↑</button>
+              <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === goods.length - 1 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',1)" ${gi === goods.length - 1 ? 'disabled' : ''}>↓</button>
             </div>
           `).join('')}
         </div>
@@ -2908,7 +2908,7 @@
       const tmp = booths[i]; booths[i] = booths[j]; booths[j] = tmp;
       const result = await authorAPI('POST', `/api/author/only-booths/${eventId}/reorder`, { order: booths.map(b => b.id) });
       if (result && result.success) {
-        showToast('摊位顺序已保�?, 'success');
+        showToast('摊位顺序已保存', 'success');
         loadAuthorOnlyBooths();
       }
     }
@@ -2917,7 +2917,7 @@
       if (!confirm('确定删除该摊位？')) return;
       const result = await authorAPI('DELETE', `/api/author/only-booths/${eventId}/${boothId}`);
       if (result && result.success) {
-        showToast('已删�?, 'success');
+        showToast('已删除', 'success');
         loadAuthorOnlyBooths();
       } else if (result && result.error) {
         showToast(result.error, 'error');
@@ -2939,7 +2939,7 @@
       if (result && result.success) {
         booth.goodsOrder = ids;
         renderAuthorBoothGoods(pack, booth);
-        showToast('作品顺序已保�?, 'success');
+        showToast('作品顺序已保存', 'success');
       } else if (result && result.error) {
         showToast(result.error, 'error');
       }
@@ -2965,7 +2965,7 @@
       const selectedOwners = new Set(booth?.circleIds || []);
       const tiers = booth?.promoTiers?.length ? booth.promoTiers : [{ minAmount: '', giftWorkIds: [], text: '' }];
       const claimMap = (booth?.claimConditions && typeof booth.claimConditions === 'object' && !Array.isArray(booth.claimConditions)) ? booth.claimConditions : {};
-      // 活动管理员可设置本摊全部作品；普通摊主只设置自己的作�?
+      // 活动管理员可设置本摊全部作品；普通摊主只设置自己的作品
       const claimGoods = isEdit
         ? authorBoothGoods(pack, booth).filter(w => canFullEdit || (w.circles || []).includes(activeCircleId()))
         : [];
@@ -2975,26 +2975,26 @@
       body.innerHTML = `
         ${canFullEdit ? `
         <div class="form-row">
-          <div class="form-group"><label>摊位�?<span style="color:var(--accent)">*</span></label><input class="form-input" id="abCode" value="${isEdit ? escapeHtml(booth.code || '') : ''}"></div>
-          <div class="form-group"><label>显示�?/label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
+          <div class="form-group"><label>摊位号 <span style="color:var(--accent)">*</span></label><input class="form-input" id="abCode" value="${isEdit ? escapeHtml(booth.code || '') : ''}"></div>
+          <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
         </div>
         ` : `
-        <div class="form-group"><label>摊位�?/label><input class="form-input" value="${isEdit ? escapeHtml(booth.code || '') : ''}" disabled></div>
-        <div class="form-group"><label>显示�?/label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
+        <div class="form-group"><label>摊位号</label><input class="form-input" value="${isEdit ? escapeHtml(booth.code || '') : ''}" disabled></div>
+        <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
         `}
         <div class="form-group">
-          <label>摊位头像（可选，从图片库选择�?/label>
+          <label>摊位头像（可选，从图片库选择）</label>
           <div id="abLogoPreview" style="margin-bottom:0.4rem;min-height:20px;">
             ${isEdit && booth.logo ? `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(booth.logo)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;"><button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
           </div>
           <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('abLogoPreview', true)">从图片库选择</button>
         </div>
         <div class="form-group">
-          <label>摊位简介（前台展开详情展示�?/label>
+          <label>摊位简介（前台展开详情展示）</label>
           <textarea class="form-input" id="abDescription" style="min-height:72px;" placeholder="介绍本摊位特色、现场活动等">${isEdit ? escapeHtml(booth.description || '') : ''}</textarea>
         </div>
         <div class="form-group">
-          <label>宣传图（可多�?· 从图片库选择�?/label>
+          <label>宣传图（可多张 · 从图片库选择）</label>
           <div id="abImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.4rem;min-height:20px;">
             ${(isEdit && Array.isArray(booth.images) ? booth.images : []).map(u => `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(u)}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;"><button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`).join('')}
           </div>
@@ -3009,19 +3009,19 @@
                 <input type="checkbox" class="ab-circle" value="${c.id}" ${selectedOwners.has(c.id) ? 'checked' : ''}>
                 ${escapeHtml(c.name)}
               </label>
-            `).join('') || '<span style="font-size:0.75rem;color:var(--haze);">暂无作�?/span>'}
+            `).join('') || '<span style="font-size:0.75rem;color:var(--haze);">暂无作者</span>'}
           </div>
         </div>
         ` : ''}
         <div class="form-group">
-          <label>满额赠品档（可多�?· 一档可多作�?· 仅可选我的周边）</label>
+          <label>满额赠品档（可多档 · 一档可多作品 · 仅可选我的周边）</label>
           <div id="abTierList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
             ${tiers.map((t, i) => renderAuthorTierRow(t, giftWorks, i)).join('')}
           </div>
-          <button type="button" class="btn-sm btn-edit" onclick="addAuthorTierRow('${eventId}')">+ 添加一�?/button>
+          <button type="button" class="btn-sm btn-edit" onclick="addAuthorTierRow('${eventId}')">+ 添加一档</button>
         </div>
         <div class="form-group">
-          <label>条件领取（可�?· 按本摊位作品设置�?/label>
+          <label>条件领取（可选 · 按本摊位作品设置）</label>
           ${claimGoods.length ? `
             <div id="abClaimList" style="display:flex;flex-direction:column;gap:0.45rem;">
               ${claimGoods.map(g => `
@@ -3031,7 +3031,7 @@
                 </div>
               `).join('')}
             </div>
-          ` : `<div style="font-size:0.75rem;color:var(--haze);">保存摊位并挂接摊主后，可在此按作品设置条件领取�?/div>`}
+          ` : `<div style="font-size:0.75rem;color:var(--haze);">保存摊位并挂接摊主后，可在此按作品设置条件领取。</div>`}
         </div>
         <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
           <button class="btn btn-primary" style="flex:1;" onclick="saveAuthorBooth('${eventId}', ${isEdit ? `'${booth.id}'` : 'null'}, ${canFullEdit})">保存</button>
@@ -3060,7 +3060,7 @@
         <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
           <input class="form-input ab-tier-min" type="number" min="0" style="width:90px;" placeholder="满额" value="${t.minAmount ?? ''}">
           <input class="form-input ab-tier-text" style="flex:1;min-width:100px;" placeholder="备注文案" value="${escapeHtml(t.text || '')}">
-          <button type="button" class="btn-sm btn-delete" onclick="this.closest('.ab-tier-row').remove()">�?/button>
+          <button type="button" class="btn-sm btn-delete" onclick="this.closest('.ab-tier-row').remove()">删</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:0.25rem;max-height:100px;overflow:auto;">
           ${works.length ? works.map(w => `
@@ -3099,7 +3099,7 @@
         images: [...document.querySelectorAll('#abImagesPreview img')].map(img => img.src),
         promoTiers
       };
-      // 仅在渲染了条件领取区块时提交，避免误清空其他摊主设置的条�?
+      // 仅在渲染了条件领取区块时提交，避免误清空其他摊主设置的条件
       if (document.getElementById('abClaimList')) {
         const claimConditions = {};
         document.querySelectorAll('#abClaimList .ab-claim').forEach(inp => {
@@ -3123,7 +3123,7 @@
         result = await authorAPI('POST', `/api/author/only-booths/${eventId}`, payload);
       }
       if (result && !result.error) {
-        showToast('摊位已保�?, 'success');
+        showToast('摊位已保存', 'success');
         closeWorkModal();
         loadAuthorOnlyBooths();
       } else if (result && result.error) {
@@ -3141,29 +3141,29 @@
       ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
       const eventStatusOptions = (typeof EVENT_STATUS_ORDERED !== 'undefined' && EVENT_STATUS_ORDERED.length > 0)
         ? EVENT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && eventData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')
-        : '<option value="jijiangkaiqi" ' + (isEdit && eventData.status === 'jijiangkaiqi' ? 'selected' : '') + '>即将开�?/option><option value="jinxingzhong" ' + (isEdit && eventData.status === 'jinxingzhong' ? 'selected' : '') + '>进行�?/option><option value="yijiesu" ' + (isEdit && eventData.status === 'yijiesu' ? 'selected' : '') + '>已结�?/option>';
+        : '<option value="jijiangkaiqi" ' + (isEdit && eventData.status === 'jijiangkaiqi' ? 'selected' : '') + '>即将开启</option><option value="jinxingzhong" ' + (isEdit && eventData.status === 'jinxingzhong' ? 'selected' : '') + '>进行中</option><option value="yijiesu" ' + (isEdit && eventData.status === 'yijiesu' ? 'selected' : '') + '>已结束</option>';
       const existingImages = isEdit ? (eventData.images || []) : [];
       body.innerHTML = `
         <div class="form-group"><label>活动名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myEventTitle" value="${isEdit ? escapeHtml(eventData.title) : ''}" required></div>
         <div class="form-row">
-          <div class="form-group"><label>开始日�?/label><input type="date" class="form-input" id="myEventDate" value="${isEdit ? eventData.date || '' : ''}"></div>
+          <div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="myEventDate" value="${isEdit ? eventData.date || '' : ''}"></div>
           <div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="myEventEndDate" value="${isEdit ? eventData.endDate || '' : ''}"></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>地点</label><input class="form-input" id="myEventLocation" value="${isEdit ? escapeHtml(eventData.location || '') : ''}"></div>
-          <div class="form-group"><label>状�?/label><select class="form-input" id="myEventStatus">${eventStatusOptions}</select></div>
+          <div class="form-group"><label>状态</label><select class="form-input" id="myEventStatus">${eventStatusOptions}</select></div>
         </div>
-        <div class="form-group"><label>摊位�?/label><input class="form-input" id="myEventBooth" value="${isEdit ? escapeHtml(eventData.booth || '') : ''}"></div>
+        <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth" value="${isEdit ? escapeHtml(eventData.booth || '') : ''}"></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;">${isEdit ? escapeHtml(eventData.description || '') : ''}</textarea></div>
         <div class="form-row">
-          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myEventContactType"><option value="" ${!isEdit || (!eventData.socialLinks?.qq && !eventData.socialLinks?.qqGroup && !eventData.socialLinks?.wechat && !eventData.socialLinks?.weibo && !eventData.socialLinks?.bilibili && !eventData.socialLinks?.custom) ? 'selected' : ''}>�?/option><option value="qq" ${isEdit && eventData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && eventData.socialLinks?.qqGroup ? 'selected' : ''}>QQ�?/option><option value="wechat" ${isEdit && eventData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && eventData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && eventData.socialLinks?.bilibili ? 'selected' : ''}>B�?/option><option value="custom" ${isEdit && eventData.socialLinks?.custom ? 'selected' : ''}>自定义链�?/option></select></div>
+          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myEventContactType"><option value="" ${!isEdit || (!eventData.socialLinks?.qq && !eventData.socialLinks?.qqGroup && !eventData.socialLinks?.wechat && !eventData.socialLinks?.weibo && !eventData.socialLinks?.bilibili && !eventData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && eventData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && eventData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && eventData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && eventData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && eventData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && eventData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
           <div class="form-group"><label>联系方式</label><input class="form-input" id="myEventContactValue" value="${isEdit ? (eventData.socialLinks?.qq || eventData.socialLinks?.qqGroup || eventData.socialLinks?.wechat || eventData.socialLinks?.weibo || eventData.socialLinks?.bilibili || eventData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>联系显示�?/label><input class="form-input" id="myEventContactLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.contactLabel || '') : ''}"></div>
+          <div class="form-group"><label>联系显示名</label><input class="form-input" id="myEventContactLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.contactLabel || '') : ''}"></div>
           <div class="form-group"><label>网站链接</label><input class="form-input" id="myEventWebsite" value="${isEdit ? escapeHtml(eventData.socialLinks?.website || '') : ''}" placeholder="https://..."></div>
         </div>
-        <div class="form-group"><label>网站显示�?/label><input class="form-input" id="myEventWebsiteLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.websiteLabel || '') : ''}"></div>
+        <div class="form-group"><label>网站显示名</label><input class="form-input" id="myEventWebsiteLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.websiteLabel || '') : ''}"></div>
         <div class="form-group">
           <label>封面图片</label>
           <div id="myEventCoverPreview" style="margin-bottom:0.5rem;">${isEdit && eventData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + eventData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
@@ -3202,7 +3202,7 @@
 
     async function submitMyEvent(eventId = '') {
       const title = document.getElementById('myEventTitle').value;
-      if (!title) { showToast('请填写活动名�?, 'error'); return; }
+      if (!title) { showToast('请填写活动名称', 'error'); return; }
       const coverImg = document.querySelector('#myEventCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-event-work-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myEventImagesPreview img')].map(img => img.src);
@@ -3246,7 +3246,7 @@
       if (!await showConfirm('确定删除此活动？', { danger: true })) return;
       const result = await authorAPI('DELETE', '/api/author/my-events/' + id);
       if (result && result.success) {
-        showToast('已删�?, 'success');
+        showToast('已删除', 'success');
         loadMyEvents();
       }
     }
@@ -3256,13 +3256,13 @@
       const projects = await authorAPI('GET', '/api/author/my-projects');
       const grid = document.getElementById('myProjectsGrid');
       if (!projects || projects.length === 0) {
-        grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无企划，点击上方按钮提�?/p>';
+        grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无企划，点击上方按钮提交</p>';
         return;
       }
       grid.innerHTML = projects.map(p => {
-        const statusBadge = p.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批�?/span>'
-          : p.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒�?/span>'
-          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审�?/span>';
+        const statusBadge = p.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+          : p.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
         const rejectReasonHtml = p.approvalStatus === 'rejected' && p.rejectReason
           ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(p.rejectReason)}</p>` : '';
         return `
@@ -3294,19 +3294,19 @@
         <div class="form-group"><label>企划名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myProjectTitle" value="${isEdit ? escapeHtml(projectData.title) : ''}" required></div>
         <div class="form-row">
           <div class="form-group"><label>分类</label><select class="form-input" id="myProjectCategory">${PROJECT_CATEGORIES_ORDERED.map(c => `<option value="${c.id}" ${isEdit && projectData.category === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
-          <div class="form-group"><label>状�?/label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && projectData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div>
+          <div class="form-group"><label>状态</label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && projectData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div>
         </div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;">${isEdit ? escapeHtml(projectData.description || '') : ''}</textarea></div>
-        <div class="form-group"><label>标签（英文逗号分隔�?/label><input class="form-input" id="myProjectTags" value="${isEdit ? (projectData.tags || []).join(', ') : ''}" placeholder="标签1, 标签2"></div>
+        <div class="form-group"><label>标签（英文逗号分隔）</label><input class="form-input" id="myProjectTags" value="${isEdit ? (projectData.tags || []).join(', ') : ''}" placeholder="标签1, 标签2"></div>
         <div class="form-row">
-          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="" ${!isEdit || (!projectData.socialLinks?.qq && !projectData.socialLinks?.qqGroup && !projectData.socialLinks?.wechat && !projectData.socialLinks?.weibo && !projectData.socialLinks?.bilibili && !projectData.socialLinks?.custom) ? 'selected' : ''}>�?/option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ�?/option><option value="wechat" ${isEdit && projectData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && projectData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && projectData.socialLinks?.bilibili ? 'selected' : ''}>B�?/option><option value="custom" ${isEdit && projectData.socialLinks?.custom ? 'selected' : ''}>自定义链�?/option></select></div>
+          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="" ${!isEdit || (!projectData.socialLinks?.qq && !projectData.socialLinks?.qqGroup && !projectData.socialLinks?.wechat && !projectData.socialLinks?.weibo && !projectData.socialLinks?.bilibili && !projectData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && projectData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && projectData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && projectData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && projectData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
           <div class="form-group"><label>联系方式</label><input class="form-input" id="myProjectContactValue" value="${isEdit ? (projectData.socialLinks?.qq || projectData.socialLinks?.qqGroup || projectData.socialLinks?.wechat || projectData.socialLinks?.weibo || projectData.socialLinks?.bilibili || projectData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>联系显示�?/label><input class="form-input" id="myProjectContactLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.contactLabel || '') : ''}"></div>
+          <div class="form-group"><label>联系显示名</label><input class="form-input" id="myProjectContactLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.contactLabel || '') : ''}"></div>
           <div class="form-group"><label>网站链接</label><input class="form-input" id="myProjectWebsite" value="${isEdit ? escapeHtml(projectData.socialLinks?.website || '') : ''}" placeholder="https://..."></div>
         </div>
-        <div class="form-group"><label>网站显示�?/label><input class="form-input" id="myProjectWebsiteLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.websiteLabel || '') : ''}"></div>
+        <div class="form-group"><label>网站显示名</label><input class="form-input" id="myProjectWebsiteLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.websiteLabel || '') : ''}"></div>
         <div class="form-group">
           <label>封面图片</label>
           <div id="myProjectCoverPreview" style="margin-bottom:0.5rem;">${isEdit && projectData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + projectData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
@@ -3331,7 +3331,7 @@
 
     async function submitMyProject(projectId = '') {
       const title = document.getElementById('myProjectTitle').value;
-      if (!title) { showToast('请填写企划名�?, 'error'); return; }
+      if (!title) { showToast('请填写企划名称', 'error'); return; }
       const coverImg = document.querySelector('#myProjectCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-project-work-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myProjectImagesPreview img')].map(img => img.src);
@@ -3372,7 +3372,7 @@
       if (!await showConfirm('确定删除此企划？', { danger: true })) return;
       const result = await authorAPI('DELETE', '/api/author/my-projects/' + id);
       if (result && result.success) {
-        showToast('已删�?, 'success');
+        showToast('已删除', 'success');
         loadMyProjects();
       }
     }
@@ -3386,9 +3386,9 @@
         return;
       }
       grid.innerHTML = updates.map(u => {
-        const statusBadge = u.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批�?/span>'
-          : u.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒�?/span>'
-          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审�?/span>';
+        const statusBadge = u.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
+          : u.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
+          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
         const rejectReasonHtml = u.approvalStatus === 'rejected' && u.rejectReason
           ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(u.rejectReason)}</p>` : '';
         return `
@@ -3411,12 +3411,12 @@
       const isEdit = !!updateData;
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
-      document.getElementById('workModalTitle').textContent = isEdit ? '编辑动�? : '发布动�?;
+      document.getElementById('workModalTitle').textContent = isEdit ? '编辑动态' : '发布动态';
       const existingImages = isEdit ? (updateData.images || []) : [];
       body.innerHTML = `
         <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" value="${isEdit ? escapeHtml(updateData.title) : ''}" required></div>
         <div class="form-group"><label>分类 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateCategory"><option value="">请选择</option></select></div>
-        <div class="form-group"><label>状�?<span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateStatus"><option value="">请选择</option></select></div>
+        <div class="form-group"><label>状态 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateStatus"><option value="">请选择</option></select></div>
         <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${isEdit ? updateData.publishDate || '' : new Date().toISOString().split('T')[0]}"></div>
         <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:120px;" required>${isEdit ? escapeHtml(updateData.content || '') : ''}</textarea></div>
         <div class="form-group">
@@ -3459,7 +3459,7 @@
       const category = document.getElementById('myUpdateCategory').value;
       const status = document.getElementById('myUpdateStatus').value;
       if (!title || !content) { showToast('请填写标题和内容', 'error'); return; }
-      if (!category || !status) { showToast('请选择分类和状�?, 'error'); return; }
+      if (!category || !status) { showToast('请选择分类和状态', 'error'); return; }
       const coverImg = document.querySelector('#myUpdateCoverPreview img');
       const images = [...document.querySelectorAll('#myUpdateImagesPreview img')].map(img => img.src);
       const data = {
@@ -3477,7 +3477,7 @@
         if (result) showToast('已保存，需重新审核', 'success');
       } else {
         result = await authorAPI('POST', '/api/author/my-updates', data);
-        if (result) showToast('动态已提交，等待审�?, 'success');
+        if (result) showToast('动态已提交，等待审核', 'success');
       }
       if (result) {
         closeWorkModal();
@@ -3489,7 +3489,7 @@
       if (!await showConfirm('确定删除此动态？', { danger: true })) return;
       const result = await authorAPI('DELETE', '/api/author/my-updates/' + id);
       if (result && result.success) {
-        showToast('已删�?, 'success');
+        showToast('已删除', 'success');
         loadMyUpdates();
       }
     }
@@ -3508,18 +3508,18 @@
         'my-events': '我的活动',
         'only-booths': 'ONLY 摊位',
         'my-projects': '我的企划',
-        'my-updates': '我的动�?,
+        'my-updates': '我的动态',
         events: '活动关联',
         projects: '企划关联',
         images: '图片管理',
         notifications: '审核通知',
         'author-announcements': '管理公告',
-        profile: '作者资�?,
+        profile: '作者资料',
         password: '修改密码',
         history: '操作日志'
       };
       const titleEl = document.getElementById('mgmtTitle');
-      if (titleEl) titleEl.textContent = titles[tab] || '作者管�?;
+      if (titleEl) titleEl.textContent = titles[tab] || '作者管理';
       const content = document.querySelector('.mgmt-content');
       if (content) content.scrollTop = 0;
       toggleMgmtSidebar(false);
@@ -3562,7 +3562,7 @@
           if (res.status === 403) {
             const data = await res.json();
             if (data.needReapply) {
-              alert('您的作者账号已被管理员删除，请重新申请�?);
+              alert('您的作者账号已被管理员删除，请重新申请。');
               authorLogout();
               switchAuthTab('register');
               return;

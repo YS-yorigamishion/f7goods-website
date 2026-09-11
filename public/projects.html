@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods �?同人企划</title>
-  <meta name="description" content="发现正在进行的同人企划，加入创作团队。浏览招募中、进行中和已完成的企划�?>
-  <meta property="og:title" content="f7goods �?同人企划">
-  <meta property="og:description" content="发现正在进行的同人企划，加入创作团队�?>
+  <title>f7goods — 同人企划</title>
+  <meta name="description" content="发现正在进行的同人企划，加入创作团队。浏览招募中、进行中和已完成的企划。">
+  <meta property="og:title" content="f7goods — 同人企划">
+  <meta property="og:description" content="发现正在进行的同人企划，加入创作团队。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.svg">
@@ -25,11 +25,11 @@
         <h1 id="heroTitle" class="settings-pending" data-i18n="projects.heroTitle">同人企划</h1>
         <p id="heroSubtitle" class="settings-pending" data-i18n="projects.heroSubtitle">发现正在进行的同人企划，加入创作团队</p>
       </div>
-      <div class="cl-list-count">�?<b id="projectTotalCount">0</b> 个企�?/div>
+      <div class="cl-list-count">共 <b id="projectTotalCount">0</b> 个企划</div>
     </div>
     <div class="cl-list-sub">
       <strong id="pageTitle" class="settings-pending" data-i18n="projects.listTitle">企划列表</strong>
-      <span id="pageSubtitle" class="settings-pending" data-i18n="projects.listSubtitle">正在进行或招募中的同人企划项�?/span>
+      <span id="pageSubtitle" class="settings-pending" data-i18n="projects.listSubtitle">正在进行或招募中的同人企划项目</span>
     </div>
   </section>
 
@@ -43,10 +43,10 @@
       <div class="cl-toolbar-row">
         <button type="button" class="filter-btn" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
         <select class="form-input" id="sortSelect">
-          <option value="date-desc" selected data-i18n="common.dateDesc">创建日期 �?新→�?/option>
-          <option value="date-asc" data-i18n="common.dateAsc">创建日期 �?旧→�?/option>
+          <option value="date-desc" selected data-i18n="common.dateDesc">创建日期 ↓ 新→旧</option>
+          <option value="date-asc" data-i18n="common.dateAsc">创建日期 ↑ 旧→新</option>
           <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
-          <option value="progress-desc">进度 �?/option>
+          <option value="progress-desc">进度 ↓</option>
         </select>
         <input type="text" class="search-input" placeholder="搜索企划..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
         <span class="cl-show-count">显示 <b id="projectShowCount">0</b></span>
@@ -67,7 +67,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260912a"></script>
+  <script src="/js/main.js?v=20260912b"></script>
   <script>
     initPage('projects');
 
@@ -107,7 +107,7 @@
       }
     }
 
-    // 企划时间轴进度：startDate �?endDate
+    // 企划时间轴进度：startDate → endDate
     function projectProgress(p) {
       const s = new Date(p.startDate || p.createdAt || 0);
       const e = new Date(p.endDate || 0);
@@ -116,9 +116,9 @@
       const total = e - s;
       const pct = Math.max(0, Math.min(100, Math.round((now - s) / total * 100)));
       let label;
-      if (now < s) label = '尚未开�?;
-      else if (now > e) label = '已结�?;
-      else label = '剩余 ' + Math.max(0, Math.ceil((e - now) / 86400000)) + ' �?;
+      if (now < s) label = '尚未开始';
+      else if (now > e) label = '已结束';
+      else label = '剩余 ' + Math.max(0, Math.ceil((e - now) / 86400000)) + ' 天';
       return { pct, label };
     }
 
@@ -204,21 +204,21 @@
           </div>
           <div class="cl-proj-body">
             <div class="cl-proj-title">${escapeHtml(project.title)}</div>
-            <div class="cl-proj-sub">${escapeHtml(catLabel)}${authorN ? ' · 参与作�?' + authorN + ' �? : ''}</div>
+            <div class="cl-proj-sub">${escapeHtml(catLabel)}${authorN ? ' · 参与作者 ' + authorN + ' 人' : ''}</div>
             <div class="cl-proj-desc">${escapeHtml(project.description || '')}</div>
             ${tags.length ? `<div class="cl-proj-tags">${tags.map(tg => `<span class="cl-proj-tag">#${escapeHtml(tg)}</span>`).join('')}</div>` : ''}
           </div>
           ${prog ? `
           <div class="cl-proj-timeline">
             <div class="cl-tl-head">
-              <span>${formatDate(project.startDate)} �?${formatDate(project.endDate)}</span>
+              <span>${formatDate(project.startDate)} → ${formatDate(project.endDate)}</span>
               <span class="now">${prog.label}</span>
             </div>
             <div class="cl-tl-bar"><div class="cl-tl-fill ${fillCls}" style="width:${prog.pct}%"></div></div>
           </div>` : ''}
           <div class="cl-proj-foot">
             <span>${formatDate(project.startDate)}</span>
-            <span class="go">查看 �?/span>
+            <span class="go">查看 →</span>
           </div>
         </a>
       `;

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods �?动态详�?/title>
-  <meta name="description" content="查看同人动态详情，了解最新资讯�?>
+  <title>f7goods — 动态详情</title>
+  <meta name="description" content="查看同人动态详情，了解最新资讯。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.svg">
@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911w">
+  <link rel="stylesheet" href="/css/style.css?v=20260912b">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -47,7 +47,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260912a"></script>
+  <script src="/js/main.js?v=20260912b"></script>
   <script>
     async function loadUpdate() {
       const params = new URLSearchParams(location.search);
@@ -68,7 +68,7 @@
         const relatedProjects = allProjects.filter(p => (update.relatedProjects || []).includes(p.id));
         const relatedCircles = allCircles.filter(c => (update.relatedCircles || []).includes(c.id));
 
-        document.title = `${update.title} �?f7goods`;
+        document.title = `${update.title} — f7goods`;
         document.querySelector('meta[property="og:title"]').content = update.title;
         document.querySelector('meta[property="og:description"]').content = (update.content || '').substring(0, 160);
         if (update.coverImage) document.querySelector('meta[property="og:image"]').content = update.coverImage;
@@ -86,16 +86,16 @@
           else stCls += ' now';
         }
         const images = Array.isArray(update.images) ? update.images.filter(Boolean) : [];
-        const authors = relatedCircles.map(c => c.name).join('�?);
-        // 作者名可点击进入作者页（多个作者以 �?分隔�?
+        const authors = relatedCircles.map(c => c.name).join('、');
+        // 作者名可点击进入作者页（多个作者以 、 分隔）
         const authorLinks = relatedCircles
           .map(c => `<a class="au" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.name)}</a>`)
-          .join('�?);
+          .join('、');
 
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/updates.html">${t('nav.updates')}</a>
-            <span>�?/span>
+            <span>›</span>
             <span>${escapeHtml(update.title)}</span>
           </div>
           ${update.coverImage ? `
@@ -104,8 +104,8 @@
           </div>` : ''}
           <div class="cl-u-head">
             <div class="cl-u-date">
-              <span class="m">${d.slice(5, 7) ? Number(d.slice(5, 7)) + ' �? : ''}</span>
-              <span class="d">${d.slice(8, 10) || '�?}</span>
+              <span class="m">${d.slice(5, 7) ? Number(d.slice(5, 7)) + ' 月' : ''}</span>
+              <span class="d">${d.slice(8, 10) || '—'}</span>
             </div>
             <div class="cl-u-main">
               <div class="cl-u-chips">
@@ -145,7 +145,7 @@
                 </div>
                 <div class="info-row">
                   <span class="info-label">${t('works.author')}</span>
-                  <span class="info-value">${relatedCircles.length ? relatedCircles.map(c => `<a class="au" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.name)}</a>`).join('�?) : '-'}</span>
+                  <span class="info-value">${relatedCircles.length ? relatedCircles.map(c => `<a class="au" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.name)}</a>`).join('、') : '-'}</span>
                 </div>
                 ${catLabel ? `
                 <div class="info-row">
@@ -154,7 +154,7 @@
                 </div>` : ''}
                 ${stLabel ? `
                 <div class="info-row">
-                  <span class="info-label">状�?/span>
+                  <span class="info-label">状态</span>
                   <span class="info-value">${escapeHtml(stLabel)}</span>
                 </div>` : ''}
                 <div class="info-row">

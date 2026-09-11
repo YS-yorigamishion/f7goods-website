@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods �?作品详情</title>
-  <meta name="description" content="查看同人作品详情，包括图片、价格、作者信息等�?>
+  <title>f7goods — 作品详情</title>
+  <meta name="description" content="查看同人作品详情，包括图片、价格、作者信息等。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:title" content="">
@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911e">
+  <link rel="stylesheet" href="/css/style.css?v=20260912b">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -47,7 +47,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260912a"></script>
+  <script src="/js/main.js?v=20260912b"></script>
   <script>
     async function loadWork() {
       const params = new URLSearchParams(location.search);
@@ -66,7 +66,7 @@
         const workCircles = (work.circles || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
         const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(work.id));
         const relatedProjects = allProjects.filter(p => (p.works || []).includes(work.id));
-        document.title = `${work.title} �?f7goods`;
+        document.title = `${work.title} — f7goods`;
         document.querySelector('meta[property="og:title"]').content = work.title;
         document.querySelector('meta[property="og:description"]').content = (work.description || '').substring(0, 160);
         if (work.images && work.images[0]) document.querySelector('meta[property="og:image"]').content = work.images[0];
@@ -96,8 +96,8 @@
         container.innerHTML = `
           <div class="exhibit-stage">
             <div class="exhibit-crumb">
-              <a href="/">�?${t('nav.works')}</a>
-              <span> �?</span>
+              <a href="/">← ${t('nav.works')}</a>
+              <span> › </span>
               <span>${escapeHtml(work.title)}</span>
             </div>
             <div class="exhibit-grid">
@@ -134,7 +134,7 @@
                   ${workCircles.length > 0 ? `
                   <div class="info-row">
                     <span class="info-label">${t('works.author')}</span>
-                    <span class="info-value">${workCircles.map(c => `<a href="/circle-detail.html?id=${c.id}" class="detail-link" style="color:var(--ink);text-decoration:none;">${escapeHtml(c.name)}</a>`).join('�?)}</span>
+                    <span class="info-value">${workCircles.map(c => `<a href="/circle-detail.html?id=${c.id}" class="detail-link" style="color:var(--ink);text-decoration:none;">${escapeHtml(c.name)}</a>`).join('、')}</span>
                   </div>
                   ` : ''}
                   ${work.isCommissioned && work.commissionedBy ? `
@@ -237,12 +237,12 @@
       }
     }
 
-    // ===== 分享图片：把大卡片导出为 PNG（不含路径与 想要/喜爱/分享 按钮�?=====
+    // ===== 分享图片：把大卡片导出为 PNG（不含路径与 想要/喜爱/分享 按钮） =====
     const SHARE_W = 1000;
     const SHARE_SCALE = 2;
     const SHARE_SANS = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
     const SHARE_SERIF = '"Noto Serif SC", Georgia, serif';
-    const TITLE_TRACK = '-0.6px';   // 对应页面 .exhibit-title �?-0.02em�?0px�?
+    const TITLE_TRACK = '-0.6px';   // 对应页面 .exhibit-title 的 -0.02em（30px）
     let shareBusy = false;
 
     function shareRoundRect(ctx, x, y, w, h, r) {
@@ -308,7 +308,7 @@
 
       const m = document.createElement('canvas').getContext('2d');
       const statusText = (typeof STATUS_LABELS !== 'undefined' && STATUS_LABELS[work.status]) || '';
-      // 标题按页�?.exhibit-title �?letter-spacing 收紧，量宽时一并计�?
+      // 标题按页面 .exhibit-title 的 letter-spacing 收紧，量宽时一并计入
       m.letterSpacing = TITLE_TRACK;
       m.font = `600 30px ${SHARE_SERIF}`;
       const titleLines = shareWrapText(m, work.title || '', plaqueW);
@@ -320,13 +320,13 @@
         [t('works.price'), typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料')],
         [t('works.releaseDate'), formatDate(work.releaseDate)],
         [t('common.category'), catLabel],
-        workCircles.length ? [t('works.author'), workCircles.map(c => c.name).join('�?)] : null,
+        workCircles.length ? [t('works.author'), workCircles.map(c => c.name).join('、')] : null,
         (work.isCommissioned && work.commissionedBy) ? [t('works.commissionedBy'), work.commissionedBy] : null
       ].filter(r => r && String(r[1] || '').trim());
       m.font = `14px ${SHARE_SANS}`;
       const descLines = work.description ? shareWrapText(m, work.description, plaqueW - 14) : [];
 
-      // 版面：先算坐标，绘制时复用同一套数�?
+      // 版面：先算坐标，绘制时复用同一套数值
       const L = {};
       let cy = 0;
       if (statusText) { L.statusY = cy; cy += 22; }
@@ -354,7 +354,7 @@
       ctx.fillStyle = '#E8E2D6';
       ctx.fillRect(0, 0, SHARE_W, H);
 
-      // 大卡�?
+      // 大卡片
       shareRoundRect(ctx, 0, cardY, SHARE_W, cardH, 18);
       ctx.fillStyle = '#F6F2EB';
       ctx.fill();
@@ -374,7 +374,7 @@
 
       const left = PAD, top = cardY + PAD;
 
-      // 作品�?
+      // 作品图
       shareRoundRect(ctx, left, top, frameW, frameH, 4);
       ctx.fillStyle = '#FFFCF7';
       ctx.fill();
@@ -385,7 +385,7 @@
       ctx.beginPath();
       ctx.rect(artX, artY, artW, artH);
       ctx.clip();
-      // 与页�?.exhibit-art img 的底色一致，避免透明图留白处颜色不同
+      // 与页面 .exhibit-art img 的底色一致，避免透明图留白处颜色不同
       ctx.fillStyle = '#1a1816';
       ctx.fillRect(artX, artY, artW, artH);
       const img = await shareLoadImg((work.images || [])[0] || '');

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods �?活动详情</title>
-  <meta name="description" content="查看同人活动详情，包括时间、地点、相关作品等�?>
+  <title>f7goods — 活动详情</title>
+  <meta name="description" content="查看同人活动详情，包括时间、地点、相关作品等。">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="f7goods">
   <meta property="og:image" content="/uploads/og-image.svg">
@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260912b">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -46,7 +46,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260912a"></script>
+  <script src="/js/main.js?v=20260912b"></script>
   <script>
     let eventRelatedWorks = [];
     let eventCirclesMap = {};
@@ -78,7 +78,7 @@
         return;
       }
       grid.innerHTML = filtered.map(work => {
-        const authorNames = (work.circles || []).map(cid => eventCirclesMap[cid]).filter(Boolean).join('�?);
+        const authorNames = (work.circles || []).map(cid => eventCirclesMap[cid]).filter(Boolean).join('、');
         return `
         <a class="card" href="/work-detail.html?id=${work.id}" style="text-decoration:none;color:inherit;">
           <div class="card-image" style="height:160px;">
@@ -107,10 +107,10 @@
         el._clickTimer = setTimeout(() => {
           el._clickTimer = null;
           if (el.classList.contains('collapsed')) {
-            // 折叠状�?�?展开
+            // 折叠状态 → 展开
             el.classList.remove('collapsed');
           } else {
-            // 已展开 �?打开lightbox
+            // 已展开 → 打开lightbox
             const images = JSON.parse(el.dataset.images || '[]');
             const index = parseInt(el.dataset.index || '0');
             openLightbox(images, index);
@@ -144,7 +144,7 @@
         ])];
         const relatedCircles = allCircles.filter(c => relatedCircleIds.includes(c.id));
 
-        document.title = `${event.title} �?f7goods`;
+        document.title = `${event.title} — f7goods`;
         document.querySelector('meta[property="og:title"]').content = event.title;
         document.querySelector('meta[property="og:description"]').content = (event.description || '').substring(0, 160);
         if (event.coverImage) document.querySelector('meta[property="og:image"]').content = event.coverImage;
@@ -174,7 +174,7 @@
         container.innerHTML = `
           <div class="detail-breadcrumb">
             <a href="/events.html">${t('nav.events')}</a>
-            <span>�?/span>
+            <span>›</span>
             <span>${escapeHtml(event.title)}</span>
           </div>
           <div class="ev-hero ${cover ? 'has-cover' : ''}" ${cover ? `style="background-image:url('${escapeHtml(cover).replace(/'/g, '&#39;')}');background-size:cover;background-position:center;"` : ''}>
@@ -195,9 +195,9 @@
           ${isOnly ? `
           <div class="ev-only-banner">
             <div>
-              <b>ONLY 专场页已开�?/b>
+              <b>ONLY 专场页已开放</b>
             </div>
-            <a href="/only.html?id=${encodeURIComponent(event.id)}">进入专场 �?/a>
+            <a href="/only.html?id=${encodeURIComponent(event.id)}">进入专场 →</a>
           </div>
           ` : ''}
           <div class="detail-content">
