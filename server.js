@@ -1509,6 +1509,10 @@ function sanitizePromoTiers(tiers) {
       return { minAmount: Number(t.minAmount) || 0, giftWorkId: ids[0] || '', giftWorkIds: ids, text: String(t.text || '') };
     });
 }
+function sanitizeBoothImages(images) {
+  if (!Array.isArray(images)) return undefined;
+  return images.filter(u => u != null && String(u).trim() !== '').map(u => String(u));
+}
 
 // List ONLY events + booths the author can manage
 app.get('/api/author/only-booths', authorAuthMiddleware, (req, res) => {
@@ -1579,6 +1583,8 @@ app.post('/api/author/only-booths/:eventId', authorAuthMiddleware, async (req, r
     code: String(req.body.code || '').trim(),
     title: String(req.body.title || '').trim(),
     logo: String(req.body.logo || ''),
+    description: String(req.body.description || ''),
+    images: sanitizeBoothImages(req.body.images) || [],
     order: booths.length,
     circleIds: Array.isArray(req.body.circleIds) ? req.body.circleIds.filter(Boolean) : [],
     goodsOrder: [],
@@ -1610,13 +1616,23 @@ app.put('/api/author/only-booths/:eventId/:boothId', authorAuthMiddleware, async
     if (req.body.code !== undefined) booth.code = String(req.body.code || '').trim();
     if (req.body.title !== undefined) booth.title = String(req.body.title || '').trim();
     if (req.body.logo !== undefined) booth.logo = String(req.body.logo || '');
+    if (req.body.description !== undefined) booth.description = String(req.body.description || '');
+    if (req.body.images !== undefined) {
+      const imgs = sanitizeBoothImages(req.body.images);
+      if (imgs) booth.images = imgs;
+    }
     if (req.body.circleIds !== undefined) booth.circleIds = Array.isArray(req.body.circleIds) ? req.body.circleIds.filter(Boolean) : [];
     if (req.body.promoTiers !== undefined) booth.promoTiers = sanitizePromoTiers(req.body.promoTiers);
     if (req.body.goodsOrder !== undefined) booth.goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
   } else {
-    // Booth owner: only title / logo / promoTiers / goodsOrder
+    // Booth owner / event editor: limited fields including description + promo images
     if (req.body.title !== undefined) booth.title = String(req.body.title || '').trim();
     if (req.body.logo !== undefined) booth.logo = String(req.body.logo || '');
+    if (req.body.description !== undefined) booth.description = String(req.body.description || '');
+    if (req.body.images !== undefined) {
+      const imgs = sanitizeBoothImages(req.body.images);
+      if (imgs) booth.images = imgs;
+    }
     if (req.body.promoTiers !== undefined) booth.promoTiers = sanitizePromoTiers(req.body.promoTiers);
     if (req.body.goodsOrder !== undefined) booth.goodsOrder = Array.isArray(req.body.goodsOrder) ? req.body.goodsOrder.filter(Boolean) : [];
   }

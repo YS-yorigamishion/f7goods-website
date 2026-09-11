@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260911b">
+  <link rel="stylesheet" href="/css/style.css?v=20260911d">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -51,10 +51,13 @@
     .only-tabs button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
     .only-booth {
       background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-      padding: 14px; margin-bottom: 10px;
+      padding: 14px; margin-bottom: 10px; overflow: hidden;
+      transition: border-color 0.18s ease;
     }
-    .only-booth-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
-    .only-booth-bulk { display: flex; gap: 6px; flex-shrink: 0; margin-left: auto; align-self: flex-start; }
+    .only-booth.open { border-color: #D4C8B8; }
+    .only-booth-head { display: flex; gap: 10px; align-items: center; margin-bottom: 0; cursor: pointer; user-select: none; padding: 2px 0; }
+    .only-booth-head:hover .info h3 { color: var(--accent); }
+    .only-booth-bulk { display: flex; gap: 6px; flex-shrink: 0; margin-left: auto; align-self: center; }
     .only-booth-bulk button {
       border: 1px solid var(--line); background: var(--card); color: var(--muted);
       border-radius: 999px; padding: 4px 10px; font-size: 11px; cursor: pointer;
@@ -66,10 +69,52 @@
       width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
       background: linear-gradient(145deg,#EDE6DA,#D9D0C2);
       display: flex; align-items: center; justify-content: center; font-weight: 700;
+      overflow: hidden;
     }
+    .only-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .only-booth-head .info { flex: 1; min-width: 0; }
-    .only-booth-head h3 { margin: 0 0 2px; font-size: 0.95rem; font-weight: 600; }
+    .only-booth-head h3 { margin: 0 0 2px; font-size: 0.95rem; font-weight: 600; transition: color 0.15s ease; }
     .only-booth-head .sub { font-size: 11px; color: var(--muted); }
+    .only-booth-chev {
+      width: 18px; height: 18px; stroke: var(--muted); fill: none; stroke-width: 1.8;
+      flex-shrink: 0; transition: transform 0.2s ease;
+    }
+    .only-booth.open .only-booth-chev { transform: rotate(180deg); }
+    .only-booth-body { display: none; padding-top: 10px; }
+    .only-booth.open .only-booth-body { display: block; animation: onlyFadeIn 0.22s ease; }
+    @keyframes onlyFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .only-banners {
+      display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory;
+      padding-bottom: 2px; margin-bottom: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .only-banners::-webkit-scrollbar { height: 4px; }
+    .only-banners::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+    .only-banner {
+      flex: 0 0 auto;
+      width: min(220px, 72%);
+      aspect-ratio: 16 / 10;
+      border-radius: var(--radius-sm, 10px);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      scroll-snap-align: start;
+      cursor: zoom-in;
+      padding: 0;
+      background: linear-gradient(145deg, #EDE6DA, #E2D9CB);
+      display: block;
+    }
+    .only-banner img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .only-booth-intro {
+      font-size: 12.5px; line-height: 1.7; color: #4A453F;
+      background: var(--paper); border: 1px solid var(--line);
+      border-radius: 10px; padding: 8px 10px; margin-bottom: 10px;
+      white-space: pre-wrap;
+    }
     .only-goods { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
     .only-g {
       border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper);
@@ -357,11 +402,15 @@
         }
         const promoTiers = Array.isArray(raw.promoTiers) ? raw.promoTiers.filter(t => t && (tierGiftIds(t).length || t.text)) : [];
         const logo = raw.logo || owners.find(o => o.logo)?.logo || '';
+        const images = Array.isArray(raw.images) ? raw.images.filter(Boolean).map(String) : [];
+        const description = String(raw.description || '');
         return {
           id: raw.id,
           code,
           title,
           logo,
+          description,
+          images,
           order: raw.order ?? idx,
           circleIds: raw.circleIds || [],
           owners,
@@ -448,6 +497,33 @@
         renderOnlyBooths(b.dataset.t);
       });
       document.getElementById('onlyListPane').addEventListener('click', e => {
+        // Banner open lightbox
+        const banner = e.target.closest('[data-banner]');
+        if (banner) {
+          e.preventDefault();
+          e.stopPropagation();
+          const boothId = banner.dataset.booth;
+          const idx = Number(banner.dataset.banner) || 0;
+          const booth = (window._only?.boothModels || []).find(b => b.id === boothId);
+          if (booth && booth.images?.length && typeof openLightbox === 'function') {
+            openLightbox(booth.images, idx);
+          }
+          return;
+        }
+        // Bulk qty buttons
+        const bulk = e.target.closest('[data-bulk]');
+        if (bulk) {
+          e.preventDefault();
+          e.stopPropagation();
+          setOnlyBoothQty(bulk.dataset.booth, Number(bulk.dataset.bulk));
+          return;
+        }
+        // Expand / collapse booth card
+        const head = e.target.closest('[data-booth-toggle]');
+        if (head && !e.target.closest('a,button,input,select,textarea')) {
+          toggleOnlyBooth(head.dataset.boothToggle);
+          return;
+        }
         const add = e.target.closest('[data-add]');
         if (add) { setOnlyQty(add.dataset.add, +1); return; }
         const dec = e.target.closest('[data-dec]');
@@ -485,46 +561,74 @@
         return;
       }
       const cart = window._onlyCart || {};
+      if (!window._onlyOpenBooths) {
+        window._onlyOpenBooths = new Set(booths.filter(b => b.id !== '_unassigned').slice(0, 1).map(b => b.id));
+      }
       listPane.innerHTML = booths.map(b => {
         const ownerNames = (b.owners || []).map(c => esc(c.name)).join('、');
         const tiers = b.promoTiers || [];
+        const images = b.images || [];
+        const open = window._onlyOpenBooths.has(b.id);
+        const bannersHtml = images.length
+          ? `<div class="only-banners">${images.map((u, i) => `
+              <button type="button" class="only-banner" data-booth="${esc(b.id)}" data-banner="${i}" aria-label="查看宣传图 ${i + 1}">
+                <img src="${esc(u)}" alt="" loading="lazy">
+              </button>`).join('')}</div>`
+          : '';
+        const introHtml = b.description
+          ? `<div class="only-booth-intro">${esc(b.description)}</div>`
+          : '';
         return `
-          <div class="only-booth">
-            <div class="only-booth-head">
-              <div class="only-avatar">${b.logo ? `<img src="${esc(b.logo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : esc((b.code || ownerNames || '?').slice(0,1))}</div>
+          <div class="only-booth${open ? ' open' : ''}" id="only-booth-${esc(b.id)}">
+            <div class="only-booth-head" data-booth-toggle="${esc(b.id)}" role="button" tabindex="0"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleOnlyBooth('${esc(b.id)}')}">
+              <div class="only-avatar">${b.logo ? `<img src="${esc(b.logo)}" alt="">` : esc((b.code || ownerNames || '?').slice(0,1))}</div>
               <div class="info">
                 <h3>${esc(boothLabel(b))}</h3>
-                <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件关联周边</div>
+                <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件关联周边${images.length ? ' · ' + images.length + ' 张宣传图' : ''}${tiers.length ? ' · 满赠' : ''}</div>
               </div>
               <div class="only-booth-bulk" title="本摊全部作品数量">
-                <button type="button" onclick="setOnlyBoothQty('${esc(b.id)}',-1)" ${b.goods.length ? '' : 'disabled'}>全部 −1</button>
-                <button type="button" onclick="setOnlyBoothQty('${esc(b.id)}',1)" ${b.goods.length ? '' : 'disabled'}>全部 +1</button>
+                <button type="button" data-booth="${esc(b.id)}" data-bulk="-1" ${b.goods.length ? '' : 'disabled'}>全部 −1</button>
+                <button type="button" data-booth="${esc(b.id)}" data-bulk="1" ${b.goods.length ? '' : 'disabled'}>全部 +1</button>
               </div>
+              <svg class="only-booth-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
             </div>
-            <div class="only-goods">
-              ${b.goods.length ? b.goods.map(g => {
-                const q = cart[g.id]?.qty || 0;
-                const img = (g.images && g.images[0]) || '';
-                return `<a class="only-g" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
-                  <div class="img">${img ? `<img src="${esc(img)}" alt="">` : '周边'}</div>
-                  <div class="body">
-                    <div class="name">${esc(g.title)}</div>
-                    <div class="price">${esc(formatPriceLabel(g.price))}</div>
-                    <div class="only-qtyrow">
-                      <button type="button" onclick="event.preventDefault();event.stopPropagation();setOnlyQty('${esc(g.id)}',-1)" ${q ? '' : 'disabled'}>−</button>
-                      <span class="q">${q}</span>
-                      <button type="button" onclick="event.preventDefault();event.stopPropagation();setOnlyQty('${esc(g.id)}',1)">+</button>
+            <div class="only-booth-body">
+              ${bannersHtml}
+              ${introHtml}
+              <div class="only-goods">
+                ${b.goods.length ? b.goods.map(g => {
+                  const q = cart[g.id]?.qty || 0;
+                  const img = (g.images && g.images[0]) || '';
+                  return `<a class="only-g" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
+                    <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
+                    <div class="body">
+                      <div class="name">${esc(g.title)}</div>
+                      <div class="price">${esc(formatPriceLabel(g.price))}</div>
+                      <div class="only-qtyrow">
+                        <button type="button" data-dec="${esc(g.id)}" ${q ? '' : 'disabled'}>−</button>
+                        <span class="q">${q}</span>
+                        <button type="button" data-add="${esc(g.id)}">+</button>
+                      </div>
                     </div>
-                  </div>
-                </a>`;
-              }).join('') : `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;">该摊位暂无关联本活动的周边</div>`}
+                  </a>`;
+                }).join('') : `<div style="font-size:12px;color:var(--muted);padding:0.5rem 0;grid-column:1/-1;">该摊位暂无关联本活动的周边</div>`}
+              </div>
+              ${tiers.length ? `<div class="only-promo-box" style="margin-top:10px;">${tiers.map(t => {
+                return `满 <b>${money(t.minAmount || 0)}</b> 送「${esc(tierGiftLabel(t))}」`;
+              }).join('<br>')}</div>` : ''}
             </div>
-            ${tiers.length ? `<div class="only-promo-box">${tiers.map(t => {
-              return `满 <b>${money(t.minAmount || 0)}</b> 送「${esc(tierGiftLabel(t))}」`;
-            }).join('<br>')}</div>` : ''}
           </div>
         `;
       }).join('');
+    }
+
+    function toggleOnlyBooth(boothId) {
+      if (!window._onlyOpenBooths) window._onlyOpenBooths = new Set();
+      if (window._onlyOpenBooths.has(boothId)) window._onlyOpenBooths.delete(boothId);
+      else window._onlyOpenBooths.add(boothId);
+      const el = document.getElementById('only-booth-' + boothId);
+      if (el) el.classList.toggle('open', window._onlyOpenBooths.has(boothId));
     }
 
     function loadOnlyCart(eventId) {

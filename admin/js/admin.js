@@ -4060,6 +4060,9 @@ async function pickImageFromLibrary(type) {
     } else if (type === 'booth-logo') {
       const preview = document.getElementById('boothLogoPreview');
       if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:48px;height:48px;object-fit:cover;border-radius:10px;"></div>`;
+    } else if (type === 'booth-images') {
+      const preview = document.getElementById('boothImagesPreview');
+      if (preview) selected.forEach(url => appendImagePreview(preview, url));
     }
   };
   openModal();
@@ -6849,6 +6852,8 @@ function normalizeBooths(booths) {
     code: b.code || b.name || '',
     title: b.title || '',
     logo: b.logo || '',
+    description: b.description || '',
+    images: Array.isArray(b.images) ? b.images.filter(Boolean).map(String) : [],
     order: b.order ?? i,
     circleIds: b.circleIds || [],
     goodsOrder: Array.isArray(b.goodsOrder) ? b.goodsOrder.filter(Boolean) : [],
@@ -6906,6 +6911,21 @@ function openBoothModal(boothId = null) {
       </div>
     </div>
     <div class="form-group">
+      <label>摊位简介（前台展开详情展示）</label>
+      <textarea class="form-input" id="boothDescription" style="min-height:72px;" placeholder="介绍本摊位特色、现场活动等">${escapeHtml(booth?.description || '')}</textarea>
+    </div>
+    <div class="form-group">
+      <label>宣传图（可多张）</label>
+      <div id="boothImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.4rem;">
+        ${(booth?.images || []).map(u => `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(u)}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;"><button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">×</button></div>`).join('')}
+      </div>
+      <input type="file" id="boothImagesInput" accept="image/*" multiple style="font-size:0.85rem;">
+      <div style="display:flex;gap:0.4rem;margin-top:0.4rem;flex-wrap:wrap;">
+        <button type="button" class="btn-sm btn-edit" onclick="uploadBoothImages()">上传宣传图</button>
+        <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageFromLibrary('booth-images')">从图片库选择</button>
+      </div>
+    </div>
+    <div class="form-group">
       <label>挂接摊主（可多选）</label>
       <input type="text" class="form-input" id="boothOwnerSearch" placeholder="搜索作者名称..." style="margin-bottom:0.45rem;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterBoothOwners(this.value)">
       <div id="boothOwnerList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:0.5rem;">
@@ -6945,6 +6965,8 @@ function openBoothModal(boothId = null) {
     const payload = {
       id: booth?.id || ('b' + Date.now() + Math.random().toString(36).slice(2, 6)),
       code, title, logo, circleIds, promoTiers,
+      description: document.getElementById('boothDescription')?.value || '',
+      images: [...document.querySelectorAll('#boothImagesPreview img')].map(img => img.src),
       goodsOrder: Array.isArray(booth?.goodsOrder) ? booth.goodsOrder.slice() : []
     };
     if (booth) {
@@ -7014,6 +7036,31 @@ async function uploadBoothLogo() {
     console.error(e);
     showToast(e.message || '上传失败', 'error');
   }
+}
+
+async function uploadBoothImages() {
+  const input = document.getElementById('boothImagesInput');
+  if (!input || !input.files || !input.files.length) { showToast('请选择图片', 'error'); return; }
+  const preview = document.getElementById('boothImagesPreview');
+  for (const file of input.files) {
+    const fd = new FormData();
+    fd.append('image', file);
+    try {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || '上传失败');
+      if (preview) appendImagePreview(preview, data.url);
+    } catch (e) {
+      console.error(e);
+      showToast(e.message || '上传失败', 'error');
+    }
+  }
+  input.value = '';
+  showToast('宣传图已上传，保存摊位后生效');
 }
 
 function filterBoothOwners(q) {

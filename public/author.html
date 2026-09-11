@@ -2949,6 +2949,17 @@
           </div>
           <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('abLogoPreview', true)">从图片库选择</button>
         </div>
+        <div class="form-group">
+          <label>摊位简介（前台展开详情展示）</label>
+          <textarea class="form-input" id="abDescription" style="min-height:72px;" placeholder="介绍本摊位特色、现场活动等">${isEdit ? escapeHtml(booth.description || '') : ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label>宣传图（可多张 · 从图片库选择）</label>
+          <div id="abImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.4rem;min-height:20px;">
+            ${(isEdit && Array.isArray(booth.images) ? booth.images : []).map(u => `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(u)}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;"><button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`).join('')}
+          </div>
+          <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('abImagesPreview')">从图片库选择</button>
+        </div>
         ${canFullEdit ? `
         <div class="form-group">
           <label>挂接摊主（可多选）</label>
@@ -3022,6 +3033,8 @@
       const payload = {
         title: document.getElementById('abTitle')?.value.trim() || '',
         logo: document.querySelector('#abLogoPreview img')?.src || '',
+        description: document.getElementById('abDescription')?.value || '',
+        images: [...document.querySelectorAll('#abImagesPreview img')].map(img => img.src),
         promoTiers
       };
       if (canFullEdit) {
