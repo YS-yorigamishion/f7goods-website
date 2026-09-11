@@ -1004,8 +1004,9 @@
       const entries = Object.values(window._onlyCart || {});
       const imgs = await Promise.all(entries.map(e => loadImg(resolveEntryImg(e))));
 
-      // receipt proportions — narrower paper, taller rows for thumbs
-      const W = 480;
+      // receipt proportions — logical size, rendered at 2x for crisp export
+      const LOGICAL_W = 480;
+      const SCALE = 2;
       const padX = 28;
       const thumb = 44;
       const rowH = 58;
@@ -1014,17 +1015,22 @@
       const footerH = 78;
       const bodyH = entries.length * rowH;
       const totalH = 64;
-      const H = headerH + bodyH + totalH + giftH + footerH + 24;
+      const LOGICAL_H = Math.max(360, headerH + bodyH + totalH + giftH + footerH + 24);
+      const W = LOGICAL_W;
+      const H = LOGICAL_H;
       const canvas = document.createElement('canvas');
-      canvas.width = W;
-      canvas.height = Math.max(360, H);
+      canvas.width = Math.round(LOGICAL_W * SCALE);
+      canvas.height = Math.round(LOGICAL_H * SCALE);
       const ctx = canvas.getContext('2d');
+      ctx.scale(SCALE, SCALE);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
 
       // page backdrop (behind the paper)
       ctx.fillStyle = '#E8E2D6';
-      ctx.fillRect(0, 0, W, canvas.height);
+      ctx.fillRect(0, 0, W, H);
       // paper
-      const paperX = 18, paperW = W - 36, paperY = 14, paperH = canvas.height - 28;
+      const paperX = 18, paperW = W - 36, paperY = 14, paperH = H - 28;
       ctx.fillStyle = '#FFFCF7';
       ctx.fillRect(paperX, paperY, paperW, paperH);
       // soft paper shadow edge
