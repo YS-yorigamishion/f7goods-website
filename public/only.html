@@ -533,9 +533,19 @@
           return;
         }
         const add = e.target.closest('[data-add]');
-        if (add) { setOnlyQty(add.dataset.add, +1); return; }
+        if (add) {
+          e.preventDefault();
+          e.stopPropagation();
+          setOnlyQty(add.dataset.add, +1);
+          return;
+        }
         const dec = e.target.closest('[data-dec]');
-        if (dec) { setOnlyQty(dec.dataset.dec, -1); return; }
+        if (dec) {
+          e.preventDefault();
+          e.stopPropagation();
+          setOnlyQty(dec.dataset.dec, -1);
+          return;
+        }
       });
 
       renderOnlyBooths('all');
