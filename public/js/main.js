@@ -1127,15 +1127,20 @@ function openLightbox(images, startIndex = 0) {
     overlay.innerHTML = `
       <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
       <button class="lightbox-nav lightbox-prev" onclick="event.stopPropagation();navLightbox(-1)">&#8249;</button>
-      <img src="" alt="">
+      <div class="lightbox-stage"><img src="" alt=""></div>
       <button class="lightbox-nav lightbox-next" onclick="event.stopPropagation();navLightbox(1)">&#8250;</button>
       <div class="lightbox-counter"></div>
     `;
     overlay.addEventListener('click', (e) => {
+      if (e.target.tagName === 'IMG') return;
+      // 长图滚动时点空白不关闭，避免误触
+      const stage = e.target.closest?.('.lightbox-stage');
+      if (stage && stage.classList.contains('is-scroll') && e.target === stage) return;
       if (e.target === overlay || e.target.tagName !== 'IMG') closeLightbox();
     });
     document.body.appendChild(overlay);
 
+    const stage = overlay.querySelector('.lightbox-stage');
     const img = overlay.querySelector('img');
 
     img.addEventListener('dblclick', (e) => {
@@ -1151,13 +1156,17 @@ function openLightbox(images, startIndex = 0) {
       }
     });
 
-    // 滚轮缩放（百分比缩放，更平滑）
-    img.addEventListener('wheel', (e) => {
+    // 长图未放大时滚轮/触控板竖滑交给原生滚动；其余情况缩放
+    stage.addEventListener('wheel', (e) => {
+      const canScroll = stage.classList.contains('is-scroll') && lbZoom.scale <= 1;
+      if (canScroll && !e.ctrlKey) return;
       e.preventDefault();
       const factor = e.deltaY > 0 ? 0.95 : 1.05;
       lbZoom.scale = Math.max(0.5, Math.min(2.5, lbZoom.scale * factor));
       applyZoom(img);
     }, { passive: false });
+
+    img.addEventListener('load', () => fitLightboxImage(img));
 
     img.addEventListener('mousedown', (e) => {
       if (lbZoom.scale <= 1) return;
@@ -1199,7 +1208,7 @@ function openLightbox(images, startIndex = 0) {
           lbTouch.dragStartTx = lbZoom.tx;
           lbTouch.dragStartTy = lbZoom.ty;
           img.classList.add('lightbox-dragging');
-        } else {
+        } else if (!stage.classList.contains('is-scroll')) {
           lbTouch.swiping = true;
         }
       }
@@ -1274,6 +1283,7 @@ function openLightbox(images, startIndex = 0) {
   }
 
   document.addEventListener('keydown', lightboxKeyHandler);
+  document.body.style.overflow = 'hidden';
   updateLightbox();
   requestAnimationFrame(() => overlay.classList.add('open'));
 }
@@ -1281,6 +1291,8 @@ function openLightbox(images, startIndex = 0) {
 function applyZoom(img) {
   img.style.transform = `translate(${lbZoom.tx}px, ${lbZoom.ty}px) scale(${lbZoom.scale})`;
   img.classList.toggle('lightbox-zoomed', lbZoom.scale > 1);
+  const stage = img.closest('.lightbox-stage');
+  if (stage) stage.classList.toggle('is-zooming', lbZoom.scale > 1);
 }
 
 function resetZoom(img) {
@@ -1289,14 +1301,40 @@ function resetZoom(img) {
   lbZoom.ty = 0;
   img.classList.remove('lightbox-zoomed', 'lightbox-dragging');
   img.style.transform = '';
+  const stage = img.closest('.lightbox-stage');
+  if (stage) stage.classList.remove('is-zooming');
+}
+
+// 长图判定：按整宽展示后仍超过视口高度，则整宽 + 竖向滚动
+function fitLightboxImage(img) {
+  const stage = img.closest('.lightbox-stage');
+  if (!stage || !img.naturalWidth || !img.naturalHeight) return;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const displayW = Math.min(img.naturalWidth, vw);
+  const displayH = img.naturalHeight * (displayW / img.naturalWidth);
+  const isLong = displayH > vh * 1.02;
+  img.classList.toggle('lightbox-long', isLong);
+  stage.classList.toggle('is-scroll', isLong);
+  if (!isLong) {
+    stage.scrollTop = 0;
+  }
 }
 
 function closeLightbox() {
   const overlay = document.getElementById('lightboxOverlay');
   if (overlay) {
-    resetZoom(overlay.querySelector('img'));
+    const img = overlay.querySelector('img');
+    const stage = overlay.querySelector('.lightbox-stage');
+    resetZoom(img);
+    img.classList.remove('lightbox-long');
+    if (stage) {
+      stage.classList.remove('is-scroll', 'is-zooming');
+      stage.scrollTop = 0;
+    }
     overlay.classList.remove('open');
   }
+  document.body.style.overflow = '';
   document.removeEventListener('keydown', lightboxKeyHandler);
 }
 
@@ -1309,7 +1347,13 @@ function updateLightbox(direction) {
   const overlay = document.getElementById('lightboxOverlay');
   if (!overlay) return;
   const img = overlay.querySelector('img');
+  const stage = overlay.querySelector('.lightbox-stage');
   resetZoom(img);
+  img.classList.remove('lightbox-long');
+  if (stage) {
+    stage.classList.remove('is-scroll', 'is-zooming');
+    stage.scrollTop = 0;
+  }
   if (direction) {
     img.style.transition = 'none';
     img.style.transform = `translateX(${direction > 0 ? '30%' : '-30%'})`;
@@ -1320,7 +1364,9 @@ function updateLightbox(direction) {
       img.style.opacity = '1';
     });
   }
+  img.onload = () => fitLightboxImage(img);
   img.src = lightboxImages[lightboxIndex];
+  if (img.complete && img.naturalWidth) fitLightboxImage(img);
   const counter = overlay.querySelector('.lightbox-counter');
   const prev = overlay.querySelector('.lightbox-prev');
   const next = overlay.querySelector('.lightbox-next');
@@ -1341,4 +1387,11 @@ function lightboxKeyHandler(e) {
   if (e.key === 'Escape') closeLightbox();
   if (e.key === 'ArrowLeft') navLightbox(-1);
   if (e.key === 'ArrowRight') navLightbox(1);
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    const stage = overlay.querySelector('.lightbox-stage');
+    if (stage && stage.classList.contains('is-scroll') && lbZoom.scale <= 1) {
+      e.preventDefault();
+      stage.scrollBy({ top: e.key === 'ArrowDown' ? 160 : -160, behavior: 'smooth' });
+    }
+  }
 }
