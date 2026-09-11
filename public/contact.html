@@ -397,7 +397,7 @@
 
       <div class="about-section-head">
         <h3 id="contactTitle" class="settings-pending" data-i18n="contact.title">联系我们</h3>
-        <span>REACH US</span>
+        <span id="contactLabel">REACH US</span>
       </div>
       <p id="contactContent" class="about-channels-lead settings-pending" data-i18n="contact.subtitle">有任何问题、合作意向或建议，欢迎通过以下方式联系我们：</p>
       <div class="about-channels settings-pending" id="contactLinksContainer">
@@ -489,6 +489,9 @@
         document.getElementById('storyContent').innerHTML = ps.storyContent.split('\n').map(p => `<p>${p}</p>`).join('');
       }
       if (ps.contactTitle) document.getElementById('contactTitle').textContent = ps.contactTitle;
+      if (ps.contactLabel !== undefined && ps.contactLabel !== null && ps.contactLabel !== '') {
+        document.getElementById('contactLabel').textContent = ps.contactLabel;
+      }
       if (ps.contactContent) document.getElementById('contactContent').textContent = ps.contactContent;
 
       document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));

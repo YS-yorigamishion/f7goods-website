@@ -5104,7 +5104,11 @@ function renderSettings() {
               <input class="form-input" id="setting_${key}_contactTitle" value="${pages[key]?.contactTitle || ''}">
             </div>
             <div class="form-group">
-              <label>联系内容</label>
+              <label>联系标题英文小标（显示在「联系我们」右侧）</label>
+              <input class="form-input" id="setting_${key}_contactLabel" value="${pages[key]?.contactLabel || ''}" placeholder="如 REACH US">
+            </div>
+            <div class="form-group">
+              <label>联系区说明小字（显示在「联系我们」下方）</label>
               <textarea class="form-input" id="setting_${key}_contactContent">${pages[key]?.contactContent || ''}</textarea>
             </div>
             <div class="form-group">
