@@ -570,7 +570,7 @@
       }
       const cart = window._onlyCart || {};
       if (!window._onlyOpenBooths) {
-        window._onlyOpenBooths = new Set(booths.filter(b => b.id !== '_unassigned').slice(0, 1).map(b => b.id));
+        window._onlyOpenBooths = new Set();
       }
       listPane.innerHTML = booths.map(b => {
         const ownerNames = (b.owners || []).map(c => esc(c.name)).join('、');
