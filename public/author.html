@@ -3214,9 +3214,10 @@
                 <button type="button" class="btn-sm" onclick="abWorkBulk('invert')">反选</button>
                 <button type="button" class="btn-sm" onclick="abWorkBulk('none')">清空</button>
               </div>
-              <div id="abWorkCats" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.45rem;">
-                ${Object.keys(catMap).sort((a, z) => catLabel(a).localeCompare(catLabel(z), 'zh')).map(c => `
-                  <button type="button" class="btn-sm" style="font-size:0.7rem;padding:0.15rem 0.5rem;" onclick="abWorkBulkCat('${escapeHtml(c)}')" title="勾选/取消本分类可见作品">${escapeHtml(catLabel(c))}（${catMap[c].length}）</button>
+              <div id="abWorkCats" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.45rem;align-items:center;">
+                <span style="font-size:0.72rem;color:var(--haze);">按分类：</span>
+                ${Object.keys(catMap).filter(c => c).sort((a, z) => catLabel(a).localeCompare(catLabel(z), 'zh')).map(c => `
+                  <button type="button" class="btn-sm" style="font-size:0.7rem;padding:0.15rem 0.55rem;border-radius:999px;background:var(--bg);border:1px solid var(--border);" onclick="abWorkBulkCat('${escapeHtml(c)}')" title="勾选/取消本分类作品">${escapeHtml(catLabel(c))}（${catMap[c].length}）</button>
                 `).join('')}
               </div>
               <div id="abWorkPickList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:170px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
@@ -3276,7 +3277,6 @@
 
         <div class="ab-foot">
           <button class="btn btn-primary" style="flex:1;min-width:120px;" onclick="saveAuthorBooth('${eventId}', ${isEdit ? `'${booth.id}'` : 'null'}, ${canFullEdit})">保存</button>
-          ${isEdit && booth ? `<button type="button" class="btn" style="flex:0 0 auto;background:var(--accent-alt);color:#fff;" onclick="window.open('/only.html?id=${encodeURIComponent(eventId)}#only-booth-${encodeURIComponent(booth.id)}','_blank')">前台预览</button>` : ''}
           <button class="btn" style="flex:1;min-width:100px;background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>
       `;
