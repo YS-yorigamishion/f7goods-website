@@ -4365,8 +4365,8 @@ function buildUploadWatermarkSvg(width, height, authorName, style) {
   const solidCornerName = '<text x="' + brX + '" y="' + brY + '" text-anchor="end" dominant-baseline="auto" font-size="' + smallFontSize + '" font-family="sans-serif" fill="rgba(255,255,255,1)">' + name + '</text>';
   const solidSite = '<text x="' + tlX + '" y="' + tlY + '" text-anchor="start" dominant-baseline="auto" font-size="' + smallFontSize + '" font-family="sans-serif" fill="rgba(255,255,255,1)">' + site + '</text>';
   function strokeLayer(text, attrs, sw) {
-    return '<text ' + attrs + ' fill="none" stroke="rgba(0,0,0,0.45)" stroke-width="' + sw + '">' + text + '</text>'
-      + '<text ' + attrs + ' fill="rgba(255,255,255,0.72)">' + text + '</text>';
+    return '<text ' + attrs + ' style="fill:none;stroke:rgba(0,0,0,0.45);stroke-width:' + sw + '">' + text + '</text>'
+      + '<text ' + attrs + ' style="fill:rgba(255,255,255,0.72)">' + text + '</text>';
   }
   const outlineCenterAttrs = 'x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="middle" font-size="' + fontSize + '" font-family="sans-serif"';
   const outlineCornerNameAttrs = 'x="' + brX + '" y="' + brY + '" text-anchor="end" dominant-baseline="auto" font-size="' + smallFontSize + '" font-family="sans-serif"';
@@ -4406,8 +4406,10 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
           const metadata = await image.metadata();
           const { width, height } = metadata;
           if (width && height) {
-            const style = ['light', 'half', 'full'].includes(req.body.watermarkStyle)
-              ? req.body.watermarkStyle
+            let wmStyle = req.body.watermarkStyle;
+            if (Array.isArray(wmStyle)) wmStyle = wmStyle[wmStyle.length - 1];
+            const style = ['light', 'half', 'full'].includes(String(wmStyle))
+              ? String(wmStyle)
               : 'light';
             const svgWatermark = buildUploadWatermarkSvg(width, height, authorName, style);
             await image.composite([{ input: Buffer.from(svgWatermark) }]).toFile(filePath + '.tmp');

@@ -565,7 +565,7 @@
           <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">管理您上传的所有图片。点击图片可复制链接。超过5MB的图片在批量上传时会被跳过。</p>
           <div style="display:flex;gap:0.5rem;margin-bottom:1rem;align-items:center;flex-wrap:wrap;">
             <input type="file" id="batchUploadInput" accept="image/*" multiple style="font-size:0.85rem;">
-            <button class="btn btn-primary" onclick="batchUploadAuthorImages()">选择并设置水印</button>
+            <button class="btn btn-primary" onclick="batchUploadAuthorImages()">上传</button>
             <button class="btn" id="batchDeleteBtn" style="background:var(--accent);color:white;display:none;" onclick="batchDeleteAuthorImages()">批量删除</button>
             <span id="imageCount" style="font-size:0.85rem;color:var(--haze);margin-left:auto;"></span>
           </div>
@@ -2643,10 +2643,10 @@
         <div class="ab-sec">
           <h4 class="ab-sec-h"><span class="n">1</span>水印样式<span class="tip">默认浅色 · 可逐图调整</span></h4>
           <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.6rem;">
-            <button type="button" class="btn-sm" onclick="setAllUploadWm(true,'light')">全部浅色</button>
-            <button type="button" class="btn-sm" onclick="setAllUploadWm(true,'half')">全部半边描边</button>
-            <button type="button" class="btn-sm" onclick="setAllUploadWm(true,'full')">全部描边</button>
-            <button type="button" class="btn-sm" onclick="setAllUploadWm(false,'light')">全部不加</button>
+            <button type="button" class="btn-sm btn-edit" style="font-size:0.75rem;padding:0.25rem 0.7rem;" onclick="setAllUploadWm(true,'light')">全部浅色</button>
+            <button type="button" class="btn-sm" style="font-size:0.75rem;padding:0.25rem 0.7rem;background:var(--card);color:var(--ink);" onclick="setAllUploadWm(true,'half')">全部半边描边</button>
+            <button type="button" class="btn-sm" style="font-size:0.75rem;padding:0.25rem 0.7rem;background:var(--card);color:var(--ink);" onclick="setAllUploadWm(true,'full')">全部描边</button>
+            <button type="button" class="btn-sm" style="font-size:0.75rem;padding:0.25rem 0.7rem;background:transparent;color:var(--haze);border:1px solid var(--border);" onclick="setAllUploadWm(false,'light')">全部不加</button>
           </div>
           <div style="font-size:0.72rem;color:var(--haze);line-height:1.5;margin-bottom:0.5rem;">
             浅色：中间白字 + 角标｜半边描边：仅角标描边｜全部描边：含中间，半透明描边
@@ -2664,33 +2664,98 @@
       if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
     }
 
+    function drawUploadWmCanvas(canvas, img, item) {
+      const W = 160, H = 120;
+      canvas.width = W * 2; canvas.height = H * 2;
+      canvas.style.width = '100%';
+      canvas.style.height = 'auto';
+      canvas.style.display = 'block';
+      canvas.style.borderRadius = '6px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(2, 2);
+      ctx.clearRect(0, 0, W, H);
+      // cover fit
+      const s = Math.max(W / img.width, H / img.height);
+      const dw = img.width * s, dh = img.height * s;
+      ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      if (!item.wm) return;
+      const author = (typeof authorProfile !== 'undefined' && authorProfile?.name) || '作者';
+      const site = 'f7goods.com';
+      function strokeText(text, x, y, size, align, baseline) {
+        ctx.font = '700 ' + size + 'px sans-serif';
+        ctx.textAlign = align; ctx.textBaseline = baseline;
+        ctx.lineWidth = Math.max(1.5, size / 7);
+        ctx.strokeStyle = 'rgba(0,0,0,.45)';
+        ctx.strokeText(text, x, y);
+        ctx.fillStyle = 'rgba(255,255,255,.72)';
+        ctx.fillText(text, x, y);
+      }
+      const name = '@' + author;
+      if (item.style === 'light') {
+        ctx.fillStyle = 'rgba(255,255,255,1)';
+        ctx.font = '700 16px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(name, W / 2, H / 2 + 8);
+        ctx.font = '600 10px sans-serif';
+        ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+        ctx.fillText(name, W - 6, H - 6);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(site, 6, 6);
+      } else if (item.style === 'half') {
+        strokeText(name, W - 6, H - 6, 11, 'right', 'bottom');
+        strokeText(site, 6, 6, 9, 'left', 'top');
+      } else {
+        // full
+        strokeText(name, W / 2, H / 2 + 8, 16, 'center', 'middle');
+        strokeText(name, W - 6, H - 6, 11, 'right', 'bottom');
+        strokeText(site, 6, 6, 9, 'left', 'top');
+      }
+    }
+
     function renderUploadWmList() {
       const list = document.getElementById('uploadWmList');
       if (!list) return;
       const labels = { light: '浅色', half: '半边描边', full: '全部描边' };
-      list.innerHTML = _uploadQueue.map((item, i) => {
-        const url = URL.createObjectURL(item.file);
-        return `
-          <div class="ab-up-item" data-i="${i}" style="display:grid;grid-template-columns:96px 1fr;gap:0.5rem;border:1px solid var(--border);border-radius:10px;padding:0.45rem;align-items:center;">
-            <img src="${url}" alt="" style="width:96px;height:72px;object-fit:cover;border-radius:6px;" onload="URL.revokeObjectURL(this.src)">
-            <div style="min-width:0;">
-              <div style="font-size:0.78rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.file.name)}</div>
-              <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.3rem;align-items:center;">
-                <label style="font-size:0.72rem;display:inline-flex;align-items:center;gap:0.2rem;cursor:pointer;">
-                  <input type="checkbox" class="up-wm" data-i="${i}" ${item.wm ? 'checked' : ''}>
-                  加水印
-                </label>
-                <span class="up-seg" data-i="${i}" style="display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;">
-                  ${['light','half','full'].map(s => `
-                    <button type="button" class="up-style" data-i="${i}" data-style="${s}"
-                      style="border:none;background:${item.wm && item.style===s ? 'var(--accent)' : 'transparent'};color:${item.wm && item.style===s ? '#fff' : 'var(--muted)'};padding:0.15rem 0.45rem;font-size:0.68rem;cursor:pointer;${item.wm ? '' : 'opacity:.4;'}"
-                      ${item.wm ? '' : 'disabled'}>${labels[s]}</button>
-                  `).join('')}
-                </span>
-              </div>
+      list.innerHTML = _uploadQueue.map((item, i) => `
+        <div class="ab-up-item" data-i="${i}" style="display:grid;grid-template-columns:110px 1fr;gap:0.55rem;border:1px solid var(--border);border-radius:10px;padding:0.5rem;align-items:center;background:var(--card);">
+          <div id="upPrev${i}" style="width:110px;min-height:82px;background:var(--bg);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;"></div>
+          <div style="min-width:0;">
+            <div style="font-size:0.78rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.file.name)}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.35rem;align-items:center;">
+              <label style="font-size:0.72rem;display:inline-flex;align-items:center;gap:0.25rem;cursor:pointer;">
+                <input type="checkbox" class="up-wm" data-i="${i}" ${item.wm ? 'checked' : ''}>
+                加水印
+              </label>
+              ${['light','half','full'].map(s => `
+                <button type="button" class="up-style btn-sm ${item.wm && item.style===s ? 'btn-edit' : ''}" data-i="${i}" data-style="${s}"
+                  style="font-size:0.68rem;padding:0.15rem 0.5rem;${item.wm && item.style===s ? '' : (item.wm ? 'background:var(--bg);color:var(--haze);' : 'opacity:.45;')}"
+                  ${item.wm ? '' : 'disabled'}>${labels[s]}</button>
+              `).join('')}
             </div>
-          </div>`;
-      }).join('');
+          </div>
+        </div>
+      `).join('');
+
+      _uploadQueue.forEach((item, i) => {
+        const host = document.getElementById('upPrev' + i);
+        if (!host) return;
+        if (item._img && item._img.complete) {
+          const canvas = document.createElement('canvas');
+          drawUploadWmCanvas(canvas, item._img, item);
+          host.innerHTML = '';
+          host.appendChild(canvas);
+          return;
+        }
+        host.innerHTML = '<span style="font-size:11px;color:var(--haze);">预览…</span>';
+        if (!item._img) {
+          const img = new Image();
+          img.onload = () => {
+            item._img = img;
+            if (document.getElementById('upPrev' + i)) renderUploadWmList();
+          };
+          img.src = URL.createObjectURL(item.file);
+        }
+      });
 
       list.onchange = (e) => {
         const cb = e.target;
@@ -2722,11 +2787,12 @@
       let uploaded = 0;
       for (const item of toUpload) {
         const formData = new FormData();
-        formData.append('image', item.file);
+        // 字段写在文件前，确保部分环境能正确解析
         if (item.wm) {
           formData.append('addWatermark', 'true');
           formData.append('watermarkStyle', item.style || 'light');
         }
+        formData.append('image', item.file);
         const headers = { 'Authorization': 'Bearer ' + authorToken };
         if (actAs) headers['X-Act-As'] = actAs;
         const res = await fetch('/api/author/upload', { method: 'POST', headers, body: formData });
