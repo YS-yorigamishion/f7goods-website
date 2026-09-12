@@ -1546,7 +1546,7 @@ function isAuthorLoggedIn() {
   try { return !!localStorage.getItem('f7author_token'); } catch { return false; }
 }
 
-// 在列表页右下角挂「创建」按钮，跳转作者后台对应页并打开新建表单
+// 作者已登录时：列表页右下角创建入口（仅跳转作者后台对应列表，不自动打开编辑）
 function mountAuthorCreateFab(opts) {
   if (!opts || !opts.tab || !opts.label) return;
   if (!isAuthorLoggedIn()) return;
@@ -1554,8 +1554,12 @@ function mountAuthorCreateFab(opts) {
   const a = document.createElement('a');
   a.id = 'authorCreateFab';
   a.className = 'author-create-fab';
-  a.href = '/author.html?tab=' + encodeURIComponent(opts.tab) + '&new=1';
+  a.href = '/author.html?tab=' + encodeURIComponent(opts.tab);
   a.textContent = opts.label;
   a.setAttribute('aria-label', opts.label);
   document.body.appendChild(a);
+  // 创建入口占右下角时隐藏「回到顶部」，避免叠按钮
+  document.querySelectorAll('.back-to-top').forEach(el => {
+    el.style.display = 'none';
+  });
 }
