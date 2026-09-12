@@ -199,6 +199,11 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   padding: 0.15rem 0.45rem; border-radius: 6px; font-size: 0.65rem; font-weight: 600;
   z-index: 2; pointer-events: none;
 }
+.card-new-badge {
+  position: absolute; top: 8px; left: 8px; background: var(--success); color: #fff;
+  padding: 0.15rem 0.45rem; border-radius: 999px; font-size: 0.65rem; font-weight: 700;
+  z-index: 2; pointer-events: none; letter-spacing: 0.04em;
+}
 .card-body { padding: 1rem 1.1rem 0.75rem; flex: 1; }
 .card-tag {
   display: inline-block; padding: 0.12rem 0.55rem; background: rgba(217,79,92,0.08);
