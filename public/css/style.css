@@ -1185,29 +1185,8 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 .cl-w-want-icon { font-size: 1rem; line-height: 1; }
 .cl-w-want-count { font-size: 0.75rem; font-weight: 500; color: var(--haze); }
 
-/* wishlist quick control on the cover */
-.cl-w-wish {
-  position: absolute; bottom: 8px; right: 8px; z-index: 3;
-  height: 26px; padding: 0 9px; border-radius: 999px;
-  background: rgba(255,252,247,0.94); border: 1px solid var(--line);
-  font-size: 0.68rem; color: var(--haze);
-  display: inline-flex; align-items: center; gap: 0.15rem;
-  font-family: inherit; cursor: pointer;
-  opacity: 0; transform: translateY(4px); transition: 0.16s ease;
-}
-.cl-w-card:hover .cl-w-wish { opacity: 1; transform: translateY(0); }
-.cl-w-wish:hover { border-color: var(--accent); color: var(--accent); }
-.cl-w-wish.on {
-  background: var(--accent); border-color: var(--accent); color: #fff;
-  opacity: 1; transform: none; cursor: default;
-}
-.cl-w-wish .qbtn {
-  background: none; border: none; cursor: pointer; color: inherit;
-  font-size: 0.8rem; line-height: 1; padding: 0 2px; font-family: inherit;
-}
-.cl-w-wish .wishlist-badge {
-  font-size: 0.66rem; font-weight: 700; min-width: 14px; text-align: center;
-}
+/* 心愿单控件（.cl-w-wish / .cl-w-foot-l）样式由 index.html 内联管理 */
+
 .cl-w-more { grid-column: 1 / -1; text-align: center; padding: 1.2rem 0 0.4rem; }
 .cl-w-more button {
   height: 38px; padding: 0 22px; border-radius: 999px;
@@ -1231,7 +1210,6 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   .cl-w-foot { padding: 0.4rem 0.6rem 0.55rem; }
   .cl-w-price { font-size: 0.9rem; }
   .cl-w-stats { gap: 0.35rem; font-size: 0.66rem; }
-  .cl-w-wish { opacity: 1; transform: none; height: 24px; font-size: 0.62rem; }
 }
 
 /* ===== Update detail (article) ===== */
