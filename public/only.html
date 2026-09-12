@@ -186,6 +186,16 @@
       body.app-mode.has-only-cart { padding-bottom: calc(58px + 64px + env(safe-area-inset-bottom, 0px)); }
       body.has-only-cart { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
     }
+    /* 作者「我的摊位」入口：避开底部购物清单栏 */
+    #authorCreateFab.author-create-fab { bottom: 5.25rem; }
+    @media (max-width: 768px) {
+      #authorCreateFab.author-create-fab {
+        bottom: calc(58px + 5.25rem + env(safe-area-inset-bottom, 0px));
+      }
+    }
+    body.app-mode #authorCreateFab.author-create-fab {
+      bottom: calc(58px + 5.25rem + env(safe-area-inset-bottom, 0px));
+    }
     .only-cartbar .l { flex: 1; min-width: 0; font-size: 12.5px; text-align: center; }
     .only-cartbar .l b { color: var(--accent); }
     .only-cartbar .hintline { font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -413,6 +423,7 @@
       const id = params.get('id');
       if (!id) { location.href = '/events.html'; return; }
       initPage('events', id);
+      if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '我的摊位', tab: 'only-booths' });
       const root = document.getElementById('onlyRoot');
       try {
         await loadCategoriesFromAPI();
