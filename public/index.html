@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260912d">
+  <link rel="stylesheet" href="/css/style.css?v=20260912f">
   <style>
     /* ===== 心愿单：卡片价格旁的加减控件 ===== */
     .cl-w-foot-l { display:inline-flex; align-items:center; gap:0.5rem; min-width:0; flex:1; }
@@ -312,7 +312,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260912e"></script>
+  <script src="/js/main.js?v=20260912f"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -399,8 +399,38 @@
     let boardFeatTimer = null;
     let boardFeatPaused = false;
 
+    function isOnlyEvent(e) {
+      return !!(e && e.type === 'only');
+    }
+    function onlyEventHref(e) {
+      return '/only.html?id=' + encodeURIComponent(e.id);
+    }
+    function pickCurrentOnlyEvent() {
+      return (allEvents || [])
+        .filter(e => e && e.type === 'only' && isEventOngoing(e))
+        .sort((a, z) => String(a.date || a.startDate || 'z').localeCompare(String(z.date || z.startDate || 'z')))[0] || null;
+    }
+
     function buildBoardFeatureSlides() {
       const slides = [];
+      const currentOnly = pickCurrentOnlyEvent();
+      // 本场 ONLY 固定第一张，直达专场（不与轮播外的横幅重复）
+      if (currentOnly) {
+        const loc = currentOnly.location || '';
+        slides.push({
+          key: 'only:' + currentOnly.id,
+          href: onlyEventHref(currentOnly),
+          tag: 'ONLY 专场',
+          tagClass: 'only',
+          title: currentOnly.title || '',
+          cover: currentOnly.coverImage || (currentOnly.images && currentOnly.images[0]) || '',
+          pills: [
+            { cls: 'price', text: 'ONLY' },
+            currentOnly.date || currentOnly.startDate ? { cls: '', text: formatDate(currentOnly.date || currentOnly.startDate) } : null,
+            loc ? { cls: '', text: loc } : null
+          ].filter(Boolean)
+        });
+      }
       const recruiting = allProjects.filter(isProjectRecruiting);
       recruiting.slice(0, 5).forEach(p => {
         const catLabel = (typeof PROJECT_CATEGORIES !== 'undefined' && PROJECT_CATEGORIES[p.category]) || '';
@@ -419,6 +449,7 @@
       });
       const activeEvents = allEvents
         .filter(isEventOngoing)
+        .filter(e => !currentOnly || e.id !== currentOnly.id)
         .sort((a, b) => String(a.date || a.startDate || 'z').localeCompare(String(b.date || b.startDate || 'z')));
       activeEvents.slice(0, 5).forEach(e => {
         const stLabel = (typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || '';
@@ -592,12 +623,16 @@
         } else {
           aeEl.innerHTML = activeEvents.map(e => {
             const cover = e.coverImage || (e.images && e.images[0]) || '';
-            return `<a class="board-list-row" href="/event-detail.html?id=${e.id}">
+            const only = isOnlyEvent(e);
+            const href = only ? onlyEventHref(e) : '/event-detail.html?id=' + encodeURIComponent(e.id);
+            return `<a class="board-list-row" href="${href}">
               ${cover
                 ? `<div class="board-thumb"><img src="${cover}" alt="" loading="lazy"></div>`
                 : `<div class="board-thumb">📅</div>`}
               <div class="t"><b>${escapeHtml(e.title)}</b><small>${escapeHtml(e.location || '')}</small></div>
-              <span class="card-tag in_progress" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml((typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || '')}</span>
+              ${only
+                ? `<span class="badge-urgent" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">ONLY</span>`
+                : `<span class="card-tag in_progress" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml((typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || '')}</span>`}
             </a>`;
           }).join('');
         }

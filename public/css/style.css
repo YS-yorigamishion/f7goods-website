@@ -3257,6 +3257,11 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   background: rgba(61, 139, 110, 0.15);
   color: var(--success);
 }
+.board-feature-tag.only {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
 .board-feature-tag.in_progress {
   background: rgba(196, 138, 42, 0.15);
   color: var(--warning);
@@ -3269,6 +3274,10 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 .board-feature.has-cover .board-feature-tag.recruiting {
   background: rgba(61, 139, 110, 0.35);
   color: #A8D5C0;
+}
+.board-feature.has-cover .board-feature-tag.only {
+  background: var(--accent);
+  color: #fff;
 }
 .board-feature.has-cover .board-feature-tag.in_progress {
   background: rgba(196, 138, 42, 0.35);
