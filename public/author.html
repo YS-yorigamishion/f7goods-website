@@ -10,6 +10,42 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="/css/style.css?v=20260912g">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
+  <style>
+    /* ONLY 摊位编辑：分段卡片 */
+    .ab-sec {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem 0.85rem 0.85rem;
+      margin-bottom: 0.75rem;
+      background: var(--card);
+    }
+    .ab-sec-h {
+      display: flex; align-items: baseline; gap: 0.4rem;
+      margin: 0 0 0.65rem; padding-bottom: 0.45rem;
+      border-bottom: 1px dashed var(--border);
+      font-family: 'Noto Serif SC', Georgia, serif;
+      font-size: 0.92rem; font-weight: 700;
+    }
+    .ab-sec-h .n {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 999px;
+      background: var(--accent); color: #fff;
+      font-size: 0.68rem; font-family: inherit; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .ab-sec-h .tip {
+      font-family: -apple-system, 'PingFang SC', sans-serif;
+      font-size: 0.7rem; font-weight: 400; color: var(--haze);
+      margin-left: auto;
+    }
+    .ab-sec .form-group:last-child { margin-bottom: 0; }
+    .ab-foot {
+      position: sticky; bottom: 0;
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+      padding: 0.75rem 0 0.15rem;
+      background: linear-gradient(transparent, var(--bg) 28%);
+    }
+  </style>
 </head>
 <body>
   <!-- Auth Screen -->
@@ -3102,36 +3138,44 @@
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? (canFullEdit ? '编辑摊位' : '编辑我的摊位') : '新增摊位';
       body.innerHTML = `
-        ${canFullEdit ? `
-        <div class="form-row">
-          <div class="form-group"><label>摊位号 <span style="color:var(--accent)">*</span></label><input class="form-input" id="abCode" value="${isEdit ? escapeHtml(booth.code || '') : ''}"></div>
-          <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
-        </div>
-        ` : `
-        <div class="form-group"><label>摊位号</label><input class="form-input" value="${isEdit ? escapeHtml(booth.code || '') : ''}" disabled></div>
-        <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
-        `}
-        <div class="form-group">
-          <label>摊位头像（可选，从图片库选择）</label>
-          <div id="abLogoPreview" style="margin-bottom:0.4rem;min-height:20px;">
-            ${isEdit && booth.logo ? `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(booth.logo)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;"><button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
+        <section class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">1</span>基本信息<span class="tip">前台摊位标题与简介</span></h4>
+          ${canFullEdit ? `
+          <div class="form-row">
+            <div class="form-group"><label>摊位号 <span style="color:var(--accent)">*</span></label><input class="form-input" id="abCode" value="${isEdit ? escapeHtml(booth.code || '') : ''}" placeholder="如 A1"></div>
+            <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}" placeholder="如 主摊 / 特典区"></div>
           </div>
-          <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('abLogoPreview', true)">从图片库选择</button>
-        </div>
-        <div class="form-group">
-          <label>摊位简介（前台展开详情展示）</label>
-          <textarea class="form-input" id="abDescription" style="min-height:72px;" placeholder="介绍本摊位特色、现场活动等">${isEdit ? escapeHtml(booth.description || '') : ''}</textarea>
-        </div>
-        <div class="form-group">
-          <label>宣传图（可多张 · 从图片库选择）</label>
-          <div id="abImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.4rem;min-height:20px;">
-            ${(isEdit && Array.isArray(booth.images) ? booth.images : []).map(u => `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(u)}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;"><button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`).join('')}
+          ` : `
+          <div class="form-row">
+            <div class="form-group"><label>摊位号</label><input class="form-input" value="${isEdit ? escapeHtml(booth.code || '') : ''}" disabled></div>
+            <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}"></div>
           </div>
-          <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('abImagesPreview')">从图片库选择</button>
-        </div>
+          `}
+          <div class="form-row">
+            <div class="form-group">
+              <label>摊位头像（可选）</label>
+              <div id="abLogoPreview" style="margin-bottom:0.4rem;min-height:20px;">
+                ${isEdit && booth.logo ? `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(booth.logo)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;"><button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : ''}
+              </div>
+              <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('abLogoPreview', true)">从图片库选择</button>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>摊位简介（前台展开详情）</label>
+              <textarea class="form-input" id="abDescription" style="min-height:72px;" placeholder="介绍本摊位特色、现场活动等">${isEdit ? escapeHtml(booth.description || '') : ''}</textarea>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>宣传图（可多张）</label>
+            <div id="abImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.4rem;min-height:20px;">
+              ${(isEdit && Array.isArray(booth.images) ? booth.images : []).map(u => `<div style="position:relative;display:inline-block;"><img src="${escapeHtml(u)}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;"><button type="button" onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`).join('')}
+            </div>
+            <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('abImagesPreview')">从图片库选择</button>
+          </div>
+        </section>
+
         ${canFullEdit ? `
-        <div class="form-group">
-          <label>挂接摊主（可多选 · 同一作者可开多个摊位）</label>
+        <section class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">2</span>挂接摊主<span class="tip">决定可管理的作品范围</span></h4>
           <div style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:140px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
             ${circles.map(c => `
               <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.2rem 0.5rem;cursor:pointer;">
@@ -3140,15 +3184,17 @@
               </label>
             `).join('') || '<span style="font-size:0.75rem;color:var(--haze);">暂无作者</span>'}
           </div>
-        </div>
+          <div style="font-size:0.72rem;color:var(--haze);margin-top:0.35rem;">同一作者可开多个摊位；仅本摊已挂接摊主的作品可被管理。</div>
+        </section>
         ` : ''}
-        <div class="form-group">
-          <label>展示作品（可多选 · 不勾选则展示摊主全部关联作品）</label>
+
+        <section class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '3' : '2'}</span>展示作品<span class="tip">不勾选 = 摊主全部关联作品</span></h4>
           ${(() => {
             const pool = manageWorks;
             const selected = new Set(Array.isArray(booth?.workIds) && booth.workIds.length ? booth.workIds : []);
             if (!pool.length) {
-              return '<div style="font-size:0.75rem;color:var(--haze);">暂无可选作品（需先将作品关联到本活动）</div>';
+              return '<div style="font-size:0.75rem;color:var(--haze);">暂无可选作品（需先挂接摊主并将作品关联到本活动）</div>';
             }
             const catMap = {};
             pool.forEach(w => {
@@ -3173,7 +3219,7 @@
                   <button type="button" class="btn-sm" style="font-size:0.7rem;padding:0.15rem 0.5rem;" onclick="abWorkBulkCat('${escapeHtml(c)}')" title="勾选/取消本分类可见作品">${escapeHtml(catLabel(c))}（${catMap[c].length}）</button>
                 `).join('')}
               </div>
-              <div id="abWorkPickList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
+              <div id="abWorkPickList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:170px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
                 ${pool.map(w => `
                   <label class="ab-work-pick" data-title="${escapeHtml(String(w.title || '').toLowerCase())}" data-cat="${escapeHtml(w.category || '')}" style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.2rem 0.5rem;cursor:pointer;">
                     <input type="checkbox" class="ab-work" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''} onchange="updateAbWorkGroupHint()">
@@ -3181,13 +3227,13 @@
                   </label>
                 `).join('')}
               </div>
-              <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">仅可管理本摊已挂接摊主的作品；未挂接到本摊的作者作品不可选。</div>
-              <div id="abWorkGroupHint" style="font-size:0.72rem;color:var(--warning);margin-top:0.25rem;"></div>
+              <div id="abWorkGroupHint" style="font-size:0.72rem;color:var(--warning);margin-top:0.3rem;"></div>
             `;
           })()}
-        </div>
-        <div class="form-group">
-          <label>自定义分类（可选 · 不添加则前台不分类）</label>
+        </section>
+
+        <section class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '4' : '3'}</span>自定义分类<span class="tip">可选 · 未归类进「其他」</span></h4>
           <div id="abGroupList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
             ${(() => {
               const groups = Array.isArray(booth?.goodsGroups) ? booth.goodsGroups : [];
@@ -3196,17 +3242,18 @@
             })()}
           </div>
           <button type="button" class="btn-sm btn-edit" onclick="addAuthorGroupRow()">+ 添加分类</button>
-          <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">可分几类、上下排序、编辑名称；每类勾选作品。未归入任何分类的展示作品会显示在「其他」。</div>
-        </div>
-        <div class="form-group">
-          <label>满额赠品档（可多档 · 一档可多作品 · 可选本摊全部作品）</label>
+        </section>
+
+        <section class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '5' : '4'}</span>满额赠品<span class="tip">到额自动加入清单</span></h4>
           <div id="abTierList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
             ${tiers.map((t, i) => renderAuthorTierRow(t, giftWorks, i)).join('')}
           </div>
           <button type="button" class="btn-sm btn-edit" onclick="addAuthorTierRow('${eventId}')">+ 添加一档</button>
-        </div>
-        <div class="form-group">
-          <label>条件领取（可选 · 先勾选要设置的作品）</label>
+        </section>
+
+        <section class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '6' : '5'}</span>条件领取<span class="tip">可选 · 先勾选作品</span></h4>
           ${claimGoods.length ? `
             <div id="abClaimToggles" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:120px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;margin-bottom:0.5rem;">
               ${claimGoods.map(g => `
@@ -3219,15 +3266,15 @@
             <div id="abClaimList" style="display:flex;flex-direction:column;gap:0.45rem;">
               ${claimGoods.filter(g => claimMap[g.id]).map(g => `
                 <div class="ab-claim-row" data-work="${g.id}" style="display:flex;align-items:flex-start;gap:0.5rem;">
-                  <span style="flex:0 0 38%;font-size:0.78rem;padding-top:0.4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+                  <span style="flex:0 0 34%;font-size:0.78rem;padding-top:0.4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
                   <textarea class="form-input ab-claim" data-work="${g.id}" rows="2" style="flex:1;font-size:0.78rem;padding:0.3rem 0.55rem;line-height:1.55;min-height:42px;resize:vertical;" placeholder="领取条件，可换行">${escapeHtml(claimMap[g.id] || '')}</textarea>
                 </div>
               `).join('')}
             </div>
-            <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">仅勾选后出现填写框；取消勾选保存后会清除该作品的条件领取。</div>
           ` : `<div style="font-size:0.75rem;color:var(--haze);">保存摊位并挂接摊主后，可在此按作品设置条件领取。</div>`}
-        </div>
-        <div style="display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;">
+        </section>
+
+        <div class="ab-foot">
           <button class="btn btn-primary" style="flex:1;min-width:120px;" onclick="saveAuthorBooth('${eventId}', ${isEdit ? `'${booth.id}'` : 'null'}, ${canFullEdit})">保存</button>
           ${isEdit && booth ? `<button type="button" class="btn" style="flex:0 0 auto;background:var(--accent-alt);color:#fff;" onclick="window.open('/only.html?id=${encodeURIComponent(eventId)}#only-booth-${encodeURIComponent(booth.id)}','_blank')">前台预览</button>` : ''}
           <button class="btn" style="flex:1;min-width:100px;background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
