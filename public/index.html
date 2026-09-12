@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260912f">
+  <link rel="stylesheet" href="/css/style.css?v=20260912g">
   <style>
     /* ===== 心愿单：卡片价格旁的加减控件 ===== */
     .cl-w-foot-l { display:inline-flex; align-items:center; gap:0.5rem; min-width:0; flex:1; }
@@ -693,9 +693,9 @@
         } else {
           strip.innerHTML = latestWorks.map(w => `
             <a class="card" href="/work-detail.html?id=${w.id}" style="text-decoration:none;color:inherit;">
+              ${isWorkNew(w) ? `<span class="card-new-badge" aria-label="新上架">新</span>` : ''}
               <div class="card-image">
                 ${w.images && w.images[0] ? `<img src="${w.images[0]}" alt="${escapeHtml(w.title)}" loading="lazy">` : '<span class="placeholder-icon">🎨</span>'}
-                ${isWorkNew(w) ? `<span class="card-new-badge" aria-label="新上架">新</span>` : ''}
               </div>
               <div class="card-body">
                 <span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || ''}</span>
