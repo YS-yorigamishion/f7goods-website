@@ -2839,7 +2839,7 @@
       list.innerHTML = '<p style="color:var(--haze);font-size:0.85rem;">加载中…</p>';
       _onlyBoothData = await authorAPI('GET', '/api/author/only-booths') || [];
       if (!_onlyBoothData.length) {
-        list.innerHTML = '<div class="mgmt-card"><p style="color:var(--haze);margin:0;font-size:0.85rem;">暂无你可管理的 ONLY 摊位。若你是摊位作者，请联系活动管理员将你挂接到摊位；若你是活动管理员，请在站内后台配置 editableBy 或在活动创建时提交。</p></div>';
+        list.innerHTML = '<div class="mgmt-card"><p style="color:var(--haze);margin:0;font-size:0.85rem;">暂无你可管理的 ONLY 摊位。若你是摊位作者，请联系活动管理员将你挂接到摊位。</p></div>';
         return;
       }
       list.innerHTML = _onlyBoothData.map(pack => {
