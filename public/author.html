@@ -202,18 +202,6 @@
       </div>
 
       <div class="mgmt-nav-group">
-        <div class="mgmt-nav-label">关联</div>
-        <button type="button" class="mgmt-nav-item" data-tab="events" onclick="switchMgmtTab('events')">
-          <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="17" r="2.5"/><path d="M8 9.5l2.5 5M16 9.5l-2.5 5"/></svg>
-          活动关联
-        </button>
-        <button type="button" class="mgmt-nav-item" data-tab="projects" onclick="switchMgmtTab('projects')">
-          <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="17" r="2.5"/><path d="M8 9.5l2.5 5M16 9.5l-2.5 5"/></svg>
-          企划关联
-        </button>
-      </div>
-
-      <div class="mgmt-nav-group">
         <div class="mgmt-nav-label">素材</div>
         <button type="button" class="mgmt-nav-item" data-tab="images" onclick="switchMgmtTab('images')">
           <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg>
@@ -566,24 +554,6 @@
           <button class="btn btn-primary" onclick="openMyUpdateForm()">+ 发布动态</button>
         </div>
         <div id="myUpdatesGrid" class="works-grid"></div>
-      </div>
-
-      <!-- Events Tab -->
-      <div id="tab-events" class="mgmt-section">
-        <div class="mgmt-card">
-          <h3 style="margin-bottom:1rem;">活动关联</h3>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">勾选要关联的活动，取消勾选可解除关联。</p>
-          <div id="eventsList"></div>
-        </div>
-      </div>
-
-      <!-- Projects Tab -->
-      <div id="tab-projects" class="mgmt-section">
-        <div class="mgmt-card">
-          <h3 style="margin-bottom:1rem;">企划关联</h3>
-          <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">勾选要关联的企划，取消勾选可解除关联。</p>
-          <div id="projectsList"></div>
-        </div>
       </div>
 
       <!-- Images Tab -->
@@ -2538,8 +2508,9 @@
 
     // Load events
     async function loadAuthorEvents() {
-      const events = await authorAPI('GET', '/api/author/events');
       const container = document.getElementById('eventsList');
+      if (!container) return;
+      const events = await authorAPI('GET', '/api/author/events');
       if (!events || events.length === 0) {
         container.innerHTML = '<p style="color:var(--haze);">暂无活动</p>';
         return;
@@ -2569,8 +2540,9 @@
 
     // Load projects
     async function loadAuthorProjects() {
-      const projects = await authorAPI('GET', '/api/author/projects');
       const container = document.getElementById('projectsList');
+      if (!container) return;
+      const projects = await authorAPI('GET', '/api/author/projects');
       if (!projects || projects.length === 0) {
         container.innerHTML = '<p style="color:var(--haze);">暂无企划</p>';
         return;
@@ -4066,8 +4038,6 @@
         'only-booths': 'ONLY 摊位',
         'my-projects': '我的企划',
         'my-updates': '我的动态',
-        events: '活动关联',
-        projects: '企划关联',
         images: '图片管理',
         notifications: '审核通知',
         'author-announcements': '管理公告',
