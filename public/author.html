@@ -2667,12 +2667,7 @@
       body.innerHTML = `
         <div class="ab-sec">
           <h4 class="ab-sec-h"><span class="n">1</span>水印样式<span class="tip">默认不加 · 可逐图调整</span></h4>
-          <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.6rem;">
-            <button type="button" class="btn-sm btn-edit" style="font-size:0.75rem;padding:0.25rem 0.7rem;" onclick="setAllUploadWm(true,'light')">全部浅色</button>
-            <button type="button" class="btn-sm" style="font-size:0.75rem;padding:0.25rem 0.7rem;background:var(--card);color:var(--ink);" onclick="setAllUploadWm(true,'half')">全部半边描边</button>
-            <button type="button" class="btn-sm" style="font-size:0.75rem;padding:0.25rem 0.7rem;background:var(--card);color:var(--ink);" onclick="setAllUploadWm(true,'full')">全部描边</button>
-            <button type="button" class="btn-sm" style="font-size:0.75rem;padding:0.25rem 0.7rem;background:transparent;color:var(--haze);border:1px solid var(--border);" onclick="setAllUploadWm(false,'light')">全部不加</button>
-          </div>
+          <div id="uploadWmBulk" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.6rem;"></div>
           <div style="font-size:0.72rem;color:var(--haze);line-height:1.5;margin-bottom:0.5rem;">
             浅色：中间白字 + 角标｜半边描边：仅角标描边｜全部描边：中间透明+角标
           </div>
@@ -2683,10 +2678,43 @@
           <button class="btn" style="flex:1;background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>
       `;
+      renderUploadWmBulk();
       renderUploadWmList();
       overlay.style.display = '';
       overlay.classList.add('open');
       if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
+    }
+
+    function uploadWmBulkMode() {
+      if (!_uploadQueue.length) return null;
+      if (_uploadQueue.every(item => !item.wm)) return 'off';
+      if (_uploadQueue.every(item => item.wm && item.style === 'light')) return 'light';
+      if (_uploadQueue.every(item => item.wm && item.style === 'half')) return 'half';
+      if (_uploadQueue.every(item => item.wm && item.style === 'full')) return 'full';
+      return null;
+    }
+
+    function renderUploadWmBulk() {
+      const host = document.getElementById('uploadWmBulk');
+      if (!host) return;
+      const mode = uploadWmBulkMode();
+      const btns = [
+        { k: 'light', label: '全部浅色', wm: true, style: 'light' },
+        { k: 'half', label: '全部半边描边', wm: true, style: 'half' },
+        { k: 'full', label: '全部描边', wm: true, style: 'full' },
+        { k: 'off', label: '全部不加', wm: false, style: 'light' }
+      ];
+      host.innerHTML = btns.map(b => {
+        const on = mode === b.k;
+        const base = 'font-size:0.75rem;padding:0.25rem 0.7rem;';
+        if (on) {
+          return `<button type="button" class="btn-sm btn-edit" style="${base}" onclick="setAllUploadWm(${b.wm},'${b.style}')">${b.label}</button>`;
+        }
+        if (b.k === 'off') {
+          return `<button type="button" class="btn-sm" style="${base}background:transparent;color:var(--haze);border:1px solid var(--border);" onclick="setAllUploadWm(false,'light')">${b.label}</button>`;
+        }
+        return `<button type="button" class="btn-sm" style="${base}background:var(--card);color:var(--ink);" onclick="setAllUploadWm(${b.wm},'${b.style}')">${b.label}</button>`;
+      }).join('');
     }
 
     function drawUploadWmCanvas(canvas, img, item) {
@@ -2786,18 +2814,21 @@
         const cb = e.target;
         if (!cb.classList.contains('up-wm')) return;
         _uploadQueue[+cb.dataset.i].wm = cb.checked;
+        renderUploadWmBulk();
         renderUploadWmList();
       };
       list.onclick = (e) => {
         const btn = e.target.closest('.up-style');
         if (!btn || btn.disabled) return;
         _uploadQueue[+btn.dataset.i].style = btn.dataset.style;
+        renderUploadWmBulk();
         renderUploadWmList();
       };
     }
 
     function setAllUploadWm(wm, style) {
       _uploadQueue.forEach(item => { item.wm = wm; if (wm) item.style = style; });
+      renderUploadWmBulk();
       renderUploadWmList();
     }
 
