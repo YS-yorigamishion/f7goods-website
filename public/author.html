@@ -2645,7 +2645,7 @@
       const toUpload = [];
       for (const file of files) {
         if (file.size > MAX_SIZE) skipped.push(file.name);
-        else toUpload.push({ file, wm: true, style: 'light' });
+        else toUpload.push({ file, wm: false, style: 'light' });
       }
       if (skipped.length > 0) {
         showToast(`以下图片超过5MB已跳过：${skipped.join('、')}，请自行压缩后上传`, 'warning', 5000);
@@ -2666,7 +2666,7 @@
       document.getElementById('workModalTitle').textContent = '上传预览 · 设置水印';
       body.innerHTML = `
         <div class="ab-sec">
-          <h4 class="ab-sec-h"><span class="n">1</span>水印样式<span class="tip">默认浅色 · 可逐图调整</span></h4>
+          <h4 class="ab-sec-h"><span class="n">1</span>水印样式<span class="tip">默认不加 · 可逐图调整</span></h4>
           <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.6rem;">
             <button type="button" class="btn-sm btn-edit" style="font-size:0.75rem;padding:0.25rem 0.7rem;" onclick="setAllUploadWm(true,'light')">全部浅色</button>
             <button type="button" class="btn-sm" style="font-size:0.75rem;padding:0.25rem 0.7rem;background:var(--card);color:var(--ink);" onclick="setAllUploadWm(true,'half')">全部半边描边</button>
@@ -2674,7 +2674,7 @@
             <button type="button" class="btn-sm" style="font-size:0.75rem;padding:0.25rem 0.7rem;background:transparent;color:var(--haze);border:1px solid var(--border);" onclick="setAllUploadWm(false,'light')">全部不加</button>
           </div>
           <div style="font-size:0.72rem;color:var(--haze);line-height:1.5;margin-bottom:0.5rem;">
-            浅色：中间白字 + 角标｜半边描边：仅角标描边｜全部描边：含中间，半透明描边
+            浅色：中间白字 + 角标｜半边描边：仅角标描边｜全部描边：中间透明+角标
           </div>
           <div id="uploadWmList" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
         </div>
@@ -3135,7 +3135,7 @@
               </div>
               <p style="margin:0.25rem 0 0;font-size:0.75rem;color:var(--haze);">${ev.date || ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''} · 摊位 ${pack.booths.length} 个</p>
             </div>
-            ${pack.canManageAll ? `<button class="btn-sm btn-edit" onclick="openAuthorBoothForm('${ev.id}')">+ 新增摊位</button>` : ''}
+            ${pack.canManageAll ? `<button class="ab-pill" onclick="openAuthorBoothForm('${ev.id}')">+ 新增摊位</button>` : ''}
           </div>
           <div style="display:flex;flex-direction:column;gap:0.55rem;">
             ${pack.booths.map((b, bi) => `
@@ -3150,14 +3150,14 @@
                       摊主 ${(b.circleIds || []).length} 人 · ${Array.isArray(b.workIds) && b.workIds.length ? `已选作品 ${b.workIds.length} 件` : '展示摊主全部作品'}
                     </div>
                   </div>
-                  <div style="display:flex;gap:0.25rem;flex-wrap:wrap;">
+                  <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
                     ${pack.canManageAll ? `
-                      <button class="btn-sm" onclick="authorMoveBooth('${ev.id}','${b.id}',-1)" ${bi === 0 ? 'disabled style="opacity:0.4;font-size:0.7rem;padding:0.15rem 0.4rem;"' : 'style="font-size:0.7rem;padding:0.15rem 0.4rem;"'}>↑</button>
-                      <button class="btn-sm" onclick="authorMoveBooth('${ev.id}','${b.id}',1)" ${bi === pack.booths.length - 1 ? 'disabled style="opacity:0.4;font-size:0.7rem;padding:0.15rem 0.4rem;"' : 'style="font-size:0.7rem;padding:0.15rem 0.4rem;"'}>↓</button>
+                      <button class="ab-pill" style="font-size:0.7rem;padding:0.15rem 0.5rem;" onclick="authorMoveBooth('${ev.id}','${b.id}',-1)" ${bi === 0 ? 'disabled' : ''}>↑</button>
+                      <button class="ab-pill" style="font-size:0.7rem;padding:0.15rem 0.5rem;" onclick="authorMoveBooth('${ev.id}','${b.id}',1)" ${bi === pack.booths.length - 1 ? 'disabled' : ''}>↓</button>
                     ` : ''}
-                    <button class="btn-sm btn-edit" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick='openAuthorBoothForm(${escapeHtml(JSON.stringify({ eventId: ev.id, booth: b, canFullEdit: !!pack.canManageAll }))})'>编辑</button>
-                    <button type="button" class="btn-sm" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick="window.open('/only.html?id=${encodeURIComponent(ev.id)}#only-booth-${encodeURIComponent(b.id)}','_blank')">预览</button>
-                    ${pack.canManageAll ? `<button class="btn-sm btn-delete" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick="authorDeleteBooth('${ev.id}','${b.id}')">删除</button>` : ''}
+                    <button class="ab-pill" style="font-size:0.7rem;padding:0.15rem 0.55rem;" onclick='openAuthorBoothForm(${escapeHtml(JSON.stringify({ eventId: ev.id, booth: b, canFullEdit: !!pack.canManageAll }))})'>编辑</button>
+                    <button type="button" class="ab-pill ghost" style="font-size:0.7rem;padding:0.15rem 0.55rem;" onclick="window.open('/only.html?id=${encodeURIComponent(ev.id)}#only-booth-${encodeURIComponent(b.id)}','_blank')">预览</button>
+                    ${pack.canManageAll ? `<button class="ab-pill danger" style="font-size:0.7rem;padding:0.15rem 0.55rem;" onclick="authorDeleteBooth('${ev.id}','${b.id}')">删除</button>` : ''}
                   </div>
                 </div>
                 <div id="authorGoods-${ev.id}-${b.id}" style="margin-top:0.5rem;"></div>
@@ -3213,8 +3213,8 @@
               : `<div style="width:24px;height:24px;border-radius:4px;background:linear-gradient(145deg,#EDE6DA,#D9D0C2);flex-shrink:0;"></div>`}
             <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
             ${claimMap[g.id] ? `<span title="条件领取：${escapeHtml(claimMap[g.id])}" style="flex-shrink:0;font-size:0.66rem;font-weight:600;color:var(--warning);border:1px solid rgba(196,138,42,.4);background:rgba(196,138,42,.12);border-radius:999px;padding:0 6px;">条件领取</span>` : ''}
-            <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${isFirst ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',-1)" ${isFirst ? 'disabled' : ''}>↑</button>
-            <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${isLast ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',1)" ${isLast ? 'disabled' : ''}>↓</button>
+            <button class="ab-pill" style="padding:0.1rem 0.4rem;font-size:0.68rem;${isFirst ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',-1)" ${isFirst ? 'disabled' : ''}>↑</button>
+            <button class="ab-pill" style="padding:0.1rem 0.4rem;font-size:0.68rem;${isLast ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',1)" ${isLast ? 'disabled' : ''}>↓</button>
           </div>`;
       };
 
