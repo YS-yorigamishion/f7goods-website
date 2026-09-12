@@ -46,7 +46,7 @@
   <footer class="footer" id="footer"></footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260912d"></script>
+  <script src="/js/main.js?v=20260912e"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -118,6 +118,7 @@
       const id = params.get('id');
       if (!id) { location.href = '/circles.html'; return; }
       initPage('circles', id);
+      if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '我的资料', tab: 'profile' });
 
       try {
         await loadCategoriesFromAPI();

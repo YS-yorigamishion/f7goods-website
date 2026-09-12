@@ -1546,15 +1546,16 @@ function isAuthorLoggedIn() {
   try { return !!localStorage.getItem('f7author_token'); } catch { return false; }
 }
 
-// 作者已登录时：列表页右下角创建入口（仅跳转作者后台对应列表，不自动打开编辑）
+// 作者已登录时：右下角入口（默认跳作者后台列表；也可传 href 自定义）
 function mountAuthorCreateFab(opts) {
-  if (!opts || !opts.tab || !opts.label) return;
+  if (!opts || !opts.label) return;
+  if (!opts.tab && !opts.href) return;
   if (!isAuthorLoggedIn()) return;
   if (document.getElementById('authorCreateFab')) return;
   const a = document.createElement('a');
   a.id = 'authorCreateFab';
   a.className = 'author-create-fab';
-  a.href = '/author.html?tab=' + encodeURIComponent(opts.tab);
+  a.href = opts.href || ('/author.html?tab=' + encodeURIComponent(opts.tab));
   a.textContent = opts.label;
   a.setAttribute('aria-label', opts.label);
   document.body.appendChild(a);
@@ -1562,4 +1563,12 @@ function mountAuthorCreateFab(opts) {
   document.querySelectorAll('.back-to-top').forEach(el => {
     el.style.display = 'none';
   });
+}
+
+function authorHomeCircleId() {
+  try {
+    return localStorage.getItem('f7author_actAs') || localStorage.getItem('f7author_circleId') || '';
+  } catch {
+    return '';
+  }
 }

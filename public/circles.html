@@ -64,9 +64,13 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260912d"></script>
+  <script src="/js/main.js?v=20260912e"></script>
   <script>
     initPage('circles');
+    if (typeof isAuthorLoggedIn === 'function' && isAuthorLoggedIn() && typeof mountAuthorCreateFab === 'function') {
+      const myCid = typeof authorHomeCircleId === 'function' ? authorHomeCircleId() : '';
+      if (myCid) mountAuthorCreateFab({ label: '我的主页', href: '/circle-detail.html?id=' + encodeURIComponent(myCid) });
+    }
 
     let allCircles = [];
     let circleTagsMap = {};
