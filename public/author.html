@@ -3283,7 +3283,7 @@
         </section>
 
         <section class="ab-sec">
-          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '5' : '4'}</span>满额赠品<span class="tip">到额自动加入清单</span></h4>
+          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '5' : '4'}</span>满额赠品<span class="tip">填满额数字 + 勾选赠品</span></h4>
           <div id="abTierList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
             ${tiers.map((t, i) => renderAuthorTierRow(t, giftWorks, i)).join('')}
           </div>
@@ -3372,9 +3372,9 @@
       const selected = new Set(Array.isArray(t.giftWorkIds) && t.giftWorkIds.length ? t.giftWorkIds : (t.giftWorkId ? [t.giftWorkId] : []));
       return `<div class="ab-tier-row" data-i="${i}" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.55rem;display:flex;flex-direction:column;gap:0.35rem;">
         <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
-          <input class="form-input ab-tier-min" type="number" min="0" style="width:90px;" placeholder="满额" value="${t.minAmount ?? ''}">
-          <input class="form-input ab-tier-text" style="flex:1;min-width:100px;" placeholder="备注文案" value="${escapeHtml(t.text || '')}">
+          <input class="form-input ab-tier-min" type="number" min="0" step="1" style="width:110px;" placeholder="满额（留空无）" value="${t.minAmount ?? ''}">
           <button type="button" class="btn-sm btn-delete" onclick="this.closest('.ab-tier-row').remove()">删</button>
+          <span style="font-size:0.72rem;color:var(--haze);">填数字并勾选赠品后生效；数字留空 = 本档不生效</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:0.25rem;max-height:100px;overflow:auto;">
           ${works.length ? works.map(w => `
@@ -3397,11 +3397,13 @@
       const pack = _onlyBoothData.find(p => p.event.id === eventId);
       if (!pack) return;
       const promoTiers = [...document.querySelectorAll('#abTierList .ab-tier-row')].map(row => {
-        const minAmount = Number(row.querySelector('.ab-tier-min')?.value) || 0;
+        const minRaw = row.querySelector('.ab-tier-min')?.value;
         const giftWorkIds = [...row.querySelectorAll('.ab-tier-gift:checked')].map(i => i.value);
-        const text = row.querySelector('.ab-tier-text')?.value.trim() || '';
-        if (!giftWorkIds.length && !text) return null;
-        return { minAmount, giftWorkId: giftWorkIds[0] || '', giftWorkIds, text };
+        // 未填数字或未勾赠品 → 本档不算赠品
+        if (minRaw === '' || minRaw == null || !giftWorkIds.length) return null;
+        const minAmount = Number(minRaw);
+        if (!Number.isFinite(minAmount) || minAmount < 0) return null;
+        return { minAmount, giftWorkId: giftWorkIds[0] || '', giftWorkIds, text: '' };
       }).filter(Boolean);
 
       const payload = {
