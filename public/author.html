@@ -381,7 +381,10 @@
       <div id="tab-works" class="mgmt-section active">
         <div class="mgmt-toolbar" style="margin-bottom:1rem;">
           <div class="mgmt-toolbar-row" style="justify-content:space-between;">
-            <h3 style="margin:0;font-family:'Noto Serif SC',Georgia,serif;">我的作品</h3>
+            <div style="display:flex;align-items:center;gap:0.55rem;flex-wrap:wrap;min-width:0;">
+              <h3 style="margin:0;font-family:'Noto Serif SC',Georgia,serif;">我的作品</h3>
+              <button type="button" class="ab-pill" onclick="showUploadTutorial()">上传教程</button>
+            </div>
             <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
               <button class="btn btn-primary" onclick="openAuthorWorkForm()">+ 新增作品</button>
               <button type="button" class="btn" onclick="openBatchCreateFromImages()" style="background:var(--card);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.75rem;">批量创建</button>
@@ -3033,6 +3036,42 @@
     let _onlyBoothData = [];
     let _abGiftWorks = [];
     let _abManageWorks = [];
+
+    function showUploadTutorial() {
+      const overlay = document.getElementById('workModalOverlay');
+      const body = document.getElementById('workModalBody');
+      document.getElementById('workModalTitle').textContent = '作品上传教程（简易版）';
+      body.innerHTML = `
+        <div class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">1</span>上传图片</h4>
+          <div style="font-size:0.85rem;line-height:1.7;color:var(--ink);">
+            首先在「图片管理」页面选择你要上传的周边图片（支持多个文件一起选择），然后点击「上传」按钮。接着设置水印信息（默认是不加水印的）。上传完成后，前往「我的作品」页面。
+          </div>
+        </div>
+        <div class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">2</span>创建作品</h4>
+          <div style="font-size:0.85rem;line-height:1.7;color:var(--ink);display:flex;flex-direction:column;gap:0.55rem;">
+            <div><b>(a) 单个编辑：</b>如果仅对单个作品进行编辑，直接点击「新增作品」即可。</div>
+            <div><b>(b) 批量创建：</b>如果要对多个作品进行编辑，可以选择「批量创建」，然后选择你要上传的周边图片并设置信息；也可以选择「使用格式」——你可以选择你之前设置好格式的作品，选择使用它的格式。</div>
+            <div><b>(c) 已上传、想统一改格式：</b>对要改格式的作品进行勾选，然后点击紫色按钮的「使用格式」，选择你之前设定好的作品格式进行应用并保存。</div>
+          </div>
+        </div>
+        <div class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">3</span>上传须知</h4>
+          <div style="font-size:0.85rem;line-height:1.7;color:var(--ink);display:flex;flex-direction:column;gap:0.55rem;">
+            <div><b>(a)</b> 初次上传作品，你的作品会触发审核机制，要在审核通过后才能出现在首页，或者添加 QQ 群直接 @群主。</div>
+            <div><b>(b)</b> 如果你的作品没有设置图片，也不会出现在首页。</div>
+            <div><b>(c)</b> 如果你的作品是 ONLY 的作品，请在编辑作品的关联活动中选择你参与的 ONLY，并联系活动管理员（活动主办方）或网站管理员为你设置摊位；摊位完成后，就可以在 ONLY 摊位页面编辑你的摊位了。</div>
+          </div>
+        </div>
+        <div class="ab-foot">
+          <button class="btn btn-primary" style="flex:1;" onclick="closeWorkModal()">知道了</button>
+        </div>
+      `;
+      overlay.style.display = '';
+      overlay.classList.add('open');
+      if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
+    }
 
     function renderAuthorGroupRow(group, works) {
       const selected = new Set(Array.isArray(group?.workIds) ? group.workIds : []);
