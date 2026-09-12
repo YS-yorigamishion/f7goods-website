@@ -2112,6 +2112,8 @@ app.get('/api/works', cacheMiddleware(60), (req, res) => {
   let works = ensureArray(readJSON('works.json'));
   // Only return approved works (or legacy works without approvalStatus)
   works = works.filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
+  // 未上传封面图的周边暂不对外展示
+  works = works.filter(w => Array.isArray(w.images) && w.images[0]);
   const { category, search, status, circleId, eventId } = req.query;
   if (category) works = works.filter(w => w.category === category);
   if (status) works = works.filter(w => w.status === status);
@@ -2151,6 +2153,10 @@ app.get('/api/works/:id', (req, res) => {
   if (!work) return res.status(404).json({ error: '作品未找到' });
   // Only return approved works (or legacy works without approvalStatus)
   if (work.approvalStatus && work.approvalStatus !== 'approved') {
+    return res.status(404).json({ error: '作品未找到' });
+  }
+  // 未上传封面图的周边暂不对外展示
+  if (!Array.isArray(work.images) || !work.images[0]) {
     return res.status(404).json({ error: '作品未找到' });
   }
   res.json(work);

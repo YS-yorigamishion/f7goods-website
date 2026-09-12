@@ -1124,13 +1124,18 @@
         if (cart[k] && cart[k].isGift) delete cart[k];
       });
       const byBooth = {};
+      const boothTouched = {};
       Object.values(cart).forEach(e => {
         if (e.isGift) return;
+        // 该摊位有任意勾选（含条件领取）才算“逛过本摊”
+        boothTouched[e.boothId] = true;
         // 条件领取的周边不计入满赠累计
         if (e.claim) return;
         byBooth[e.boothId] = (byBooth[e.boothId] || 0) + (e.price || 0) * e.qty;
       });
       (window._only?.boothModels || []).forEach(b => {
+        // 未选购本摊任何周边时，不计入该摊赠品
+        if (!boothTouched[b.id]) return;
         const tiers = (b.promoTiers || []).slice().sort((a, z) => (a.minAmount || 0) - (z.minAmount || 0));
         const spend = byBooth[b.id] || 0;
         const hit = tiers.filter(t => spend >= (t.minAmount || 0)).slice(-1)[0];
