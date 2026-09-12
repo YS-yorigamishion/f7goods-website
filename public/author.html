@@ -565,10 +565,7 @@
           <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">管理您上传的所有图片。点击图片可复制链接。超过5MB的图片在批量上传时会被跳过。</p>
           <div style="display:flex;gap:0.5rem;margin-bottom:1rem;align-items:center;flex-wrap:wrap;">
             <input type="file" id="batchUploadInput" accept="image/*" multiple style="font-size:0.85rem;">
-            <button class="btn btn-primary" onclick="batchUploadAuthorImages()">批量上传</button>
-            <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.8rem;cursor:pointer;">
-              <input type="checkbox" id="addWatermarkCheck" style="width:14px;height:14px;accent-color:var(--accent);"> 添加水印
-            </label>
+            <button class="btn btn-primary" onclick="batchUploadAuthorImages()">选择并设置水印</button>
             <button class="btn" id="batchDeleteBtn" style="background:var(--accent);color:white;display:none;" onclick="batchDeleteAuthorImages()">批量删除</button>
             <span id="imageCount" style="font-size:0.85rem;color:var(--haze);margin-left:auto;"></span>
           </div>
@@ -2616,70 +2613,141 @@
     async function batchUploadAuthorImages() {
       const input = document.getElementById('batchUploadInput');
       if (!input.files.length) { showToast('请选择图片', 'error'); return; }
-      const addWatermark = document.getElementById('addWatermarkCheck')?.checked || false;
 
-      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+      const MAX_SIZE = 5 * 1024 * 1024;
       const files = [...input.files];
       const skipped = [];
       const toUpload = [];
-
-      // 预检查文件大小
       for (const file of files) {
-        if (file.size > MAX_SIZE) {
-          skipped.push(file.name);
-        } else {
-          toUpload.push(file);
-        }
+        if (file.size > MAX_SIZE) skipped.push(file.name);
+        else toUpload.push({ file, wm: true, style: 'light' });
       }
-
-      // 提醒跳过的文件
       if (skipped.length > 0) {
         showToast(`以下图片超过5MB已跳过：${skipped.join('、')}，请自行压缩后上传`, 'warning', 5000);
       }
-
-      if (toUpload.length === 0) {
+      if (!toUpload.length) {
         showToast('没有可上传的图片', 'error');
         input.value = '';
         return;
       }
+      openUploadWatermarkModal(toUpload, skipped);
+    }
 
-      // 上传剩余文件
-      let uploaded = 0;
+    let _uploadQueue = [];
+    function openUploadWatermarkModal(queue, skipped) {
+      _uploadQueue = queue;
+      const overlay = document.getElementById('workModalOverlay');
+      const body = document.getElementById('workModalBody');
+      document.getElementById('workModalTitle').textContent = '上传预览 · 设置水印';
+      body.innerHTML = `
+        <div class="ab-sec">
+          <h4 class="ab-sec-h"><span class="n">1</span>水印样式<span class="tip">默认浅色 · 可逐图调整</span></h4>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.6rem;">
+            <button type="button" class="btn-sm" onclick="setAllUploadWm(true,'light')">全部浅色</button>
+            <button type="button" class="btn-sm" onclick="setAllUploadWm(true,'half')">全部半边描边</button>
+            <button type="button" class="btn-sm" onclick="setAllUploadWm(true,'full')">全部描边</button>
+            <button type="button" class="btn-sm" onclick="setAllUploadWm(false,'light')">全部不加</button>
+          </div>
+          <div style="font-size:0.72rem;color:var(--haze);line-height:1.5;margin-bottom:0.5rem;">
+            浅色：中间白字 + 角标｜半边描边：仅角标描边｜全部描边：含中间，半透明描边
+          </div>
+          <div id="uploadWmList" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+        </div>
+        <div class="ab-foot">
+          <button class="btn btn-primary" style="flex:1;" onclick="startUploadFromModal()">开始上传</button>
+          <button class="btn" style="flex:1;background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
+        </div>
+      `;
+      renderUploadWmList();
+      overlay.style.display = '';
+      overlay.classList.add('open');
+      if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
+    }
+
+    function renderUploadWmList() {
+      const list = document.getElementById('uploadWmList');
+      if (!list) return;
+      const labels = { light: '浅色', half: '半边描边', full: '全部描边' };
+      list.innerHTML = _uploadQueue.map((item, i) => {
+        const url = URL.createObjectURL(item.file);
+        return `
+          <div class="ab-up-item" data-i="${i}" style="display:grid;grid-template-columns:96px 1fr;gap:0.5rem;border:1px solid var(--border);border-radius:10px;padding:0.45rem;align-items:center;">
+            <img src="${url}" alt="" style="width:96px;height:72px;object-fit:cover;border-radius:6px;" onload="URL.revokeObjectURL(this.src)">
+            <div style="min-width:0;">
+              <div style="font-size:0.78rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.file.name)}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.3rem;align-items:center;">
+                <label style="font-size:0.72rem;display:inline-flex;align-items:center;gap:0.2rem;cursor:pointer;">
+                  <input type="checkbox" class="up-wm" data-i="${i}" ${item.wm ? 'checked' : ''}>
+                  加水印
+                </label>
+                <span class="up-seg" data-i="${i}" style="display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;">
+                  ${['light','half','full'].map(s => `
+                    <button type="button" class="up-style" data-i="${i}" data-style="${s}"
+                      style="border:none;background:${item.wm && item.style===s ? 'var(--accent)' : 'transparent'};color:${item.wm && item.style===s ? '#fff' : 'var(--muted)'};padding:0.15rem 0.45rem;font-size:0.68rem;cursor:pointer;${item.wm ? '' : 'opacity:.4;'}"
+                      ${item.wm ? '' : 'disabled'}>${labels[s]}</button>
+                  `).join('')}
+                </span>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+
+      list.onchange = (e) => {
+        const cb = e.target;
+        if (!cb.classList.contains('up-wm')) return;
+        _uploadQueue[+cb.dataset.i].wm = cb.checked;
+        renderUploadWmList();
+      };
+      list.onclick = (e) => {
+        const btn = e.target.closest('.up-style');
+        if (!btn || btn.disabled) return;
+        _uploadQueue[+btn.dataset.i].style = btn.dataset.style;
+        renderUploadWmList();
+      };
+    }
+
+    function setAllUploadWm(wm, style) {
+      _uploadQueue.forEach(item => { item.wm = wm; if (wm) item.style = style; });
+      renderUploadWmList();
+    }
+
+    async function startUploadFromModal() {
+      const input = document.getElementById('batchUploadInput');
+      const toUpload = _uploadQueue.slice();
+      closeWorkModal();
       const errors = [];
       const compressed = [];
       const actAs = localStorage.getItem('f7author_actAs');
       showLoading('上传中...');
-      for (const file of toUpload) {
+      let uploaded = 0;
+      for (const item of toUpload) {
         const formData = new FormData();
-        formData.append('image', file);
-        if (addWatermark) formData.append('addWatermark', 'true');
+        formData.append('image', item.file);
+        if (item.wm) {
+          formData.append('addWatermark', 'true');
+          formData.append('watermarkStyle', item.style || 'light');
+        }
         const headers = { 'Authorization': 'Bearer ' + authorToken };
         if (actAs) headers['X-Act-As'] = actAs;
         const res = await fetch('/api/author/upload', { method: 'POST', headers, body: formData });
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           uploaded++;
-          // 检查是否被压缩
           if (data.originalSize && data.compressedSize && data.originalSize > data.compressedSize) {
-            compressed.push(`${file.name}: ${(data.originalSize/1024).toFixed(0)}KB → ${(data.compressedSize/1024).toFixed(0)}KB`);
+            compressed.push(`${item.file.name}: ${(data.originalSize/1024).toFixed(0)}KB → ${(data.compressedSize/1024).toFixed(0)}KB`);
           }
         } else {
           const data = await res.json().catch(() => ({}));
-          errors.push(`${file.name}: ${data.error || '上传失败'}`);
+          errors.push(`${item.file.name}: ${data.error || '上传失败'}`);
         }
       }
       hideLoading();
-
-      // 显示结果
       let msg = `成功上传 ${uploaded} 张图片`;
-      if (skipped.length > 0) msg += `，跳过 ${skipped.length} 张（超过5MB）`;
       if (errors.length > 0) msg += `，失败 ${errors.length} 张`;
       showToast(msg, uploaded > 0 ? 'success' : 'error', 5000);
-      if (compressed.length > 0) {
-        showToast(`已压缩: ${compressed.join('、')}`, 'info', 8000);
-      }
-
-      input.value = '';
+      if (compressed.length > 0) showToast(`已压缩: ${compressed.join('、')}`, 'info', 8000);
+      _uploadQueue = [];
+      if (input) input.value = '';
       loadAuthorImages();
     }
 

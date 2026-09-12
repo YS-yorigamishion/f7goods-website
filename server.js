@@ -4344,6 +4344,47 @@ app.post('/api/admin/upload', authMiddleware, upload.single('image'), async (req
   }
 });
 
+
+// Author upload watermark builders
+function buildUploadWatermarkSvg(width, height, authorName, style) {
+  const fontSize = Math.max(12, Math.round(width / 20));
+  const smallFontSize = Math.max(9, Math.round(width / 40));
+  const padding = Math.max(6, Math.round(width / 50));
+  const strokeW = Math.max(2, Math.round(fontSize / 8));
+  const strokeWSmall = Math.max(1.5, Math.round(smallFontSize / 7));
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const name = esc('@' + authorName);
+  const site = 'f7goods.com';
+  const cx = Math.round(width / 2);
+  const cy = Math.round(height / 2);
+  const brX = width - padding;
+  const brY = height - padding;
+  const tlX = padding;
+  const tlY = padding + smallFontSize;
+  const solidCenter = '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="middle" font-size="' + fontSize + '" font-family="sans-serif" fill="rgba(255,255,255,1)">' + name + '</text>';
+  const solidCornerName = '<text x="' + brX + '" y="' + brY + '" text-anchor="end" dominant-baseline="auto" font-size="' + smallFontSize + '" font-family="sans-serif" fill="rgba(255,255,255,1)">' + name + '</text>';
+  const solidSite = '<text x="' + tlX + '" y="' + tlY + '" text-anchor="start" dominant-baseline="auto" font-size="' + smallFontSize + '" font-family="sans-serif" fill="rgba(255,255,255,1)">' + site + '</text>';
+  function strokeLayer(text, attrs, sw) {
+    return '<text ' + attrs + ' fill="none" stroke="rgba(0,0,0,0.45)" stroke-width="' + sw + '">' + text + '</text>'
+      + '<text ' + attrs + ' fill="rgba(255,255,255,0.72)">' + text + '</text>';
+  }
+  const outlineCenterAttrs = 'x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="middle" font-size="' + fontSize + '" font-family="sans-serif"';
+  const outlineCornerNameAttrs = 'x="' + brX + '" y="' + brY + '" text-anchor="end" dominant-baseline="auto" font-size="' + smallFontSize + '" font-family="sans-serif"';
+  const outlineSiteAttrs = 'x="' + tlX + '" y="' + tlY + '" text-anchor="start" dominant-baseline="auto" font-size="' + smallFontSize + '" font-family="sans-serif"';
+  let layers = '';
+  if (style === 'half') {
+    layers = strokeLayer(name, outlineCornerNameAttrs, strokeWSmall) +
+      strokeLayer(site, outlineSiteAttrs, Math.max(1.2, strokeWSmall * 0.8));
+  } else if (style === 'full') {
+    layers = strokeLayer(name, outlineCenterAttrs, strokeW) +
+      strokeLayer(name, outlineCornerNameAttrs, strokeWSmall) +
+      strokeLayer(site, outlineSiteAttrs, Math.max(1.2, strokeWSmall * 0.8));
+  } else {
+    layers = solidCenter + solidCornerName + solidSite;
+  }
+  return '<svg width="' + width + '" height="' + height + '" xmlns="http://www.w3.org/2000/svg">' + layers + '</svg>';
+}
+
 // Author upload
 app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择文件' });
@@ -4364,22 +4405,14 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
           const image = sharp(filePath);
           const metadata = await image.metadata();
           const { width, height } = metadata;
-          const fontSize = Math.round(width / 20);
-          const smallFontSize = Math.round(width / 40);
-          const padding = Math.round(width / 50);
-          const watermarkText = `@${authorName}`;
-          const xmlEscapedText = watermarkText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          const svgWatermark = `<svg width="${width}" height="${height}">
-            <style>
-              .wm-center { font-size: ${fontSize}px; fill: rgba(255,255,255,1); font-family: sans-serif; }
-              .wm-corner { font-size: ${smallFontSize}px; fill: rgba(255,255,255,1); font-family: sans-serif; }
-            </style>
-            <text class="wm-center" x="${width/2}" y="${height/2}" text-anchor="middle" dominant-baseline="middle">${xmlEscapedText}</text>
-            <text class="wm-corner" x="${width - padding}" y="${height - padding}" text-anchor="end" dominant-baseline="auto">${xmlEscapedText}</text>
-            <text class="wm-corner" x="${padding}" y="${padding + smallFontSize}" text-anchor="start" dominant-baseline="auto">f7goods.com</text>
-          </svg>`;
-          await image.composite([{ input: Buffer.from(svgWatermark) }]).toFile(filePath + '.tmp');
-          fs.renameSync(filePath + '.tmp', filePath);
+          if (width && height) {
+            const style = ['light', 'half', 'full'].includes(req.body.watermarkStyle)
+              ? req.body.watermarkStyle
+              : 'light';
+            const svgWatermark = buildUploadWatermarkSvg(width, height, authorName, style);
+            await image.composite([{ input: Buffer.from(svgWatermark) }]).toFile(filePath + '.tmp');
+            fs.renameSync(filePath + '.tmp', filePath);
+          }
         } catch (e) {
           console.error('Watermark failed:', e.message);
         }
