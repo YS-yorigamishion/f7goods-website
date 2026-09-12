@@ -323,15 +323,15 @@
             <h3 style="margin:0;font-family:'Noto Serif SC',Georgia,serif;">我的作品</h3>
             <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
               <button class="btn btn-primary" onclick="openAuthorWorkForm()">+ 新增作品</button>
+              <button type="button" class="btn" onclick="openBatchCreateFromImages()" style="background:var(--card);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.75rem;">批量创建</button>
+              <button type="button" id="authorUseFormatBtn" class="btn" onclick="openUseFormatFlow()" style="background:#6c5ce7;color:white;font-size:0.8rem;padding:0.3rem 0.75rem;">使用格式</button>
               <div class="mgmt-more">
                 <button type="button" class="btn" onclick="toggleMgmtDropdown('worksMoreMenu')" style="background:var(--card);color:var(--ink);font-size:0.8rem;padding:0.3rem 0.75rem;">更多
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:0.15rem;"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="mgmt-dropdown" id="worksMoreMenu" style="min-width:150px;">
-                  <button type="button" onclick="openBatchCreateFromImages();toggleMgmtDropdown('worksMoreMenu')">批量创建</button>
                   <button type="button" onclick="exportWorksToExcel();toggleMgmtDropdown('worksMoreMenu')">导出 Excel</button>
                   <button type="button" onclick="document.getElementById('authorWorksImportInput').click();toggleMgmtDropdown('worksMoreMenu')">导入 Excel</button>
-                  <button type="button" id="authorUseFormatBtn" style="display:none;" onclick="openUseFormatFlow();toggleMgmtDropdown('worksMoreMenu')">使用格式</button>
                 </div>
               </div>
             </div>
@@ -1810,8 +1810,8 @@
         deleteBtn.textContent = `批量删除`;
       }
       if (formatBtn) {
-        formatBtn.style.display = n >= 1 ? 'block' : 'none';
-        formatBtn.textContent = `使用格式`;
+        formatBtn.style.display = '';
+        formatBtn.textContent = '使用格式';
       }
     }
 
