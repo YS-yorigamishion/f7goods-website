@@ -503,11 +503,8 @@
         const owners = (raw.circleIds || []).map(cid => circleMap[cid]).filter(Boolean);
         const ownerIds = new Set(owners.map(c => c.id));
         let goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
-        // 摊位勾选了展示作品时，只展示勾选的
-        if (Array.isArray(raw.workIds) && raw.workIds.length) {
-          const sel = new Set(raw.workIds);
-          goods = relatedWorks.filter(w => sel.has(w.id));
-        }
+        // 展示范围以「作品关联本活动」+「本摊挂接摊主」为准；
+        // 不再使用作者后台勾选的 workIds 二次裁剪。
         // Manual goods order from admin (goodsOrder)
         if (Array.isArray(raw.goodsOrder) && raw.goodsOrder.length) {
           const rank = new Map(raw.goodsOrder.map((id, i) => [id, i]));
