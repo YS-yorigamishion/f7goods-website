@@ -1106,7 +1106,7 @@ app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
   const globalRequireApproval = settings.site?.requireWorkApproval !== false;
   const requireApproval = authorRequireApproval && globalRequireApproval;
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks'];
+  const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'isCommissioned', 'commissionedBy', 'socialLinks', 'relatedEvents'];
   const workData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) workData[field] = req.body[field];
