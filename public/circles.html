@@ -39,7 +39,8 @@
       <div class="cl-toolbar-row">
         <button type="button" class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">关注</button>
         <select class="form-input" id="sortSelect">
-          <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
+          <option value="new" selected>最新注册</option>
+          <option value="random" data-i18n="common.sortRandom">随机排序</option>
           <option value="order" data-i18n="common.sortDefault">默认排序</option>
           <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
         </select>
@@ -188,13 +189,15 @@
 
       // Sorting
       filtered = filtered.slice();
-      const sortVal = document.getElementById('sortSelect')?.value || 'random';
+      const sortVal = document.getElementById('sortSelect')?.value || 'new';
       if (sortVal === 'name-asc') {
         filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       } else if (sortVal === 'order') {
         filtered.sort((a, b) => (a.order || 0) - (b.order || 0));
+      } else if (sortVal === 'new') {
+        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       } else {
-        // random（默认）
+        // random
         filtered.sort((a, b) => (a._randomRank || 0) - (b._randomRank || 0));
       }
 
