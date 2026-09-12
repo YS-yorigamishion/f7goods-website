@@ -921,7 +921,17 @@
       loadAuthorImages();
       loadNotifications();
       checkAaPopup();
-      switchMgmtTab('works');
+      // 支持前台入口深链：?tab=my-events&new=1 等
+      const deep = new URLSearchParams(location.search);
+      const deepTab = deep.get('tab') || 'works';
+      switchMgmtTab(deepTab);
+      if (deep.get('new') === '1') {
+        setTimeout(() => {
+          if (deepTab === 'my-events') openMyEventForm();
+          else if (deepTab === 'my-projects') openMyProjectForm();
+          else if (deepTab === 'my-updates') openMyUpdateForm();
+        }, 80);
+      }
     }
 
     // Author API helper

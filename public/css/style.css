@@ -1812,6 +1812,28 @@ textarea.form-input { resize: vertical; min-height: 130px; }
 @media (max-width: 768px) {
   .back-to-top { bottom: 1.5rem; right: 1.5rem; width: 40px; height: 40px; font-size: 1rem; }
 }
+/* 作者已登录时：列表页右下角创建入口 */
+.author-create-fab {
+  position: fixed; right: 1.25rem; bottom: 5.25rem; z-index: 95;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff; text-decoration: none;
+  border-radius: 999px; padding: 0.85rem 1.15rem;
+  font-size: 0.88rem; font-weight: 600; font-family: inherit;
+  box-shadow: 0 8px 24px rgba(217,79,92,0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.author-create-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(217,79,92,0.45); }
+@media (max-width: 768px) {
+  .author-create-fab {
+    right: 1rem;
+    bottom: calc(58px + 0.85rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
+  }
+}
+body.app-mode .author-create-fab {
+  bottom: calc(58px + 0.85rem + env(safe-area-inset-bottom, 0px));
+}
 body { animation: pageFadeIn 0.28s ease; }
 @keyframes pageFadeIn {
   from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); }
