@@ -45,6 +45,31 @@
       padding: 0.75rem 0 0.15rem;
       background: linear-gradient(transparent, var(--bg) 28%);
     }
+    /* ONLY 摊位表单：操作按钮统一风格 */
+    .ab-pill {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 0.25rem 0.7rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: inherit;
+      line-height: 1.4;
+      transition: border-color .15s ease, color .15s ease;
+    }
+    .ab-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .ab-pill.ghost {
+      background: transparent;
+      color: var(--haze);
+    }
+    .ab-pill.danger {
+      background: transparent;
+      color: var(--accent);
+      border-color: rgba(217,79,92,.35);
+    }
+    .ab-pill:disabled { opacity: 0.4; cursor: default; }
+    .ab-pill:disabled:hover { border-color: var(--border); color: var(--ink); }
   </style>
 </head>
 <body>
@@ -2985,10 +3010,10 @@
       return `<div class="ab-group-row" data-id="${id}" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.55rem;display:flex;flex-direction:column;gap:0.35rem;">
         <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
           <input class="form-input ab-group-name" style="flex:1;min-width:100px;" placeholder="分类名称，如：新品" value="${name}">
-          <button type="button" class="btn-sm" title="上移" onclick="moveAuthorGroupRow(this,-1)">↑</button>
-          <button type="button" class="btn-sm" title="下移" onclick="moveAuthorGroupRow(this,1)">↓</button>
-          <button type="button" class="btn-sm" title="把尚未归类的展示作品加入本类" onclick="assignUncategorizedToGroup(this)">收未归类</button>
-          <button type="button" class="btn-sm btn-delete" onclick="this.closest('.ab-group-row').remove();updateAbWorkGroupHint();">删</button>
+          <button type="button" class="ab-pill" title="上移" onclick="moveAuthorGroupRow(this,-1)">↑</button>
+          <button type="button" class="ab-pill" title="下移" onclick="moveAuthorGroupRow(this,1)">↓</button>
+          <button type="button" class="ab-pill" title="把尚未归类的展示作品加入本类" onclick="assignUncategorizedToGroup(this)">收未归类</button>
+          <button type="button" class="ab-pill danger" onclick="this.closest('.ab-group-row').remove();updateAbWorkGroupHint();">删</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:0.25rem;max-height:100px;overflow:auto;">
           ${works.length ? works.map(w => `
@@ -3381,14 +3406,14 @@
             return `
               <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;margin-bottom:0.45rem;">
                 <input type="search" id="abWorkSearch" class="form-input" style="flex:1;min-width:120px;font-size:0.78rem;padding:0.3rem 0.55rem;" placeholder="搜索作品名称…" oninput="filterAbWorkPicks(this.value)">
-                <button type="button" class="btn-sm" onclick="abWorkBulk('all')">全选</button>
-                <button type="button" class="btn-sm" onclick="abWorkBulk('invert')">反选</button>
-                <button type="button" class="btn-sm" onclick="abWorkBulk('none')">清空</button>
+                <button type="button" class="ab-pill" onclick="abWorkBulk('all')">全选</button>
+                <button type="button" class="ab-pill" onclick="abWorkBulk('invert')">反选</button>
+                <button type="button" class="ab-pill ghost" onclick="abWorkBulk('none')">清空</button>
               </div>
               <div id="abWorkCats" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.45rem;align-items:center;">
                 <span style="font-size:0.72rem;color:var(--haze);">按分类：</span>
                 ${Object.keys(catMap).filter(c => c).sort((a, z) => catLabel(a).localeCompare(catLabel(z), 'zh')).map(c => `
-                  <button type="button" class="btn-sm" style="font-size:0.7rem;padding:0.15rem 0.55rem;border-radius:999px;background:var(--bg);border:1px solid var(--border);" onclick="abWorkBulkCat('${escapeHtml(c)}')" title="勾选/取消本分类作品">${escapeHtml(catLabel(c))}（${catMap[c].length}）</button>
+                  <button type="button" class="ab-pill" style="font-size:0.7rem;padding:0.15rem 0.55rem;" onclick="abWorkBulkCat('${escapeHtml(c)}')" title="勾选/取消本分类作品">${escapeHtml(catLabel(c))}（${catMap[c].length}）</button>
                 `).join('')}
               </div>
               <div id="abWorkPickList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:170px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
@@ -3413,7 +3438,7 @@
               return groups.map(g => renderAuthorGroupRow(g, manageWorks)).join('');
             })()}
           </div>
-          <button type="button" class="btn-sm btn-edit" onclick="addAuthorGroupRow()">+ 添加分类</button>
+          <button type="button" class="ab-pill" onclick="addAuthorGroupRow()">+ 添加分类</button>
         </section>
 
         <section class="ab-sec">
@@ -3421,7 +3446,7 @@
           <div id="abTierList" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.4rem;">
             ${tiers.map((t, i) => renderAuthorTierRow(t, giftWorks, i)).join('')}
           </div>
-          <button type="button" class="btn-sm btn-edit" onclick="addAuthorTierRow('${eventId}')">+ 添加一档</button>
+          <button type="button" class="ab-pill" onclick="addAuthorTierRow('${eventId}')">+ 添加一档</button>
         </section>
 
         <section class="ab-sec">
@@ -3507,7 +3532,7 @@
       return `<div class="ab-tier-row" data-i="${i}" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.55rem;display:flex;flex-direction:column;gap:0.35rem;">
         <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
           <input class="form-input ab-tier-min" type="number" min="0" step="1" style="width:110px;" placeholder="满额（留空无）" value="${t.minAmount ?? ''}">
-          <button type="button" class="btn-sm btn-delete" onclick="this.closest('.ab-tier-row').remove()">删</button>
+          <button type="button" class="ab-pill danger" onclick="this.closest('.ab-tier-row').remove()">删</button>
           <span style="font-size:0.72rem;color:var(--haze);">填数字并勾选赠品后生效；数字留空 = 本档不生效</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:0.25rem;max-height:100px;overflow:auto;">
