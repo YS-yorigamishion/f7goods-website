@@ -3043,22 +3043,59 @@
         el.innerHTML = '<div style="font-size:0.75rem;color:var(--haze);">该摊位暂无展示作品，可在「编辑」中勾选</div>';
         return;
       }
+      const rankOf = new Map(goods.map((g, i) => [g.id, i]));
+      const rowHtml = (g, isFirst, isLast) => {
+        const gi = rankOf.get(g.id) ?? 0;
+        return `
+          <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;padding:0.25rem 0.35rem;border-radius:6px;background:var(--card-bg);">
+            <span style="color:var(--haze);width:1.1rem;text-align:right;">${gi + 1}.</span>
+            ${g.images && g.images[0]
+              ? `<img src="${escapeHtml(g.images[0])}" alt="" style="width:24px;height:24px;border-radius:4px;object-fit:cover;flex-shrink:0;">`
+              : `<div style="width:24px;height:24px;border-radius:4px;background:linear-gradient(145deg,#EDE6DA,#D9D0C2);flex-shrink:0;"></div>`}
+            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
+            ${claimMap[g.id] ? `<span title="条件领取：${escapeHtml(claimMap[g.id])}" style="flex-shrink:0;font-size:0.66rem;font-weight:600;color:var(--warning);border:1px solid rgba(196,138,42,.4);background:rgba(196,138,42,.12);border-radius:999px;padding:0 6px;">条件领取</span>` : ''}
+            <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${isFirst ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',-1)" ${isFirst ? 'disabled' : ''}>↑</button>
+            <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${isLast ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',1)" ${isLast ? 'disabled' : ''}>↓</button>
+          </div>`;
+      };
+
+      const groups = Array.isArray(booth.goodsGroups)
+        ? booth.goodsGroups.filter(g => g && (g.name || (g.workIds || []).length))
+        : [];
+      let bodyHtml;
+      if (!groups.length) {
+        bodyHtml = `
+          <div style="display:flex;flex-direction:column;gap:0.25rem;">
+            ${goods.map((g, gi) => rowHtml(g, gi === 0, gi === goods.length - 1)).join('')}
+          </div>`;
+      } else {
+        const claimed = new Set();
+        const sections = groups.map(g => {
+          const ids = new Set(g.workIds || []);
+          const works = goods.filter(w => ids.has(w.id));
+          works.forEach(w => claimed.add(w.id));
+          return { name: String(g.name || '未命名').trim() || '未命名', works };
+        });
+        const rest = goods.filter(w => !claimed.has(w.id));
+        if (rest.length) sections.push({ name: '其他', works: rest });
+        bodyHtml = sections.map(s => {
+          if (!s.works.length) return '';
+          return `
+            <div style="margin-bottom:0.45rem;">
+              <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:0.25rem;">${escapeHtml(s.name)} · ${s.works.length}</div>
+              <div style="display:flex;flex-direction:column;gap:0.25rem;">
+                ${s.works.map((g, si) => {
+                  const gi = rankOf.get(g.id) ?? 0;
+                  return rowHtml(g, gi === 0, gi === goods.length - 1);
+                }).join('')}
+              </div>
+            </div>`;
+        }).join('');
+      }
+
       el.innerHTML = `
-        <div style="font-size:0.72rem;color:var(--haze);margin-bottom:0.3rem;">作品顺序（↑↓）</div>
-        <div style="display:flex;flex-direction:column;gap:0.25rem;">
-          ${goods.map((g, gi) => `
-            <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;padding:0.25rem 0.35rem;border-radius:6px;background:var(--card-bg);">
-              <span style="color:var(--haze);width:1.1rem;text-align:right;">${gi + 1}.</span>
-              ${g.images && g.images[0]
-                ? `<img src="${escapeHtml(g.images[0])}" alt="" style="width:24px;height:24px;border-radius:4px;object-fit:cover;flex-shrink:0;">`
-                : `<div style="width:24px;height:24px;border-radius:4px;background:linear-gradient(145deg,#EDE6DA,#D9D0C2);flex-shrink:0;"></div>`}
-              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.title || '')}</span>
-              ${claimMap[g.id] ? `<span title="条件领取：${escapeHtml(claimMap[g.id])}" style="flex-shrink:0;font-size:0.66rem;font-weight:600;color:var(--warning);border:1px solid rgba(196,138,42,.4);background:rgba(196,138,42,.12);border-radius:999px;padding:0 6px;">条件领取</span>` : ''}
-              <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === 0 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',-1)" ${gi === 0 ? 'disabled' : ''}>↑</button>
-              <button class="btn-sm" style="padding:0.1rem 0.35rem;font-size:0.7rem;${gi === goods.length - 1 ? 'opacity:0.35;' : ''}" onclick="authorMoveGood('${pack.event.id}','${booth.id}','${g.id}',1)" ${gi === goods.length - 1 ? 'disabled' : ''}>↓</button>
-            </div>
-          `).join('')}
-        </div>
+        <div style="font-size:0.72rem;color:var(--haze);margin-bottom:0.3rem;">作品顺序（↑↓${groups.length ? ' · 按分类分组' : ''}）</div>
+        ${bodyHtml}
       `;
     }
 
