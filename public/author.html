@@ -1334,7 +1334,12 @@
       { key: 'description', label: '描述', getValue: w => { const d = w.description || ''; return d.length > 60 ? d.substring(0, 60) + '...' : d; } },
       { key: 'commissioned', label: '约稿作品 + 约稿作者', getValue: w => w.isCommissioned ? '是 (' + (w.commissionedBy || '未填') + ')' : '否' },
       { key: 'socialLinks', label: '联系方式', getValue: w => { const sl = w.socialLinks || {}; const keys = Object.keys(sl).filter(k => sl[k]); return keys.length ? keys.map(k => k + ': ' + sl[k]).join(', ') : '(无)'; } },
-      { key: 'relatedEvents', label: '关联活动', getValue: (w, events) => { if (!events || events.length === 0) return '(无活动)'; const related = events.filter(e => (e.relatedCircles || []).includes(authorCircleId)); return related.length ? related.map(e => e.title).join(', ') : '(无)'; } },
+      { key: 'relatedEvents', label: '关联活动', getValue: (w, events) => {
+        const ids = w.relatedEvents || [];
+        if (!events || !events.length || !ids.length) return '(无)';
+        const related = events.filter(e => ids.includes(e.id));
+        return related.length ? related.map(e => e.title).join(', ') : '(无)';
+      } },
       { key: 'relatedProjects', label: '关联企划', getValue: (w, events, projects) => { if (!projects || projects.length === 0) return '(无企划)'; const ids = w._relatedProjects || []; const related = projects.filter(p => ids.includes(p.id)); return related.length ? related.map(p => p.title).join(', ') : '(无)'; } }
     ];
     async function openBatchCreateFromImages() {
@@ -2228,21 +2233,10 @@
 
       const hasBasicChanges = Object.keys(data).length > 0;
       const hasProjectChanges = selectedProjectIds.length > 0;
+      // 批量勾选活动 = 写入这些作品的 relatedEvents（不是作者后台的活动关联）
+      const hasEventChanges = selectedEventIds.length > 0;
 
-      // 获取当前作者关联的活动
-      const allEvents = await authorAPI('GET', '/api/author/events');
-      const currentEventIds = allEvents
-        ? allEvents.filter(e => (e.relatedCircles || []).includes(authorCircleId)).map(e => e.id)
-        : [];
-
-      // 需要添加关联的活动：用户勾选但当前未关联
-      const eventsToAdd = selectedEventIds.filter(id => !currentEventIds.includes(id));
-      // 需要移除关联的活动：当前已关联但用户未勾选
-      const eventsToRemove = currentEventIds.filter(id => !selectedEventIds.includes(id));
-      // 合并需要 toggle 的活动
-      const eventsToToggle = [...new Set([...eventsToAdd, ...eventsToRemove])];
-
-      if (!hasBasicChanges && !hasProjectChanges && eventsToToggle.length === 0) {
+      if (!hasBasicChanges && !hasProjectChanges && !hasEventChanges) {
         alert('请至少修改一个字段');
         return;
       }
@@ -2250,15 +2244,11 @@
       showLoading('保存中...');
       try {
         // 批量更新作品 (单次请求)
-        if (hasBasicChanges || hasProjectChanges) {
+        if (hasBasicChanges || hasProjectChanges || hasEventChanges) {
           const batchData = { ...data };
           if (hasProjectChanges) batchData.relatedProjects = selectedProjectIds;
+          if (hasEventChanges) batchData.relatedEvents = selectedEventIds;
           await authorAPI('PUT', '/api/author/works/batch', { ids: workIds, data: batchData });
-        }
-
-        // 批量切换活动关联 (单次请求)
-        if (eventsToToggle.length > 0) {
-          await authorAPI('PUT', '/api/author/events/batch-toggle', { eventIds: eventsToToggle });
         }
 
         showToast(`已更新 ${workIds.length} 个作品`, 'success');
@@ -2294,7 +2284,7 @@
         authorAPI('GET', '/api/author/events'),
         authorAPI('GET', '/api/author/projects')
       ]);
-      work._relatedEvents = (allEvents || []).filter(e => (e.relatedCircles || []).includes(authorCircleId)).map(e => e.id);
+      work._relatedEvents = Array.isArray(work.relatedEvents) ? work.relatedEvents.slice() : [];
       work._relatedProjects = (allProjects || []).filter(p => (p.works || []).includes(workId)).map(p => p.id);
 
       body.innerHTML = await buildWorkFormHTML(work);

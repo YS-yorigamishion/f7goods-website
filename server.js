@@ -894,7 +894,7 @@ app.put('/api/author/works/batch', authorAuthMiddleware, async (req, res) => {
 
   const circleId = req.author.circleId;
   const idSet = new Set(ids);
-  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy'];
+  const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy', 'relatedEvents'];
   const updates = {};
   allowed.forEach(field => {
     if (data[field] !== undefined) updates[field] = data[field];
@@ -913,6 +913,28 @@ app.put('/api/author/works/batch', authorAuthMiddleware, async (req, res) => {
   if (updated === 0) return res.status(404).json({ error: '未找到可更新的作品' });
 
   await writeJSON('works.json', works);
+
+  // Handle event associations if provided — 写作品 relatedEvents，并同步活动 relatedWorks
+  if (data.relatedEvents !== undefined) {
+    let events = readJSON('events.json');
+    const newEventIds = Array.isArray(data.relatedEvents) ? data.relatedEvents.filter(Boolean) : [];
+    const matchingWorkIds = works.filter(w => idSet.has(w.id) && (w.circles || []).includes(circleId)).map(w => w.id);
+    const matchSet = new Set(matchingWorkIds);
+    for (const evt of events) {
+      if (!Array.isArray(evt.relatedWorks)) evt.relatedWorks = [];
+      matchingWorkIds.forEach(wid => {
+        const hasWork = evt.relatedWorks.includes(wid);
+        const shouldHave = newEventIds.includes(evt.id);
+        if (hasWork && !shouldHave) {
+          evt.relatedWorks = evt.relatedWorks.filter(id => id !== wid);
+        } else if (!hasWork && shouldHave) {
+          evt.relatedWorks.push(wid);
+        }
+      });
+      // 同时清理本次批量外其它作品不在 relatedEvents 的残留不做处理
+    }
+    await writeJSON('events.json', events);
+  }
 
   // Handle project associations if provided
   if (data.relatedProjects !== undefined) {
