@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260912a">
+  <link rel="stylesheet" href="/css/style.css?v=20260912c">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -67,10 +67,10 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260912b"></script>
+  <script src="/js/main.js?v=20260912c"></script>
   <script>
     initPage('projects');
-    mountAuthorCreateFab({ label: '发布企划', tab: 'my-projects' });
+    if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '发布企划', tab: 'my-projects' });
 
     let allProjects = [];
     let currentStatus = 'all';
