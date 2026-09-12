@@ -3650,14 +3650,53 @@
       }
     }
 
+    function filterAuthorPickList(input, listId) {
+      const q = String((input && input.value) || '').trim().toLowerCase();
+      const list = document.getElementById(listId);
+      if (!list) return;
+      list.querySelectorAll('label[data-title]').forEach(el => {
+        el.style.display = (!q || (el.dataset.title || '').includes(q)) ? '' : 'none';
+      });
+    }
+
+    async function loadCirclesForPick() {
+      try {
+        if (typeof F7API !== 'undefined' && F7API.getCircles) {
+          const list = await F7API.getCircles();
+          if (Array.isArray(list)) return list;
+        }
+        const res = await fetch('/api/circles');
+        return await res.json();
+      } catch { return []; }
+    }
+
+    function renderCirclePickList(circles, selectedSet, inputClass, listId) {
+      const selfId = (typeof activeCircleId === 'function' ? activeCircleId() : '') || authorCircleId;
+      const ids = [...new Set([selfId, ...selectedSet].filter(Boolean))];
+      const idSet = new Set(ids);
+      const ordered = [
+        ...circles.filter(c => c.id === selfId),
+        ...circles.filter(c => c.id !== selfId)
+      ];
+      return ordered.map(c => {
+        const isSelf = c.id === selfId;
+        return `<label data-title="${escapeHtml(String(c.name || '').toLowerCase())}" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;">
+          <input type="checkbox" class="${inputClass}" value="${c.id}" ${idSet.has(c.id) ? 'checked' : ''} ${isSelf ? 'disabled' : ''} style="width:14px;height:14px;accent-color:var(--accent);">
+          ${escapeHtml(c.name || '')}${isSelf ? ' <span style="color:var(--haze);font-size:0.75rem;">（自己）</span>' : ''}
+        </label>`;
+      }).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作者</p>';
+    }
+
     async function openMyEventForm(eventData = null) {
       const isEdit = !!eventData;
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑活动' : '提交活动';
       const worksCheckboxes = authorWorksData.map(w =>
-        `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-event-work-cb" value="${w.id}" ${isEdit && (eventData.relatedWorks || []).includes(w.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
+        `<label data-title="${escapeHtml(String(w.title || '').toLowerCase())}" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-event-work-cb" value="${w.id}" ${isEdit && (eventData.relatedWorks || []).includes(w.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
       ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
+      const allCircles = await loadCirclesForPick();
+      const selectedCircles = new Set(isEdit ? (eventData.relatedCircles || []) : []);
       const eventStatusOptions = (typeof EVENT_STATUS_ORDERED !== 'undefined' && EVENT_STATUS_ORDERED.length > 0)
         ? EVENT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && eventData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')
         : '<option value="jijiangkaiqi" ' + (isEdit && eventData.status === 'jijiangkaiqi' ? 'selected' : '') + '>即将开启</option><option value="jinxingzhong" ' + (isEdit && eventData.status === 'jinxingzhong' ? 'selected' : '') + '>进行中</option><option value="yijiesu" ' + (isEdit && eventData.status === 'yijiesu' ? 'selected' : '') + '>已结束</option>';
@@ -3694,8 +3733,14 @@
           <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myEventImagesPreview')">从图片库选择</button>
         </div>
         <div class="form-group">
-          <label>关联作品</label>
-          <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
+          <label>关联作者（可搜索 · 默认包含自己）</label>
+          <input type="search" class="form-input" placeholder="搜索作者…" style="margin-bottom:0.4rem;font-size:0.85rem;" oninput="filterAuthorPickList(this,'myEventCirclePick')">
+          <div id="myEventCirclePick" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${renderCirclePickList(allCircles, selectedCircles, 'my-event-circle-cb', 'myEventCirclePick')}</div>
+        </div>
+        <div class="form-group">
+          <label>关联作品（可搜索 · 仅自己的作品）</label>
+          <input type="search" class="form-input" placeholder="搜索我的作品…" style="margin-bottom:0.4rem;font-size:0.85rem;" oninput="filterAuthorPickList(this,'myEventWorksPick')">
+          <div id="myEventWorksPick" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
         </div>
         ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
@@ -3724,6 +3769,7 @@
       if (!title) { showToast('请填写活动名称', 'error'); return; }
       const coverImg = document.querySelector('#myEventCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-event-work-cb:checked')].map(cb => cb.value);
+      const relatedCircles = [...document.querySelectorAll('.my-event-circle-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myEventImagesPreview img')].map(img => img.src);
       const contactType = document.getElementById('myEventContactType').value;
       const contactValue = document.getElementById('myEventContactValue').value;
@@ -3744,6 +3790,7 @@
         coverImage: coverImg ? coverImg.src : '',
         images,
         relatedWorks,
+        relatedCircles,
         socialLinks
       };
       let result;
@@ -3800,14 +3847,16 @@
       }).join('');
     }
 
-    function openMyProjectForm(projectData = null) {
+    async function openMyProjectForm(projectData = null) {
       const isEdit = !!projectData;
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑企划' : '提交企划';
       const worksCheckboxes = authorWorksData.map(w =>
-        `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-project-work-cb" value="${w.id}" ${isEdit && (projectData.works || []).includes(w.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
+        `<label data-title="${escapeHtml(String(w.title || '').toLowerCase())}" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-project-work-cb" value="${w.id}" ${isEdit && (projectData.works || []).includes(w.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
       ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
+      const allCircles = await loadCirclesForPick();
+      const selectedCircles = new Set(isEdit ? (projectData.circles || []) : []);
       const existingImages = isEdit ? (projectData.images || []) : [];
       body.innerHTML = `
         <div class="form-group"><label>企划名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myProjectTitle" value="${isEdit ? escapeHtml(projectData.title) : ''}" required></div>
@@ -3837,8 +3886,14 @@
           <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myProjectImagesPreview')">从图片库选择</button>
         </div>
         <div class="form-group">
-          <label>关联作品</label>
-          <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
+          <label>关联作者（可搜索 · 默认包含自己）</label>
+          <input type="search" class="form-input" placeholder="搜索作者…" style="margin-bottom:0.4rem;font-size:0.85rem;" oninput="filterAuthorPickList(this,'myProjectCirclePick')">
+          <div id="myProjectCirclePick" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${renderCirclePickList(allCircles, selectedCircles, 'my-project-circle-cb', 'myProjectCirclePick')}</div>
+        </div>
+        <div class="form-group">
+          <label>关联作品（可搜索 · 仅自己的作品）</label>
+          <input type="search" class="form-input" placeholder="搜索我的作品…" style="margin-bottom:0.4rem;font-size:0.85rem;" oninput="filterAuthorPickList(this,'myProjectWorksPick')">
+          <div id="myProjectWorksPick" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
         </div>
         ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
@@ -3853,6 +3908,7 @@
       if (!title) { showToast('请填写企划名称', 'error'); return; }
       const coverImg = document.querySelector('#myProjectCoverPreview img');
       const relatedWorks = [...document.querySelectorAll('.my-project-work-cb:checked')].map(cb => cb.value);
+      const circles = [...document.querySelectorAll('.my-project-circle-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myProjectImagesPreview img')].map(img => img.src);
       const contactType = document.getElementById('myProjectContactType').value;
       const contactValue = document.getElementById('myProjectContactValue').value;
@@ -3871,6 +3927,7 @@
         coverImage: coverImg ? coverImg.src : '',
         images,
         works: relatedWorks,
+        circles,
         socialLinks
       };
       let result;

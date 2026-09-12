@@ -1460,21 +1460,37 @@ app.post('/api/author/my-events', authorAuthMiddleware, async (req, res) => {
   let events = readJSON('events.json');
   const maxOrder = events.reduce((max, e) => Math.max(max, e.order ?? 0), 0);
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status'];
+  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'socialLinks', 'relatedWorks'];
   const eventData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) eventData[field] = req.body[field];
   });
+  // 关联作者：默认包含自己，可再加其他人
+  const extraCircles = Array.isArray(req.body.relatedCircles) ? req.body.relatedCircles.filter(Boolean) : [];
+  const relatedCircles = [...new Set([req.author.circleId, ...extraCircles])];
+  const relatedWorks = Array.isArray(eventData.relatedWorks) ? eventData.relatedWorks.filter(Boolean) : [];
   const event = {
     id: 'e' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...eventData,
-    relatedCircles: [req.author.circleId],
+    relatedWorks,
+    relatedCircles,
     approvalStatus: 'pending',
     submittedBy: req.author.circleId,
     order: maxOrder + 1
   };
   events.push(event);
   await writeJSON('events.json', events);
+  // 同步作品关联活动
+  if (relatedWorks.length) {
+    let works = readJSON('works.json');
+    const idSet = new Set(relatedWorks);
+    works.forEach(w => {
+      if (!idSet.has(w.id)) return;
+      if (!Array.isArray(w.relatedEvents)) w.relatedEvents = [];
+      if (!w.relatedEvents.includes(event.id)) w.relatedEvents.push(event.id);
+    });
+    await writeJSON('works.json', works);
+  }
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -1493,13 +1509,37 @@ app.put('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) => {
   const isEditable = (events[index].editableBy || []).includes(circleId);
   if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此活动' });
 
-  const allowed = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'socialLinks'];
+  const allowed = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'socialLinks', 'relatedWorks'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
+  // 关联作者：始终保留自己
+  if (req.body.relatedCircles !== undefined) {
+    const extra = Array.isArray(req.body.relatedCircles) ? req.body.relatedCircles.filter(Boolean) : [];
+    updates.relatedCircles = [...new Set([circleId, ...extra])];
+  }
+  if (Array.isArray(updates.relatedWorks)) {
+    updates.relatedWorks = updates.relatedWorks.filter(Boolean);
+  }
 
+  const prevWorks = new Set(events[index].relatedWorks || []);
   events[index] = { ...events[index], ...updates, approvalStatus: 'pending' };
+  // 同步作品 relatedEvents
+  if (req.body.relatedWorks !== undefined) {
+    const nextList = Array.isArray(events[index].relatedWorks) ? events[index].relatedWorks : [];
+    const nextSet = new Set(nextList);
+    let works = readJSON('works.json');
+    let changed = false;
+    works.forEach(w => {
+      if (!Array.isArray(w.relatedEvents)) w.relatedEvents = [];
+      const i = w.relatedEvents.indexOf(events[index].id);
+      const shouldHave = nextSet.has(w.id);
+      if (shouldHave && i === -1) { w.relatedEvents.push(events[index].id); changed = true; }
+      if (!shouldHave && i !== -1) { w.relatedEvents.splice(i, 1); changed = true; }
+    });
+    if (changed) await writeJSON('works.json', works);
+  }
   await writeJSON('events.json', events);
   res.json(events[index]);
 });
@@ -1869,15 +1909,19 @@ app.post('/api/author/my-projects', authorAuthMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage'];
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'works'];
   const projectData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) projectData[field] = req.body[field];
   });
+  const extraCircles = Array.isArray(req.body.circles) ? req.body.circles.filter(Boolean) : [];
+  const circles = [...new Set([req.author.circleId, ...extraCircles])];
+  const works = Array.isArray(projectData.works) ? projectData.works.filter(Boolean) : [];
   const project = {
     id: 'p' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...projectData,
-    circles: [req.author.circleId],
+    works,
+    circles,
     approvalStatus: 'pending',
     submittedBy: req.author.circleId,
     order: maxOrder + 1,
@@ -1886,8 +1930,8 @@ app.post('/api/author/my-projects', authorAuthMiddleware, async (req, res) => {
   projects.push(project);
   await writeJSON('projects.json', projects);
 
-  const circles = readJSON('circles.json');
-  const circle = circles.find(c => c.id === req.author.circleId);
+  const circleList = readJSON('circles.json');
+  const circle = circleList.find(c => c.id === req.author.circleId);
   logEdit(circle?.name || '作者', '提交企划', project.title || project.id, '待审核');
 
   res.json(project);
@@ -1903,11 +1947,16 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res) =>
   const isEditable = (projects[index].editableBy || []).includes(circleId);
   if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此企划' });
 
-  const allowed = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage'];
+  const allowed = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'works'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
+  if (req.body.circles !== undefined) {
+    const extra = Array.isArray(req.body.circles) ? req.body.circles.filter(Boolean) : [];
+    updates.circles = [...new Set([circleId, ...extra])];
+  }
+  if (Array.isArray(updates.works)) updates.works = updates.works.filter(Boolean);
 
   projects[index] = { ...projects[index], ...updates, approvalStatus: 'pending' };
   await writeJSON('projects.json', projects);
