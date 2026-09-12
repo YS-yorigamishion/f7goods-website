@@ -684,6 +684,24 @@
       renderOnlyCartUI();
       document.getElementById('onlyCartBar').style.display = 'flex';
       document.body.classList.add('has-only-cart');
+      openOnlyBoothFromHash();
+    }
+
+    // 支持 #only-booth-<id> 直接展开并定位（作者后台「前台预览」用）
+    function openOnlyBoothFromHash() {
+      const hash = location.hash || '';
+      if (!hash.startsWith('#only-booth-')) return;
+      const boothId = decodeURIComponent(hash.slice('#only-booth-'.length));
+      if (!boothId) return;
+      if (!window._onlyOpenBooths) window._onlyOpenBooths = new Set();
+      window._onlyOpenBooths.add(boothId);
+      const el = document.getElementById('only-booth-' + boothId);
+      if (el) {
+        el.classList.add('open');
+        setTimeout(() => {
+          try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { el.scrollIntoView(); }
+        }, 80);
+      }
     }
 
     function findClaimEntry(workId) {

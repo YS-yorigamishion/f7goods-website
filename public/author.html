@@ -2813,14 +2813,17 @@
       const name = escapeHtml(group?.name || '');
       const id = escapeHtml(group?.id || '');
       return `<div class="ab-group-row" data-id="${id}" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.55rem;display:flex;flex-direction:column;gap:0.35rem;">
-        <div style="display:flex;gap:0.4rem;align-items:center;">
-          <input class="form-input ab-group-name" style="flex:1;min-width:0;" placeholder="分类名称，如：新品" value="${name}">
-          <button type="button" class="btn-sm btn-delete" onclick="this.closest('.ab-group-row').remove()">删</button>
+        <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
+          <input class="form-input ab-group-name" style="flex:1;min-width:100px;" placeholder="分类名称，如：新品" value="${name}">
+          <button type="button" class="btn-sm" title="上移" onclick="moveAuthorGroupRow(this,-1)">↑</button>
+          <button type="button" class="btn-sm" title="下移" onclick="moveAuthorGroupRow(this,1)">↓</button>
+          <button type="button" class="btn-sm" title="把尚未归类的展示作品加入本类" onclick="assignUncategorizedToGroup(this)">收未归类</button>
+          <button type="button" class="btn-sm btn-delete" onclick="this.closest('.ab-group-row').remove();updateAbWorkGroupHint();">删</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:0.25rem;max-height:100px;overflow:auto;">
           ${works.length ? works.map(w => `
             <label style="font-size:0.72rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.45rem;cursor:pointer;">
-              <input type="checkbox" class="ab-group-work" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''}>
+              <input type="checkbox" class="ab-group-work" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''} onchange="updateAbWorkGroupHint()">
               ${escapeHtml(w.title || '')}
             </label>
           `).join('') : '<span style="font-size:0.72rem;color:var(--haze);">暂无可选作品</span>'}
@@ -2832,6 +2835,88 @@
       const list = document.getElementById('abGroupList');
       if (!list) return;
       list.insertAdjacentHTML('beforeend', renderAuthorGroupRow({ id: 'c' + Date.now(), name: '', workIds: [] }, _abManageWorks || []));
+      updateAbWorkGroupHint();
+    }
+
+    function moveAuthorGroupRow(btn, dir) {
+      const row = btn.closest('.ab-group-row');
+      if (!row) return;
+      const list = row.parentElement;
+      const rows = [...list.children].filter(el => el.classList.contains('ab-group-row'));
+      const i = rows.indexOf(row);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= rows.length) return;
+      if (dir < 0) list.insertBefore(row, rows[j]);
+      else list.insertBefore(rows[j], row);
+    }
+
+    function assignUncategorizedToGroup(btn) {
+      const row = btn.closest('.ab-group-row');
+      if (!row) return;
+      const selectedWorks = new Set(
+        [...document.querySelectorAll('.ab-work:checked')].map(i => i.value)
+      );
+      const groupedElsewhere = new Set();
+      document.querySelectorAll('#abGroupList .ab-group-row').forEach(r => {
+        if (r === row) return;
+        r.querySelectorAll('.ab-group-work:checked').forEach(cb => groupedElsewhere.add(cb.value));
+      });
+      let n = 0;
+      row.querySelectorAll('.ab-group-work').forEach(cb => {
+        if (selectedWorks.has(cb.value) && !groupedElsewhere.has(cb.value) && !cb.checked) {
+          cb.checked = true;
+          n++;
+        }
+      });
+      updateAbWorkGroupHint();
+      if (typeof showToast === 'function') showToast(n ? `已将 ${n} 件未归类作品加入本分类` : '没有可收进的未归类作品', n ? 'success' : 'info');
+    }
+
+    function filterAbWorkPicks(q) {
+      const s = String(q || '').trim().toLowerCase();
+      document.querySelectorAll('#abWorkPickList .ab-work-pick').forEach(el => {
+        const title = el.dataset.title || '';
+        el.style.display = !s || title.includes(s) ? '' : 'none';
+      });
+    }
+
+    function abWorkBulk(mode) {
+      const list = document.getElementById('abWorkPickList');
+      if (!list) return;
+      const cbs = [...list.querySelectorAll('.ab-work')];
+      if (mode === 'all') cbs.forEach(cb => { cb.checked = true; });
+      else if (mode === 'none') cbs.forEach(cb => { cb.checked = false; });
+      else if (mode === 'invert') cbs.forEach(cb => { cb.checked = !cb.checked; });
+      updateAbWorkGroupHint();
+    }
+
+    function abWorkBulkCat(cat) {
+      const list = document.getElementById('abWorkPickList');
+      if (!list) return;
+      const cbs = [...list.querySelectorAll('.ab-work')].filter(cb => {
+        const pick = cb.closest('.ab-work-pick');
+        return (pick?.dataset.cat || '') === (cat || '');
+      });
+      if (!cbs.length) return;
+      const allOn = cbs.every(cb => cb.checked);
+      cbs.forEach(cb => { cb.checked = !allOn; });
+      updateAbWorkGroupHint();
+    }
+
+    function updateAbWorkGroupHint() {
+      const hint = document.getElementById('abWorkGroupHint');
+      if (!hint) return;
+      const selected = new Set([...document.querySelectorAll('.ab-work:checked')].map(i => i.value));
+      const grouped = new Set();
+      document.querySelectorAll('#abGroupList .ab-group-work:checked').forEach(cb => grouped.add(cb.value));
+      const ungrouped = [...selected].filter(id => !grouped.has(id));
+      if (!selected.size) {
+        hint.textContent = '';
+        return;
+      }
+      hint.textContent = ungrouped.length
+        ? `有 ${ungrouped.length} 件展示作品未归入任何分类，前台将显示在「其他」`
+        : '';
     }
 
     async function loadAuthorOnlyBooths() {
@@ -2876,6 +2961,7 @@
                       <button class="btn-sm" onclick="authorMoveBooth('${ev.id}','${b.id}',1)" ${bi === pack.booths.length - 1 ? 'disabled style="opacity:0.4;font-size:0.7rem;padding:0.15rem 0.4rem;"' : 'style="font-size:0.7rem;padding:0.15rem 0.4rem;"'}>↓</button>
                     ` : ''}
                     <button class="btn-sm btn-edit" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick='openAuthorBoothForm(${escapeHtml(JSON.stringify({ eventId: ev.id, booth: b, canFullEdit: !!pack.canManageAll }))})'>编辑</button>
+                    <button type="button" class="btn-sm" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick="window.open('/only.html?id=${encodeURIComponent(ev.id)}#only-booth-${encodeURIComponent(b.id)}','_blank')">预览</button>
                     ${pack.canManageAll ? `<button class="btn-sm btn-delete" style="font-size:0.7rem;padding:0.15rem 0.4rem;" onclick="authorDeleteBooth('${ev.id}','${b.id}')">删除</button>` : ''}
                   </div>
                 </div>
@@ -3064,16 +3150,39 @@
             if (!pool.length) {
               return '<div style="font-size:0.75rem;color:var(--haze);">暂无可选作品（需先将作品关联到本活动）</div>';
             }
+            const catMap = {};
+            pool.forEach(w => {
+              const c = w.category || '';
+              if (!catMap[c]) catMap[c] = [];
+              catMap[c].push(w);
+            });
+            const catLabel = (c) => {
+              if (!c) return '未分类';
+              const hit = (typeof CATEGORIES_ORDERED !== 'undefined' ? CATEGORIES_ORDERED : []).find(x => x.id === c);
+              return hit ? (hit.name || c) : c;
+            };
             return `
-              <div style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
+              <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;margin-bottom:0.45rem;">
+                <input type="search" id="abWorkSearch" class="form-input" style="flex:1;min-width:120px;font-size:0.78rem;padding:0.3rem 0.55rem;" placeholder="搜索作品名称…" oninput="filterAbWorkPicks(this.value)">
+                <button type="button" class="btn-sm" onclick="abWorkBulk('all')">全选</button>
+                <button type="button" class="btn-sm" onclick="abWorkBulk('invert')">反选</button>
+                <button type="button" class="btn-sm" onclick="abWorkBulk('none')">清空</button>
+              </div>
+              <div id="abWorkCats" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.45rem;">
+                ${Object.keys(catMap).sort((a, z) => catLabel(a).localeCompare(catLabel(z), 'zh')).map(c => `
+                  <button type="button" class="btn-sm" style="font-size:0.7rem;padding:0.15rem 0.5rem;" onclick="abWorkBulkCat('${escapeHtml(c)}')" title="勾选/取消本分类可见作品">${escapeHtml(catLabel(c))}（${catMap[c].length}）</button>
+                `).join('')}
+              </div>
+              <div id="abWorkPickList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:160px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
                 ${pool.map(w => `
-                  <label style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.2rem 0.5rem;cursor:pointer;">
-                    <input type="checkbox" class="ab-work" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''}>
+                  <label class="ab-work-pick" data-title="${escapeHtml(String(w.title || '').toLowerCase())}" data-cat="${escapeHtml(w.category || '')}" style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.2rem 0.5rem;cursor:pointer;">
+                    <input type="checkbox" class="ab-work" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''} onchange="updateAbWorkGroupHint()">
                     ${escapeHtml(w.title || '')}
                   </label>
                 `).join('')}
               </div>
               <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">仅可管理本摊已挂接摊主的作品；未挂接到本摊的作者作品不可选。</div>
+              <div id="abWorkGroupHint" style="font-size:0.72rem;color:var(--warning);margin-top:0.25rem;"></div>
             `;
           })()}
         </div>
@@ -3087,7 +3196,7 @@
             })()}
           </div>
           <button type="button" class="btn-sm btn-edit" onclick="addAuthorGroupRow()">+ 添加分类</button>
-          <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">可分几类并编辑名称；每类勾选对应作品。未归入任何分类的作品会显示在「其他」。</div>
+          <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">可分几类、上下排序、编辑名称；每类勾选作品。未归入任何分类的展示作品会显示在「其他」。</div>
         </div>
         <div class="form-group">
           <label>满额赠品档（可多档 · 一档可多作品 · 可选本摊全部作品）</label>
@@ -3118,9 +3227,10 @@
             <div style="font-size:0.72rem;color:var(--haze);margin-top:0.3rem;">仅勾选后出现填写框；取消勾选保存后会清除该作品的条件领取。</div>
           ` : `<div style="font-size:0.75rem;color:var(--haze);">保存摊位并挂接摊主后，可在此按作品设置条件领取。</div>`}
         </div>
-        <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-          <button class="btn btn-primary" style="flex:1;" onclick="saveAuthorBooth('${eventId}', ${isEdit ? `'${booth.id}'` : 'null'}, ${canFullEdit})">保存</button>
-          <button class="btn" style="flex:1;background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
+        <div style="display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;">
+          <button class="btn btn-primary" style="flex:1;min-width:120px;" onclick="saveAuthorBooth('${eventId}', ${isEdit ? `'${booth.id}'` : 'null'}, ${canFullEdit})">保存</button>
+          ${isEdit && booth ? `<button type="button" class="btn" style="flex:0 0 auto;background:var(--accent-alt);color:#fff;" onclick="window.open('/only.html?id=${encodeURIComponent(eventId)}#only-booth-${encodeURIComponent(booth.id)}','_blank')">前台预览</button>` : ''}
+          <button class="btn" style="flex:1;min-width:100px;background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>
       `;
       // Use class open (not inline display) so closeWorkModal can hide it
@@ -3128,6 +3238,7 @@
       overlay.classList.add('open');
       // Booth form is not draft-tracked; stop any leftover tracking so close works
       if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
+      setTimeout(() => { try { updateAbWorkGroupHint(); } catch {} }, 0);
     }
 
     function activeCircleId() {
