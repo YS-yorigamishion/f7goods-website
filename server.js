@@ -1909,7 +1909,7 @@ app.post('/api/author/my-projects', authorAuthMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'works'];
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'works', 'recruiting', 'recruitNote', 'recruitJobs'];
   const projectData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) projectData[field] = req.body[field];
@@ -1947,7 +1947,7 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res) =>
   const isEditable = (projects[index].editableBy || []).includes(circleId);
   if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此企划' });
 
-  const allowed = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'works'];
+  const allowed = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'works', 'recruiting', 'recruitNote', 'recruitJobs'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];

@@ -608,11 +608,19 @@
             const name = firstCircle ? (firstCircle.name || '') : '';
             const cover = p.coverImage || (p.images && p.images[0]) || '';
             const stClass = projectStatusClass(p.status);
+            const jobs = (p.recruitJobs || []).filter(j => j && j.title);
+            const jobChips = jobs.map(j =>
+              `<span style="display:inline-block;font-size:0.62rem;border:1px solid rgba(217,79,92,.35);background:rgba(217,79,92,.06);border-radius:999px;padding:0 0.35rem;margin:0.1rem 0.2rem 0 0;white-space:nowrap;"><b style="color:var(--accent);font-weight:700;">${escapeHtml(j.title)}</b>${(j.count || 1) > 1 ? '×' + j.count : ''}</span>`
+            ).join('');
+            const recruitNote = p.recruiting && p.recruitNote ? escapeHtml(p.recruitNote) : '';
+            const recruitLine = p.recruiting
+              ? `<div style="font-size:0.65rem;color:var(--accent);font-weight:600;margin-top:0.15rem;">招人中${jobChips ? '' : (recruitNote ? '' : ' · 欢迎报名')}</div>${jobChips ? `<div style="margin-top:0.1rem;">${jobChips}</div>` : ''}${recruitNote ? `<div style="font-size:0.62rem;color:var(--haze);margin-top:0.1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${recruitNote}</div>` : ''}`
+              : '';
             return `<a class="board-list-row" href="/project-detail.html?id=${encodeURIComponent(p.id)}" onclick="location.href=this.href;return false;">
               ${cover
                 ? `<div class="board-thumb"><img src="${escapeHtml(cover)}" alt="" loading="lazy"></div>`
                 : `<div class="board-thumb">📋</div>`}
-              <div class="t"><b>${escapeHtml(p.title)}</b><small>${escapeHtml(name)}</small></div>
+              <div class="t"><b>${escapeHtml(p.title)}</b><small>${escapeHtml(name)}</small>${recruitLine}</div>
               <span class="card-tag ${stClass}" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml(projectStatusLabel(p.status))}</span>
             </a>`;
           }).join('');

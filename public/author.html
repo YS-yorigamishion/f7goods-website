@@ -3847,6 +3847,35 @@
       }).join('');
     }
 
+    function toggleMyProjectRecruit(on) {
+      const el = document.getElementById('myProjectRecruitFields');
+      if (el) el.style.display = on ? 'block' : 'none';
+    }
+
+    function renderMyProjectJobRow(job) {
+      const j = job || { title: '', count: 1 };
+      return `<div class="ab-recruit-job" style="display:flex;gap:0.4rem;align-items:center;margin-bottom:0.35rem;">
+        <input class="form-input ab-job-title" style="flex:1;min-width:0;" placeholder="职位名称" value="${escapeHtml(j.title || '')}">
+        <input class="form-input ab-job-count" type="number" min="1" style="width:72px;" placeholder="人数" value="${j.count || 1}">
+        <button type="button" class="ab-pill danger" onclick="this.closest('.ab-recruit-job').remove()">删</button>
+      </div>`;
+    }
+
+    function addMyProjectJobRow() {
+      const list = document.getElementById('myProjectRecruitJobs');
+      if (!list) return;
+      list.insertAdjacentHTML('beforeend', renderMyProjectJobRow({ title: '', count: 1 }));
+    }
+
+    function collectMyProjectRecruitJobs() {
+      return [...document.querySelectorAll('#myProjectRecruitJobs .ab-recruit-job')].map(row => {
+        const title = row.querySelector('.ab-job-title')?.value.trim() || '';
+        const count = Math.max(1, parseInt(row.querySelector('.ab-job-count')?.value, 10) || 1);
+        if (!title) return null;
+        return { title, count };
+      }).filter(Boolean);
+    }
+
     async function openMyProjectForm(projectData = null) {
       const isEdit = !!projectData;
       const overlay = document.getElementById('workModalOverlay');
@@ -3895,6 +3924,25 @@
           <input type="search" class="form-input" placeholder="搜索我的作品…" style="margin-bottom:0.4rem;font-size:0.85rem;" oninput="filterAuthorPickList(this,'myProjectWorksPick')">
           <div id="myProjectWorksPick" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
         </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+            <input type="checkbox" id="myProjectRecruitOn" ${isEdit && projectData.recruiting ? 'checked' : ''} onchange="toggleMyProjectRecruit(this.checked)" style="width:16px;height:16px;accent-color:var(--accent);">
+            本企划正在招人
+          </label>
+          <div id="myProjectRecruitFields" style="display:${isEdit && projectData.recruiting ? 'block' : 'none'};margin-top:0.6rem;">
+            <div class="form-group" style="margin-bottom:0.5rem;">
+              <label>招人说明（可选）</label>
+              <textarea class="form-input" id="myProjectRecruitNote" rows="2" placeholder="例如：长期招募，线上协作，按节点交付">${isEdit ? escapeHtml(projectData.recruitNote || '') : ''}</textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>招人职位</label>
+              <div id="myProjectRecruitJobs">
+                ${(isEdit ? (projectData.recruitJobs || []) : []).map(j => renderMyProjectJobRow(j)).join('')}
+              </div>
+              <button type="button" class="ab-pill" style="margin-top:0.4rem;" onclick="addMyProjectJobRow()">+ 添加职位</button>
+            </div>
+          </div>
+        </div>
         ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
           <button class="btn btn-primary" onclick="submitMyProject('${isEdit ? projectData.id : ''}')">${isEdit ? '保存修改' : '提交审核'}</button>
@@ -3918,6 +3966,7 @@
         websiteLabel: document.getElementById('myProjectWebsiteLabel').value
       };
       if (contactType && contactValue) socialLinks[contactType] = contactValue;
+      const recruitOn = !!document.getElementById('myProjectRecruitOn')?.checked;
       const data = {
         title,
         category: document.getElementById('myProjectCategory').value,
@@ -3928,6 +3977,9 @@
         images,
         works: relatedWorks,
         circles,
+        recruiting: recruitOn,
+        recruitNote: recruitOn ? (document.getElementById('myProjectRecruitNote')?.value.trim() || '') : '',
+        recruitJobs: recruitOn ? collectMyProjectRecruitJobs() : [],
         socialLinks
       };
       let result;
