@@ -312,7 +312,8 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/main.js?v=20260912f"></script>
+  <script src="/js/i18n.js?v=20260913a"></script>
+  <script src="/js/main.js?v=20260913a"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -427,7 +428,7 @@
         slides.push({
           key: 'only:' + currentOnly.id,
           href: onlyEventHref(currentOnly),
-          tag: 'ONLY 专场',
+          tag: tText('only.onlyBadge', 'ONLY 专场'),
           tagClass: 'only',
           title: currentOnly.title || '',
           cover: currentOnly.coverImage || (currentOnly.images && currentOnly.images[0]) || '',
@@ -1606,6 +1607,15 @@
     }
 
     loadWorks();
+    if (typeof onLangChange === 'function') {
+      onLangChange(() => {
+        try {
+          renderBoard();
+          if (homeView === 'catalog') renderWorks();
+          applyTranslations();
+        } catch {}
+      });
+    }
     loadBoardAnnounce();
 
     PullToRefresh.init({

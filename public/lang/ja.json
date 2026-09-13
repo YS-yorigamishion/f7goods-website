@@ -192,7 +192,9 @@
     "endDate": "終了日",
     "relatedEvents": "関連イベント",
     "relatedUpdates": "関連ニュース",
-    "relatedAuthors": "関連作者"
+    "relatedAuthors": "関連作者",
+    "recruiting": "募集中",
+    "welcomeSignup": "参加歓迎"
   },
   "updates": {
     "title": "ニュース",
@@ -282,5 +284,22 @@
     "copyLink": "リンクをコピー",
     "copied": "コピーしました",
     "qrCode": "QRコード"
+  },
+  "error": {
+    "notFound": "ページが見つかりません",
+    "notFoundDesc": "申し訳ありません。アクセスしたページは存在しないか、削除されました。",
+    "backHome": "ホームへ戻る",
+    "viewEvents": "イベントを見る",
+    "browseAuthors": "作者を見る"
+  },
+  "only": {
+    "cartTitle": "現地ショッピングリスト",
+    "unassigned": "未割り当て",
+    "cartHint": "現地で買うグッズを追加",
+    "onlyBadge": "ONLY イベント",
+    "tabsBooths": "全ブース",
+    "tabsGoods": "全グッズ",
+    "tabsOwners": "全作者",
+    "tabsOverview": "概要"
   }
 }

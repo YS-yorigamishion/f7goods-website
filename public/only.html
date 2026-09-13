@@ -395,7 +395,7 @@
   <div class="only-overlay" id="onlyOverlay">
     <div class="only-drawer only-drawer-wrap">
       <button type="button" class="closebtn" id="ocClose">×</button>
-      <h3>现场购物清单</h3>
+      <h3 data-i18n="only.cartTitle">现场购物清单</h3>
       <div id="ocList"></div>
       <div id="ocSum"></div>
       <div class="actions">
@@ -416,7 +416,8 @@
   </div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/main.js?v=20260912f"></script>
+  <script src="/js/i18n.js?v=20260913a"></script>
+  <script src="/js/main.js?v=20260913a"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -553,7 +554,7 @@
         boothModels.push({
           id: '_unassigned',
           code: '—',
-          title: '未分摊',
+          title: tText('only.unassigned', '未分摊'),
           circleIds: [],
           owners: [],
           goods: unassignedGoods,
@@ -585,10 +586,10 @@
           <div class="only-stat"><b>${allGoodsN}</b><span>关联周边</span></div>
         </div>
         <div class="only-tabs" id="onlyTabs">
-          <button type="button" class="on" data-t="all">全部摊位</button>
-          <button type="button" data-t="goods">全部周边</button>
-          <button type="button" data-t="owners">全部摊主</button>
-          <button type="button" data-t="ov">活动概况</button>
+          <button type="button" class="on" data-t="all">${typeof tText === 'function' ? tText('only.tabsBooths', '全部摊位') : '全部摊位'}</button>
+          <button type="button" data-t="goods">${typeof tText === 'function' ? tText('only.tabsGoods', '全部周边') : '全部周边'}</button>
+          <button type="button" data-t="owners">${typeof tText === 'function' ? tText('only.tabsOwners', '全部摊主') : '全部摊主'}</button>
+          <button type="button" data-t="ov">${typeof tText === 'function' ? tText('only.tabsOverview', '活动概况') : '活动概况'}</button>
         </div>
         <div id="onlyListPane"></div>
         <div id="onlyGoodsPane" style="display:none;"></div>
@@ -682,6 +683,16 @@
       document.getElementById('onlyCartBar').style.display = 'flex';
       document.body.classList.add('has-only-cart');
       openOnlyBoothFromHash();
+      if (typeof onLangChange === 'function') {
+        onLangChange(() => {
+          try {
+            const tab = document.querySelector('#onlyTabs button.on')?.dataset.t || 'all';
+            renderOnlyBooths(tab);
+            renderOnlyCartUI();
+            applyTranslations();
+          } catch {}
+        });
+      }
     }
 
     // 支持 #only-booth-<id> 直接展开并定位（作者后台「前台预览」用）
@@ -736,7 +747,7 @@
         }
         if (!booth) {
           booth = booths.find(b => b.id === '_unassigned') || {
-            id: '_unassigned', code: '—', title: '未分摊',
+            id: '_unassigned', code: '—', title: tText('only.unassigned', '未分摊'),
             circleIds: [], owners: [], goods: [], claimConditions: {}, promoTiers: []
           };
         }
@@ -827,7 +838,7 @@
         const img = (g.images && g.images[0]) || '';
         const pack = idx[g.id];
         const claim = String((pack?.booth?.claimConditions || {})[g.id] || '').trim();
-        const boothName = pack?.booth?.id === '_unassigned' ? '未分摊' : boothLabel(pack?.booth || { code: '—', title: '' });
+        const boothName = pack?.booth?.id === '_unassigned' ? tText('only.unassigned', '未分摊') : boothLabel(pack?.booth || { code: '—', title: '' });
         return `<a class="only-g${claim ? ' is-claim' : ''}" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
           <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
           <div class="body">
@@ -1202,7 +1213,7 @@
       if (tEl) tEl.textContent = money(total);
       if (hint) {
         if (!count) {
-          hint.textContent = '把要买的周边加进现场清单';
+          hint.textContent = tText('only.cartHint', '把要买的周边加进现场清单');
           hint.classList.remove('ok');
         } else if (gifts.length) {
           hint.textContent = '已得赠品：' + gifts.map(g => g.title).join('、');

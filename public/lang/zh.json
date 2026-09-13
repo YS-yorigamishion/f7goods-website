@@ -192,7 +192,9 @@
     "endDate": "结束日期",
     "relatedEvents": "关联活动",
     "relatedUpdates": "相关动态",
-    "relatedAuthors": "关联作者"
+    "relatedAuthors": "关联作者",
+    "recruiting": "招人中",
+    "welcomeSignup": "欢迎报名"
   },
   "updates": {
     "title": "同人动态",
@@ -282,5 +284,22 @@
     "copyLink": "复制链接",
     "copied": "已复制",
     "qrCode": "二维码"
+  },
+  "error": {
+    "notFound": "页面未找到",
+    "notFoundDesc": "抱歉，您访问的页面不存在或已被移除。",
+    "backHome": "返回首页",
+    "viewEvents": "查看活动",
+    "browseAuthors": "浏览作者"
+  },
+  "only": {
+    "cartTitle": "现场购物清单",
+    "unassigned": "未分摊",
+    "cartHint": "把要买的周边加进现场清单",
+    "onlyBadge": "ONLY 专场",
+    "tabsBooths": "全部摊位",
+    "tabsGoods": "全部周边",
+    "tabsOwners": "全部摊主",
+    "tabsOverview": "活动概况"
   }
 }

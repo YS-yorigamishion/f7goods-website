@@ -192,7 +192,9 @@
     "endDate": "종료일",
     "relatedEvents": "관련 이벤트",
     "relatedUpdates": "관련 뉴스",
-    "relatedAuthors": "관련 작가"
+    "relatedAuthors": "관련 작가",
+    "recruiting": "모집 중",
+    "welcomeSignup": "참여 환영"
   },
   "updates": {
     "title": "뉴스",
@@ -282,5 +284,22 @@
     "copyLink": "링크 복사",
     "copied": "복사됨",
     "qrCode": "QR 코드"
+  },
+  "error": {
+    "notFound": "페이지를 찾을 수 없습니다",
+    "notFoundDesc": "죄송합니다. 요청하신 페이지가 없거나 삭제되었습니다.",
+    "backHome": "홈으로",
+    "viewEvents": "행사 보기",
+    "browseAuthors": "작가 보기"
+  },
+  "only": {
+    "cartTitle": "현장 쇼핑 목록",
+    "unassigned": "미배정",
+    "cartHint": "현장에서 살 굿즈를 추가하세요",
+    "onlyBadge": "ONLY 행사",
+    "tabsBooths": "전체 부스",
+    "tabsGoods": "전체 굿즈",
+    "tabsOwners": "전체 작가",
+    "tabsOverview": "개요"
   }
 }

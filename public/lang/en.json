@@ -192,7 +192,9 @@
     "endDate": "End Date",
     "relatedEvents": "Related Events",
     "relatedUpdates": "Related Updates",
-    "relatedAuthors": "Related Authors"
+    "relatedAuthors": "Related Authors",
+    "recruiting": "Recruiting",
+    "welcomeSignup": "Welcome to join"
   },
   "updates": {
     "title": "Updates",
@@ -282,5 +284,22 @@
     "copyLink": "Copy Link",
     "copied": "Copied",
     "qrCode": "QR Code"
+  },
+  "error": {
+    "notFound": "Page not found",
+    "notFoundDesc": "Sorry, the page you visited does not exist or has been removed.",
+    "backHome": "Back to home",
+    "viewEvents": "View events",
+    "browseAuthors": "Browse authors"
+  },
+  "only": {
+    "cartTitle": "On-site shopping list",
+    "unassigned": "Unassigned",
+    "cartHint": "Add goods to your on-site list",
+    "onlyBadge": "ONLY EVENT",
+    "tabsBooths": "All booths",
+    "tabsGoods": "All goods",
+    "tabsOwners": "All authors",
+    "tabsOverview": "Overview"
   }
 }
