@@ -105,6 +105,19 @@
               <h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('projects.description')}</h3>
               <p style="line-height:1.8;color:var(--ink);">${nl2br(project.description)}</p>
 
+              ${project.recruiting ? (() => {
+                const jobs = (project.recruitJobs || []).filter(j => j && j.title);
+                const chips = jobs.map(j =>
+                  `<span style="display:inline-block;font-size:0.72rem;border:1px solid rgba(217,79,92,.35);background:rgba(217,79,92,.06);border-radius:999px;padding:2px 8px;margin:0 4px 4px 0;white-space:nowrap;"><b style="color:var(--accent);font-weight:700;">${escapeHtml(j.title)}</b>${(j.count || 1) > 1 ? ' ×' + j.count : ''}</span>`
+                ).join('');
+                return `
+                <div style="margin-top:1.25rem;border:1px solid rgba(217,79,92,.25);background:rgba(217,79,92,.04);border-radius:12px;padding:0.85rem 1rem;">
+                  <div style="font-size:0.95rem;font-weight:700;color:var(--accent);margin-bottom:0.5rem;">招人中</div>
+                  ${chips ? `<div>${chips}</div>` : '<div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.25rem;">欢迎报名</div>'}
+                  ${project.recruitNote ? `<p style="margin:0.55rem 0 0;font-size:0.85rem;line-height:1.6;color:var(--ink);">${nl2br(project.recruitNote)}</p>` : ''}
+                </div>`;
+              })() : ''}
+
               ${project.images && project.images.length > 0 ? `
                 <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('projects.projectImages')}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
