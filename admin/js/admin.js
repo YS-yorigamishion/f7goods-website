@@ -4301,6 +4301,30 @@ function filterProjects() {
   renderProjectsTable(filtered);
 }
 
+function renderAdminProjectJobRow(job) {
+  const j = job || { title: '', count: 1 };
+  return `<div class="admin-recruit-job" style="display:flex;gap:0.4rem;align-items:center;margin-bottom:0.35rem;">
+    <input class="form-input admin-job-title" style="flex:1;min-width:0;" placeholder="职位名称" value="${escapeHtml(j.title || '')}">
+    <input class="form-input admin-job-count" type="number" min="1" style="width:72px;" placeholder="人数" value="${j.count || 1}">
+    <button type="button" class="btn-sm btn-delete" onclick="this.closest('.admin-recruit-job').remove()">删</button>
+  </div>`;
+}
+
+function addAdminProjectJobRow() {
+  const list = document.getElementById('pRecruitJobs');
+  if (!list) return;
+  list.insertAdjacentHTML('beforeend', renderAdminProjectJobRow({ title: '', count: 1 }));
+}
+
+function collectAdminProjectRecruitJobs() {
+  return [...document.querySelectorAll('#pRecruitJobs .admin-recruit-job')].map(row => {
+    const title = row.querySelector('.admin-job-title')?.value.trim() || '';
+    const count = Math.max(1, parseInt(row.querySelector('.admin-job-count')?.value, 10) || 1);
+    if (!title) return null;
+    return { title, count };
+  }).filter(Boolean);
+}
+
 function openProjectModal(project = null) {
   const isEdit = !!project;
   document.getElementById('modalTitle').textContent = isEdit ? '编辑企划' : '新增企划';
@@ -4382,6 +4406,25 @@ function openProjectModal(project = null) {
       </label>
     </div>
     <div class="form-group">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" id="pRecruitOn" style="width:16px;height:16px;accent-color:var(--accent);" ${project?.recruiting ? 'checked' : ''} onchange="document.getElementById('pRecruitFields').style.display=this.checked?'block':'none'">
+        本企划正在招人
+      </label>
+      <div id="pRecruitFields" style="display:${project?.recruiting ? 'block' : 'none'};margin-top:0.6rem;">
+        <div class="form-group" style="margin-bottom:0.5rem;">
+          <label>招人说明（可选）</label>
+          <textarea class="form-input" id="pRecruitNote" rows="2" placeholder="例如：长期招募，线上协作，按节点交付">${escapeHtml(project?.recruitNote || '')}</textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>招人职位</label>
+          <div id="pRecruitJobs">
+            ${(project?.recruitJobs || []).map(j => renderAdminProjectJobRow(j)).join('')}
+          </div>
+          <button type="button" class="btn-sm" style="background:var(--card);color:var(--ink);margin-top:0.4rem;" onclick="addAdminProjectJobRow()">+ 添加职位</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
       <label>首图（列表页封面图，仅限1张）</label>
       <div id="pCoverPreview" style="margin-bottom:0.5rem;">
         ${project?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${project.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
@@ -4433,7 +4476,10 @@ function openProjectModal(project = null) {
       })(),
       coverImage: document.querySelector('#pCoverPreview img')?.src || '',
       images: [...document.querySelectorAll('#pImagesPreview img')].map(img => img.src),
-      pinned: !!document.getElementById('pPinned')?.checked
+      pinned: !!document.getElementById('pPinned')?.checked,
+      recruiting: !!document.getElementById('pRecruitOn')?.checked,
+      recruitNote: (document.getElementById('pRecruitOn')?.checked ? (document.getElementById('pRecruitNote')?.value.trim() || '') : ''),
+      recruitJobs: document.getElementById('pRecruitOn')?.checked ? collectAdminProjectRecruitJobs() : []
     };
 
     if (!data.title) { showToast('请填写企划名称', 'error'); return; }

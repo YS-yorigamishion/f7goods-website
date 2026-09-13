@@ -4135,7 +4135,7 @@ app.post('/api/admin/projects', authMiddleware, async (req, res) => {
   const projects = readJSON('projects.json');
   const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
   // Whitelist allowed fields
-  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'editableBy', 'pinned'];
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'editableBy', 'pinned', 'recruiting', 'recruitNote', 'recruitJobs'];
   const projectData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) projectData[field] = req.body[field];
@@ -4191,7 +4191,7 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
   // Whitelist allowed fields
-  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'order', 'socialLinks', 'coverImage', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy', 'pinned'];
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'order', 'socialLinks', 'coverImage', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy', 'pinned', 'recruiting', 'recruitNote', 'recruitJobs'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
