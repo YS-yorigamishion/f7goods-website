@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>移动端底栏预览 · f7goods</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #22201E;
+      --paper: #F6F2EB;
+      --card: #FFFCF7;
+      --accent: #D94F5C;
+      --accent-dark: #B83D49;
+      --muted: #8A8078;
+      --line: #E5DDD1;
+      --tab-dark: #1C1B1A;
+      --tab-dark-2: #2A2826;
+      --tab-fg: #9A948C;
+      --tab-fg-on: #F6F2EB;
+      --tab-active: #E8A0A8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+      background: #EDE8DF;
+      color: var(--ink);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    .page-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .page-head h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .page-head p {
+      margin-top: 0.35rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 36em;
+    }
+
+    .mode-switch {
+      display: flex;
+      gap: 0.35rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.25rem;
+    }
+    .mode-switch button {
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 0.45rem 0.95rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .mode-switch button.active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    /* Phone frame */
+    .phone-wrap {
+      position: sticky;
+      top: 1rem;
+      display: flex;
+      justify-content: center;
+    }
+    .phone {
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 9 / 16.5;
+      background: var(--paper);
+      border-radius: 28px;
+      border: 1px solid #D4C8B8;
+      box-shadow:
+        0 0 0 8px #1a1918,
+        0 0 0 9px #3a3632,
+        0 24px 48px rgba(34, 32, 30, 0.18);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-status {
+      flex-shrink: 0;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--ink);
+      opacity: 0.7;
+    }
+
+    .phone-top {
+      flex-shrink: 0;
+      padding: 0.35rem 0.9rem 0.55rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .phone-logo {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: var(--ink);
+      color: var(--paper);
+      display: grid;
+      place-items: center;
+      font-size: 0.62rem;
+      font-weight: 700;
+    }
+    .phone-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      flex: 1;
+    }
+    .phone-search {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    .phone-body {
+      flex: 1;
+      overflow: hidden;
+      padding: 0 0.85rem 5.5rem;
+      position: relative;
+    }
+
+    .mock-hero {
+      height: 88px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #2C3340 0%, #4A3A3E 55%, #D94F5C 140%);
+      margin-bottom: 0.75rem;
+      padding: 0.85rem;
+      color: #F6F2EB;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .mock-hero b {
+      font-size: 0.95rem;
+      letter-spacing: -0.02em;
+    }
+    .mock-hero span {
+      font-size: 0.68rem;
+      opacity: 0.75;
+      margin-top: 0.15rem;
+    }
+
+    .mock-chips {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+    }
+    .mock-chip {
+      flex-shrink: 0;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: var(--card);
+    }
+    .mock-chip.on {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .mock-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+    }
+    .mock-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .mock-card-img {
+      height: 72px;
+      background: linear-gradient(160deg, #E5DDD1, #D4C8B8);
+    }
+    .mock-card:nth-child(2) .mock-card-img {
+      background: linear-gradient(160deg, #D8CFC4, #C4B8A8);
+    }
+    .mock-card:nth-child(3) .mock-card-img {
+      background: linear-gradient(160deg, #E0D5C8, #CBB8A0);
+    }
+    .mock-card:nth-child(4) .mock-card-img {
+      background: linear-gradient(160deg, #D2CCC4, #B8AFA4);
+    }
+    .mock-card-body {
+      padding: 0.45rem 0.5rem 0.55rem;
+    }
+    .mock-card-body b {
+      display: block;
+      font-size: 0.72rem;
+      margin-bottom: 0.15rem;
+    }
+    .mock-card-body span {
+      font-size: 0.65rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── Shared tabbar shell ── */
+    .tabbar {
+      position: absolute;
+      z-index: 20;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-decoration: none;
+      color: inherit;
+      min-width: 0;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+    .tab-item svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+      transition: transform 0.18s ease;
+    }
+    .tab-item span {
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .tab-badge {
+      position: absolute;
+      top: 6px;
+      right: calc(50% - 22px);
+      background: #F05A4A;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 3px 5px;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      pointer-events: none;
+    }
+
+    /* Mode A — 当前：浅色通栏 */
+    .phone[data-mode="light"] .tabbar {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 56px;
+      background: rgba(255, 252, 247, 0.96);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid var(--line);
+      padding: 4px 2px;
+    }
+    .phone[data-mode="light"] .tab-item {
+      color: var(--muted);
+      border-radius: 10px;
+      margin: 2px;
+    }
+    .phone[data-mode="light"] .tab-item.active {
+      color: var(--accent);
+      background: rgba(217, 79, 92, 0.08);
+    }
+    .phone[data-mode="light"] .tab-badge {
+      right: calc(50% - 26px);
+      top: 4px;
+    }
+
+    /* Mode B — 新：深色悬浮胶囊 */
+    .phone[data-mode="capsule"] .tabbar {
+      left: 12px;
+      right: 12px;
+      bottom: 14px;
+      height: 56px;
+      background: var(--tab-dark);
+      border-radius: 28px;
+      padding: 0 6px;
+      box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.28),
+        0 2px 8px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .phone[data-mode="capsule"] .tab-item {
+      color: var(--tab-fg);
+      border-radius: 22px;
+      padding: 6px 0 5px;
+    }
+    .phone[data-mode="capsule"] .tab-item span {
+      color: inherit;
+      opacity: 0.92;
+    }
+    .phone[data-mode="capsule"] .tab-item.active {
+      color: var(--tab-active);
+    }
+    .phone[data-mode="capsule"] .tab-item.active svg {
+      transform: translateY(-1px) scale(1.08);
+    }
+    .phone[data-mode="capsule"] .tab-item.active span {
+      color: var(--tab-fg-on);
+      font-weight: 600;
+    }
+    .phone[data-mode="capsule"] .tab-item.active::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36px;
+      height: 28px;
+      border-radius: 12px;
+      background: rgba(232, 160, 168, 0.14);
+      z-index: -1;
+    }
+    .phone[data-mode="capsule"] .tab-badge {
+      right: calc(50% - 24px);
+      top: 8px;
+    }
+
+    /* Variant: 朱色 active（站内品牌色） */
+    .phone[data-accent="brand"][data-mode="capsule"] {
+      --tab-active: #FFB3BA;
+    }
+    .phone[data-accent="brand"][data-mode="capsule"] .tab-item.active {
+      color: #fff;
+    }
+    .phone[data-accent="brand"][data-mode="capsule"] .tab-item.active::before {
+      background: rgba(217, 79, 92, 0.92);
+      width: 40px;
+      height: 30px;
+      top: 6px;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(217, 79, 92, 0.35);
+    }
+    .phone[data-accent="brand"][data-mode="capsule"] .tab-item.active svg {
+      color: #fff;
+    }
+
+    /* Specs panel */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1.25rem 1.35rem;
+    }
+    .panel h2 {
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.01em;
+    }
+    .panel h3 {
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin: 1.25rem 0 0.5rem;
+      font-weight: 600;
+    }
+    .panel p, .panel li {
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: var(--ink);
+    }
+    .panel ul {
+      padding-left: 1.15rem;
+      margin: 0.35rem 0 0.5rem;
+    }
+    .panel li { margin-bottom: 0.25rem; }
+    .panel .muted { color: var(--muted); font-size: 0.82rem; }
+
+    .token-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .token {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.55rem 0.65rem;
+      font-size: 0.75rem;
+      line-height: 1.45;
+    }
+    .token b { display: block; font-size: 0.78rem; margin-bottom: 0.1rem; }
+    .token i {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 3px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .cmp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 0.5rem;
+    }
+    .cmp-table th, .cmp-table td {
+      text-align: left;
+      padding: 0.45rem 0.5rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    .cmp-table th {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.72rem;
+    }
+
+    .accent-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.75rem;
+    }
+    .accent-row button {
+      border: 1px solid var(--line);
+      background: var(--card);
+      font-family: inherit;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .accent-row button.on {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .note {
+      margin-top: 1rem;
+      padding: 0.75rem 0.85rem;
+      border-left: 2px solid var(--accent);
+      background: rgba(217, 79, 92, 0.05);
+      border-radius: 0 8px 8px 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="page-head">
+      <div>
+        <h1>移动端底栏 · 深色胶囊预览</h1>
+        <p>对照现有浅色通栏 tabbar，预览「悬浮深色圆角胶囊」方案（参考你提供的出行 App 底栏形态），映射到 f7goods 的五个入口。</p>
+      </div>
+      <div class="mode-switch" role="tablist" aria-label="底栏样式">
+        <button type="button" data-set-mode="light" class="active">现行浅色</button>
+        <button type="button" data-set-mode="capsule">深色胶囊</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <div class="phone-wrap">
+        <div class="phone" id="phone" data-mode="light" data-accent="soft">
+          <div class="phone-status"><span>9:41</span><span>5G · 86%</span></div>
+          <div class="phone-top">
+            <div class="phone-logo">F7</div>
+            <div class="phone-title">周边概览</div>
+            <div class="phone-search" aria-hidden="true">⌕</div>
+          </div>
+          <div class="phone-body">
+            <div class="mock-hero">
+              <b>七日市场</b>
+              <span>汇集优质同人作者的周边商品</span>
+            </div>
+            <div class="mock-chips">
+              <span class="mock-chip on">全部</span>
+              <span class="mock-chip">预售</span>
+              <span class="mock-chip">发售中</span>
+              <span class="mock-chip">售罄</span>
+            </div>
+            <div class="mock-grid">
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"><b>安托涅瓦</b><span>无料</span></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"><b>珈儿</b><span>无料</span></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"><b>徽章套装</b><span>¥28</span></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"><b>立牌</b><span>¥45</span></div></div>
+            </div>
+          </div>
+
+          <nav class="tabbar" aria-label="底部导航预览" id="tabbar"></nav>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <h2>方案说明</h2>
+        <p>形态取自截图：底部<strong>悬浮</strong>、两侧留边、大圆角胶囊；深色底 + 细分割感；当前项图标上浮放大，标签更亮。内容用 f7goods 现有五项：周边 / 活动 / 作者 / 企划 / 动态。</p>
+
+        <h3>切换</h3>
+        <div class="accent-row">
+          <button type="button" class="on" data-accent="soft">浅色 active</button>
+          <button type="button" data-accent="brand">朱色 active 块</button>
+        </div>
+        <p class="muted" style="margin-top:0.5rem">「朱色 active」更贴站内品牌；「浅色 active」更接近截图里的柔和高亮。</p>
+
+        <h3>规格</h3>
+        <div class="token-grid">
+          <div class="token"><b>高度</b>56px</div>
+          <div class="token"><b>圆角</b>28px（全圆）</div>
+          <div class="token"><b>左右边距</b>12px</div>
+          <div class="token"><b>底距</b>14px + safe-area</div>
+          <div class="token"><b>底色</b><i style="background:#1C1B1A"></i>#1C1B1A</div>
+          <div class="token"><b>未选图标</b><i style="background:#9A948C"></i>#9A948C</div>
+          <div class="token"><b>选中</b><i style="background:#E8A0A8"></i>浅粉 / 朱块</div>
+          <div class="token"><b>阴影</b>0 8px 28px / 28%</div>
+        </div>
+
+        <h3>与现行对比</h3>
+        <table class="cmp-table">
+          <thead>
+            <tr><th></th><th>现行浅色通栏</th><th>深色胶囊</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>贴边</td><td>通栏贴底</td><td>悬浮，露出纸面</td></tr>
+            <tr><td>气质</td><td>站内纸面一致</td><td>更「App」、更聚焦</td></tr>
+            <tr><td>可点热区</td><td>高 58px 通栏</td><td>高 56，内容区更干净</td></tr>
+            <tr><td>与心愿单条</td><td>叠在上面需抬高</td><td>同样需抬高（预留 ~76px）</td></tr>
+            <tr><td>无障碍</td><td>良好</td><td>保持 aria + 焦点环即可</td></tr>
+          </tbody>
+        </table>
+
+        <div class="note">
+          接入位置：<code>public/js/main.js</code> 的 <code>buildNavbar</code> tab 部分 + <code>style.css</code> 中 <code>.app-tabbar</code> / <code>.tab-btn</code> 的移动端媒体查询。心愿单条、ONLY 购物车、返回顶部的 <code>bottom</code> 都要跟着抬高。
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const ICONS = {
+      works: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+      events: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+      circles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>',
+      projects: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h14"/></svg>',
+      updates: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="M8 10h8M8 14h5"/></svg>'
+    };
+
+    const TABS = [
+      { key: 'works', label: '周边', badge: null },
+      { key: 'events', label: '活动', badge: '新' },
+      { key: 'circles', label: '作者', badge: null },
+      { key: 'projects', label: '企划', badge: null },
+      { key: 'updates', label: '动态', badge: null }
+    ];
+
+    let active = 'works';
+    const phone = document.getElementById('phone');
+    const tabbar = document.getElementById('tabbar');
+
+    function renderTabs() {
+      tabbar.innerHTML = TABS.map(t => {
+        const on = t.key === active ? ' active' : '';
+        const badge = t.badge ? `<span class="tab-badge">${t.badge}</span>` : '';
+        return `<button type="button" class="tab-item${on}" data-key="${t.key}" aria-current="${t.key === active ? 'page' : 'false'}">
+          ${ICONS[t.key]}<span>${t.label}</span>${badge}
+        </button>`;
+      }).join('');
+    }
+
+    tabbar.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-item');
+      if (!btn) return;
+      active = btn.dataset.key;
+      renderTabs();
+    });
+
+    document.querySelectorAll('[data-set-mode]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-set-mode]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        phone.dataset.mode = btn.dataset.setMode;
+      });
+    });
+
+    document.querySelectorAll('[data-accent]').forEach(btn => {
+      if (!btn.hasAttribute('data-accent')) return;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.accent-row [data-accent]').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        phone.dataset.accent = btn.dataset.accent;
+      });
+    });
+
+    renderTabs();
+  </script>
+</body>
+</html>

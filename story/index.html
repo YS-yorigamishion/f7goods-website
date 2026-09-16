@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>我们的故事 · f7goods</title>
+  <meta name="description" content="日服韩服停更、国服永断更之后，玩家如何保存剧情、聚集作者、举办 ONLY，并让热爱持续。f7goods 故事页。">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/story.css">
+</head>
+<body>
+  <div class="stage">
+    <header class="chrome">
+      <div class="brand">
+        <span class="brand-mark">F7</span>
+        <span>f7goods</span>
+      </div>
+      <div class="chrome-right">
+        <span class="preview-tag">预览</span>
+        <button type="button" class="skip-btn" id="skipBtn" hidden>跳过</button>
+      </div>
+    </header>
+
+    <div class="meter" id="meter" hidden aria-hidden="true">
+      <span class="meter-label" id="meterLabel">CH 00</span>
+      <div class="meter-track" id="meterTrack"></div>
+    </div>
+
+    <main class="scene" id="scene" role="main" aria-live="polite"></main>
+
+    <footer class="foot">
+      <button type="button" class="nav-btn" id="prevBtn" disabled>上一步</button>
+      <div class="foot-center" id="footHint">点击画面或按钮继续</div>
+      <button type="button" class="nav-btn next" id="nextBtn">开始</button>
+    </footer>
+  </div>
+
+  <script src="js/story.js"></script>
+</body>
+</html>
