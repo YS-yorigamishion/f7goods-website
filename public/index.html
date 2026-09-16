@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260912g">
+  <link rel="stylesheet" href="/css/style.css?v=20260913a">
   <style>
     /* ===== 心愿单：卡片价格旁的加减控件 ===== */
     .cl-w-foot-l { display:inline-flex; align-items:center; gap:0.5rem; min-width:0; flex:1; }
@@ -65,10 +65,20 @@
     /* 预留高度按实际条高计算（--wl-bar-h 由 JS 写入），避免窄屏文字换行后遮挡内容 */
     body.has-wishlist-bar { padding-bottom: calc(var(--wl-bar-h, 72px) + 10px); }
     @media (max-width: 768px) {
-      /* Sit above mobile tab bar (58px + safe area) */
-      #wishlistBar { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
-      body.app-mode.has-wishlist-bar { padding-bottom: calc(var(--wl-bar-h, 72px) + 10px + 62px + env(safe-area-inset-bottom, 0px)); }
-      body.has-wishlist-bar { padding-bottom: calc(var(--wl-bar-h, 72px) + 10px + env(safe-area-inset-bottom, 0px)); }
+      /* Sit above floating capsule tabbar (--tabbar-clearance from style.css) */
+      #wishlistBar {
+        bottom: calc(var(--tabbar-clearance, 80px) + 0px);
+        left: 10px; right: 10px;
+        border-radius: 14px 14px 0 0;
+        border-left: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+      }
+      body.app-mode.has-wishlist-bar {
+        padding-bottom: calc(var(--wl-bar-h, 72px) + 10px + var(--tabbar-clearance, 80px));
+      }
+      body.has-wishlist-bar {
+        padding-bottom: calc(var(--wl-bar-h, 72px) + 10px + env(safe-area-inset-bottom, 0px));
+      }
     }
 
     /* ===== 心愿单：清单抽屉（与 ONLY 专场购物清单同款小票样式） ===== */

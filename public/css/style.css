@@ -1816,7 +1816,12 @@ textarea.form-input { resize: vertical; min-height: 130px; }
   }
 }
 body.app-mode .author-create-fab {
-  bottom: calc(58px + 0.85rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--tabbar-clearance, 80px) + 0.5rem);
+}
+@media (min-width: 769px) {
+  body.app-mode .author-create-fab {
+    bottom: 2rem;
+  }
 }
 body { animation: pageFadeIn 0.28s ease; }
 @keyframes pageFadeIn {
@@ -3168,10 +3173,18 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 }
 
 @media (max-width: 768px) {
+  /* 浅色悬浮胶囊底栏尺寸（内容避让统一用 --tabbar-clearance） */
+  :root {
+    --tabbar-h: 56px;
+    --tabbar-inset-x: 12px;
+    --tabbar-gap: 14px;
+    --tabbar-clearance: calc(var(--tabbar-h) + var(--tabbar-gap) + 10px + env(safe-area-inset-bottom, 0px));
+  }
+
   body.app-mode {
     padding-left: 0;
     padding-top: 52px;
-    padding-bottom: 62px;
+    padding-bottom: calc(var(--tabbar-clearance, 80px));
   }
 
   .app-rail { display: none; }
@@ -3195,19 +3208,25 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
     font-size: 0.72rem !important;
   }
 
+  /* 浅色悬浮胶囊底栏（对照出行 App 形态，贴合纸面设计） */
   .app-tabbar {
     display: flex;
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 58px;
-    background: rgba(255,252,247,0.96);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-top: 1px solid var(--line);
+    left: var(--tabbar-inset-x);
+    right: var(--tabbar-inset-x);
+    bottom: calc(var(--tabbar-gap) + env(safe-area-inset-bottom, 0px));
+    height: var(--tabbar-h);
+    background: rgba(255, 252, 247, 0.94);
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    border: 1px solid var(--line);
+    border-radius: 28px;
     z-index: 1100;
-    padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
+    padding: 0 6px;
+    box-shadow:
+      0 8px 28px rgba(34, 32, 30, 0.12),
+      0 2px 8px rgba(34, 32, 30, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
   }
 
   .tab-btn {
@@ -3220,14 +3239,44 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
     font-size: 10px;
     color: var(--haze);
     text-decoration: none;
-    border-radius: 10px;
+    border-radius: 22px;
     min-height: 48px;
     font-weight: 500;
+    position: relative;
+    transition: color 0.15s ease;
+  }
+
+  .tab-btn svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+    transition: transform 0.18s ease;
   }
 
   .tab-btn.active {
     color: var(--accent);
-    background: rgba(217,79,92,0.08);
+  }
+
+  .tab-btn.active span {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .tab-btn.active svg {
+    transform: translateY(-1px) scale(1.08);
+  }
+
+  .tab-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 30px;
+    border-radius: 14px;
+    background: rgba(217, 79, 92, 0.1);
+    z-index: -1;
   }
 
   .board-cats { grid-template-columns: repeat(3, 1fr); }
@@ -3240,7 +3289,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   }
 
   body.app-mode .back-to-top {
-    bottom: 70px;
+    bottom: calc(var(--tabbar-clearance, 80px) + 4px);
   }
 
   body.app-mode .footer {

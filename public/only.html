@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260912g">
+  <link rel="stylesheet" href="/css/style.css?v=20260913a">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -180,21 +180,27 @@
       box-shadow: 0 -4px 16px rgba(0,0,0,.06);
     }
     body.has-only-cart { padding-bottom: 72px; }
-    /* Sit above mobile tab bar (58px + safe area) */
+    /* Sit above floating capsule tabbar (--tabbar-clearance from style.css) */
     @media (max-width: 768px) {
-      .only-cartbar { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
-      body.app-mode.has-only-cart { padding-bottom: calc(58px + 64px + env(safe-area-inset-bottom, 0px)); }
+      .only-cartbar {
+        bottom: calc(var(--tabbar-clearance, 80px));
+        left: 10px; right: 10px;
+        border-radius: 14px 14px 0 0;
+        border-left: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+      }
+      body.app-mode.has-only-cart { padding-bottom: calc(var(--tabbar-clearance, 80px) + 64px); }
       body.has-only-cart { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
     }
     /* 作者「我的摊位」入口：避开底部购物清单栏 */
     #authorCreateFab.author-create-fab { bottom: 5.25rem; }
     @media (max-width: 768px) {
       #authorCreateFab.author-create-fab {
-        bottom: calc(58px + 5.25rem + env(safe-area-inset-bottom, 0px));
+        bottom: calc(var(--tabbar-clearance, 80px) + 5.25rem);
       }
     }
     body.app-mode #authorCreateFab.author-create-fab {
-      bottom: calc(58px + 5.25rem + env(safe-area-inset-bottom, 0px));
+      bottom: calc(var(--tabbar-clearance, 80px) + 5.25rem);
     }
     .only-cartbar .l { flex: 1; min-width: 0; font-size: 12.5px; text-align: center; }
     .only-cartbar .l b { color: var(--accent); }
