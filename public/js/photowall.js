@@ -1,19 +1,24 @@
 /**
  * f7goods 周边照片墙
- * - 数据来自 /api/works（需有封面）
+ * - 相框贴合图片比例（白边薄包一圈，无大留白）
  * - 点击 → /work-detail.html?id=
- * - 刷新优先换未展示过的周边；每批保证 MIN–MAX 数量
+ * - 刷新优先换未展示；每批保证数量
  */
 (function () {
   const MIN_ON_WALL = 16;
   const MAX_ON_WALL = 22;
+  // 显示宽度（相对视口宽），高度 = 宽 × 图片纵横比
+  const W_MIN = 0.11;
+  const W_MID = 0.15;
+  const W_MAX = 0.20;
 
   let WORKS = [];
   const state = {
     shownIds: new Set(),
     current: [],
     layout: [],
-    busy: false
+    busy: false,
+    ready: false
   };
 
   function shuffle(arr) {
@@ -57,12 +62,22 @@
     return picked;
   }
 
-  function scatterPhotoWall(count) {
+  function pickWidth(i) {
+    const roll = Math.random() + (i < 3 ? -0.06 : 0);
+    if (roll < 0.2) return rand(W_MIN, W_MIN + 0.025);
+    if (roll < 0.6) return rand(W_MID - 0.02, W_MID + 0.03);
+    return rand(W_MAX - 0.025, W_MAX);
+  }
+
+  /**
+   * 照片墙散落：每张先定宽度，再按图片比例算高度，框贴图。
+   */
+  function scatterPhotoWall(works, count) {
     const items = [];
     const rects = [];
     const avoid = [
-      { x: 0.02, y: 0.02, w: 0.30, h: 0.13 },
-      { x: 0.54, y: 0.85, w: 0.43, h: 0.13 }
+      { x: 0.02, y: 0.02, w: 0.30, h: 0.12 },
+      { x: 0.54, y: 0.86, w: 0.43, h: 0.12 }
     ];
 
     function inAvoid(nx, ny, nw, nh) {
@@ -104,34 +119,34 @@
       return best;
     }
 
-    for (let i = 0; i < count; i++) {
-      // 相框略放大，全图更清楚
-      const roll = Math.random() + (i < 4 ? -0.08 : 0);
-      let w;
-      if (roll < 0.16) w = rand(0.095, 0.115);
-      else if (roll < 0.58) w = rand(0.12, 0.155);
-      else w = rand(0.155, 0.20);
-      const h = w * rand(1.18, 1.42);
+    const n = Math.min(count, works.length);
+    for (let i = 0; i < n; i++) {
+      const work = works[i];
+      const w = pickWidth(i);
+      // 图片比例；未知时用 4:5 兜底
+      const ratio = work.ratio || 1.25;
+      const h = Math.min(w * ratio, 0.42); // 极长图限制高度，避免一根柱子
+      // 白边已含在视觉里，布局盒与显示盒一致
 
       let best =
-        tryPlace(w, h, 0.22, 36) ||
-        tryPlace(w, h, 0.35, 28) ||
-        tryPlace(w, h, 0.55, 20);
+        tryPlace(w, h, 0.2, 40) ||
+        tryPlace(w, h, 0.32, 28) ||
+        tryPlace(w, h, 0.48, 18);
 
       if (!best) {
         let nx = rand(0.03, 0.9 - w);
         let ny = rand(0.06, 0.88 - h);
-        for (let k = 0; k < 12; k++) {
+        for (let k = 0; k < 10; k++) {
           const tx = rand(0.03, 0.9 - w);
           const ty = rand(0.06, 0.88 - h);
           if (!inAvoid(tx, ty, w, h)) { nx = tx; ny = ty; break; }
         }
-        best = { x: nx, y: ny, w, h, ov: 0.4 };
+        best = { x: nx, y: ny, w, h, ov: 0.35 };
       }
 
       const r = Math.random() < 0.72
-        ? rand(-16, 16)
-        : (Math.random() < 0.5 ? rand(-26, -16) : rand(16, 26));
+        ? rand(-14, 14)
+        : (Math.random() < 0.5 ? rand(-22, -14) : rand(14, 22));
 
       const z = 6 + i + Math.floor(Math.random() * 4);
       rects.push({ x: best.x, y: best.y, w: best.w, h: best.h });
@@ -142,6 +157,7 @@
         h: best.h,
         r,
         z,
+        workId: work.id,
         delay: (i * 0.022 + Math.random() * 0.03).toFixed(3)
       });
     }
@@ -172,26 +188,25 @@
       return;
     }
 
-    const mixed = shuffle(layout.map((pos, i) => ({
-      pos,
-      work: works[i % works.length]
-    })));
+    const byId = {};
+    works.forEach(w => { byId[w.id] = w; });
 
-    wall.innerHTML = mixed.map(item => {
-      const p = item.pos;
-      const w = item.work;
+    // layout 与作品一一对应（scatter 时已绑定）
+    wall.innerHTML = layout.map(p => {
+      const w = byId[p.workId] || works[0];
+      if (!w) return '';
       return (
         '<a class="pw-shot" href="' + detailHref(w.id) + '"' +
         ' style="left:' + (p.x * 100).toFixed(2) + '%;' +
         ' top:' + (p.y * 100).toFixed(2) + '%;' +
         ' width:' + (p.w * 100).toFixed(2) + '%;' +
-        ' height:' + (p.h * 100).toFixed(2) + '%;' +
         ' z-index:' + p.z + ';' +
         ' --rot:rotate(' + p.r.toFixed(1) + 'deg);' +
         ' --delay:' + p.delay + 's;' +
         ' transform:rotate(' + p.r.toFixed(1) + 'deg);"' +
         ' aria-label="' + escapeHtml(w.title) + ' — 查看周边详情">' +
-        '<div class="frame"><img src="' + escapeHtml(w.image) + '" alt="' + escapeHtml(w.title) + '" loading="lazy"></div>' +
+        '<img src="' + escapeHtml(w.image) + '" alt="' + escapeHtml(w.title) + '" loading="lazy"' +
+        ' width="' + (w.nw || 400) + '" height="' + (w.nh || 500) + '">' +
         '</a>'
       );
     }).join('');
@@ -207,7 +222,7 @@
   }
 
   function refreshWall() {
-    if (state.busy || !WORKS.length) return;
+    if (state.busy || !state.ready || !WORKS.length) return;
     state.busy = true;
 
     const btn = document.getElementById('pwRefresh');
@@ -218,13 +233,38 @@
 
     const count = targetCount();
     const works = pickWorks(count);
-    const layout = scatterPhotoWall(count);
+    const layout = scatterPhotoWall(works, works.length);
 
     state.current = works;
     state.layout = layout;
     render();
     updateCount();
     setTimeout(function () { state.busy = false; }, 280);
+  }
+
+  function probeImage(src) {
+    return new Promise(function (resolve) {
+      const img = new Image();
+      img.onload = function () {
+        resolve({
+          nw: img.naturalWidth || 400,
+          nh: img.naturalHeight || 500,
+          ratio: (img.naturalHeight || 500) / (img.naturalWidth || 400)
+        });
+      };
+      img.onerror = function () {
+        resolve({ nw: 400, nh: 500, ratio: 1.25 });
+      };
+      img.src = src;
+    });
+  }
+
+  async function enrichWorks(list) {
+    const withMeta = await Promise.all(list.map(async w => {
+      const meta = await probeImage(w.image);
+      return Object.assign({}, w, meta);
+    }));
+    return withMeta;
   }
 
   function mapApiWorks(list) {
@@ -235,7 +275,9 @@
         title: w.title || '周边',
         price: w.price || '',
         image: w.images[0],
-        circle: ''
+        ratio: 1.25,
+        nw: 400,
+        nh: 500
       }));
   }
 
@@ -244,11 +286,12 @@
       if (typeof F7API !== 'undefined' && F7API.getWorks) {
         const data = await F7API.getWorks();
         const list = Array.isArray(data) ? data : (data && data.items) || [];
-        WORKS = mapApiWorks(list);
+        WORKS = await enrichWorks(mapApiWorks(list));
       }
     } catch (e) {
       WORKS = [];
     }
+    state.ready = true;
     refreshWall();
   }
 
@@ -261,8 +304,8 @@
     window.addEventListener('resize', function () {
       clearTimeout(t);
       t = setTimeout(function () {
-        if (!state.layout.length) return;
-        state.layout = scatterPhotoWall(state.layout.length);
+        if (!state.current.length) return;
+        state.layout = scatterPhotoWall(state.current, state.current.length);
         render();
       }, 200);
     });
