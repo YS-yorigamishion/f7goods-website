@@ -57,70 +57,86 @@
   }
 
   /**
-   * 网格式散落：把安全区分成格子，每格中心随机抖动。
-   * 保证每张图都有位置，最多轻叠，绝不整页空白。
+   * 照片墙散落
+   * - 手机：图更大、数量略少、叠压更明显
+   * - 电脑：左右也可叠（放宽横向抖动 + 允许盖过相邻格）
+   * - 仍夹在安全区内，不整体溢出屏幕
    */
   function scatterPhotoWall(works) {
-    const items = [];
+    var items = [];
     if (!works.length) return items;
 
-    const isNarrow = typeof window !== 'undefined' && window.innerWidth < 640;
-    // 安全区：避开文案与底部按钮，四周不贴边
-    const minX = 0.04, maxX = 0.96;
-    const minY = 0.08, maxY = 0.86;
-    const usableW = maxX - minX;
-    const usableH = maxY - minY;
+    var isNarrow = typeof window !== 'undefined' && window.innerWidth < 640;
+    var padX = isNarrow ? 0.02 : 0.03;
+    var padY = isNarrow ? 0.05 : 0.05;
+    var minX = padX, maxX = 1 - padX;
+    var minY = padY, maxY = 0.88;
+    var usableW = maxX - minX;
+    var usableH = maxY - minY;
 
-    // 按数量选网格，保证塞得下
-    const n = Math.min(works.length, isNarrow ? 10 : 12);
-    const cols = n <= 4 ? 2 : n <= 6 ? 3 : n <= 9 ? 3 : 4;
-    const rows = Math.ceil(n / cols);
+    // 数量：手机少而大，电脑适中
+    var n = Math.min(works.length, isNarrow ? 9 : 12);
+    var cols = isNarrow
+      ? (n <= 4 ? 2 : 3)
+      : (n <= 4 ? 2 : n <= 8 ? 3 : 4);
+    var rows = Math.ceil(n / cols);
+    var cellW = usableW / cols;
+    var cellH = usableH / rows;
 
-    // 单元尺寸
-    const cellW = usableW / cols;
-    const cellH = usableH / rows;
+    // 基准宽度：故意大于格子，制造左右/上下叠压
+    // 手机约屏宽 34%–48%；电脑约 22%–32%
+    var baseW = isNarrow
+      ? usableW * rand(0.40, 0.55) / cols * cols * 0.55 // 见下方再算
+      : 0;
+    if (isNarrow) {
+      // 每张约占半屏多一点，两列会自然左右叠
+      baseW = rand(0.34, 0.48);
+    } else {
+      // 比单格更宽，邻列会重叠
+      baseW = cellW * rand(1.05, 1.35);
+    }
 
-    // 每张图目标宽度：略小于格宽，留出呼吸
-    const baseW = cellW * rand(0.72, 0.92);
+    for (var i = 0; i < n; i++) {
+      var work = works[i];
+      var col = i % cols;
+      var row = Math.floor(i / cols);
 
-    for (let i = 0; i < n; i++) {
-      const work = works[i];
-      const col = i % cols;
-      const row = Math.floor(i / cols);
+      // 角度
+      var r = Math.random() < 0.72
+        ? rand(-14, 14)
+        : (Math.random() < 0.5 ? rand(-24, -14) : rand(14, 24));
 
-      const r = Math.random() < 0.78
-        ? rand(-11, 11)
-        : (Math.random() < 0.5 ? rand(-18, -11) : rand(11, 18));
+      var ratio = work.ratio || 1.25;
+      var w = baseW * rand(0.88, 1.12);
+      var h = w * ratio;
+      if (isNarrow && h > 0.42) { h = 0.42; w = h / ratio; }
+      if (!isNarrow && h > 0.40) { h = 0.40; w = h / ratio; }
 
-      const ratio = work.ratio || 1.25;
-      let w = baseW * rand(0.88, 1.08);
-      let h = w * ratio;
+      // 旋转包络下，最大允许尺寸（以安全区为准，不限死在格子里）
+      var k = rotBleed(r);
+      var maxW = usableW * 0.98;
+      var maxH = usableH * 0.98;
+      if (w * k > maxW) { var s1 = maxW / (w * k); w *= s1; h *= s1; }
+      if (h * k > maxH) { var s2 = maxH / (h * k); w *= s2; h *= s2; }
 
-      // 旋转后包围盒不得超出单元太多，也不得超出安全区
-      const k = rotBleed(r);
-      const maxCellW = cellW * 0.95;
-      const maxCellH = cellH * 0.95;
-      if (w * k > maxCellW) {
-        const s = maxCellW / (w * k);
-        w *= s; h *= s;
+      // 格心 + 大幅抖动：横向抖动可跨过相邻列 → 左右也叠
+      var jx = isNarrow ? cellW * 0.42 : cellW * 0.48;
+      var jy = isNarrow ? cellH * 0.35 : cellH * 0.40;
+      var cx = minX + cellW * (col + 0.5) + rand(-jx, jx);
+      var cy = minY + cellH * (row + 0.5) + rand(-jy, jy);
+      // 偶尔整张偏出格心，更「乱」一点
+      if (Math.random() < 0.35) {
+        cx += rand(-cellW * 0.35, cellW * 0.35);
+        cy += rand(-cellH * 0.3, cellH * 0.3);
       }
-      if (h * k > maxCellH) {
-        const s = maxCellH / (h * k);
-        w *= s; h *= s;
-      }
 
-      // 格心 + 抖动
-      const cx = minX + cellW * (col + 0.5) + rand(-cellW * 0.12, cellW * 0.12);
-      const cy = minY + cellH * (row + 0.5) + rand(-cellH * 0.12, cellH * 0.12);
-
-      // 用旋转包围盒夹紧，保证整张在屏内
-      const hw = (w * k) / 2;
-      const hh = (h * k) / 2;
-      const ccx = Math.min(maxX - hw, Math.max(minX + hw, cx));
-      const ccy = Math.min(maxY - hh, Math.max(minY + hh, cy));
-
-      const nx = ccx - w / 2;
-      const ny = ccy - h / 2;
+      // 夹在安全区：保证不溢出屏幕（叠是可以的）
+      var hw = (w * k) / 2;
+      var hh = (h * k) / 2;
+      var ccx = Math.min(maxX - hw, Math.max(minX + hw, cx));
+      var ccy = Math.min(maxY - hh, Math.max(minY + hh, cy));
+      var nx = ccx - w / 2;
+      var ny = ccy - h / 2;
 
       items.push({
         x: nx,
@@ -128,12 +144,13 @@
         w: w,
         h: h,
         r: r,
-        z: 6 + row * cols + col + Math.floor(Math.random() * 2),
+        z: 6 + i + Math.floor(Math.random() * 3),
         workId: work.id,
         delay: (i * 0.028 + Math.random() * 0.04).toFixed(3)
       });
     }
 
+    items.sort(function (a, b) { return a.z - b.z; });
     return items;
   }
 
@@ -216,7 +233,7 @@
       setTimeout(function () { btn.classList.remove('spinning'); }, 480);
     }
 
-    const count = WORKS.length <= 6 ? WORKS.length : (window.innerWidth < 640 ? 8 : 10);
+    const count = WORKS.length <= 4 ? WORKS.length : (window.innerWidth < 640 ? 9 : 12);
     const works = pickWorks(Math.max(count, 1));
     const layout = scatterPhotoWall(works);
 
