@@ -2609,6 +2609,26 @@ body.app-mode .back-to-top {
   font-weight: 600;
 }
 
+/* 「照片墙」入口：贴在「全部周边」右侧，同一胶囊组内 */
+.home-view-toggle .home-view-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--haze);
+  text-decoration: none;
+  min-height: 32px;
+  border-left: 1px solid var(--line);
+  transition: color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.home-view-toggle .home-view-link:hover {
+  color: var(--accent);
+  background: rgba(217, 79, 92, 0.06);
+}
+
 /* Detail app layout */
 body.app-mode .detail-page { padding-top: 1.25rem; }
 

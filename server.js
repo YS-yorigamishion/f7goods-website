@@ -3038,7 +3038,7 @@ app.get('/sitemap.xml', cacheMiddleware(3600), (req, res) => {
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
     // Static pages
-    ['/', '/events', '/projects', '/updates', '/circles', '/announcements', '/contact'].forEach(p => {
+    ['/', '/events', '/projects', '/updates', '/circles', '/announcements', '/contact', '/photowall.html'].forEach(p => {
       xml += `  <url><loc>${baseUrl}${p}</loc><changefreq>daily</changefreq></url>\n`;
     });
     // Dynamic pages

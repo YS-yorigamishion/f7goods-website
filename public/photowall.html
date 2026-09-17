@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>照片墙 — f7goods</title>
+  <meta name="description" content="f7goods 周边照片墙。我们的故事还没有结束。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="/css/photowall.css?v=20260917a">
+</head>
+<body class="pw-body">
+  <div class="pw-bg" aria-hidden="true"></div>
+
+  <div class="pw-chrome">
+    <a href="/">返回周边</a>
+  </div>
+
+  <main class="pw-wall" id="pwWall" aria-label="周边照片墙"></main>
+
+  <p class="pw-slogan tl">我们的故事</p>
+  <p class="pw-slogan br">还没有结束</p>
+
+  <button type="button" class="pw-refresh" id="pwRefresh" aria-label="换一批周边">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 8a8 8 0 1 0 1.5 6"/>
+      <path d="M20 4v5h-5"/>
+    </svg>
+    换一批
+    <span class="count" id="pwCount"></span>
+  </button>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/photowall.js?v=20260917a"></script>
+</body>
+</html>
