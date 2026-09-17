@@ -8,24 +8,23 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/photowall.css?v=20260918b">
-  <!-- 相框贴合图片 + 不溢出屏幕（布局侧已缩小，这里兜底裁切） -->
+  <link rel="stylesheet" href="/css/photowall.css?v=20260918d">
   <style id="pw-fit-image">
     .pw-wall { overflow: hidden !important; }
     .pw-shot {
       padding: 4px 4px 6px !important;
       line-height: 0 !important;
       box-sizing: border-box !important;
+      opacity: 1 !important;
     }
     .pw-shot img {
       display: block !important;
       width: 100% !important;
       height: auto !important;
-      max-width: none !important;
-      max-height: none !important;
       object-fit: fill !important;
       margin: 0 !important;
       vertical-align: top !important;
+      opacity: 1 !important;
     }
   </style>
 </head>
@@ -50,7 +49,7 @@
     <span class="count" id="pwCount"></span>
   </button>
 
-  <script src="/js/api.js?v=20260918c"></script>
-  <script src="/js/photowall.js?v=20260918c"></script>
+  <script src="/js/api.js?v=20260918d"></script>
+  <script src="/js/photowall.js?v=20260918d"></script>
 </body>
 </html>
