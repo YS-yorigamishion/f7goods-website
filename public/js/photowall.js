@@ -58,23 +58,24 @@
 
   /**
    * 照片墙散落
-   * - 手机：图更大、数量略少、叠压更明显
-   * - 电脑：左右也可叠（放宽横向抖动 + 允许盖过相邻格）
-   * - 仍夹在安全区内，不整体溢出屏幕
+   * - 每张图「被盖住的面积」≤ 20%
+   * - 手机图更大、可叠；电脑左右也可叠
+   * - 不整体溢出屏幕
    */
   function scatterPhotoWall(works) {
     var items = [];
+    var covers = []; // 与 items 同步：每张图当前被挡比例
     if (!works.length) return items;
 
+    var MAX_COVER = 0.2;
     var isNarrow = typeof window !== 'undefined' && window.innerWidth < 640;
     var padX = isNarrow ? 0.02 : 0.03;
-    var padY = isNarrow ? 0.05 : 0.05;
+    var padY = 0.05;
     var minX = padX, maxX = 1 - padX;
     var minY = padY, maxY = 0.88;
     var usableW = maxX - minX;
     var usableH = maxY - minY;
 
-    // 数量：手机少而大，电脑适中
     var n = Math.min(works.length, isNarrow ? 9 : 12);
     var cols = isNarrow
       ? (n <= 4 ? 2 : 3)
@@ -83,17 +84,61 @@
     var cellW = usableW / cols;
     var cellH = usableH / rows;
 
-    // 基准宽度：故意大于格子，制造左右/上下叠压
-    // 手机约屏宽 34%–48%；电脑约 22%–32%
-    var baseW = isNarrow
-      ? usableW * rand(0.40, 0.55) / cols * cols * 0.55 // 见下方再算
-      : 0;
+    var baseW;
     if (isNarrow) {
-      // 每张约占半屏多一点，两列会自然左右叠
-      baseW = rand(0.34, 0.48);
+      baseW = rand(0.34, 0.46);
     } else {
-      // 比单格更宽，邻列会重叠
-      baseW = cellW * rand(1.05, 1.35);
+      baseW = cellW * rand(1.0, 1.28);
+    }
+
+    function interArea(ax, ay, aw, ah, bx, by, bw, bh) {
+      var ix = Math.max(0, Math.min(ax + aw, bx + bw) - Math.max(ax, bx));
+      var iy = Math.max(0, Math.min(ay + ah, by + bh) - Math.max(ay, by));
+      return ix * iy;
+    }
+
+    /**
+     * 若把新图放在 (nx,ny,w,h) 且 z 高于已有点：
+     * 已有点被挡增量 = inter / 旧面积；新图被挡 = 与更高 z 的交叠（当前 z 最大则为 0）
+     * 返回 null = 合法；否则返回原因
+     */
+    function coverOk(nx, ny, w, h, newZ) {
+      var areaNew = Math.max(w * h, 1e-6);
+      var newCover = 0;
+      for (var j = 0; j < items.length; j++) {
+        var it = items[j];
+        var inter = interArea(nx, ny, w, h, it.x, it.y, it.w, it.h);
+        if (inter <= 0) continue;
+        var areaOld = Math.max(it.w * it.h, 1e-6);
+        if (newZ > it.z) {
+          // 盖在旧图上：旧图被挡增加
+          var add = inter / areaOld;
+          if (covers[j] + add > MAX_COVER + 0.001) return false;
+        } else if (it.z > newZ) {
+          // 旧图盖在新图上：新图被挡
+          newCover += inter / areaNew;
+          if (newCover > MAX_COVER + 0.001) return false;
+        }
+      }
+      return true;
+    }
+
+    /** 合法落点时，登记被挡增量 */
+    function commitCover(nx, ny, w, h, newZ, idx) {
+      var areaNew = Math.max(w * h, 1e-6);
+      var newCover = 0;
+      for (var j = 0; j < items.length; j++) {
+        var it = items[j];
+        var inter = interArea(nx, ny, w, h, it.x, it.y, it.w, it.h);
+        if (inter <= 0) continue;
+        var areaOld = Math.max(it.w * it.h, 1e-6);
+        if (newZ > it.z) {
+          covers[j] += inter / areaOld;
+        } else if (it.z > newZ) {
+          newCover += inter / areaNew;
+        }
+      }
+      covers[idx] = newCover;
     }
 
     for (var i = 0; i < n; i++) {
@@ -101,53 +146,91 @@
       var col = i % cols;
       var row = Math.floor(i / cols);
 
-      // 角度
+      // z：后画略靠前，保证叠放层次；commit 时按真实 z 算被挡
+      var z = 6 + i + Math.floor(Math.random() * 2);
+
       var r = Math.random() < 0.72
         ? rand(-14, 14)
         : (Math.random() < 0.5 ? rand(-24, -14) : rand(14, 24));
 
       var ratio = work.ratio || 1.25;
-      var w = baseW * rand(0.88, 1.12);
-      var h = w * ratio;
-      if (isNarrow && h > 0.42) { h = 0.42; w = h / ratio; }
-      if (!isNarrow && h > 0.40) { h = 0.40; w = h / ratio; }
+      var w0 = baseW * rand(0.88, 1.1);
+      var h0 = w0 * ratio;
+      if (isNarrow && h0 > 0.40) { h0 = 0.40; w0 = h0 / ratio; }
+      if (!isNarrow && h0 > 0.38) { h0 = 0.38; w0 = h0 / ratio; }
 
-      // 旋转包络下，最大允许尺寸（以安全区为准，不限死在格子里）
       var k = rotBleed(r);
-      var maxW = usableW * 0.98;
-      var maxH = usableH * 0.98;
-      if (w * k > maxW) { var s1 = maxW / (w * k); w *= s1; h *= s1; }
-      if (h * k > maxH) { var s2 = maxH / (h * k); w *= s2; h *= s2; }
+      if (w0 * k > usableW * 0.98) { var s1 = (usableW * 0.98) / (w0 * k); w0 *= s1; h0 *= s1; }
+      if (h0 * k > usableH * 0.98) { var s2 = (usableH * 0.98) / (h0 * k); w0 *= s2; h0 *= s2; }
 
-      // 格心 + 大幅抖动：横向抖动可跨过相邻列 → 左右也叠
-      var jx = isNarrow ? cellW * 0.42 : cellW * 0.48;
-      var jy = isNarrow ? cellH * 0.35 : cellH * 0.40;
-      var cx = minX + cellW * (col + 0.5) + rand(-jx, jx);
-      var cy = minY + cellH * (row + 0.5) + rand(-jy, jy);
-      // 偶尔整张偏出格心，更「乱」一点
-      if (Math.random() < 0.35) {
-        cx += rand(-cellW * 0.35, cellW * 0.35);
-        cy += rand(-cellH * 0.3, cellH * 0.3);
+      var jx = isNarrow ? cellW * 0.4 : cellW * 0.46;
+      var jy = isNarrow ? cellH * 0.32 : cellH * 0.38;
+
+      var placed = null;
+      var scaleSeq = [1, 0.95, 0.9, 0.85, 0.8, 0.72, 0.65];
+
+      for (var si = 0; si < scaleSeq.length && !placed; si++) {
+        var sc = scaleSeq[si];
+        var w = w0 * sc;
+        var h = h0 * sc;
+        var hw0 = (w * k) / 2;
+        var hh0 = (h * k) / 2;
+        if (minX + hw0 > maxX - hw0 || minY + hh0 > maxY - hh0) continue;
+
+        for (var a = 0; a < 36 && !placed; a++) {
+          var cx = minX + cellW * (col + 0.5) + rand(-jx, jx);
+          var cy = minY + cellH * (row + 0.5) + rand(-jy, jy);
+          if (Math.random() < 0.3) {
+            cx += rand(-cellW * 0.3, cellW * 0.3);
+            cy += rand(-cellH * 0.25, cellH * 0.25);
+          }
+          var ccx = Math.min(maxX - hw0, Math.max(minX + hw0, cx));
+          var ccy = Math.min(maxY - hh0, Math.max(minY + hh0, cy));
+          var nx = ccx - w / 2;
+          var ny = ccy - h / 2;
+
+          if (!coverOk(nx, ny, w, h, z)) continue;
+
+          var idx = items.length;
+          var rec = {
+            x: nx,
+            y: ny,
+            w: w,
+            h: h,
+            r: r,
+            z: z,
+            workId: work.id,
+            delay: (i * 0.028 + Math.random() * 0.04).toFixed(3)
+          };
+          items.push(rec);
+          covers.push(0);
+          commitCover(nx, ny, w, h, z, idx);
+          placed = rec;
+        }
       }
 
-      // 夹在安全区：保证不溢出屏幕（叠是可以的）
-      var hw = (w * k) / 2;
-      var hh = (h * k) / 2;
-      var ccx = Math.min(maxX - hw, Math.max(minX + hw, cx));
-      var ccy = Math.min(maxY - hh, Math.max(minY + hh, cy));
-      var nx = ccx - w / 2;
-      var ny = ccy - h / 2;
-
-      items.push({
-        x: nx,
-        y: ny,
-        w: w,
-        h: h,
-        r: r,
-        z: 6 + i + Math.floor(Math.random() * 3),
-        workId: work.id,
-        delay: (i * 0.028 + Math.random() * 0.04).toFixed(3)
-      });
+      // 仍放不下：再试全局随机小图，被挡仍 ≤20%
+      if (!placed) {
+        for (var b = 0; b < 40 && !placed; b++) {
+          var rw = (isNarrow ? 0.28 : 0.16) * rand(0.75, 1);
+          var rh = rw * ratio;
+          var kk = rotBleed(r);
+          var hx = (rw * kk) / 2, hy = (rh * kk) / 2;
+          var mx = Math.min(maxX - hx, Math.max(minX + hx, rand(minX + hx, maxX - hx)));
+          var my = Math.min(maxY - hy, Math.max(minY + hy, rand(minY + hy, maxY - hy)));
+          var nx2 = mx - rw / 2, ny2 = my - rh / 2;
+          if (!coverOk(nx2, ny2, rw, rh, z)) continue;
+          var idx2 = items.length;
+          items.push({
+            x: nx2, y: ny2, w: rw, h: rh, r: r, z: z,
+            workId: work.id,
+            delay: (i * 0.028 + Math.random() * 0.04).toFixed(3)
+          });
+          covers.push(0);
+          commitCover(nx2, ny2, rw, rh, z, idx2);
+          placed = items[items.length - 1];
+        }
+      }
     }
 
     items.sort(function (a, b) { return a.z - b.z; });
