@@ -1,7 +1,7 @@
 /**
  * f7goods 周边照片墙
  * - 相框贴图，白边薄
- * - 不溢出屏幕；叠压尽量轻，但保证有图可看
+ * - 每张图被叠压总面积 ≤ 20%（按旋转后保守包围盒）
  * - 点击 → /work-detail.html?id=
  */
 (function () {
@@ -51,20 +51,20 @@
     return picked;
   }
 
-  function rotBleed(deg) {
-    const rad = Math.abs(deg) * Math.PI / 180;
+  function rotK(deg) {
+    const rad = Math.abs(deg || 0) * Math.PI / 180;
     return Math.cos(rad) + Math.sin(rad);
   }
 
   /**
    * 照片墙散落
-   * - 每张图「被盖住的面积」≤ 20%
-   * - 手机图更大、可叠；电脑左右也可叠
-   * - 不整体溢出屏幕
+   * - 每张图被盖住的面积 ≤ 20%
+   * - z 严格递增，后放的一定在上层
+   * - 用旋转后的保守包围盒算重叠，避免“算法说没超、肉眼却超了”
+   * - 放完再校验一轮，超标则删掉盖人的那张
    */
   function scatterPhotoWall(works) {
     var items = [];
-    var covers = []; // 与 items 同步：每张图当前被挡比例
     if (!works.length) return items;
 
     var MAX_COVER = 0.2;
@@ -77,69 +77,69 @@
     var usableH = maxY - minY;
 
     var n = Math.min(works.length, isNarrow ? 9 : 16);
-    var cols = isNarrow
-      ? (n <= 4 ? 2 : 3)
-      : (n <= 4 ? 2 : n <= 8 ? 3 : 4);
+    var cols = isNarrow ? (n <= 4 ? 2 : 3) : 4;
     var rows = Math.ceil(n / cols);
     var cellW = usableW / cols;
     var cellH = usableH / rows;
 
-    var baseW;
-    if (isNarrow) {
-      baseW = rand(0.34, 0.46);
-    } else {
-      // 电脑端：约原尺寸的 1/2；16 张时用更紧的格距
-      baseW = cellW * rand(0.95, 1.2) * 0.5;
+    var baseW = isNarrow
+      ? rand(0.32, 0.42)
+      : cellW * rand(0.95, 1.15) * 0.5;
+
+    function ebox(it) {
+      var k = rotK(it.r);
+      var ew = it.w * k;
+      var eh = it.h * k;
+      var cx = it.x + it.w / 2;
+      var cy = it.y + it.h / 2;
+      return { x: cx - ew / 2, y: cy - eh / 2, w: ew, h: eh };
     }
 
-    function interArea(ax, ay, aw, ah, bx, by, bw, bh) {
-      var ix = Math.max(0, Math.min(ax + aw, bx + bw) - Math.max(ax, bx));
-      var iy = Math.max(0, Math.min(ay + ah, by + bh) - Math.max(ay, by));
+    function interArea(a, b) {
+      var ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+      var iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
       return ix * iy;
     }
 
-    /**
-     * 若把新图放在 (nx,ny,w,h) 且 z 高于已有点：
-     * 已有点被挡增量 = inter / 旧面积；新图被挡 = 与更高 z 的交叠（当前 z 最大则为 0）
-     * 返回 null = 合法；否则返回原因
-     */
-    function coverOk(nx, ny, w, h, newZ) {
-      var areaNew = Math.max(w * h, 1e-6);
-      var newCover = 0;
-      for (var j = 0; j < items.length; j++) {
-        var it = items[j];
-        var inter = interArea(nx, ny, w, h, it.x, it.y, it.w, it.h);
-        if (inter <= 0) continue;
-        var areaOld = Math.max(it.w * it.h, 1e-6);
-        if (newZ > it.z) {
-          // 盖在旧图上：旧图被挡增加
-          var add = inter / areaOld;
-          if (covers[j] + add > MAX_COVER + 0.001) return false;
-        } else if (it.z > newZ) {
-          // 旧图盖在新图上：新图被挡
-          newCover += inter / areaNew;
-          if (newCover > MAX_COVER + 0.001) return false;
-        }
+    /** 上层（z 更大；z 相同则索引更大 / 更后放）盖住下层的面积占比 */
+    function coverOf(list, targetIdx) {
+      var tb = ebox(list[targetIdx]);
+      var tArea = Math.max(tb.w * tb.h, 1e-6);
+      var cov = 0;
+      for (var i = 0; i < list.length; i++) {
+        if (i === targetIdx) continue;
+        var onTop =
+          list[i].z > list[targetIdx].z ||
+          (list[i].z === list[targetIdx].z && i > targetIdx);
+        if (!onTop) continue;
+        var inter = interArea(ebox(list[i]), tb);
+        if (inter > 0) cov += inter / tArea;
       }
-      return true;
+      return cov;
     }
 
-    /** 合法落点时，登记被挡增量 */
-    function commitCover(nx, ny, w, h, newZ, idx) {
-      var areaNew = Math.max(w * h, 1e-6);
-      var newCover = 0;
-      for (var j = 0; j < items.length; j++) {
-        var it = items[j];
-        var inter = interArea(nx, ny, w, h, it.x, it.y, it.w, it.h);
+    function allCovers(list) {
+      var out = [];
+      for (var i = 0; i < list.length; i++) out.push(coverOf(list, i));
+      return out;
+    }
+
+    /**
+     * 候选新图（一定后放、一定在最上层）是否合法：
+     * 1) 它盖住的每一张旧图，旧图总被盖 ≤20%
+     * 2) 新图自己被盖为 0（在最上层）
+     */
+    function coverOk(cand, list) {
+      var kb = ebox(cand);
+      for (var j = 0; j < list.length; j++) {
+        var ob = ebox(list[j]);
+        var inter = interArea(kb, ob);
         if (inter <= 0) continue;
-        var areaOld = Math.max(it.w * it.h, 1e-6);
-        if (newZ > it.z) {
-          covers[j] += inter / areaOld;
-        } else if (it.z > newZ) {
-          newCover += inter / areaNew;
-        }
+        var areaOld = Math.max(ob.w * ob.h, 1e-6);
+        var cur = coverOf(list, j);
+        if (cur + inter / areaOld > MAX_COVER + 0.0001) return false;
       }
-      covers[idx] = newCover;
+      return true;
     }
 
     for (var i = 0; i < n; i++) {
@@ -147,28 +147,28 @@
       var col = i % cols;
       var row = Math.floor(i / cols);
 
-      // z：后画略靠前，保证叠放层次；commit 时按真实 z 算被挡
-      var z = 6 + i + Math.floor(Math.random() * 2);
+      // z 严格递增，后放的永远在上
+      var z = 10 + i * 3;
 
-      var r = Math.random() < 0.72
-        ? rand(-14, 14)
-        : (Math.random() < 0.5 ? rand(-24, -14) : rand(14, 24));
+      var r = Math.random() < 0.75
+        ? rand(-10, 10)
+        : (Math.random() < 0.5 ? rand(-18, -10) : rand(10, 18));
 
       var ratio = work.ratio || 1.25;
-      var w0 = baseW * rand(0.88, 1.1);
+      var w0 = baseW * rand(0.9, 1.08);
       var h0 = w0 * ratio;
-      if (isNarrow && h0 > 0.40) { h0 = 0.40; w0 = h0 / ratio; }
-      if (!isNarrow && h0 > 0.20) { h0 = 0.20; w0 = h0 / ratio; }
+      if (isNarrow && h0 > 0.36) { h0 = 0.36; w0 = h0 / ratio; }
+      if (!isNarrow && h0 > 0.16) { h0 = 0.16; w0 = h0 / ratio; }
 
-      var k = rotBleed(r);
-      if (w0 * k > usableW * 0.98) { var s1 = (usableW * 0.98) / (w0 * k); w0 *= s1; h0 *= s1; }
-      if (h0 * k > usableH * 0.98) { var s2 = (usableH * 0.98) / (h0 * k); w0 *= s2; h0 *= s2; }
+      var k = rotK(r);
+      if (w0 * k > usableW * 0.96) { var s1 = (usableW * 0.96) / (w0 * k); w0 *= s1; h0 *= s1; }
+      if (h0 * k > usableH * 0.96) { var s2 = (usableH * 0.96) / (h0 * k); w0 *= s2; h0 *= s2; }
 
-      var jx = isNarrow ? cellW * 0.4 : cellW * 0.46;
-      var jy = isNarrow ? cellH * 0.32 : cellH * 0.38;
+      var jx = isNarrow ? cellW * 0.34 : cellW * 0.38;
+      var jy = isNarrow ? cellH * 0.28 : cellH * 0.3;
 
       var placed = null;
-      var scaleSeq = [1, 0.95, 0.9, 0.85, 0.8, 0.72, 0.65];
+      var scaleSeq = [1, 0.9, 0.82, 0.74, 0.66, 0.56];
 
       for (var si = 0; si < scaleSeq.length && !placed; si++) {
         var sc = scaleSeq[si];
@@ -178,21 +178,21 @@
         var hh0 = (h * k) / 2;
         if (minX + hw0 > maxX - hw0 || minY + hh0 > maxY - hh0) continue;
 
-        for (var a = 0; a < 36 && !placed; a++) {
+        for (var a = 0; a < 42 && !placed; a++) {
           var cx = minX + cellW * (col + 0.5) + rand(-jx, jx);
           var cy = minY + cellH * (row + 0.5) + rand(-jy, jy);
-          if (Math.random() < 0.3) {
-            cx += rand(-cellW * 0.3, cellW * 0.3);
-            cy += rand(-cellH * 0.25, cellH * 0.25);
+          if (Math.random() < 0.25) {
+            cx += rand(-cellW * 0.25, cellW * 0.25);
+            cy += rand(-cellH * 0.2, cellH * 0.2);
           }
           var ccx = Math.min(maxX - hw0, Math.max(minX + hw0, cx));
           var ccy = Math.min(maxY - hh0, Math.max(minY + hh0, cy));
           var nx = ccx - w / 2;
           var ny = ccy - h / 2;
 
-          if (!coverOk(nx, ny, w, h, z)) continue;
+          var cand = { x: nx, y: ny, w: w, h: h, r: r, z: z };
+          if (!coverOk(cand, items)) continue;
 
-          var idx = items.length;
           var rec = {
             x: nx,
             y: ny,
@@ -204,34 +204,66 @@
             delay: (i * 0.028 + Math.random() * 0.04).toFixed(3)
           };
           items.push(rec);
-          covers.push(0);
-          commitCover(nx, ny, w, h, z, idx);
           placed = rec;
         }
       }
 
-      // 仍放不下：再试全局随机小图，被挡仍 ≤20%
       if (!placed) {
-        for (var b = 0; b < 40 && !placed; b++) {
-          var rw = (isNarrow ? 0.28 : 0.09) * rand(0.75, 1);
+        for (var b = 0; b < 48 && !placed; b++) {
+          var rw = (isNarrow ? 0.22 : 0.07) * rand(0.75, 1);
           var rh = rw * ratio;
-          var kk = rotBleed(r);
+          var kk = rotK(r);
           var hx = (rw * kk) / 2, hy = (rh * kk) / 2;
-          var mx = Math.min(maxX - hx, Math.max(minX + hx, rand(minX + hx, maxX - hx)));
-          var my = Math.min(maxY - hy, Math.max(minY + hy, rand(minY + hy, maxY - hy)));
-          var nx2 = mx - rw / 2, ny2 = my - rh / 2;
-          if (!coverOk(nx2, ny2, rw, rh, z)) continue;
-          var idx2 = items.length;
+          if (minX + hx > maxX - hx || minY + hy > maxY - hy) continue;
+          var mx = rand(minX + hx, maxX - hx);
+          var my = rand(minY + hy, maxY - hy);
+          var cand2 = { x: mx - rw / 2, y: my - rh / 2, w: rw, h: rh, r: r, z: z };
+          if (!coverOk(cand2, items)) continue;
           items.push({
-            x: nx2, y: ny2, w: rw, h: rh, r: r, z: z,
+            x: cand2.x,
+            y: cand2.y,
+            w: rw,
+            h: rh,
+            r: r,
+            z: z,
             workId: work.id,
             delay: (i * 0.028 + Math.random() * 0.04).toFixed(3)
           });
-          covers.push(0);
-          commitCover(nx2, ny2, rw, rh, z, idx2);
           placed = items[items.length - 1];
         }
       }
+    }
+
+    // 收尾：按绘制规则重算被盖，删掉导致超标的上层图
+    for (var guard = 0; guard < 50; guard++) {
+      var covs = allCovers(items);
+      var bad = -1;
+      var worst = 0;
+      for (var t = 0; t < items.length; t++) {
+        if (covs[t] > MAX_COVER + 0.0001 && covs[t] > worst) {
+          worst = covs[t];
+          bad = t;
+        }
+      }
+      if (bad < 0) break;
+
+      var victim = -1;
+      var bestZ = -Infinity;
+      var bb = ebox(items[bad]);
+      for (var u = 0; u < items.length; u++) {
+        if (u === bad) continue;
+        var onTop =
+          items[u].z > items[bad].z ||
+          (items[u].z === items[bad].z && u > bad);
+        if (!onTop) continue;
+        if (interArea(ebox(items[u]), bb) <= 0) continue;
+        if (items[u].z > bestZ) {
+          bestZ = items[u].z;
+          victim = u;
+        }
+      }
+      if (victim < 0) items.splice(bad, 1);
+      else items.splice(victim, 1);
     }
 
     items.sort(function (a, b) { return a.z - b.z; });
@@ -263,11 +295,10 @@
       return;
     }
     if (!layout.length) {
-      // 极端兜底：至少摆第一张
       const w0 = works[0];
       wall.innerHTML =
         '<a class="pw-shot" href="' + detailHref(w0.id) + '"' +
-        ' style="left:28%;top:28%;width:28%;z-index:6;transform:rotate(-4deg);">' +
+        ' style="left:28%;top:28%;width:22%;z-index:6;transform:rotate(-4deg);">' +
         '<img src="' + escapeHtml(w0.image) + '" alt="' + escapeHtml(w0.title) + '">' +
         '</a>';
       return;
@@ -317,7 +348,7 @@
       setTimeout(function () { btn.classList.remove('spinning'); }, 480);
     }
 
-    var count = WORKS.length <= 4 ? WORKS.length : (window.innerWidth < 640 ? 9 : 16);
+    const count = WORKS.length <= 4 ? WORKS.length : (window.innerWidth < 640 ? 9 : 16);
     const works = pickWorks(Math.max(count, 1));
     const layout = scatterPhotoWall(works);
 
@@ -396,12 +427,9 @@
     if (WORKS.length) {
       try {
         WORKS = await enrichWorks(WORKS);
-      } catch (e) {
-        // 保留未 probe 的数据，也要能展示
-      }
+      } catch (e) { /* keep unprobed */ }
     }
 
-    // API 失败时用公开 uploads 兜底，避免空白墙
     if (!WORKS.length) {
       WORKS = [
         { id: 'w1785585980921k4h69', title: '安托涅瓦', image: '/uploads/006antuoniewa1.png', ratio: 1.25, nw: 400, nh: 500 },
