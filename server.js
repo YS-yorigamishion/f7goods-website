@@ -2160,17 +2160,32 @@ app.post('/api/admin/circles/:id/toggle-approval', authMiddleware, async (req, r
   res.json({ success: true, requireApproval: circles[index].requireApproval });
 });
 
-// Admin: toggle author visibility on public page
+// Admin: cycle author visibility — auto → show → hide → auto
+// auto (无 visible 字段)：仅当作者名下有已通过审核作品时才出现在作者列表
 app.post('/api/admin/circles/:id/toggle-visible', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
 
-  circles[index].visible = !circles[index].visible;
+  let mode;
+  if (circles[index].visible === true) {
+    circles[index].visible = false;
+    mode = 'hide';
+  } else if (circles[index].visible === false) {
+    delete circles[index].visible;
+    mode = 'auto';
+  } else {
+    circles[index].visible = true;
+    mode = 'show';
+  }
   await writeJSON('circles.json', circles);
-  logEdit('管理员', '切换作者显示', circles[index].name,
-    circles[index].visible ? '显示' : '隐藏');
-  res.json({ success: true, visible: circles[index].visible });
+  const modeLabel = mode === 'show' ? '显示' : mode === 'hide' ? '隐藏' : '自动（有作品才显示）';
+  logEdit('管理员', '切换作者显示', circles[index].name, modeLabel);
+  res.json({
+    success: true,
+    mode,
+    visible: circles[index].visible === true ? true : circles[index].visible === false ? false : null
+  });
 });
 
 function ensureArray(v, fallback = []) {
@@ -2526,7 +2541,11 @@ ensureAllOrders();
 app.get('/api/circles', cacheMiddleware(60), (req, res) => {
   let circles = readJSON('circles.json');
   let works = readJSON('works.json');
-  const approvedWorks = works.filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
+  // 与公开作品列表一致：已过审且有封面才算「有作品」
+  const approvedWorks = works.filter(w =>
+    (!w.approvalStatus || w.approvalStatus === 'approved') &&
+    Array.isArray(w.images) && w.images[0]
+  );
   const circlesWithApprovedWorks = new Set();
   approvedWorks.forEach(w => {
     (w.circles || []).forEach(cid => circlesWithApprovedWorks.add(cid));

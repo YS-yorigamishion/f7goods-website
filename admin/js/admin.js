@@ -3352,7 +3352,7 @@ function renderCirclesTable(circles) {
     const visibleLabel = visibleState === 'show' ? '👁 显示' : visibleState === 'hide' ? '👁 隐藏' : '👁 自动';
     const visibleColor = visibleState === 'show' ? '#2ecc71' : visibleState === 'hide' ? 'var(--accent)' : 'var(--haze)';
     let actionBtns = `
-      <button class="btn-sm" style="background:${visibleColor}22;color:${visibleColor};font-size:0.75rem;" onclick="toggleCircleVisible('${c.id}')" title="切换显示/隐藏">${visibleLabel}</button>
+      <button class="btn-sm" style="background:${visibleColor}22;color:${visibleColor};font-size:0.75rem;" onclick="toggleCircleVisible('${c.id}')" title="切换：显示 → 隐藏 → 自动（有作品才显示）">${visibleLabel}</button>
       <button class="btn-sm btn-edit" onclick="manageCircleWorks('${c.id}')">关联</button>
       ${(c.username && (c.authorStatus === 'active' || c.authorStatus === 'approved')) ? `<button class="btn-sm btn-edit" onclick="manageCircleEditors('${c.id}')">编辑者</button>` : ''}
       <button class="btn-sm btn-edit" onclick="exportCircleExcel('${c.id}')" title="导出Excel">📥导出</button>
@@ -3425,7 +3425,10 @@ async function toggleAuthorApproval(circleId) {
 async function toggleCircleVisible(circleId) {
   const result = await adminAPI('POST', `/api/admin/circles/${circleId}/toggle-visible`);
   if (result && result.success) {
-    showToast(result.visible ? '已设为显示' : '已设为隐藏', 'success');
+    const msg = result.mode === 'show' ? '已设为显示'
+      : result.mode === 'hide' ? '已设为隐藏'
+      : '已设为自动（上传作品后才显示）';
+    showToast(msg, 'success');
     loadCircles();
   }
 }
