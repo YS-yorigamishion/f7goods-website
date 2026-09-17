@@ -76,7 +76,7 @@
     var usableW = maxX - minX;
     var usableH = maxY - minY;
 
-    var n = Math.min(works.length, isNarrow ? 9 : 12);
+    var n = Math.min(works.length, isNarrow ? 9 : 16);
     var cols = isNarrow
       ? (n <= 4 ? 2 : 3)
       : (n <= 4 ? 2 : n <= 8 ? 3 : 4);
@@ -88,8 +88,8 @@
     if (isNarrow) {
       baseW = rand(0.34, 0.46);
     } else {
-      // 电脑端：约原尺寸的 1/2
-      baseW = cellW * rand(1.0, 1.28) * 0.5;
+      // 电脑端：约原尺寸的 1/2；16 张时用更紧的格距
+      baseW = cellW * rand(0.95, 1.2) * 0.5;
     }
 
     function interArea(ax, ay, aw, ah, bx, by, bw, bh) {
@@ -317,7 +317,7 @@
       setTimeout(function () { btn.classList.remove('spinning'); }, 480);
     }
 
-    const count = WORKS.length <= 4 ? WORKS.length : (window.innerWidth < 640 ? 9 : 12);
+    var count = WORKS.length <= 4 ? WORKS.length : (window.innerWidth < 640 ? 9 : 16);
     const works = pickWorks(Math.max(count, 1));
     const layout = scatterPhotoWall(works);
 
