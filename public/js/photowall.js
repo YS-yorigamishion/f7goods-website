@@ -35,7 +35,8 @@
   }
 
   function targetCount() {
-    return Math.floor(rand(MIN_ON_WALL, MAX_ON_WALL + 1));
+    // 每批目标数量：够用即可，避免为凑数而重叠
+    return Math.floor(rand(10, 15));
   }
 
   function pickWorks(count) {
@@ -69,15 +70,49 @@
     return rand(W_MAX - 0.025, W_MAX);
   }
 
+  /** 旋转后包围盒相对轴对齐盒的放大系数 */
+  function rotBleed(deg) {
+    const rad = Math.abs(deg) * Math.PI / 180;
+    return {
+      kx: Math.cos(rad) + Math.sin(rad),
+      ky: Math.cos(rad) + Math.sin(rad)
+    };
+  }
+
+  /** 把 w,h 缩到旋转后仍完全落在安全区内 */
+  function fitWithin(w, h, deg, pad) {
+    const { kx, ky } = rotBleed(deg);
+    const maxW = 1 - pad.x * 2;
+    const maxH = 1 - pad.y * 2;
+    // 旋转包围盒：w'≈w*kx, h'≈h*ky（近似，对 |deg|≤30° 够用）
+    let scale = 1;
+    if (w * kx > maxW) scale = Math.min(scale, maxW / (w * kx));
+    if (h * ky > maxH) scale = Math.min(scale, maxH / (h * ky));
+    if (scale < 1) {
+      w *= scale;
+      h *= scale;
+    }
+    // 仍过高（长图）再压高，保持比例
+    if (h * ky > maxH) {
+      const s2 = maxH / (h * ky);
+      w *= s2;
+      h *= s2;
+    }
+    return { w, h };
+  }
+
   /**
-   * 照片墙散落：每张先定宽度，再按图片比例算高度，框贴图。
+   * 照片墙散落：每张先定宽度，再按图片比例算高度；
+   * 旋转后的盒子不得溢出屏幕；优先轻叠，避免被盖太狠。
    */
   function scatterPhotoWall(works, count) {
     const items = [];
     const rects = [];
+    const pad = { x: 0.03, y: 0.05 };
     const avoid = [
-      { x: 0.02, y: 0.02, w: 0.30, h: 0.12 },
-      { x: 0.54, y: 0.86, w: 0.43, h: 0.12 }
+      { x: 0.02, y: 0.02, w: 0.32, h: 0.13 },
+      { x: 0.52, y: 0.84, w: 0.45, h: 0.14 },
+      { x: 0.28, y: 0.90, w: 0.44, h: 0.08 }
     ];
 
     function inAvoid(nx, ny, nw, nh) {
@@ -88,67 +123,109 @@
 
     function overlapRatio(nx, ny, nw, nh) {
       let maxR = 0;
+      let sumR = 0;
+      let hits = 0;
       for (const r of rects) {
         const ix = Math.max(0, Math.min(nx + nw, r.x + r.w) - Math.max(nx, r.x));
         const iy = Math.max(0, Math.min(ny + nh, r.y + r.h) - Math.max(ny, r.y));
         const inter = ix * iy;
         if (inter <= 0) continue;
         const area = Math.min(nw * nh, r.w * r.h);
-        maxR = Math.max(maxR, inter / Math.max(area, 0.0001));
+        const ratio = inter / Math.max(area, 0.0001);
+        maxR = Math.max(maxR, ratio);
+        sumR += ratio;
+        hits += 1;
       }
-      return maxR;
+      return { maxR, avgR: hits ? sumR / hits : 0, hits };
     }
 
-    function tryPlace(w, h, maxOv, attempts) {
+    /** 在安全区内落点；优先几乎不叠的位置 */
+    function tryPlace(w, h, deg, maxOv, attempts) {
+      const { kx, ky } = rotBleed(deg);
+      const hw = (w * kx) / 2;
+      const hh = (h * ky) / 2;
       let best = null;
       let bestScore = -Infinity;
       for (let a = 0; a < attempts; a++) {
-        const cx = 0.5 + (Math.random() + Math.random() - 1) * 0.46;
-        const cy = 0.5 + (Math.random() + Math.random() - 1) * 0.46;
-        const nx = Math.min(0.96 - w, Math.max(0.02, cx - w / 2));
-        const ny = Math.min(0.92 - h, Math.max(0.04, cy - h / 2));
+        const cx = 0.5 + (Math.random() + Math.random() - 1) * 0.42;
+        const cy = 0.5 + (Math.random() + Math.random() - 1) * 0.4;
+        const cxMin = pad.x + hw;
+        const cxMax = 1 - pad.x - hw;
+        const cyMin = pad.y + hh;
+        const cyMax = 1 - pad.y - hh;
+        if (cxMin > cxMax || cyMin > cyMax) continue;
+        const ccx = Math.min(cxMax, Math.max(cxMin, cx));
+        const ccy = Math.min(cyMax, Math.max(cyMin, cy));
+        const nx = ccx - w / 2;
+        const ny = ccy - h / 2;
+        if (nx < pad.x - 0.01 || ny < pad.y - 0.01 ||
+            nx + w > 1 - pad.x + 0.01 || ny + h > 1 - pad.y + 0.01) continue;
         if (inAvoid(nx, ny, w, h)) continue;
+
         const ov = overlapRatio(nx, ny, w, h);
-        if (ov > maxOv) continue;
-        const score = (1 - ov * 2.2) + Math.random() * 0.12;
+        if (ov.maxR > maxOv) continue;
+
+        // 强烈惩罚叠压：最大重叠权重高，均叠也扣分
+        const score =
+          1.0
+          - ov.maxR * 4.5
+          - ov.avgR * 1.8
+          - ov.hits * 0.04
+          + Math.random() * 0.06;
+
         if (score > bestScore) {
           bestScore = score;
-          best = { x: nx, y: ny, w, h, ov };
+          best = { x: nx, y: ny, w, h, ov: ov.maxR };
         }
       }
       return best;
     }
 
-    const n = Math.min(count, works.length);
+    const isNarrow = typeof window !== 'undefined' && window.innerWidth < 640;
+    // 展示密度：宁可稍少，也不让图被盖死
+    const target = Math.min(count, isNarrow ? 12 : 14, Math.max(works.length, 6));
+    const n = Math.min(target, works.length);
+
     for (let i = 0; i < n; i++) {
       const work = works[i];
-      const w = pickWidth(i);
-      // 图片比例；未知时用 4:5 兜底
-      const ratio = work.ratio || 1.25;
-      const h = Math.min(w * ratio, 0.42); // 极长图限制高度，避免一根柱子
-      // 白边已含在视觉里，布局盒与显示盒一致
+      const r = Math.random() < 0.75
+        ? rand(-12, 12)
+        : (Math.random() < 0.5 ? rand(-20, -12) : rand(12, 20));
 
+      let w = pickWidth(i);
+      if (isNarrow) w *= 0.82;
+      const ratio = work.ratio || 1.25;
+      let h = w * ratio;
+      if (h > 0.36) h = 0.36;
+      w = h / ratio;
+
+      const fitted = fitWithin(w, h, r, pad);
+      w = fitted.w;
+      h = fitted.h;
+
+      // 叠压上限逐步放宽，但起手就很严，尽量找空位
       let best =
-        tryPlace(w, h, 0.2, 40) ||
-        tryPlace(w, h, 0.32, 28) ||
-        tryPlace(w, h, 0.48, 18);
+        tryPlace(w, h, r, 0.04, 48) ||
+        tryPlace(w, h, r, 0.08, 40) ||
+        tryPlace(w, h, r, 0.14, 32) ||
+        tryPlace(w, h, r, 0.22, 24);
 
       if (!best) {
-        let nx = rand(0.03, 0.9 - w);
-        let ny = rand(0.06, 0.88 - h);
-        for (let k = 0; k < 10; k++) {
-          const tx = rand(0.03, 0.9 - w);
-          const ty = rand(0.06, 0.88 - h);
-          if (!inAvoid(tx, ty, w, h)) { nx = tx; ny = ty; break; }
+        // 缩小后再找，而不是硬叠上去
+        for (let s = 0.88; s >= 0.5 && !best; s -= 0.08) {
+          const sw = w * s;
+          const sh = h * s;
+          best = tryPlace(sw, sh, r, 0.12, 36) || tryPlace(sw, sh, r, 0.2, 24);
+          if (best) { w = sw; h = sh; }
         }
-        best = { x: nx, y: ny, w, h, ov: 0.35 };
       }
 
-      const r = Math.random() < 0.72
-        ? rand(-14, 14)
-        : (Math.random() < 0.5 ? rand(-22, -14) : rand(14, 22));
+      if (!best) {
+        // 实在放不下：跳过这张，留给下一批，避免硬盖
+        continue;
+      }
 
-      const z = 6 + i + Math.floor(Math.random() * 4);
+      const z = 6 + i + Math.floor(Math.random() * 2);
       rects.push({ x: best.x, y: best.y, w: best.w, h: best.h });
       items.push({
         x: best.x,
@@ -158,9 +235,41 @@
         r,
         z,
         workId: work.id,
-        delay: (i * 0.022 + Math.random() * 0.03).toFixed(3)
+        delay: (i * 0.025 + Math.random() * 0.03).toFixed(3)
       });
     }
+
+    // 若因避让跳过导致过少，用更小的图补位
+    if (items.length < Math.min(8, works.length) && works.length) {
+      const placed = new Set(items.map(it => it.workId));
+      const fill = works.filter(w => !placed.has(w.id)).concat(works);
+      for (let j = 0; j < fill.length && items.length < 10; j++) {
+        const work = fill[j];
+        const r = rand(-10, 10);
+        let w = rand(0.09, 0.12);
+        if (isNarrow) w *= 0.85;
+        const ratio = work.ratio || 1.25;
+        let h = Math.min(w * ratio, 0.22);
+        w = h / ratio;
+        const fitted = fitWithin(w, h, r, pad);
+        const best = tryPlace(fitted.w, fitted.h, r, 0.1, 40) ||
+          tryPlace(fitted.w * 0.8, fitted.h * 0.8, r, 0.16, 30);
+        if (!best) continue;
+        const z = 6 + items.length;
+        rects.push({ x: best.x, y: best.y, w: best.w, h: best.h });
+        items.push({
+          x: best.x,
+          y: best.y,
+          w: best.w,
+          h: best.h,
+          r,
+          z,
+          workId: work.id,
+          delay: (items.length * 0.02).toFixed(3)
+        });
+      }
+    }
+
     return items;
   }
 
