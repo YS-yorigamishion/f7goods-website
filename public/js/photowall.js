@@ -105,12 +105,13 @@
     }
 
     for (let i = 0; i < count; i++) {
-      const roll = Math.random() + (i < 4 ? -0.1 : 0);
+      // 相框略放大，全图更清楚
+      const roll = Math.random() + (i < 4 ? -0.08 : 0);
       let w;
-      if (roll < 0.18) w = rand(0.075, 0.095);
-      else if (roll < 0.62) w = rand(0.10, 0.135);
-      else w = rand(0.135, 0.17);
-      const h = w * rand(1.12, 1.32);
+      if (roll < 0.16) w = rand(0.095, 0.115);
+      else if (roll < 0.58) w = rand(0.12, 0.155);
+      else w = rand(0.155, 0.20);
+      const h = w * rand(1.18, 1.42);
 
       let best =
         tryPlace(w, h, 0.22, 36) ||

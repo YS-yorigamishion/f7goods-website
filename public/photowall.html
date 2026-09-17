@@ -8,7 +8,30 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/photowall.css?v=20260917b">
+  <link rel="stylesheet" href="/css/photowall.css?v=20260917d">
+  <!-- 强制完整显示：覆盖可能被 nginx 长缓存住的旧 CSS -->
+  <style id="pw-force-contain">
+    .pw-shot .frame {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+      background: #F0EBE3 !important;
+      padding: 10px 10px 18px !important;
+      box-sizing: border-box !important;
+    }
+    .pw-shot .frame img,
+    .pw-shot img {
+      display: block !important;
+      width: auto !important;
+      height: auto !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
+      object-fit: contain !important;
+      object-position: center center !important;
+      margin: 0 !important;
+    }
+  </style>
 </head>
 <body class="pw-body">
   <div class="pw-bg" aria-hidden="true"></div>
@@ -31,7 +54,7 @@
     <span class="count" id="pwCount"></span>
   </button>
 
-  <script src="/js/api.js"></script>
-  <script src="/js/photowall.js?v=20260917a"></script>
+  <script src="/js/api.js?v=20260917d"></script>
+  <script src="/js/photowall.js?v=20260917d"></script>
 </body>
 </html>
