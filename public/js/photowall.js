@@ -88,7 +88,8 @@
     if (isNarrow) {
       baseW = rand(0.34, 0.46);
     } else {
-      baseW = cellW * rand(1.0, 1.28);
+      // 电脑端：约原尺寸的 1/2
+      baseW = cellW * rand(1.0, 1.28) * 0.5;
     }
 
     function interArea(ax, ay, aw, ah, bx, by, bw, bh) {
@@ -157,7 +158,7 @@
       var w0 = baseW * rand(0.88, 1.1);
       var h0 = w0 * ratio;
       if (isNarrow && h0 > 0.40) { h0 = 0.40; w0 = h0 / ratio; }
-      if (!isNarrow && h0 > 0.38) { h0 = 0.38; w0 = h0 / ratio; }
+      if (!isNarrow && h0 > 0.20) { h0 = 0.20; w0 = h0 / ratio; }
 
       var k = rotBleed(r);
       if (w0 * k > usableW * 0.98) { var s1 = (usableW * 0.98) / (w0 * k); w0 *= s1; h0 *= s1; }
@@ -212,7 +213,7 @@
       // 仍放不下：再试全局随机小图，被挡仍 ≤20%
       if (!placed) {
         for (var b = 0; b < 40 && !placed; b++) {
-          var rw = (isNarrow ? 0.28 : 0.16) * rand(0.75, 1);
+          var rw = (isNarrow ? 0.28 : 0.09) * rand(0.75, 1);
           var rh = rw * ratio;
           var kk = rotBleed(r);
           var hx = (rw * kk) / 2, hy = (rh * kk) / 2;
