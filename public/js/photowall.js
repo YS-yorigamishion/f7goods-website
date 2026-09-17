@@ -57,83 +57,183 @@
   }
 
   /**
-   * 网格式散落：把安全区分成格子，每格中心随机抖动。
-   * 保证每张图都有位置，最多轻叠，绝不整页空白。
+   * 照片墙散落 — 参考「撒在桌上」：
+   * 不用死板网格；允许轻到中等叠压；有疏有密；不溢出屏。
    */
   function scatterPhotoWall(works) {
-    const items = [];
+    var items = [];
+    var rects = [];
     if (!works.length) return items;
 
-    const isNarrow = typeof window !== 'undefined' && window.innerWidth < 640;
-    // 安全区：避开文案与底部按钮，四周不贴边
-    const minX = 0.04, maxX = 0.96;
-    const minY = 0.08, maxY = 0.86;
-    const usableW = maxX - minX;
-    const usableH = maxY - minY;
+    var isNarrow = typeof window !== 'undefined' && window.innerWidth < 640;
+    var padX = 0.025, padY = 0.04;
+    // 文案与按钮避让（可与照片轻擦，不整块压死）
+    var softAvoid = [
+      { x: 0.01, y: 0.01, w: 0.30, h: 0.12 },
+      { x: 0.55, y: 0.86, w: 0.42, h: 0.12 },
+      { x: 0.30, y: 0.90, w: 0.40, h: 0.08 }
+    ];
 
-    // 按数量选网格，保证塞得下
-    const n = Math.min(works.length, isNarrow ? 10 : 12);
-    const cols = n <= 4 ? 2 : n <= 6 ? 3 : n <= 9 ? 3 : 4;
-    const rows = Math.ceil(n / cols);
-
-    // 单元尺寸
-    const cellW = usableW / cols;
-    const cellH = usableH / rows;
-
-    // 每张图目标宽度：略小于格宽，留出呼吸
-    const baseW = cellW * rand(0.72, 0.92);
-
-    for (let i = 0; i < n; i++) {
-      const work = works[i];
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-
-      const r = Math.random() < 0.78
-        ? rand(-11, 11)
-        : (Math.random() < 0.5 ? rand(-18, -11) : rand(11, 18));
-
-      const ratio = work.ratio || 1.25;
-      let w = baseW * rand(0.88, 1.08);
-      let h = w * ratio;
-
-      // 旋转后包围盒不得超出单元太多，也不得超出安全区
-      const k = rotBleed(r);
-      const maxCellW = cellW * 0.95;
-      const maxCellH = cellH * 0.95;
-      if (w * k > maxCellW) {
-        const s = maxCellW / (w * k);
-        w *= s; h *= s;
+    function softHit(nx, ny, nw, nh) {
+      for (var i = 0; i < softAvoid.length; i++) {
+        var a = softAvoid[i];
+        var ix = Math.max(0, Math.min(nx + nw, a.x + a.w) - Math.max(nx, a.x));
+        var iy = Math.max(0, Math.min(ny + nh, a.y + a.h) - Math.max(ny, a.y));
+        if (ix * iy > nw * nh * 0.35) return true; // 压到文案区太多才拒绝
       }
-      if (h * k > maxCellH) {
-        const s = maxCellH / (h * k);
-        w *= s; h *= s;
-      }
-
-      // 格心 + 抖动
-      const cx = minX + cellW * (col + 0.5) + rand(-cellW * 0.12, cellW * 0.12);
-      const cy = minY + cellH * (row + 0.5) + rand(-cellH * 0.12, cellH * 0.12);
-
-      // 用旋转包围盒夹紧，保证整张在屏内
-      const hw = (w * k) / 2;
-      const hh = (h * k) / 2;
-      const ccx = Math.min(maxX - hw, Math.max(minX + hw, cx));
-      const ccy = Math.min(maxY - hh, Math.max(minY + hh, cy));
-
-      const nx = ccx - w / 2;
-      const ny = ccy - h / 2;
-
-      items.push({
-        x: nx,
-        y: ny,
-        w: w,
-        h: h,
-        r: r,
-        z: 6 + row * cols + col + Math.floor(Math.random() * 2),
-        workId: work.id,
-        delay: (i * 0.028 + Math.random() * 0.04).toFixed(3)
-      });
+      return false;
     }
 
+    function maxOverlap(nx, ny, nw, nh) {
+      var maxR = 0;
+      for (var i = 0; i < rects.length; i++) {
+        var r = rects[i];
+        var ix = Math.max(0, Math.min(nx + nw, r.x + r.w) - Math.max(nx, r.x));
+        var iy = Math.max(0, Math.min(ny + nh, r.y + r.h) - Math.max(ny, r.y));
+        var inter = ix * iy;
+        if (inter <= 0) continue;
+        var area = Math.min(nw * nh, r.w * r.h);
+        maxR = Math.max(maxR, inter / Math.max(area, 0.0001));
+      }
+      return maxR;
+    }
+
+    function rotK(deg) {
+      var rad = Math.abs(deg) * Math.PI / 180;
+      return Math.cos(rad) + Math.sin(rad);
+    }
+
+    // 每张：随机尺寸、角度；在屏内撒点，挑叠压最合适的
+    function placeOne(work, preferSize) {
+      var ratio = work.ratio || 1.25;
+      var i;
+      // 尺寸：参考图有大有小，中等偏多
+      var roll = Math.random();
+      var w;
+      if (preferSize) {
+        w = preferSize;
+      } else if (roll < 0.22) {
+        w = rand(0.085, 0.11);
+      } else if (roll < 0.68) {
+        w = rand(0.11, 0.145);
+      } else {
+        w = rand(0.145, 0.185);
+      }
+      if (isNarrow) w *= 0.88;
+
+      var r = Math.random() < 0.7
+        ? rand(-16, 16)
+        : (Math.random() < 0.5 ? rand(-28, -16) : rand(16, 28));
+
+      var h = w * ratio;
+      if (h > 0.38) {
+        h = 0.38;
+        w = h / ratio;
+      }
+
+      // 旋转包络收到安全区
+      var k = rotK(r);
+      var maxW = 1 - padX * 2;
+      var maxH = 1 - padY * 2;
+      if (w * k > maxW) { var s1 = maxW / (w * k); w *= s1; h *= s1; }
+      if (h * k > maxH) { var s2 = maxH / (h * k); w *= s2; h *= s2; }
+
+      var best = null;
+      var bestScore = -Infinity;
+      // 目标叠压：像参考图一样「有叠但不糊」
+      var targetOv = rand(0.02, 0.18);
+
+      for (var a = 0; a < 50; a++) {
+        // 比均匀分布更「乱」：中心略聚 + 两次随机和
+        var cx = 0.5 + (Math.random() + Math.random() - 1) * 0.48;
+        var cy = 0.5 + (Math.random() + Math.random() - 1) * 0.46;
+        var hw = (w * k) / 2;
+        var hh = (h * k) / 2;
+        var cxMin = padX + hw;
+        var cxMax = 1 - padX - hw;
+        var cyMin = padY + hh;
+        var cyMax = 1 - padY - hh;
+        if (cxMin > cxMax || cyMin > cyMax) continue;
+        cx = Math.min(cxMax, Math.max(cxMin, cx));
+        cy = Math.min(cyMax, Math.max(cyMin, cy));
+        var nx = cx - w / 2;
+        var ny = cy - h / 2;
+        if (softHit(nx, ny, w, h)) continue;
+
+        var ov = maxOverlap(nx, ny, w, h);
+        // 叠太狠（>0.45）不要；太贴目标叠压 + 位置抖动更自然
+        if (ov > 0.45) continue;
+        var score = -Math.abs(ov - targetOv) * 3 + Math.random() * 0.25;
+        // 略偏好边缘/空隙的「随手丢」感
+        score += (Math.abs(cx - 0.5) + Math.abs(cy - 0.5)) * 0.08;
+        if (score > bestScore) {
+          bestScore = score;
+          best = { x: nx, y: ny, w: w, h: h, ov: ov };
+        }
+      }
+
+      if (!best) {
+        // 缩小再试，或接受轻叠
+        for (var sc = 0.9; sc >= 0.55 && !best; sc -= 0.1) {
+          var sw = w * sc, sh = h * sc;
+          var kk = rotK(r);
+          var hx = (sw * kk) / 2, hy = (sh * kk) / 2;
+          var mx = Math.min(1 - padX - hx, Math.max(padX + hx, rand(0.25, 0.75)));
+          var my = Math.min(1 - padY - hy, Math.max(padY + hy, rand(0.25, 0.7)));
+          var bx = mx - sw / 2, by = my - sh / 2;
+          var ov2 = maxOverlap(bx, by, sw, sh);
+          if (ov2 <= 0.35 && !softHit(bx, by, sw, sh)) {
+            best = { x: bx, y: by, w: sw, h: sh, ov: ov2 };
+          }
+        }
+      }
+
+      if (!best) {
+        // 最后兜底：落在安全区中心附近，允许叠
+        var fw = w * 0.7, fh = h * 0.7;
+        best = {
+          x: 0.5 + rand(-0.2, 0.2) - fw / 2,
+          y: 0.48 + rand(-0.15, 0.15) - fh / 2,
+          w: fw,
+          h: fh,
+          ov: 0.2
+        };
+        best.x = Math.min(1 - padX - best.w, Math.max(padX, best.x));
+        best.y = Math.min(1 - padY - best.h, Math.max(padY, best.y));
+      }
+
+      return {
+        x: best.x,
+        y: best.y,
+        w: best.w,
+        h: best.h,
+        r: r,
+        z: 0,
+        workId: work.id,
+        delay: (items.length * 0.025 + Math.random() * 0.04).toFixed(3)
+      };
+    }
+
+    // 密度：参考图很满；移动端略减
+    var n = Math.min(works.length, isNarrow ? 12 : 16);
+    // 若作品少，允许同一作品多张入墙
+    var pool = [];
+    while (pool.length < n) {
+      for (var p = 0; p < works.length && pool.length < n; p++) {
+        pool.push(works[p]);
+      }
+    }
+
+    for (var i = 0; i < n; i++) {
+      var item = placeOne(pool[i]);
+      // z：大致后画的压前画的，再随机扰动，避免「排队」
+      item.z = 5 + i + Math.floor(Math.random() * 3);
+      rects.push({ x: item.x, y: item.y, w: item.w, h: item.h });
+      items.push(item);
+    }
+
+    // 按最终 z 排一下，render 顺序即叠放顺序
+    items.sort(function (a, b) { return a.z - b.z; });
     return items;
   }
 
@@ -216,7 +316,7 @@
       setTimeout(function () { btn.classList.remove('spinning'); }, 480);
     }
 
-    const count = WORKS.length <= 6 ? WORKS.length : (window.innerWidth < 640 ? 8 : 10);
+    const count = WORKS.length <= 4 ? WORKS.length : (window.innerWidth < 640 ? 12 : 16);
     const works = pickWorks(Math.max(count, 1));
     const layout = scatterPhotoWall(works);
 
