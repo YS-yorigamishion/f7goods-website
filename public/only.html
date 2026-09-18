@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260918k">
+  <link rel="stylesheet" href="/css/style.css?v=20260918m">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -527,14 +527,17 @@
         const owners = (raw.circleIds || []).map(cid => circleMap[cid]).filter(Boolean);
         const ownerIds = new Set(owners.map(c => c.id));
         let goods = relatedWorks.filter(w => (w.circles || []).some(cid => ownerIds.has(cid)));
-        // 展示范围以「作品关联本活动」+「本摊挂接摊主」为准；
-        // 不再使用作者后台勾选的 workIds 二次裁剪。
-        // Manual goods order from admin (goodsOrder)
+        // 与作者后台一致：勾选 workIds → 只展示选中作品；未勾选 → 摊主全部关联作品
+        if (Array.isArray(raw.workIds) && raw.workIds.length) {
+          const sel = new Set(raw.workIds.map(String));
+          goods = relatedWorks.filter(w => sel.has(String(w.id)));
+        }
+        // goodsOrder 仅排序
         if (Array.isArray(raw.goodsOrder) && raw.goodsOrder.length) {
-          const rank = new Map(raw.goodsOrder.map((id, i) => [id, i]));
+          const rank = new Map(raw.goodsOrder.map((id, i) => [String(id), i]));
           goods = goods.slice().sort((a, z) => {
-            const ra = rank.has(a.id) ? rank.get(a.id) : Number.MAX_SAFE_INTEGER;
-            const rz = rank.has(z.id) ? rank.get(z.id) : Number.MAX_SAFE_INTEGER;
+            const ra = rank.has(String(a.id)) ? rank.get(String(a.id)) : Number.MAX_SAFE_INTEGER;
+            const rz = rank.has(String(z.id)) ? rank.get(String(z.id)) : Number.MAX_SAFE_INTEGER;
             if (ra !== rz) return ra - rz;
             return String(a.title || '').localeCompare(String(z.title || ''));
           });
@@ -570,8 +573,9 @@
       const unassignedGoods = relatedWorks.filter(w => {
         if (usedWorkIds.has(w.id)) return false;
         const cs = w.circles || [];
-        if (!cs.length) return true;
-        return cs.some(cid => !assignedCircles.has(cid));
+        // 作者已挂接摊位但未勾选展示的作品，不进「未分摊」，避免数量膨胀
+        if (cs.length && cs.every(cid => assignedCircles.has(cid))) return false;
+        return true;
       });
       if (unassignedGoods.length) {
         boothModels.push({
@@ -586,7 +590,18 @@
         });
       }
 
-      const allGoodsN = relatedWorks.length;
+      // 专页实际展示周边 = 各摊位 goods 并集（与作者勾选一致）
+      const displayedWorks = [];
+      const displayedSeen = new Set();
+      boothModels.forEach(b => {
+        (b.goods || []).forEach(g => {
+          if (!displayedSeen.has(g.id)) {
+            displayedSeen.add(g.id);
+            displayedWorks.push(g);
+          }
+        });
+      });
+      const allGoodsN = displayedWorks.length;
       const ownerN = boothModels.reduce((s, b) => s + (b.owners?.length || 0), 0);
 
       rootEl.innerHTML = `
@@ -606,7 +621,7 @@
         <div class="only-stats">
           <div class="only-stat"><b>${boothModels.length}</b><span>摊位</span></div>
           <div class="only-stat"><b>${ownerN}</b><span>参与摊主</span></div>
-          <div class="only-stat"><b>${allGoodsN}</b><span>关联周边</span></div>
+          <div class="only-stat"><b>${allGoodsN}</b><span>展示周边</span></div>
         </div>
         <div class="only-tabs" id="onlyTabs">
           <button type="button" class="on" data-t="all">${typeof tText === 'function' ? tText('only.tabsBooths', '全部摊位') : '全部摊位'}</button>
@@ -631,7 +646,7 @@
         </div>
       `;
 
-      window._only = { event, boothModels, relatedWorks, circleMap };
+      window._only = { event, boothModels, relatedWorks, circleMap, displayedWorks };
       window._onlyCart = loadOnlyCart(event.id);
 
       document.getElementById('onlyTabs').addEventListener('click', e => {
@@ -791,7 +806,9 @@
 
     function onlyFilteredGoods() {
       const f = window._onlyGoodsFilter || { cat: 'all', q: '' };
-      let list = (window._only?.relatedWorks || []).slice();
+      // 「全部周边」与摊位展示一致：只含实际展示的作品
+      const source = (window._only?.displayedWorks || window._only?.relatedWorks || []);
+      let list = source.slice();
       if (f.cat && f.cat !== 'all') list = list.filter(w => w.category === f.cat);
       const q = String(f.q || '').trim().toLowerCase();
       if (q) list = list.filter(w => String(w.title || '').toLowerCase().includes(q));
@@ -882,10 +899,10 @@
       const pane = document.getElementById('onlyGoodsPane');
       if (!pane) return;
       if (!window._onlyGoodsFilter) window._onlyGoodsFilter = { cat: 'all', q: '' };
-      const related = window._only?.relatedWorks || [];
+      const source = window._only?.displayedWorks || window._only?.relatedWorks || [];
       const cats = [];
       const seen = new Set();
-      related.forEach(w => {
+      source.forEach(w => {
         if (w.category && !seen.has(w.category)) {
           seen.add(w.category);
           cats.push(w.category);
@@ -901,7 +918,7 @@
           </div>
           <input type="search" id="onlyGoodsSearch" class="only-allgoods-search" placeholder="搜索本活动周边…" value="${esc(f.q || '')}">
         </div>
-        <div class="only-allgoods-meta">共 <b id="onlyGoodsCount">0</b> 件关联周边</div>
+        <div class="only-allgoods-meta">共 <b id="onlyGoodsCount">0</b> 件展示周边</div>
         <div class="only-goods" id="onlyGoodsGrid"></div>
       `;
       renderOnlyGoodsGrid();
@@ -921,16 +938,28 @@
 
     function onlyEventOwners() {
       const map = window._only?.circleMap || {};
-      const related = window._only?.relatedWorks || [];
+      const displayed = window._only?.displayedWorks || window._only?.relatedWorks || [];
       const booths = window._only?.boothModels || [];
       const event = window._only?.event || {};
       const ids = new Set();
       booths.forEach(b => (b.circleIds || []).forEach(id => ids.add(id)));
       (event.relatedCircles || []).forEach(id => ids.add(id));
+      // 摊主「本活动周边」数量 = 专页实际展示的作品
       const worksByCircle = {};
-      related.forEach(w => {
+      booths.forEach(b => {
+        if (b.id === '_unassigned') return;
+        (b.circleIds || []).forEach(cid => {
+          const n = (b.goods || []).filter(w => (w.circles || []).includes(cid)).length;
+          worksByCircle[cid] = (worksByCircle[cid] || 0) + n;
+        });
+      });
+      // 未挂接摊位但有展示作品的，按展示作品回填
+      displayed.forEach(w => {
         (w.circles || []).forEach(cid => {
-          worksByCircle[cid] = (worksByCircle[cid] || 0) + 1;
+          if (!worksByCircle[cid]) {
+            const onBooth = booths.some(b => b.id !== '_unassigned' && (b.goods || []).some(g => g.id === w.id));
+            if (!onBooth) worksByCircle[cid] = (worksByCircle[cid] || 0) + 1;
+          }
         });
       });
       const boothNamesByCircle = {};

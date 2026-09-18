@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -3419,7 +3419,7 @@
         ` : ''}
 
         <section class="ab-sec">
-          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '3' : '2'}</span>展示作品<span class="tip">不勾选 = 摊主全部关联作品</span></h4>
+          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '3' : '2'}</span>展示作品<span class="tip">勾选后专页只显示这些；不勾选 = 摊主全部关联作品</span></h4>
           ${(() => {
             const pool = manageWorks;
             const selected = new Set(Array.isArray(booth?.workIds) && booth.workIds.length ? booth.workIds : []);
