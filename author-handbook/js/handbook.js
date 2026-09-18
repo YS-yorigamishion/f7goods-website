@@ -1,9 +1,8 @@
 /**
- * 作者手册预览
- * - 档案卡：简介 → 标识 → 编号 → 联络 → 作品/活动/企划
- * - 右上角作者名：点击弹出搜索，输入后跳转指定作者
- * - 作品卡：最新三张图叠加；活动/企划用封面图
- * - 不显示数量角标
+ * 作者手册
+ * - 档案卡：简介（可展开）→ 联络 → 作品/活动/企划数量
+ * - 不显示标识、编号；不提供右上角搜索
+ * - 作品/活动/企划：图片叠加展示
  */
 const AUTHORS = [
   {
@@ -14,23 +13,18 @@ const AUTHORS = [
     worksCount: 3,
     eventCount: 1,
     projectCount: 1,
-    code: 'C-17855204',
-    stars: 4,
-    intro: '以无偿帮助创作者与企划为主的七都同人平台。2022 年成立，2024 年 8 月起试开放投稿 / 合作渠道。',
+    intro: '八日晨光为永远的7日之都吧吧务组在同人作品升级计划基础上，经过两年多个版本完善后，于2022年成立的同人平台。\n\n以无偿帮助创作者与企划为主。成立后试行两年邀请制，2024年8月起正式对外试开放投稿与合作渠道。\n\n我们相信同人创作能让这座城市继续被点亮。',
     contact: '灰机 Wiki · 八日晨光',
-    // 最新三张作品图（叠加展示）
     latestWorkImages: [
       '../uploads/006jiaer.png',
       '../uploads/006antuoniewa1.png',
       '../uploads/006antuoniewa2.png'
     ],
-    // 已参与活动：叠加展示（不足 3 张有几张显示几张）
     eventImages: [
       '../uploads/711chengdu.jpg',
       '../uploads/bawuzu.jpg',
       '../uploads/7wiki.png'
     ],
-    // 同人企划：以最新 3 个为主，叠加展示
     projectImages: [
       '../uploads/2026xinchunyan.png',
       '../uploads/404zhizuozu.png',
@@ -45,10 +39,8 @@ const AUTHORS = [
     worksCount: 0,
     eventCount: 0,
     projectCount: 0,
-    code: 'C-17855203',
-    stars: 3,
-    intro: '《未命名》同人游戏制作组，目前正在制作中。游客群：765852632。',
-    contact: '「未命名」游客群',
+    intro: '《未命名》同人游戏制作组，正在制作永远的7日之都同人游戏。\n\n如需了解更多信息，可添加游客群。',
+    contact: '「未命名」游客群 765852632',
     latestWorkImages: [],
     eventImages: [],
     projectImages: [
@@ -64,9 +56,7 @@ const AUTHORS = [
     worksCount: 2,
     eventCount: 1,
     projectCount: 1,
-    code: 'C-002',
-    stars: 5,
-    intro: '个人创作者。以钥匙扣等小物为主，参与 ONLY 与同人企划。',
+    intro: '个人创作者。以钥匙扣等同人小物为主，参与 ONLY 与同人企划。',
     contact: 'QQ（见社团页）',
     latestWorkImages: [
       '../uploads/006antuoniewa1.png',
@@ -84,12 +74,6 @@ const AUTHORS = [
 
 let authorIndex = 0;
 
-function stars(n) {
-  const max = 8;
-  const on = Math.max(0, Math.min(max, n || 0));
-  return '★'.repeat(on) + '☆'.repeat(Math.max(0, max - on));
-}
-
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
@@ -102,13 +86,29 @@ function bg(url) {
   return url ? `style="background-image:url('${esc(url)}')"` : '';
 }
 
-/** 叠加展示：最多 3 张，不足 3 张有几张叠几张 */
+/** 简介：过长时截断，可展开 */
+function introHtml(text, id) {
+  const full = String(text || '').trim();
+  if (!full) return '<div class="v muted">暂无简介</div>';
+  const paras = full.split(/\n+/).filter(Boolean);
+  const isLong = paras.length > 2 || full.length > 90;
+  if (!isLong) {
+    return `<div class="v" data-intro-body="${id}">${esc(full).replace(/\n/g, '<br>')}</div>`;
+  }
+  const preview = paras.slice(0, 2).join('\n');
+  return `
+    <div class="v intro-clamp" id="intro-${id}" data-full="0">
+      <div class="intro-text" data-preview="${esc(preview)}" data-fulltext="${esc(full)}">${esc(preview)}…</div>
+      <button type="button" class="intro-toggle" data-toggle="${id}">展开</button>
+    </div>`;
+}
+
+/** 叠加展示：最多 3 张；不足则有几张叠几张 */
 function stackHtml(images, emptyText) {
   const list = (images || []).filter(Boolean).slice(0, 3);
   if (!list.length) {
     return `<div class="tile-stack"><div class="empty-ph">${esc(emptyText || '暂无图片')}</div></div>`;
   }
-  // 少于 3 张时调整定位，避免空位
   const n = list.length;
   return `<div class="tile-stack tile-stack-n${n}">${list.map(u => `<div class="ph" ${bg(u)}></div>`).join('')}</div>`;
 }
@@ -122,22 +122,17 @@ function renderHandbook() {
     ? `<img src="${esc(a.logo)}" alt="">`
     : esc((a.name || '?').slice(0, 2));
 
-  const nameBtn = document.getElementById('hbAuthorName');
-  if (nameBtn) {
-    nameBtn.innerHTML = `${esc(a.name)}<span class="chev">⌕</span>`;
-  }
   const picker = document.getElementById('authorPicker');
   if (picker) picker.textContent = a.name;
 
   const circleUrl = `/circle-detail.html?id=${encodeURIComponent(a.id)}`;
+  const introId = 'a' + authorIndex;
 
   root.innerHTML = `
     <div class="handbook">
-      <div class="hb-title">
-        <button type="button" class="hb-author-btn" id="hbAuthorName" aria-label="搜索作者" title="点击搜索作者">
-          ${esc(a.name)}<span class="chev">⌕</span>
-        </button>
-        <span class="handbook-word">作者手册</span>
+      <div class="hb-title-static">
+        <h1>作者手册</h1>
+        <span>HANDBOOK</span>
       </div>
       <div class="hb-body">
         <div class="idcard-wrap">
@@ -151,18 +146,10 @@ function renderHandbook() {
               </div>
             </div>
 
-            <!-- 顺序：简介 → 标识 → 编号 → 联络 →（下方）作品/活动/企划 -->
+            <!-- 简介（可展开）→ 联络 → 作品/活动/企划 -->
             <div class="id-block">
               <div class="k">作者简介</div>
-              <div class="v">${esc(a.intro || '暂无简介')}</div>
-            </div>
-            <div class="id-block">
-              <div class="k">标识</div>
-              <div class="v stars">${stars(a.stars)}</div>
-            </div>
-            <div class="id-block">
-              <div class="k">编号</div>
-              <div class="v num">${esc(a.code)}</div>
+              ${introHtml(a.intro, introId)}
             </div>
             <div class="id-block">
               <div class="k">联络</div>
@@ -202,80 +189,32 @@ function renderHandbook() {
         </div>
       </div>
     </div>
-    <div class="note">
-      <strong>预览</strong> · 作者列表筛选条最右为紫底白字「作者手册」。
-      右上角作者名可点击搜索。作品 / 参与活动 / 同人企划均为<strong>图片叠加</strong>（最多 3 张；企划取最新 3 个；不足 3 张有几张显示几张）。
-      分区不显示数量角标。
-    </div>
   `;
 
-  bindNameSearch();
+  bindIntroToggle();
 }
 
-/* ── 搜索：右上角名字 ── */
-function openSearch() {
-  const mask = document.getElementById('searchMask');
-  const input = document.getElementById('searchInput');
-  const list = document.getElementById('searchList');
-  const hint = document.getElementById('searchHint');
-  if (!mask) return;
-  mask.classList.add('open');
-  if (hint) hint.textContent = '输入作者名称，回车或点击结果进入手册';
-  if (input) {
-    input.value = '';
-    setTimeout(() => input.focus(), 50);
-  }
-  renderSearchList('');
-  function renderSearchList(q) {
-    const key = String(q || '').trim().toLowerCase();
-    const hits = AUTHORS.filter(a =>
-      !key ||
-      String(a.name || '').toLowerCase().includes(key) ||
-      String(a.code || '').toLowerCase().includes(key) ||
-      String(a.category || '').toLowerCase().includes(key)
-    );
-    if (!list) return;
-    if (!hits.length) {
-      list.innerHTML = '<div style="font-size:0.8rem;color:rgba(232,196,255,0.55);padding:0.4rem;">未找到该作者</div>';
-      return;
-    }
-    list.innerHTML = hits.map(a => {
-      const i = AUTHORS.indexOf(a);
-      const mini = a.logo
-        ? `<span class="mini"><img src="${esc(a.logo)}" alt=""></span>`
-        : `<span class="mini">${esc((a.name || '?').slice(0, 1))}</span>`;
-      return `<button type="button" class="search-item" data-i="${i}">
-        ${mini}
-        <span>${esc(a.name)}<small>${esc(a.category || '')} · ${esc(a.code)}</small></span>
-      </button>`;
-    }).join('');
-    list.querySelectorAll('.search-item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        authorIndex = Number(btn.dataset.i) || 0;
-        closeSearch();
-        renderHandbook();
-      });
-    });
-  }
-  if (input) {
-    input.oninput = () => renderSearchList(input.value);
-    input.onkeydown = (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const first = list?.querySelector('.search-item');
-        if (first) first.click();
+function bindIntroToggle() {
+  document.querySelectorAll('.intro-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wrap = btn.closest('.intro-clamp');
+      if (!wrap) return;
+      const textEl = wrap.querySelector('.intro-text');
+      if (!textEl) return;
+      const expanded = wrap.getAttribute('data-full') === '1';
+      if (expanded) {
+        textEl.innerHTML = esc(textEl.getAttribute('data-preview') || '') + '…';
+        wrap.setAttribute('data-full', '0');
+        btn.textContent = '展开';
+        wrap.classList.add('intro-clamp');
+      } else {
+        textEl.innerHTML = esc(textEl.getAttribute('data-fulltext') || '').replace(/\n/g, '<br>');
+        wrap.setAttribute('data-full', '1');
+        btn.textContent = '收起';
+        wrap.classList.remove('intro-clamp');
       }
-      if (e.key === 'Escape') closeSearch();
-    };
-  }
-}
-
-function closeSearch() {
-  document.getElementById('searchMask')?.classList.remove('open');
-}
-
-function bindNameSearch() {
-  document.getElementById('hbAuthorName')?.addEventListener('click', openSearch);
+    });
+  });
 }
 
 document.getElementById('prevAuthor')?.addEventListener('click', () => {
@@ -285,15 +224,6 @@ document.getElementById('prevAuthor')?.addEventListener('click', () => {
 document.getElementById('nextAuthor')?.addEventListener('click', () => {
   authorIndex = (authorIndex + 1) % AUTHORS.length;
   renderHandbook();
-});
-document.getElementById('searchMask')?.addEventListener('click', (e) => {
-  if (e.target.id === 'searchMask') closeSearch();
-});
-document.getElementById('searchClose')?.addEventListener('click', closeSearch);
-document.getElementById('openSearchDemo')?.addEventListener('click', openSearch);
-document.getElementById('handbookEntry')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  document.querySelector('.handbook')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 renderHandbook();

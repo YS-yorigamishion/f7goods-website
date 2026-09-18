@@ -82,47 +82,52 @@ body::before {
   border-radius: 4px 4px 0 0;
 }
 
-/* 右上角：可点击作者名 + 手册标题 */
-.hb-title {
+/* 右上角标题：静态「作者手册」，无搜索 */
+.hb-title-static {
   position: absolute;
   top: 0.75rem;
   right: 1.25rem;
   text-align: right;
+  pointer-events: none;
   z-index: 5;
 }
-.hb-author-btn {
+.hb-title-static h1 {
+  font-family: 'Noto Serif SC', Georgia, serif;
+  font-size: clamp(1.25rem, 2.8vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #F5EFFF;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+.hb-title-static span {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  color: rgba(232, 196, 255, 0.45);
+  margin-top: 0.15rem;
+}
+
+/* 简介截断与展开 */
+.v.muted { color: #7a7064; }
+.intro-clamp .intro-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.intro-toggle {
   appearance: none;
   border: none;
   background: none;
+  color: #6B3FA0;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
-  font-family: 'Noto Serif SC', Georgia, serif;
-  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #F5EFFF;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.35);
-  padding: 0.15rem 0.25rem;
-  border-radius: 6px;
-  transition: color 0.15s ease, background 0.15s ease;
+  padding: 0.25rem 0 0;
+  letter-spacing: 0.04em;
 }
-.hb-author-btn:hover {
-  color: #fff;
-  background: rgba(232, 196, 255, 0.12);
-}
-.hb-author-btn .chev {
-  font-size: 0.65em;
-  opacity: 0.55;
-  margin-left: 0.2em;
-}
-.hb-title .handbook-word {
-  display: block;
-  font-family: 'Noto Serif SC', Georgia, serif;
-  font-size: 0.78rem;
-  letter-spacing: 0.2em;
-  color: rgba(232, 196, 255, 0.5);
-  margin-top: 0.15rem;
-  pointer-events: none;
-}
+.intro-toggle:hover { color: #D94F5C; }
 
 .hb-body {
   display: grid;
@@ -132,8 +137,8 @@ body::before {
   align-items: stretch;
 }
 @media (max-width: 720px) {
-  .hb-body { grid-template-columns: 1fr; margin-top: 3.5rem; }
-  .hb-title { position: static; text-align: left; margin-bottom: 0.75rem; }
+  .hb-body { grid-template-columns: 1fr; margin-top: 3.25rem; }
+  .hb-title-static { position: static; text-align: left; margin-bottom: 0.75rem; }
   .handbook::before { left: 24px; }
 }
 

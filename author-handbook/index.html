@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作者手册 · f7goods 预览</title>
+  <title>作者手册 · f7goods</title>
   <meta name="robots" content="noindex">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,39 +13,18 @@
 <body>
   <div class="page">
     <div class="chrome">
-      <span class="tag">预览 · 作者详情 · 手册式</span>
+      <span class="tag">作者手册</span>
       <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
         <button type="button" id="prevAuthor">←</button>
         <span id="authorPicker" style="min-width:7em;text-align:center;font-size:0.85rem;font-weight:600;"></span>
         <button type="button" id="nextAuthor">→</button>
-        <button type="button" id="openSearchDemo">搜索作者</button>
+        <a href="/circles.html">同人作者</a>
         <a href="/">站内</a>
       </div>
     </div>
 
-    <!-- 模拟「同人作者」列表筛选条：最右紫底白字入口 -->
-    <div class="circles-demo" aria-label="同人作者筛选条示意">
-      <span class="label">同人作者 · 筛选条</span>
-      <span class="pill-demo on">全部</span>
-      <span class="pill-demo">个人</span>
-      <span class="pill-demo">社团</span>
-      <span class="pill-demo">官方</span>
-      <a class="pill-handbook" id="handbookEntry" href="#handbook">作者手册</a>
-    </div>
-
     <div id="hbRoot"></div>
   </div>
-
-  <!-- 搜索弹层 -->
-  <div class="search-mask" id="searchMask" role="dialog" aria-modal="true" aria-label="搜索作者">
-    <div class="search-panel">
-      <h3>进入作者手册 <button type="button" id="searchClose" style="float:right;border:none;background:none;color:rgba(232,196,255,0.6);font-size:1.1rem;cursor:pointer;font-family:inherit;">×</button></h3>
-      <input type="search" id="searchInput" placeholder="输入作者名称 / 编号…" autocomplete="off">
-      <div class="search-hint" id="searchHint"></div>
-      <div class="search-list" id="searchList"></div>
-    </div>
-  </div>
-
   <script src="js/handbook.js"></script>
 </body>
 </html>
