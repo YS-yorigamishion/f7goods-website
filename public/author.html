@@ -681,7 +681,10 @@
       <!-- Notifications Tab -->
       <div id="tab-notifications" class="mgmt-section">
         <div class="mgmt-card">
-          <h3 style="margin-bottom:1rem;">审核通知</h3>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+            <h3 style="margin:0;">审核通知</h3>
+            <button type="button" class="btn-sm" style="background:var(--border);color:var(--ink);" onclick="markAllAuthorNotifsRead()">全部已读</button>
+          </div>
           <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看您的作品/活动/企划/动态的审核结果。</p>
           <div id="authorNotificationsContainer" style="max-height:500px;overflow-y:auto;">
             <p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>
@@ -1907,6 +1910,32 @@
       const navBadge = document.getElementById('navNotifBadge');
       const current = navBadge ? (parseInt(navBadge.textContent, 10) || 0) : 0;
       setApprovalNotifBadge(current - 1);
+    }
+
+    async function markAllAuthorNotifsRead() {
+      const container = document.getElementById('authorNotificationsContainer');
+      const hasUnread = container && container.querySelector('[data-unread="1"]');
+      if (!hasUnread) { showToast('没有未读的审核通知', 'info'); return; }
+      showLoading('处理中...');
+      try {
+        const result = await authorAPI('PUT', '/api/author/notifications/read-all');
+        hideLoading();
+        if (!result || result.error) {
+          showToast(result?.error || '操作失败', 'error');
+          return;
+        }
+        setApprovalNotifBadge(0);
+        if (container) {
+          container.querySelectorAll('[data-unread="1"]').forEach(el => {
+            el.style.background = '';
+            el.dataset.unread = '0';
+          });
+        }
+        showToast('已全部标记为已读', 'success');
+      } catch (e) {
+        hideLoading();
+        showToast('操作失败', 'error');
+      }
     }
 
     // ===== Author Announcements =====

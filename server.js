@@ -886,6 +886,24 @@ app.get('/api/author/notifications', authorAuthMiddleware, (req, res) => {
   res.json(authorNotifs);
 });
 
+// Author: mark all notifications as read
+app.put('/api/author/notifications/read-all', authorAuthMiddleware, async (req, res) => {
+  let notifications = [];
+  try { notifications = readJSON('author-notifications.json'); } catch {}
+  if (!Array.isArray(notifications)) notifications = [];
+
+  let updated = 0;
+  notifications = notifications.map(n => {
+    if (n.circleId === req.author.circleId && !n.read) {
+      updated += 1;
+      return { ...n, read: true };
+    }
+    return n;
+  });
+  if (updated > 0) await writeJSON('author-notifications.json', notifications);
+  res.json({ success: true, updated });
+});
+
 // Author: mark notification as read
 app.put('/api/author/notifications/:id/read', authorAuthMiddleware, async (req, res) => {
   let notifications = [];
