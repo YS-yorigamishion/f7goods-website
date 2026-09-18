@@ -64,13 +64,14 @@ body::before {
   background: linear-gradient(165deg, #D8D2E4 0%, #C8C2D6 42%, #B8B2C8 100%);
   border: 3px solid #3E2E5A;
   border-radius: 6px;
-  padding: 1.35rem 1.25rem 1.25rem;
+  padding: 1.35rem 1.25rem 1.35rem;
   box-shadow:
     0 0 0 6px rgba(20, 10, 40, 0.35),
     0 22px 48px rgba(0,0,0,0.42),
     inset 0 1px 0 rgba(255,255,255,0.35);
   --clip-center: 72px;
   --hb-pad-x: 1.25rem;
+  overflow: visible;
 }
 /* 顶部文档夹签（手册外框） */
 .handbook::before {
@@ -133,9 +134,10 @@ body::before {
 .idcard-wrap {
   position: relative;
   padding-top: 14px;
-  /* 比右侧图区更长：向上含夹签、向下探出 */
-  min-height: 420px;
-  margin-bottom: -48px;
+  /* 略长于右侧，但不超出手册底栏 */
+  min-height: 360px;
+  margin-bottom: 0;
+  margin-top: -6px;
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -167,12 +169,13 @@ body::before {
 /* 明显斜向 + 加长，高度超过右侧分区 */
 .idcard {
   flex: 1 1 auto;
-  min-height: 400px;
+  min-height: 340px;
+  max-height: 380px;
   background: linear-gradient(160deg, #5A4A62 0%, #4A3A52 40%, #3E3048 100%);
   border-radius: 8px;
   padding: 8px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.35);
-  transform: rotate(-2.8deg);
+  transform: rotate(-2.5deg) translateY(-4px);
   transform-origin: top center;
   display: flex;
   flex-direction: column;
