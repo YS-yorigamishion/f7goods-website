@@ -681,9 +681,11 @@
       <!-- Notifications Tab -->
       <div id="tab-notifications" class="mgmt-section">
         <div class="mgmt-card">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;margin-bottom:0.75rem;flex-wrap:wrap;">
-            <h3 style="margin:0;">审核通知</h3>
-            <button type="button" class="btn-sm" style="background:var(--border);color:var(--ink);" onclick="markAllAuthorNotifsRead()">全部已读</button>
+          <div class="mgmt-toolbar-row" style="justify-content:space-between;margin-bottom:0.85rem;">
+            <div style="display:flex;align-items:center;gap:0.55rem;flex-wrap:wrap;min-width:0;">
+              <h3 style="margin:0;font-family:'Noto Serif SC',Georgia,serif;">审核通知</h3>
+              <button type="button" class="ab-pill" id="markAllNotifsBtn" onclick="markAllAuthorNotifsRead()">全部已读</button>
+            </div>
           </div>
           <p style="color:var(--haze);font-size:0.85rem;margin-bottom:1rem;">查看您的作品/活动/企划/动态的审核结果。</p>
           <div id="authorNotificationsContainer" style="max-height:500px;overflow-y:auto;">
@@ -1870,7 +1872,10 @@
       try {
         const notifications = await authorAPI('GET', '/api/author/notifications');
         const list = Array.isArray(notifications) ? notifications : [];
-        setApprovalNotifBadge(list.filter(n => !n.read).length);
+        const unread = list.filter(n => !n.read).length;
+        setApprovalNotifBadge(unread);
+        const markAllBtn = document.getElementById('markAllNotifsBtn');
+        if (markAllBtn) markAllBtn.disabled = unread === 0;
         if (!list.length) {
           container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无审核通知</p>';
           return;
@@ -1909,19 +1914,25 @@
       }
       const navBadge = document.getElementById('navNotifBadge');
       const current = navBadge ? (parseInt(navBadge.textContent, 10) || 0) : 0;
-      setApprovalNotifBadge(current - 1);
+      const next = Math.max(0, current - 1);
+      setApprovalNotifBadge(next);
+      const markAllBtn = document.getElementById('markAllNotifsBtn');
+      if (markAllBtn) markAllBtn.disabled = next === 0;
     }
 
     async function markAllAuthorNotifsRead() {
       const container = document.getElementById('authorNotificationsContainer');
+      const markAllBtn = document.getElementById('markAllNotifsBtn');
       const hasUnread = container && container.querySelector('[data-unread="1"]');
       if (!hasUnread) { showToast('没有未读的审核通知', 'info'); return; }
+      if (markAllBtn) markAllBtn.disabled = true;
       showLoading('处理中...');
       try {
         const result = await authorAPI('PUT', '/api/author/notifications/read-all');
         hideLoading();
         if (!result || result.error) {
           showToast(result?.error || '操作失败', 'error');
+          if (markAllBtn) markAllBtn.disabled = false;
           return;
         }
         setApprovalNotifBadge(0);
@@ -1934,6 +1945,7 @@
         showToast('已全部标记为已读', 'success');
       } catch (e) {
         hideLoading();
+        if (markAllBtn) markAllBtn.disabled = false;
         showToast('操作失败', 'error');
       }
     }
