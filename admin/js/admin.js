@@ -1673,6 +1673,139 @@ function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
+// ===== 标签芯片输入 =====
+const TAG_SEP_RE = /[,，、;；]+/;
+
+function parseTagString(str) {
+  return String(str || '').split(TAG_SEP_RE).map(t => t.trim()).filter(Boolean);
+}
+
+function getTagChipValues(hiddenId) {
+  return parseTagString(document.getElementById(hiddenId)?.value || '');
+}
+
+function createTagChip(box, text) {
+  const chip = document.createElement('span');
+  chip.className = 'tag-chip';
+  const label = document.createElement('span');
+  label.className = 'tag-chip-text';
+  label.textContent = text;
+  const rm = document.createElement('button');
+  rm.type = 'button';
+  rm.setAttribute('aria-label', '删除标签 ' + text);
+  rm.innerHTML = '&times;';
+  rm.addEventListener('click', (e) => {
+    e.stopPropagation();
+    chip.remove();
+    syncTagChipHidden(box);
+    box.querySelector('.tag-chip-input')?.focus();
+  });
+  chip.appendChild(label);
+  chip.appendChild(rm);
+  return chip;
+}
+
+function getTagChipValuesFromBox(box) {
+  return [...box.querySelectorAll('.tag-chip .tag-chip-text')].map(el => el.textContent).filter(Boolean);
+}
+
+function syncTagChipHidden(box) {
+  const hidId = box.dataset.for;
+  const hid = hidId ? document.getElementById(hidId) : null;
+  const tags = getTagChipValuesFromBox(box);
+  if (hid) {
+    hid.value = tags.join(', ');
+    hid.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  return tags;
+}
+
+function addTagChip(box, text) {
+  const t = String(text || '').trim();
+  if (!t) return false;
+  if (getTagChipValuesFromBox(box).includes(t)) return false;
+  const input = box.querySelector('.tag-chip-input');
+  box.insertBefore(createTagChip(box, t), input || null);
+  syncTagChipHidden(box);
+  return true;
+}
+
+function setTagChipValues(box, value) {
+  const tags = Array.isArray(value) ? value.map(s => String(s).trim()).filter(Boolean) : parseTagString(value);
+  const input = box.querySelector('.tag-chip-input');
+  box.querySelectorAll('.tag-chip').forEach(c => c.remove());
+  tags.forEach(t => box.insertBefore(createTagChip(box, t), input || null));
+  syncTagChipHidden(box);
+}
+
+function commitPendingTag(box, force) {
+  const input = box.querySelector('.tag-chip-input');
+  if (!input) return;
+  const raw = input.value;
+  const parts = raw.split(TAG_SEP_RE);
+  let added = false;
+  parts.forEach((p, i) => {
+    const t = p.trim();
+    if (!t) return;
+    if (i < parts.length - 1 || TAG_SEP_RE.test(raw)) {
+      if (addTagChip(box, t)) added = true;
+    } else if (force) {
+      if (addTagChip(box, t)) added = true;
+      input.value = '';
+    }
+  });
+  if (TAG_SEP_RE.test(raw) || force) input.value = '';
+  else if (parts.length > 1) input.value = parts[parts.length - 1];
+  if (added) input.focus();
+}
+
+function initTagChipBox(box) {
+  if (!box || box.dataset.tagChipReady === '1') return;
+  box.dataset.tagChipReady = '1';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'tag-chip-input';
+  input.placeholder = '输入标签后回车';
+  input.autocomplete = 'off';
+  box.appendChild(input);
+
+  const hidId = box.dataset.for;
+  const hid = hidId ? document.getElementById(hidId) : null;
+  if (hid) setTagChipValues(box, hid.value);
+
+  input.addEventListener('keydown', (e) => {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitPendingTag(box, true);
+    } else if (e.key === 'Backspace' && input.value === '') {
+      const chips = box.querySelectorAll('.tag-chip');
+      if (chips.length) {
+        chips[chips.length - 1].remove();
+        syncTagChipHidden(box);
+      }
+    }
+  });
+
+  input.addEventListener('input', (e) => {
+    if (e.isComposing) return;
+    if (TAG_SEP_RE.test(input.value)) commitPendingTag(box, false);
+  });
+
+  input.addEventListener('blur', () => {
+    if (input.value.trim()) commitPendingTag(box, true);
+  });
+
+  box.addEventListener('click', (e) => {
+    if (e.target === box || e.target.closest('.tag-chip')) input.focus();
+  });
+}
+
+function initTagChipBoxes(root) {
+  (root || document).querySelectorAll('.tag-chip-box[data-for]').forEach(initTagChipBox);
+}
+
 function makeEditable(cell, workId, field, currentValue) {
   if (cell.querySelector('input')) return;
   const original = cell.innerHTML;
@@ -2091,8 +2224,10 @@ function openWorkModal(work = null, returnToCircleId = null) {
       </div>
     </div>
     <div class="form-group">
-      <label>标签（逗号分隔）</label>
-      <input class="form-input" id="wTags" value="${work?.tags?.join(', ') || ''}" placeholder="手办, 东方">
+      <label>标签</label>
+      <div class="tag-chip-box" id="wTagsBox" data-for="wTags"></div>
+      <input type="hidden" id="wTags" value="${escapeHtml((work?.tags || []).join(', '))}">
+      <div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>
     </div>
     <div class="form-group">
       <label>描述</label>
@@ -2177,7 +2312,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
       releaseDate: document.getElementById('wReleaseDate').value,
       endDate: document.getElementById('wEndDate').value,
       circles: [...document.querySelectorAll('#wCirclesTags .circle-tag')].map(el => el.dataset.cid),
-      tags: document.getElementById('wTags').value.split(',').map(t => t.trim()).filter(Boolean),
+      tags: getTagChipValues('wTags'),
       description: document.getElementById('wDesc').value,
       images: [...document.querySelectorAll('#wImagePreview img')].map(img => img.src),
       moreImages: [...document.querySelectorAll('#wMoreImagePreview img')].map(img => img.src),
@@ -2233,6 +2368,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
   });
 
   openModal();
+  initTagChipBoxes(document.getElementById('modalBody'));
 
   // Circle tag management
   function addCircleTag() {
@@ -2424,8 +2560,10 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
     </div>
 
     <div class="form-group">
-      <label>标签（逗号分隔，留空不修改）</label>
-      <input class="form-input" id="batch_tags" value="${tagsVal || ''}" placeholder="${tagsVal === null ? mixed : '标签1, 标签2'}">
+      <label>标签（留空不修改）</label>
+      <div class="tag-chip-box" id="batch_tagsBox" data-for="batch_tags"></div>
+      <input type="hidden" id="batch_tags" value="${escapeHtml(tagsVal || '')}">
+      <div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可${tagsVal === null ? ' · 选中作品标签不一致，留空则不修改' : ''}</div>
     </div>
 
     <div class="form-group">
@@ -2453,7 +2591,7 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
     if (batchCircles.length > 0) updates.circles = batchCircles;
     if (releaseDate) updates.releaseDate = releaseDate;
     if (endDate) updates.endDate = endDate;
-    if (tags) updates.tags = tags.split(',').map(t => t.trim()).filter(Boolean);
+    if (tags) updates.tags = parseTagString(tags);
     if (desc) updates.description = desc;
 
     if (Object.keys(updates).length === 0) { showToast('未修改任何内容', 'error'); return; }
@@ -2472,6 +2610,7 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
   });
 
   openModal();
+  initTagChipBoxes(document.getElementById('modalBody'));
 }
 
 // ===== Events =====
