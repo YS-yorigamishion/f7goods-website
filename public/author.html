@@ -668,7 +668,7 @@
           </div>
           <div class="form-group">
             <label>新密码</label>
-            <input type="password" class="form-input" id="pwNew" required minlength="6" placeholder="至少6位">
+            <input type="password" class="form-input" id="pwNew" required minlength="8" placeholder="至少8位">
           </div>
           <div class="form-group">
             <label>确认新密码</label>
@@ -1450,6 +1450,7 @@
               <button class="btn-sm" onclick="event.stopPropagation();deleteAuthorWork('${w.id}')" title="删除作品" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">🗑</button>
             </div>
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(w.title)}</h3>
+            ${!hasImg ? '<div title="缺少展示图，前台列表与详情不会显示此作品" style="margin-top:0.35rem;font-size:0.7rem;color:#C48A2A;background:rgba(196,138,42,0.1);padding:0.2rem 0.45rem;border-radius:4px;line-height:1.4;">缺封面 · 未对外展示</div>' : ''}
             <p class="card-price" style="color:var(--accent);font-weight:700;margin-top:0.3rem;font-size:0.9rem;">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(w.price) : (w.price || ''))}</p>
             ${rejectReasonHtml}
             <div class="work-stats">
@@ -2685,6 +2686,7 @@
           <input class="form-input" id="wfCommissionedBy" value="${escapeHtml(w.commissionedBy || '')}" placeholder="请输入约稿作者名字">
         </div>
         <div class="form-group"><label>标签</label><div class="tag-chip-box" id="wfTagsBox" data-for="wfTags"></div><input type="hidden" id="wfTags" value="${(w.tags||[]).map(t => String(t).replace(/"/g,'&quot;')).join(', ')}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>${renderCommonTagsHtml(worksForTagCount, 'wfTagsBox')}</div>
+        ${!(w.images || []).length ? '<div style="margin-bottom:0.75rem;font-size:0.78rem;color:#C48A2A;background:rgba(196,138,42,0.1);padding:0.45rem 0.65rem;border-radius:6px;line-height:1.5;">当前作品缺少展示图，不会出现在前台列表与详情中。请在下方「展示图片」中上传封面。</div>' : ''}
         <div class="form-group"><label>描述</label><textarea class="form-input" id="wfDesc" style="min-height:80px;">${w.description || ''}</textarea></div>
         <div class="form-row">
           <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup && !w.socialLinks?.wechat && !w.socialLinks?.weibo && !w.socialLinks?.bilibili && !w.socialLinks?.custom ? 'selected' : ''}>无</option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${w.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${w.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${w.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${w.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
@@ -3289,6 +3291,11 @@
 
       if (newPw !== confirmPw) {
         errEl.textContent = '两次输入的密码不一致';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!newPw || newPw.length < 8) {
+        errEl.textContent = '新密码至少8位';
         errEl.style.display = 'block';
         return;
       }

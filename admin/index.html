@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="/css/style.css?v=20260910n">
-  <link rel="stylesheet" href="/admin/css/admin.css?v=20260920b">
+  <link rel="stylesheet" href="/admin/css/admin.css?v=20260920c">
 </head>
 <body class="admin-body">
   <!-- Login Screen -->
@@ -581,6 +581,18 @@
           <div id="settingsContent">
             <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
           </div>
+          <div class="admin-card" style="margin-top:1.25rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.85rem;">
+              <div>
+                <h4 style="margin:0 0 0.2rem;font-family:'Noto Serif SC',Georgia,serif;">数据备份</h4>
+                <p style="margin:0;color:var(--haze);font-size:0.85rem;">备份/恢复 <code>data/</code> 目录。恢复会覆盖当前数据，并可选择立即重启服务。</p>
+              </div>
+              <button class="btn btn-primary" onclick="createAdminBackup()">立即备份</button>
+            </div>
+            <div id="adminBackupList">
+              <div class="loading"><div class="spinner"></div><p>加载备份列表...</p></div>
+            </div>
+          </div>
         </div>
         <!-- Announcements Management -->
         <div id="page-announcements" class="admin-page">
@@ -1011,6 +1023,6 @@
     </div>
   </div>
 
-  <script src="/admin/js/admin.js?v=20260920b"></script>
+  <script src="/admin/js/admin.js?v=20260920c"></script>
 </body>
 </html>

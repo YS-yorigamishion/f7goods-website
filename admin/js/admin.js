@@ -232,7 +232,7 @@ function navigateTo(page) {
   else if (page === 'projects') { loadProjects(); syncContentApprovalToggles(); }
   else if (page === 'categories') loadCategories();
   else if (page === 'images') loadImages();
-  else if (page === 'settings') loadSettings();
+  else if (page === 'settings') { loadSettings(); loadAdminBackups(); }
   else if (page === 'announcements') loadAnnouncements();
   else if (page === 'updates') { loadUpdates(); syncContentApprovalToggles(); }
   else if (page === 'editlog') loadEditLog();
@@ -1637,35 +1637,41 @@ async function rejectWork(id) {
   if (result && result.success) { showToast('已拒绝', 'success'); loadWorks(); }
 }
 
-// Batch approve/reject works
-async function batchApproveWorks() {
-  const pendingWorks = adminWorksData.filter(w => w.approvalStatus === 'pending');
-  if (pendingWorks.length === 0) { showToast('没有待审核的作品', 'error'); return; }
-  if (!await showConfirm(`确定批准全部 ${pendingWorks.length} 个待审核作品？`)) return;
-
-  let success = 0;
-  for (const w of pendingWorks) {
-    const result = await adminAPI('POST', `/api/admin/works/${w.id}/approve`);
-    if (result && result.success) success++;
+// Batch approve/reject — server-side batch endpoints
+async function runAdminBatchApproval(type, action, items, itemLabel, reloadFn) {
+  if (!items || items.length === 0) {
+    showToast(`没有待审核的${itemLabel}`, 'error');
+    return;
   }
-  showToast(`已批准 ${success} 个作品`, 'success');
-  loadWorks();
+  let reason;
+  if (action === 'reject') {
+    reason = prompt('拒绝原因（可选）');
+    if (reason === null) return;
+  }
+  const verb = action === 'approve' ? '批准' : '拒绝';
+  if (!await showConfirm(`确定${verb}全部 ${items.length} 个待审核${itemLabel}？`)) return;
+
+  const result = await adminAPI('POST', `/api/admin/${type}/batch-${action}`, {
+    ids: items.map((x) => x.id),
+    ...(reason ? { reason } : {})
+  });
+  if (!result || result.error) {
+    showToast(result?.error || '批量操作失败', 'error');
+    return;
+  }
+  const ok = result.processed || 0;
+  const fail = (result.failed || []).length;
+  if (fail) showToast(`${itemLabel}: 成功 ${ok}，失败 ${fail}`, 'error');
+  else showToast(`已${verb} ${ok} 个${itemLabel}`, 'success');
+  if (typeof reloadFn === 'function') reloadFn();
+}
+
+async function batchApproveWorks() {
+  await runAdminBatchApproval('works', 'approve', adminWorksData.filter(w => w.approvalStatus === 'pending'), '作品', loadWorks);
 }
 
 async function batchRejectWorks() {
-  const pendingWorks = adminWorksData.filter(w => w.approvalStatus === 'pending');
-  if (pendingWorks.length === 0) { showToast('没有待审核的作品', 'error'); return; }
-  const reason = prompt('拒绝原因（可选）');
-  if (reason === null) return;
-  if (!await showConfirm(`确定拒绝全部 ${pendingWorks.length} 个待审核作品？`)) return;
-
-  let success = 0;
-  for (const w of pendingWorks) {
-    const result = await adminAPI('POST', `/api/admin/works/${w.id}/reject`, { reason });
-    if (result && result.success) success++;
-  }
-  showToast(`已拒绝 ${success} 个作品`, 'success');
-  loadWorks();
+  await runAdminBatchApproval('works', 'reject', adminWorksData.filter(w => w.approvalStatus === 'pending'), '作品', loadWorks);
 }
 
 function escapeHtml(str) {
@@ -2685,33 +2691,11 @@ async function approveEvent(id) {
 
 // Batch approve/reject events
 async function batchApproveEvents() {
-  const pendingEvents = adminEventsData.filter(e => e.approvalStatus === 'pending');
-  if (pendingEvents.length === 0) { showToast('没有待审核的活动', 'error'); return; }
-  if (!await showConfirm(`确定批准全部 ${pendingEvents.length} 个待审核活动？`)) return;
-
-  let success = 0;
-  for (const e of pendingEvents) {
-    const result = await adminAPI('POST', `/api/admin/events/${e.id}/approve`);
-    if (result && result.success) success++;
-  }
-  showToast(`已批准 ${success} 个活动`, 'success');
-  loadEvents();
+  await runAdminBatchApproval('events', 'approve', (typeof adminEventsData !== 'undefined' ? adminEventsData : []).filter(e => e.approvalStatus === 'pending'), '活动', loadEvents);
 }
 
 async function batchRejectEvents() {
-  const pendingEvents = adminEventsData.filter(e => e.approvalStatus === 'pending');
-  if (pendingEvents.length === 0) { showToast('没有待审核的活动', 'error'); return; }
-  const reason = prompt('拒绝原因（可选）');
-  if (reason === null) return;
-  if (!await showConfirm(`确定拒绝全部 ${pendingEvents.length} 个待审核活动？`)) return;
-
-  let success = 0;
-  for (const e of pendingEvents) {
-    const result = await adminAPI('POST', `/api/admin/events/${e.id}/reject`, { reason });
-    if (result && result.success) success++;
-  }
-  showToast(`已拒绝 ${success} 个活动`, 'success');
-  loadEvents();
+  await runAdminBatchApproval('events', 'reject', (typeof adminEventsData !== 'undefined' ? adminEventsData : []).filter(e => e.approvalStatus === 'pending'), '活动', loadEvents);
 }
 
 // Batch delete events
@@ -3667,10 +3651,112 @@ function filterCircleEditorsList(query) {
 }
 
 async function resetAuthorPassword(circleId) {
-  const newPw = prompt('请输入新密码（至少6位）：');
-  if (!newPw || newPw.length < 6) { if (newPw !== null) showToast('密码至少6位', 'error'); return; }
+  const newPw = prompt('请输入新密码（至少8位）：');
+  if (!newPw || newPw.length < 8) { if (newPw !== null) showToast('密码至少8位', 'error'); return; }
   await adminAPI('POST', `/api/admin/circles/${circleId}/reset-password`, { newPassword: newPw });
   showToast('密码已重置', 'success');
+}
+
+// ===== Admin backups =====
+function formatBackupSize(bytes) {
+  if (!bytes && bytes !== 0) return '-';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+}
+
+async function loadAdminBackups() {
+  const container = document.getElementById('adminBackupList');
+  if (!container) return;
+  try {
+    const data = await adminAPI('GET', '/api/admin/backups');
+    const list = data?.backups || [];
+    if (!list.length) {
+      container.innerHTML = '<p style="color:var(--haze);margin:0;font-size:0.9rem;">暂无备份，点击「立即备份」创建。</p>';
+      return;
+    }
+    container.innerHTML = `<table class="admin-table"><thead><tr><th>备份名称</th><th>时间</th><th>体积</th><th>操作</th></tr></thead><tbody>${list.map((b) => {
+      const name = escapeHtml(b.name);
+      const time = b.mtime ? new Date(b.mtime).toLocaleString('zh-CN') : '-';
+      return `<tr>
+        <td><code style="font-size:0.8rem;">${name}</code></td>
+        <td style="font-size:0.85rem;">${time}</td>
+        <td style="font-size:0.85rem;">${formatBackupSize(b.size)}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn-sm btn-edit" onclick="downloadAdminBackup('${name}')">下载</button>
+          <button class="btn-sm" style="background:#C48A2A;color:white;" onclick="restoreAdminBackup('${name}', true)">恢复并重启</button>
+          <button class="btn-sm" style="background:var(--accent);color:white;" onclick="deleteAdminBackup('${name}')">删除</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+  } catch (e) {
+    container.innerHTML = '<p style="color:var(--accent);margin:0;">备份列表加载失败</p>';
+  }
+}
+
+async function createAdminBackup() {
+  if (!await showConfirm('立即备份当前 data/ 目录？')) return;
+  showToast('备份中...', 'info');
+  const result = await adminAPI('POST', '/api/admin/backups');
+  if (result && result.success) {
+    showToast('备份完成: ' + result.backup.name, 'success');
+    loadAdminBackups();
+  } else {
+    showToast(result?.error || '备份失败', 'error');
+  }
+}
+
+function downloadAdminBackup(name) {
+  const token = localStorage.getItem('f7admin_token');
+  const a = document.createElement('a');
+  a.href = `/api/admin/backups/${encodeURIComponent(name)}/download`;
+  a.download = `${name}.tar.gz`;
+  // fetch with auth then blob
+  fetch(a.href, { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(async (res) => {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || '下载失败');
+      }
+      return res.blob();
+    })
+    .then((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${name}.tar.gz`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    })
+    .catch((e) => showToast(e.message || '下载失败', 'error'));
+}
+
+async function restoreAdminBackup(name, restart) {
+  const msg = restart
+    ? `确定从「${name}」恢复数据吗？\n将覆盖当前 data/，并自动重启服务。恢复前会先自动备份当前数据。`
+    : `确定从「${name}」恢复数据吗？\n将覆盖当前 data/。恢复前会先自动备份当前数据。`;
+  if (!await showConfirm(msg, { danger: true, title: '恢复数据备份' })) return;
+  showToast('恢复中...', 'info');
+  const result = await adminAPI('POST', `/api/admin/backups/${encodeURIComponent(name)}/restore`, { restart: !!restart });
+  if (result && result.success) {
+    showToast(result.message || '已恢复', 'success');
+    loadAdminBackups();
+  } else {
+    showToast(result?.error || '恢复失败', 'error');
+  }
+}
+
+async function deleteAdminBackup(name) {
+  if (!await showConfirm(`确定删除备份「${name}」吗？此操作不可撤销。`, { danger: true, title: '删除备份' })) return;
+  const result = await adminAPI('DELETE', `/api/admin/backups/${encodeURIComponent(name)}`);
+  if (result && result.success) {
+    showToast('备份已删除', 'success');
+    loadAdminBackups();
+  } else {
+    showToast(result?.error || '删除失败', 'error');
+  }
 }
 
 async function inlineUpdateCircle(circleId, field, value) {
@@ -4350,33 +4436,11 @@ async function rejectProject(id) {
 
 // Batch approve/reject projects
 async function batchApproveProjects() {
-  const pendingProjects = adminProjectsData.filter(p => p.approvalStatus === 'pending');
-  if (pendingProjects.length === 0) { showToast('没有待审核的企划', 'error'); return; }
-  if (!await showConfirm(`确定批准全部 ${pendingProjects.length} 个待审核企划？`)) return;
-
-  let success = 0;
-  for (const p of pendingProjects) {
-    const result = await adminAPI('POST', `/api/admin/projects/${p.id}/approve`);
-    if (result && result.success) success++;
-  }
-  showToast(`已批准 ${success} 个企划`, 'success');
-  loadProjects();
+  await runAdminBatchApproval('projects', 'approve', adminProjectsData.filter(p => p.approvalStatus === 'pending'), '企划', loadProjects);
 }
 
 async function batchRejectProjects() {
-  const pendingProjects = adminProjectsData.filter(p => p.approvalStatus === 'pending');
-  if (pendingProjects.length === 0) { showToast('没有待审核的企划', 'error'); return; }
-  const reason = prompt('拒绝原因（可选）');
-  if (reason === null) return;
-  if (!await showConfirm(`确定拒绝全部 ${pendingProjects.length} 个待审核企划？`)) return;
-
-  let success = 0;
-  for (const p of pendingProjects) {
-    const result = await adminAPI('POST', `/api/admin/projects/${p.id}/reject`, { reason });
-    if (result && result.success) success++;
-  }
-  showToast(`已拒绝 ${success} 个企划`, 'success');
-  loadProjects();
+  await runAdminBatchApproval('projects', 'reject', adminProjectsData.filter(p => p.approvalStatus === 'pending'), '企划', loadProjects);
 }
 
 // Batch delete projects
@@ -6003,33 +6067,11 @@ async function rejectUpdate(id) {
 
 // Batch approve/reject updates
 async function batchApproveUpdates() {
-  const pendingUpdates = adminUpdatesData.filter(u => u.approvalStatus === 'pending');
-  if (pendingUpdates.length === 0) { showToast('没有待审核的动态', 'error'); return; }
-  if (!await showConfirm(`确定批准全部 ${pendingUpdates.length} 个待审核动态？`)) return;
-
-  let success = 0;
-  for (const u of pendingUpdates) {
-    const result = await adminAPI('POST', `/api/admin/updates/${u.id}/approve`);
-    if (result && result.success) success++;
-  }
-  showToast(`已批准 ${success} 个动态`, 'success');
-  loadUpdates();
+  await runAdminBatchApproval('updates', 'approve', adminUpdatesData.filter(u => u.approvalStatus === 'pending'), '动态', loadUpdates);
 }
 
 async function batchRejectUpdates() {
-  const pendingUpdates = adminUpdatesData.filter(u => u.approvalStatus === 'pending');
-  if (pendingUpdates.length === 0) { showToast('没有待审核的动态', 'error'); return; }
-  const reason = prompt('拒绝原因（可选）');
-  if (reason === null) return;
-  if (!await showConfirm(`确定拒绝全部 ${pendingUpdates.length} 个待审核动态？`)) return;
-
-  let success = 0;
-  for (const u of pendingUpdates) {
-    const result = await adminAPI('POST', `/api/admin/updates/${u.id}/reject`, { reason });
-    if (result && result.success) success++;
-  }
-  showToast(`已拒绝 ${success} 个动态`, 'success');
-  loadUpdates();
+  await runAdminBatchApproval('updates', 'reject', adminUpdatesData.filter(u => u.approvalStatus === 'pending'), '动态', loadUpdates);
 }
 
 function openUpdateModal(update = null) {

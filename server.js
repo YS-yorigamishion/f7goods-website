@@ -2263,6 +2263,79 @@ function approvalStatusLabel(status) {
   return status === 'approved' ? '免审核直接上架' : '待审核';
 }
 
+// ===== Admin batch approval =====
+const BATCH_APPROVAL_MAX = 200;
+const BATCH_APPROVAL_TYPES = {
+  works: { file: 'works.json', label: '作品', notifType: 'work' },
+  events: { file: 'events.json', label: '活动', notifType: 'event' },
+  projects: { file: 'projects.json', label: '企划', notifType: 'project' },
+  updates: { file: 'updates.json', label: '动态', notifType: 'update' }
+};
+
+async function runBatchApproval(typeKey, action, ids, reason) {
+  const conf = BATCH_APPROVAL_TYPES[typeKey];
+  if (!conf) throw new Error('未知类型');
+  const data = readJSON(conf.file);
+  const byId = new Map(data.map(item => [item.id, item]));
+  let processed = 0;
+  const failed = [];
+  const reasonText = typeof reason === 'string' ? reason.trim() : '';
+
+  for (const id of ids) {
+    const item = byId.get(id);
+    if (!item) {
+      failed.push({ id, error: '未找到' });
+      continue;
+    }
+    if (action === 'approve') {
+      item.approvalStatus = 'approved';
+      delete item.rejectReason;
+      logEdit('管理员', `批准${conf.label}`, item.title || id, '');
+      if (item.submittedBy) {
+        await addAuthorNotification(item.submittedBy, conf.notifType, item.title, '已通过审核');
+      }
+    } else {
+      item.approvalStatus = 'rejected';
+      if (reasonText) item.rejectReason = reasonText;
+      logEdit('管理员', `拒绝${conf.label}`, item.title || id, reasonText);
+      if (item.submittedBy) {
+        await addAuthorNotification(item.submittedBy, conf.notifType, item.title, '未通过审核', reasonText);
+      }
+    }
+    processed += 1;
+  }
+
+  if (processed > 0) await writeJSON(conf.file, data);
+  return { success: true, processed, failed, total: ids.length };
+}
+
+function registerBatchApprovalRoutes(typeKey) {
+  const conf = BATCH_APPROVAL_TYPES[typeKey];
+  const base = `/api/admin/${typeKey}/batch`;
+  ['approve', 'reject'].forEach((action) => {
+    app.post(`${base}-${action}`, authMiddleware, async (req, res) => {
+      try {
+        const rawIds = Array.isArray(req.body?.ids) ? req.body.ids : null;
+        if (!rawIds || rawIds.length === 0) {
+          return res.status(400).json({ error: `请选择要${action === 'approve' ? '批准' : '拒绝'}的${conf.label}` });
+        }
+        if (rawIds.length > BATCH_APPROVAL_MAX) {
+          return res.status(400).json({ error: `一次最多处理 ${BATCH_APPROVAL_MAX} 条` });
+        }
+        const ids = [...new Set(rawIds.map((x) => String(x || '').trim()).filter(Boolean))];
+        if (!ids.length) return res.status(400).json({ error: '无效的 id 列表' });
+        const result = await runBatchApproval(typeKey, action, ids, req.body?.reason);
+        res.json(result);
+      } catch (e) {
+        console.error(`batch ${typeKey} ${action} failed:`, e.message);
+        res.status(500).json({ error: '批量操作失败' });
+      }
+    });
+  });
+}
+
+['works', 'events', 'projects', 'updates'].forEach(registerBatchApprovalRoutes);
+
 // ===== Public API =====
 // Works
 app.get('/api/works', cacheMiddleware(60), (req, res) => {
@@ -4493,6 +4566,7 @@ async function saveUploadMeta(filename, uploader) {
 app.post('/api/admin/upload', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择文件' });
   try {
+    // 管理员上传不压缩，保留原图
     const url = await publishUploadedImage(req.file.path);
     const filename = path.basename(url);
     await saveUploadMeta(filename, '管理员');
@@ -4502,6 +4576,149 @@ app.post('/api/admin/upload', authMiddleware, upload.single('image'), async (req
     console.error('admin upload publish failed:', e.message);
     fs.unlink(req.file.path, () => {});
     res.status(500).json({ error: '上传失败' });
+  }
+});
+
+
+// ===== Admin data backup / restore =====
+const { spawn } = require('child_process');
+const BACKUP_NAME_RE = /^data\.bak\.[A-Za-z0-9._-]+$/;
+
+function dataDirPath() { return path.join(__dirname, 'data'); }
+
+function resolveBackupPath(name) {
+  const n = String(name || '');
+  if (!BACKUP_NAME_RE.test(n)) return null;
+  const full = path.resolve(__dirname, n);
+  const root = path.resolve(__dirname);
+  if (full !== path.join(root, n)) return null;
+  if (!fs.existsSync(full) || !fs.statSync(full).isDirectory()) return null;
+  return full;
+}
+
+function listBackupDirs() {
+  try {
+    return fs.readdirSync(__dirname, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && BACKUP_NAME_RE.test(d.name))
+      .map((d) => {
+        const full = path.join(__dirname, d.name);
+        let size = 0;
+        try {
+          for (const f of fs.readdirSync(full)) {
+            try { size += fs.statSync(path.join(full, f)).size; } catch {}
+          }
+        } catch {}
+        let mtime = null;
+        try { mtime = fs.statSync(full).mtime.toISOString(); } catch {}
+        return { name: d.name, mtime, size };
+      })
+      .sort((a, b) => new Date(b.mtime || 0) - new Date(a.mtime || 0));
+  } catch (e) {
+    return [];
+  }
+}
+
+function makeBackupStamp() {
+  return new Date().toISOString().replace(/[:.]/g, '-').replace('T', '-').slice(0, 19);
+}
+
+function copyDataDir(src, dest) {
+  if (fs.existsSync(dest)) throw new Error('目标目录已存在: ' + path.basename(dest));
+  fs.cpSync(src, dest, { recursive: true });
+}
+
+function scheduleServiceRestart() {
+  setTimeout(() => {
+    try {
+      const child = spawn('pm2', ['restart', 'f7goods'], {
+        detached: true,
+        stdio: 'ignore',
+        shell: process.platform === 'win32'
+      });
+      child.unref();
+    } catch (e) {
+      console.error('pm2 restart spawn failed:', e.message);
+    }
+    // 兜底：若 pm2 未拉起，进程退出后由 pm2 自动重启
+    setTimeout(() => {
+      try { process.exit(0); } catch {}
+    }, 4000);
+  }, 700);
+}
+
+app.get('/api/admin/backups', authMiddleware, (req, res) => {
+  res.json({ backups: listBackupDirs() });
+});
+
+app.post('/api/admin/backups', authMiddleware, async (req, res) => {
+  try {
+    const name = `data.bak.${makeBackupStamp()}`;
+    const dest = path.join(__dirname, name);
+    copyDataDir(dataDirPath(), dest);
+    logEdit('管理员', '创建数据备份', name, '');
+    res.json({ success: true, backup: { name, mtime: new Date().toISOString() } });
+  } catch (e) {
+    console.error('backup create failed:', e.message);
+    res.status(500).json({ error: '创建备份失败: ' + e.message });
+  }
+});
+
+app.get('/api/admin/backups/:name/download', authMiddleware, (req, res) => {
+  const src = resolveBackupPath(req.params.name);
+  if (!src) return res.status(400).json({ error: '无效的备份名称' });
+  const archiveName = `${req.params.name}.tar.gz`;
+  const tmpFile = path.join(__dirname, 'tmp-uploads', archiveName);
+  try {
+    fs.mkdirSync(path.join(__dirname, 'tmp-uploads'), { recursive: true });
+    const { spawnSync } = require('child_process');
+    const r = spawnSync('tar', ['-czf', tmpFile, '-C', __dirname, req.params.name], { encoding: 'utf8' });
+    if (r.status !== 0) {
+      return res.status(500).json({ error: '备份打包失败' });
+    }
+    res.download(tmpFile, archiveName, () => {
+      try { fs.unlinkSync(tmpFile); } catch {}
+    });
+  } catch (e) {
+    console.error('backup download failed:', e.message);
+    res.status(500).json({ error: '下载备份失败' });
+  }
+});
+
+app.post('/api/admin/backups/:name/restore', authMiddleware, async (req, res) => {
+  const src = resolveBackupPath(req.params.name);
+  if (!src) return res.status(400).json({ error: '无效的备份名称' });
+  const restart = req.body?.restart === true || req.body?.restart === 'true';
+  try {
+    const preName = `data.bak.pre-restore-${makeBackupStamp()}`;
+    const prePath = path.join(__dirname, preName);
+    copyDataDir(dataDirPath(), prePath);
+    fs.rmSync(dataDirPath(), { recursive: true, force: true });
+    copyDataDir(src, dataDirPath());
+    clearApiCache();
+    logEdit('管理员', '恢复数据备份', req.params.name, `自动备份: ${preName}${restart ? ' · 恢复并重启' : ''}`);
+    res.json({
+      success: true,
+      preBackup: preName,
+      restart,
+      message: restart ? '已恢复，服务即将重启' : '已恢复数据；建议手动重启服务（pm2 restart f7goods）'
+    });
+    if (restart) scheduleServiceRestart();
+  } catch (e) {
+    console.error('backup restore failed:', e.message);
+    res.status(500).json({ error: '恢复失败: ' + e.message });
+  }
+});
+
+app.delete('/api/admin/backups/:name', authMiddleware, async (req, res) => {
+  const src = resolveBackupPath(req.params.name);
+  if (!src) return res.status(400).json({ error: '无效的备份名称' });
+  try {
+    fs.rmSync(src, { recursive: true, force: true });
+    logEdit('管理员', '删除数据备份', req.params.name, '');
+    res.json({ success: true });
+  } catch (e) {
+    console.error('backup delete failed:', e.message);
+    res.status(500).json({ error: '删除备份失败' });
   }
 });
 
@@ -4581,21 +4798,39 @@ app.post('/api/author/upload', authorAuthMiddleware, upload.single('image'), asy
         }
       }
 
-      // Compress if large
+      // Compress if large — keep original format (author uploads; admin uploads stay uncompressed)
       const stats = fs.statSync(filePath);
-      if (stats.size > 500 * 1024 && ext !== '.gif') {
+      const COMPRESS_MIN = 400 * 1024;
+      if (stats.size > COMPRESS_MIN && ['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
         try {
-          const targetMax = 600 * 1024;
-          let quality = 90;
-          while (quality >= 70) {
-            await sharp(filePath).jpeg({ quality }).toFile(filePath + '.tmp');
-            const resultSize = fs.statSync(filePath + '.tmp').size;
-            if (resultSize <= targetMax) {
-              fs.renameSync(filePath + '.tmp', filePath);
-              break;
+          const tmp = filePath + '.tmp';
+          const targetMax = 400 * 1024;
+          let wrote = false;
+          if (ext === '.png') {
+            await sharp(filePath).png({ compressionLevel: 9, palette: stats.size > 900 * 1024 }).toFile(tmp);
+            wrote = true;
+          } else if (ext === '.webp') {
+            await sharp(filePath).webp({ quality: 82 }).toFile(tmp);
+            wrote = true;
+          } else {
+            let quality = 85;
+            while (quality >= 55) {
+              await sharp(filePath).jpeg({ quality, mozjpeg: true }).toFile(tmp);
+              const resultSize = fs.existsSync(tmp) ? fs.statSync(tmp).size : Infinity;
+              if (resultSize <= targetMax || resultSize < stats.size * 0.9) {
+                wrote = resultSize < stats.size;
+                break;
+              }
+              try { fs.unlinkSync(tmp); } catch {}
+              quality -= 5;
             }
-            try { fs.unlinkSync(filePath + '.tmp'); } catch {}
-            quality -= 5;
+          }
+          if (wrote && fs.existsSync(tmp)) {
+            const newSize = fs.statSync(tmp).size;
+            if (newSize < stats.size) fs.renameSync(tmp, filePath);
+            else try { fs.unlinkSync(tmp); } catch {}
+          } else {
+            try { fs.unlinkSync(tmp); } catch {}
           }
         } catch (e) {
           console.error('Compression failed:', e.message);
