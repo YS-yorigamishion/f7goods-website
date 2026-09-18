@@ -1,4 +1,4 @@
-/* f7goods 作者手册 — 对照庭域手册布局 */
+/* f7goods 作者手册 — 对照庭域手册比例 */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -12,7 +12,6 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-
 body::before {
   content: '';
   position: fixed; inset: 0; pointer-events: none;
@@ -64,14 +63,14 @@ body::before {
   background: linear-gradient(165deg, #D8D2E4 0%, #C8C2D6 42%, #B8B2C8 100%);
   border: 3px solid #3E2E5A;
   border-radius: 6px;
-  padding: 1.2rem 1.25rem 1.2rem;
+  padding: 1.15rem 1.2rem 1.25rem;
+  min-height: 520px;
   box-shadow:
     0 0 0 6px rgba(20, 10, 40, 0.35),
     0 22px 48px rgba(0,0,0,0.42),
     inset 0 1px 0 rgba(255,255,255,0.35);
   --clip-center: 72px;
-  --hb-pad-x: 1.25rem;
-  overflow: visible;
+  --hb-pad-x: 1.2rem;
 }
 .handbook::before {
   content: '';
@@ -83,7 +82,7 @@ body::before {
   border-radius: 3px 3px 0 0;
   border: 1px solid #3E2E5A;
   border-bottom: none;
-  z-index: 3;
+  z-index: 5;
 }
 .handbook::after {
   content: '';
@@ -93,50 +92,55 @@ body::before {
   width: 16px; height: 10px;
   background: #2A2040;
   border-radius: 2px;
-  z-index: 4;
+  z-index: 6;
 }
 
+/* 右上标题 — 对照参考图 */
 .hb-title-static {
   position: absolute;
-  top: 0.85rem; right: 1.4rem;
+  top: 0.7rem;
+  right: 1.25rem;
   text-align: right;
+  z-index: 4;
   pointer-events: none;
-  z-index: 2;
 }
 .hb-title-static h1 {
   font-family: 'Noto Serif SC', Georgia, serif;
-  font-size: clamp(1.55rem, 3.2vw, 2.1rem);
+  font-size: clamp(1.65rem, 3.4vw, 2.25rem);
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   color: #2E2440;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 .hb-title-static span {
   display: block;
-  margin-top: 0.15rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.32em;
-  color: rgba(46, 36, 64, 0.28);
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.36em;
+  color: rgba(46, 36, 64, 0.3);
   font-weight: 700;
 }
 
-/* 主体：顶对齐，右侧三卡贴近标题 */
+/* 主体布局：左卡 + 右三格 */
 .hb-body {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(230px, 268px) 1fr;
-  gap: 1.15rem;
-  margin-top: 0.25rem;
+  grid-template-columns: minmax(220px, 250px) 1fr;
+  gap: 1.1rem;
+  /* 给标题留出上部空间，三卡从标题下半部起 */
+  margin-top: 3.6rem;
   align-items: start;
+  min-height: 460px;
 }
 
+/* 左：档案卡 — 比右侧更高（上齐标题区、下更低） */
 .idcard-wrap {
   position: relative;
-  padding-top: 36px;
-  min-height: 340px;
-  margin-top: 0.4rem;
-  margin-bottom: 0;
+  padding-top: 40px;
+  min-height: 460px;
+  margin-top: -2.9rem;
   align-self: start;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   flex-direction: column;
 }
@@ -144,19 +148,19 @@ body::before {
   position: absolute;
   top: 0;
   left: calc(var(--clip-center) - var(--hb-pad-x) - 30px);
-  width: 60px; height: 22px;
+  width: 60px; height: 24px;
   background: linear-gradient(180deg, #EDEAF4 0%, #B0A8C0 40%, #5C5470 100%);
   border: 1px solid #3E2E5A;
   border-bottom: none;
   border-radius: 3px 3px 0 0;
-  z-index: 3;
-  transform: rotate(-2.5deg);
+  z-index: 4;
+  transform: rotate(-2.8deg);
   transform-origin: bottom center;
 }
 .idcard-clip::after {
   content: '';
   position: absolute;
-  left: 50%; top: 4px;
+  left: 50%; top: 5px;
   transform: translateX(-50%);
   width: 12px; height: 12px;
   border: 2px solid #2A2040;
@@ -166,35 +170,34 @@ body::before {
 .idcard-wrap::before {
   content: '';
   position: absolute;
-  top: 18px;
+  top: 20px;
   left: calc(var(--clip-center) - var(--hb-pad-x) - 7px);
   width: 14px;
-  height: 16px;
+  height: 22px;
   background: linear-gradient(180deg, #6A6280, #4A3A52);
   border-radius: 0 0 2px 2px;
-  z-index: 2;
-  transform: rotate(-2.5deg);
+  z-index: 3;
+  transform: rotate(-2.8deg);
   transform-origin: top center;
 }
 
 .idcard {
   flex: 1 1 auto;
-  min-height: 324px;
+  min-height: 420px;
   background: linear-gradient(160deg, #5A4A62 0%, #4A3A52 40%, #3E3048 100%);
   border-radius: 8px;
-  padding: 10px 8px 8px;
+  padding: 8px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.35);
-  transform: rotate(-2.5deg);
+  transform: rotate(-2.8deg);
   transform-origin: top center;
   display: flex;
   flex-direction: column;
-  position: relative;
 }
 .idcard-inner {
   flex: 1;
   background: linear-gradient(170deg, #F7F2EA 0%, #EFE8DC 55%, #E6DFD0 100%);
   border-radius: 4px;
-  padding: 0.95rem 0.85rem 0.9rem;
+  padding: 0.9rem 0.8rem 0.85rem;
   color: #2A2430;
   display: flex;
   flex-direction: column;
@@ -203,38 +206,34 @@ body::before {
 
 .id-head {
   display: flex; gap: 0.55rem; align-items: flex-start;
-  margin-bottom: 0.65rem;
-  padding-bottom: 0.55rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid rgba(42,36,48,0.12);
 }
 .id-avatar {
-  width: 64px; height: 64px;
+  width: 62px; height: 62px;
   border-radius: 4px;
   background: #ddd4c6;
   border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-  overflow: hidden;
-  flex-shrink: 0;
+  overflow: hidden; flex-shrink: 0;
   display: grid; place-items: center;
   font-family: 'Noto Serif SC', Georgia, serif;
-  font-weight: 700; font-size: 1.15rem; color: #5a5048;
+  font-weight: 700; font-size: 1.1rem; color: #5a5048;
 }
 .id-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .id-head-text { flex: 1; min-width: 0; }
 .id-name {
   font-family: 'Noto Serif SC', Georgia, serif;
-  font-weight: 700; font-size: 1.05rem; line-height: 1.35;
-  color: #221C2C;
+  font-weight: 700; font-size: 1.02rem; line-height: 1.35; color: #221C2C;
 }
-.id-sub { font-size: 0.72rem; color: #6b6258; margin-top: 0.15rem; }
+.id-sub { font-size: 0.72rem; color: #6b6258; margin-top: 0.12rem; }
 
-.id-block { margin-bottom: 0.5rem; }
+.id-block { margin-bottom: 0.48rem; }
 .id-block .k {
-  font-size: 0.78rem; font-weight: 700;
-  color: #3A3248; letter-spacing: 0.04em;
-  margin-bottom: 0.15rem;
+  font-size: 0.78rem; font-weight: 700; color: #3A3248;
+  letter-spacing: 0.04em; margin-bottom: 0.12rem;
 }
-.id-block .v { font-size: 0.84rem; line-height: 1.65; color: #2A2430; }
+.id-block .v { font-size: 0.84rem; line-height: 1.62; color: #2A2430; }
 .id-block .v.muted { color: #8A8078; }
 
 .contact-link {
@@ -261,9 +260,9 @@ body::before {
 
 .id-stats {
   margin-top: auto;
-  padding-top: 0.55rem;
+  padding-top: 0.5rem;
   border-top: 1px solid rgba(42,36,48,0.12);
-  display: grid; gap: 0.28rem;
+  display: grid; gap: 0.25rem;
 }
 .id-stat {
   display: flex; justify-content: space-between; align-items: baseline;
@@ -272,22 +271,22 @@ body::before {
 .id-stat .k { color: #3A3248; font-weight: 700; font-size: 0.78rem; }
 .id-stat .v { font-weight: 700; color: #221C2C; font-variant-numeric: tabular-nums; }
 
-/* 右侧分区：整图 + 标签条 */
-/* 右侧三卡：顶边压到「作者手册」文字一半 */
+/* 右：三格 — 顶边约在标题下半部（对照参考图） */
 .hb-tiles {
   display: grid;
-  grid-template-columns: 1.08fr 1fr;
+  grid-template-columns: 1.05fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 0.7rem;
-  min-height: 280px;
-  height: 280px;
+  gap: 0.65rem;
+  height: 420px;
+  min-height: 400px;
+  /* 略低于标题中部，接近参考图 */
+  margin-top: -0.35rem;
+  margin-left: 0.25rem;
   align-self: start;
-  margin-top: 0.55rem;
-  margin-left: clamp(0px, 12%, 5.5rem);
-  width: auto;
   position: relative;
-  z-index: 3;
+  z-index: 2;
 }
+
 .tile {
   position: relative;
   display: block;
@@ -297,7 +296,7 @@ body::before {
   overflow: hidden;
   border: 2px solid #2E2440;
   background: #1a1428;
-  min-height: 140px;
+  min-height: 0;
   box-shadow: 0 4px 14px rgba(0,0,0,0.22);
   transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
@@ -305,7 +304,7 @@ body::before {
   transform: translateY(-2px);
   box-shadow: 0 10px 22px rgba(0,0,0,0.3);
 }
-.tile-main { grid-row: 1 / 3; min-height: 280px; }
+.tile-main { grid-row: 1 / 3; }
 
 .tile-cover {
   position: absolute; inset: 0;
@@ -329,24 +328,24 @@ body::before {
   position: absolute;
   left: 0; right: 0; bottom: 0;
   z-index: 2;
-  background: linear-gradient(180deg, rgba(42,32,64,0.2) 0%, #2A2040 28%, #1E1830 100%);
-  padding: 0.55rem 0.5rem 0.65rem;
+  background: linear-gradient(180deg, rgba(42,32,64,0.15) 0%, #2A2040 30%, #1E1830 100%);
+  padding: 0.55rem 0.45rem 0.65rem;
   text-align: center;
   border-top: 1px solid rgba(255,255,255,0.06);
 }
 .tile-label b {
   display: block;
   font-family: 'Noto Serif SC', Georgia, serif;
-  font-size: 1.02rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   color: #F5EFFF;
 }
 .tile-label span {
   display: block;
   margin-top: 0.12rem;
-  font-size: 0.62rem;
-  letter-spacing: 0.18em;
+  font-size: 0.64rem;
+  letter-spacing: 0.2em;
   color: rgba(232,196,255,0.45);
 }
 
@@ -409,8 +408,7 @@ body::before {
 .as-item:hover { background: #FFFCF7; border-color: #5A3FA0; }
 .as-mini {
   width: 30px; height: 30px; border-radius: 4px;
-  overflow: hidden; flex-shrink: 0;
-  background: #ddd4c6;
+  overflow: hidden; flex-shrink: 0; background: #ddd4c6;
   display: grid; place-items: center;
   font-weight: 700; font-size: 0.8rem; color: #5a5048;
 }
@@ -422,71 +420,29 @@ body::before {
 /* 移动端 */
 @media (max-width: 720px) {
   .page { padding: 0.7rem 0.6rem 1.75rem; }
-  .chrome { margin-bottom: 0.6rem; gap: 0.4rem; }
-  .chrome a, .chrome-btn { min-height: 40px; padding: 0.4rem 0.65rem; font-size: 0.76rem; }
-  .chrome-name { min-width: 4em; font-size: 0.8rem; }
-
-  .handbook { padding: 0.95rem 0.65rem 0.85rem; margin-top: 0.45rem; }
+  .chrome { margin-bottom: 0.6rem; }
+  .chrome a, .chrome-btn { min-height: 40px; padding: 0.4rem 0.65rem; }
+  .handbook { padding: 0.95rem 0.65rem 0.9rem; min-height: 0; }
   .handbook::before { left: 18px; width: 34px; height: 15px; }
   .handbook::after { left: 30px; width: 12px; height: 8px; }
-
-  .hb-title-static { position: static; text-align: left; margin: 0.2rem 0 0.75rem; }
-  .hb-title-static h1 { font-size: 1.35rem; letter-spacing: 0.1em; }
-  .hb-title-static span { font-size: 0.6rem; }
-
-  .hb-body { grid-template-columns: 1fr; margin-top: 0; gap: 0.7rem; align-items: start; }
-
-  .idcard-wrap {
-    min-height: 0; padding-top: 28px;
-    margin-top: 0; height: auto;
-    align-self: start;
-  }
+  .hb-title-static { position: static; text-align: left; margin: 0.15rem 0 0.75rem; }
+  .hb-title-static h1 { font-size: 1.4rem; }
+  .hb-title-static span { font-size: 0.62rem; }
+  .hb-body { grid-template-columns: 1fr; margin-top: 0; gap: 0.75rem; min-height: 0; }
+  .idcard-wrap { margin-top: 0; min-height: 0; padding-top: 28px; }
+  .idcard { transform: rotate(-2deg); min-height: 0; }
   .hb-tiles {
-    align-self: stretch;
-    height: auto;
-    min-height: 0;
-    margin-top: 0;
-    margin-left: 0;
-    width: auto;
-  }
-  .idcard-clip { top: 2px; left: 16px; width: 46px; height: 20px; transform: rotate(-2deg); }
-  .idcard-wrap::before { top: 16px; left: 32px; width: 12px; height: 14px; }
-  .idcard { transform: rotate(-2deg); min-height: 0; padding: 8px 5px 5px; }
-  .idcard-inner { padding: 0.8rem 0.7rem 0.75rem; }
-  .id-avatar { width: 50px; height: 50px; }
-  .id-name { font-size: 0.96rem; }
-  .id-block .k { font-size: 0.74rem; }
-  .id-block .v { font-size: 0.82rem; }
-  .id-stat { font-size: 0.82rem; }
-
-  .hb-tiles {
+    margin-top: 0; margin-left: 0;
+    height: auto; min-height: 0;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    min-height: 0; height: auto;
-    gap: 0.55rem;
   }
-  .tile-main {
-    grid-column: 1 / -1;
-    grid-row: auto;
-    min-height: 240px;
-    height: 42vw;
-    max-height: 300px;
-  }
-  .tile { min-height: 148px; }
-  .tile-label { padding: 0.55rem 0.45rem 0.65rem; }
-  .tile-label b { font-size: 0.95rem; letter-spacing: 0.16em; }
-  .tile-label span { font-size: 0.6rem; }
+  .tile-main { grid-column: 1 / -1; grid-row: auto; min-height: 240px; }
+  .tile { min-height: 140px; }
+  .tile-label b { font-size: 0.92rem; letter-spacing: 0.16em; }
 }
 
 @media (max-width: 400px) {
-  .tile-main { min-height: 200px; height: 48vw; max-height: 260px; }
-  .tile { min-height: 128px; }
-  .tile-label b { font-size: 0.88rem; }
-  .hb-tiles { gap: 0.45rem; }
-}
-
-@media (max-width: 340px) {
   .hb-tiles { grid-template-columns: 1fr; }
-  .tile { min-height: 140px; }
-  .tile-main { height: auto; min-height: 180px; }
+  .tile { min-height: 130px; }
+  .tile-main { min-height: 180px; }
 }
