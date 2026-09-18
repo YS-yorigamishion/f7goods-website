@@ -120,12 +120,12 @@ body::before {
   font-weight: 700;
 }
 
-/* 主体：右侧略下沉；左侧卡上端可顶到标题，底端与右侧齐 */
+/* 主体：右侧只比「作者手册」低一点点 */
 .hb-body {
   display: grid;
   grid-template-columns: minmax(230px, 268px) 1fr;
   gap: 1.15rem;
-  margin-top: 2.8rem;
+  margin-top: 2.15rem;
   align-items: end;
 }
 
@@ -134,7 +134,7 @@ body::before {
   position: relative;
   padding-top: 36px;
   min-height: 360px;
-  margin-top: -2.15rem;
+  margin-top: -1.85rem;
   margin-bottom: 0;
   align-self: end;
   z-index: 2;
@@ -274,7 +274,7 @@ body::before {
 .id-stat .v { font-weight: 700; color: #221C2C; font-variant-numeric: tabular-nums; }
 
 /* 右侧分区：整图 + 标签条 */
-/* 右侧：整体略下沉；左缘不超过「作者手册」文字左侧 */
+/* 右侧：紧挨「作者手册」下方一点点；左缘不超过标题左侧 */
 .hb-tiles {
   display: grid;
   grid-template-columns: 1.08fr 1fr;
@@ -283,9 +283,8 @@ body::before {
   min-height: 280px;
   height: 280px;
   align-self: end;
-  /* 往下一点 + 左缘内收，对齐标题文字左侧 */
-  margin-top: 0.85rem;
-  margin-left: clamp(0px, 10%, 3.2rem);
+  margin-top: 0.15rem;
+  margin-left: clamp(0px, 8%, 2.4rem);
   width: auto;
 }
 .tile {
