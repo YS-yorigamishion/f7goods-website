@@ -120,22 +120,21 @@ body::before {
   font-weight: 700;
 }
 
-/* 主体：右侧分区位置不变；左右底边对齐，仅左侧卡可向上更高 */
+/* 主体：右侧略下沉；左侧卡上端可顶到标题，底端与右侧齐 */
 .hb-body {
   display: grid;
   grid-template-columns: minmax(230px, 268px) 1fr;
   gap: 1.15rem;
-  margin-top: 2.45rem;
+  margin-top: 2.8rem;
   align-items: end;
 }
 
-/* 左侧档案卡：单独向上延伸，底与作品列表齐，顶不出手册框 */
+/* 左侧简介卡：上端对齐「作者手册」，底端对齐作品列表 */
 .idcard-wrap {
   position: relative;
-  padding-top: 34px;
-  /* 比右侧略高：底对齐后顶部自然上移 */
-  min-height: 330px;
-  margin-top: 0;
+  padding-top: 36px;
+  min-height: 360px;
+  margin-top: -2.15rem;
   margin-bottom: 0;
   align-self: end;
   z-index: 2;
@@ -181,7 +180,7 @@ body::before {
 
 .idcard {
   flex: 1 1 auto;
-  min-height: 296px;
+  min-height: 324px;
   background: linear-gradient(160deg, #5A4A62 0%, #4A3A52 40%, #3E3048 100%);
   border-radius: 8px;
   padding: 10px 8px 8px;
@@ -275,15 +274,19 @@ body::before {
 .id-stat .v { font-weight: 700; color: #221C2C; font-variant-numeric: tabular-nums; }
 
 /* 右侧分区：整图 + 标签条 */
+/* 右侧：整体略下沉；左缘不超过「作者手册」文字左侧 */
 .hb-tiles {
   display: grid;
   grid-template-columns: 1.08fr 1fr;
   grid-template-rows: 1fr 1fr;
   gap: 0.7rem;
-  min-height: 300px;
-  /* 右侧不随左侧上移，底边与左侧卡对齐 */
+  min-height: 280px;
+  height: 280px;
   align-self: end;
-  height: 300px;
+  /* 往下一点 + 左缘内收，对齐标题文字左侧 */
+  margin-top: 0.85rem;
+  margin-left: clamp(0px, 10%, 3.2rem);
+  width: auto;
 }
 .tile {
   position: relative;
@@ -442,6 +445,9 @@ body::before {
     align-self: stretch;
     height: auto;
     min-height: 0;
+    margin-top: 0;
+    margin-left: 0;
+    width: auto;
   }
   .idcard-clip { top: 2px; left: 16px; width: 46px; height: 20px; transform: rotate(-2deg); }
   .idcard-wrap::before { top: 16px; left: 32px; width: 12px; height: 14px; }
