@@ -109,6 +109,33 @@
     .tag-chip-hint {
       font-size: 0.72rem; color: var(--haze); margin-top: 0.3rem; line-height: 1.4;
     }
+    .common-tags { margin-top: 0.45rem; }
+    .common-tags-label {
+      font-size: 0.75rem; color: var(--haze); margin-bottom: 0.35rem;
+    }
+    .common-tag-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 0.22rem 0.65rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: inherit;
+      line-height: 1.3;
+      transition: border-color .15s ease, color .15s ease, background .15s ease;
+    }
+    .common-tag-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(217, 79, 92, 0.06);
+    }
+    .common-tag-btn.is-added {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(217, 79, 92, 0.1);
+      opacity: 0.75;
+    }
   </style>
 </head>
 <body>
@@ -857,6 +884,63 @@
 
     function initTagChipBoxes(root) {
       (root || document).querySelectorAll('.tag-chip-box[data-for]').forEach(initTagChipBox);
+    }
+
+    function getCommonAuthorTags(works, minCount = 3) {
+      const count = new Map();
+      (works || []).forEach(w => {
+        (w?.tags || []).forEach(t => {
+          const tag = String(t).trim();
+          if (!tag) return;
+          count.set(tag, (count.get(tag) || 0) + 1);
+        });
+      });
+      return [...count.entries()]
+        .filter(([, c]) => c >= minCount)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh'))
+        .map(([tag]) => tag);
+    }
+
+    function renderCommonTagsHtml(works, boxId) {
+      const tags = getCommonAuthorTags(works);
+      if (!tags.length) return '';
+      return `<div class="common-tags" data-for-box="${boxId}">
+        <div class="common-tags-label">常用标签</div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;">
+          ${tags.map(t => `<button type="button" class="common-tag-btn" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    function bindCommonTagClicks(root) {
+      (root || document).querySelectorAll('.common-tag-btn').forEach(btn => {
+        if (btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', () => {
+          const wrap = btn.closest('.common-tags');
+          const box = wrap ? document.getElementById(wrap.dataset.forBox) : null;
+          if (!box) return;
+          initTagChipBox(box);
+          const tag = btn.dataset.tag || btn.textContent.trim();
+          if (addTagChip(box, tag) || getTagChipValuesFromBox(box).includes(tag)) {
+            btn.classList.add('is-added');
+          }
+        });
+      });
+    }
+
+    function markAddedCommonTags(root) {
+      const scope = root || document;
+      const selected = new Set(
+        [...scope.querySelectorAll('.tag-chip-box[data-for]')].flatMap(box =>
+          getTagChipValuesFromBox(box)
+        )
+      );
+      scope.querySelectorAll('.common-tag-btn').forEach(btn => {
+        const tag = btn.dataset.tag || btn.textContent.trim();
+        btn.classList.toggle('is-added', selected.has(tag));
+      });
+      bindCommonTagClicks(scope);
     }
 
     let authorToken = localStorage.getItem('f7author_token');
@@ -2470,8 +2554,9 @@
       work._relatedEvents = Array.isArray(work.relatedEvents) ? work.relatedEvents.slice() : [];
       work._relatedProjects = (allProjects || []).filter(p => (p.works || []).includes(workId)).map(p => p.id);
 
-      body.innerHTML = await buildWorkFormHTML(work);
+      body.innerHTML = await buildWorkFormHTML(work, works);
       initTagChipBoxes(body);
+      markAddedCommonTags(body);
     }
 
     async function openAuthorWorkForm() {
@@ -2481,8 +2566,15 @@
       title.textContent = '新增作品';
       body.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>';
       overlay.classList.add('open');
-      body.innerHTML = await buildWorkFormHTML({});
+      if (!authorWorksData || authorWorksData.length === 0) {
+        try {
+          const works = await authorAPI('GET', '/api/author/works');
+          if (Array.isArray(works) && works.length) authorWorksData = works;
+        } catch (e) {}
+      }
+      body.innerHTML = await buildWorkFormHTML({}, authorWorksData);
       initTagChipBoxes(body);
+      markAddedCommonTags(body);
 
       // Check for saved draft
       const draft = FormDraft.load('work');
@@ -2497,8 +2589,11 @@
       FormDraft.startTracking('work');
     }
 
-    async function buildWorkFormHTML(work) {
+    async function buildWorkFormHTML(work, allWorksForTags) {
       const w = work || {};
+      const worksForTagCount = Array.isArray(allWorksForTags) && allWorksForTags.length
+        ? allWorksForTags
+        : (Array.isArray(authorWorksData) ? authorWorksData : []);
       // Load events and projects for association
       const [allEvents, allProjects] = await Promise.all([
         authorAPI('GET', '/api/author/events'),
@@ -2527,7 +2622,7 @@
           <label>约稿作者</label>
           <input class="form-input" id="wfCommissionedBy" value="${escapeHtml(w.commissionedBy || '')}" placeholder="请输入约稿作者名字">
         </div>
-        <div class="form-group"><label>标签</label><div class="tag-chip-box" id="wfTagsBox" data-for="wfTags"></div><input type="hidden" id="wfTags" value="${(w.tags||[]).map(t => String(t).replace(/"/g,'&quot;')).join(', ')}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div></div>
+        <div class="form-group"><label>标签</label><div class="tag-chip-box" id="wfTagsBox" data-for="wfTags"></div><input type="hidden" id="wfTags" value="${(w.tags||[]).map(t => String(t).replace(/"/g,'&quot;')).join(', ')}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>${renderCommonTagsHtml(worksForTagCount, 'wfTagsBox')}</div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="wfDesc" style="min-height:80px;">${w.description || ''}</textarea></div>
         <div class="form-row">
           <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup && !w.socialLinks?.wechat && !w.socialLinks?.weibo && !w.socialLinks?.bilibili && !w.socialLinks?.custom ? 'selected' : ''}>无</option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${w.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${w.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${w.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${w.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
