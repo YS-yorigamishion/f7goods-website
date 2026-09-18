@@ -3360,9 +3360,14 @@ function renderCirclesTable(circles) {
       <button class="btn-sm btn-edit" onclick="editCircle('${c.id}')">编辑</button>
       <button class="btn-sm btn-delete" onclick="deleteCircle('${c.id}')">删除</button>`;
     if (c.username && (c.authorStatus === 'active' || c.authorStatus === 'approved')) {
-      const approvalLabel = c.requireApproval !== false ? '免审核' : '需审核';
+      // 与服务端一致：requireApproval === false → 真正免审核；true/缺省 → 仍需审核
+      const needsApproval = c.requireApproval !== false;
+      const approvalLabel = needsApproval ? '需审核' : '免审核';
+      const approvalColor = needsApproval
+        ? 'background:rgba(230,126,34,0.15);color:#e67e22;'
+        : 'background:rgba(46,204,113,0.15);color:#2ecc71;';
       actionBtns = `<button class="btn-sm btn-edit" onclick="resetAuthorPassword('${c.id}')">重置密码</button>
-        <button class="btn-sm" style="background:rgba(52,152,219,0.15);color:#3498db;" onclick="toggleAuthorApproval('${c.id}')">${approvalLabel}</button>
+        <button class="btn-sm" style="${approvalColor}" onclick="toggleAuthorApproval('${c.id}')" title="当前：${approvalLabel}。点击切换（与服务端一致）">${approvalLabel}</button>
         <button class="btn-sm btn-delete" onclick="disableAuthor('${c.id}')">禁用</button>` + actionBtns;
     } else if (c.username && c.authorStatus === 'disabled') {
       actionBtns = `<button class="btn-sm" style="background:rgba(46,204,113,0.15);color:#2ecc71;" onclick="approveAuthor('${c.id}')">启用</button>
@@ -3417,7 +3422,8 @@ async function disableAuthor(circleId) {
 async function toggleAuthorApproval(circleId) {
   const result = await adminAPI('POST', `/api/admin/circles/${circleId}/toggle-approval`);
   if (result && result.success) {
-    showToast(result.requireApproval ? '已设为需要审核' : '已设为免审核', 'success');
+    const exempt = result.exempt === true || result.requireApproval === false;
+    showToast(exempt ? '已设为免审核（作品将直接上架）' : '已设为需审核（作品需管理员通过）', 'success');
     loadCircles();
   }
 }

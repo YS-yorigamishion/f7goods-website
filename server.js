@@ -2148,16 +2148,24 @@ app.post('/api/admin/circles/:id/disable-author', authMiddleware, async (req, re
 });
 
 // Admin: toggle work approval requirement for author
+// 语义：requireApproval === false → 免审核；true / 缺省 → 需审核
 app.post('/api/admin/circles/:id/toggle-approval', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
 
-  circles[index].requireApproval = !circles[index].requireApproval;
+  const currentlyExempt = circles[index].requireApproval === false;
+  // 点击后取反：原来是免审核 → 改为需审核；否则改为免审核
+  circles[index].requireApproval = currentlyExempt;
   await writeJSON('circles.json', circles);
-  logEdit('管理员', '切换作品审核', circles[index].name,
-    circles[index].requireApproval ? '需要审核' : '免审核');
-  res.json({ success: true, requireApproval: circles[index].requireApproval });
+  const label = circles[index].requireApproval === false ? '免审核' : '需要审核';
+  logEdit('管理员', '切换作品审核', circles[index].name, label);
+  res.json({
+    success: true,
+    requireApproval: circles[index].requireApproval,
+    exempt: circles[index].requireApproval === false,
+    label
+  });
 });
 
 // Admin: cycle author visibility — auto → show → hide → auto
