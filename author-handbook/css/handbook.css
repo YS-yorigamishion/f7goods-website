@@ -120,23 +120,22 @@ body::before {
   font-weight: 700;
 }
 
-/* 主体：右侧三卡顶边压到「作者手册」文字一半 */
+/* 主体：顶对齐，右侧三卡贴近标题 */
 .hb-body {
   display: grid;
   grid-template-columns: minmax(230px, 268px) 1fr;
   gap: 1.15rem;
-  margin-top: 2.5rem;
-  align-items: end;
+  margin-top: 0.25rem;
+  align-items: start;
 }
 
-/* 左侧简介卡：上端贴近标题，底端与作品列表齐 */
 .idcard-wrap {
   position: relative;
   padding-top: 36px;
-  min-height: 380px;
-  margin-top: -2.35rem;
+  min-height: 340px;
+  margin-top: 0.4rem;
   margin-bottom: 0;
-  align-self: end;
+  align-self: start;
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -274,7 +273,7 @@ body::before {
 .id-stat .v { font-weight: 700; color: #221C2C; font-variant-numeric: tabular-nums; }
 
 /* 右侧分区：整图 + 标签条 */
-/* 右侧三卡：顶边覆盖「作者手册」约一半高度 */
+/* 右侧三卡：顶边压到「作者手册」文字一半 */
 .hb-tiles {
   display: grid;
   grid-template-columns: 1.08fr 1fr;
@@ -282,10 +281,9 @@ body::before {
   gap: 0.7rem;
   min-height: 280px;
   height: 280px;
-  align-self: end;
-  /* 相对网格上移，压到标题中部 */
-  margin-top: -1.75rem;
-  margin-left: clamp(0px, 8%, 2.4rem);
+  align-self: start;
+  margin-top: 0.55rem;
+  margin-left: clamp(0px, 12%, 5.5rem);
   width: auto;
   position: relative;
   z-index: 3;

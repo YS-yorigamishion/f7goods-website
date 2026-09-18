@@ -11,23 +11,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&display=swap">
-  <link rel="stylesheet" href="css/handbook.css?v=20260920a">
-  <!-- 强制：右侧三卡顶边压到「作者手册」一半，无视旧 CSS 缓存 -->
-  <style id="pw-force-tiles">
-    .hb-body { margin-top: 2.5rem !important; align-items: end !important; }
+  <link rel="stylesheet" href="css/handbook.css?v=20260920b">
+  <!-- 强制布局：三卡顶边压到「作者手册」一半；不依赖旧 CSS -->
+  <style id="layout-force">
+    .hb-body {
+      margin-top: 0.2rem !important;
+      align-items: start !important;
+    }
     .hb-tiles {
-      margin-top: -1.75rem !important;
-      margin-left: clamp(0px, 8%, 2.4rem) !important;
+      align-self: start !important;
+      margin-top: 0.55rem !important;
+      margin-left: clamp(0px, 12%, 5.5rem) !important;
       height: 280px !important;
       min-height: 280px !important;
-      align-self: end !important;
       position: relative !important;
       z-index: 3 !important;
     }
     .idcard-wrap {
-      margin-top: -2.35rem !important;
-      min-height: 380px !important;
-      align-self: end !important;
+      align-self: start !important;
+      margin-top: 0.35rem !important;
+      min-height: 340px !important;
+      padding-top: 36px !important;
+    }
+    .hb-title-static {
+      position: absolute !important;
+      top: 0.75rem !important;
+      right: 1.35rem !important;
+      z-index: 4 !important;
     }
   </style>
 </head>
@@ -59,7 +69,7 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20260920a"></script>
-  <script src="js/handbook.js?v=20260920a"></script>
+  <script src="/js/api.js?v=20260920b"></script>
+  <script src="js/handbook.js?v=20260920b"></script>
 </body>
 </html>
