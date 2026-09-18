@@ -24,8 +24,18 @@ const AUTHORS = [
       '/uploads/006antuoniewa1.png',
       '/uploads/006antuoniewa2.png'
     ],
-    eventCover: '/uploads/711chengdu.jpg',
-    projectCover: '/uploads/2026xinchunyan.png'
+    // 已参与活动：叠加展示（不足 3 张有几张显示几张）
+    eventImages: [
+      '/uploads/711chengdu.jpg',
+      '/uploads/bawuzu.jpg',
+      '/uploads/7wiki.png'
+    ],
+    // 同人企划：以最新 3 个为主，叠加展示
+    projectImages: [
+      '/uploads/2026xinchunyan.png',
+      '/uploads/404zhizuozu.png',
+      '/uploads/barichenguang.png'
+    ]
   },
   {
     id: 'c1785520390477',
@@ -40,8 +50,11 @@ const AUTHORS = [
     intro: '《未命名》同人游戏制作组，目前正在制作中。游客群：765852632。',
     contact: '「未命名」游客群',
     latestWorkImages: [],
-    eventCover: '/uploads/bawuzu.jpg',
-    projectCover: '/uploads/2026xinchunyan.png'
+    eventImages: [],
+    projectImages: [
+      '/uploads/2026xinchunyan.png',
+      '/uploads/404zhizuozu.png'
+    ]
   },
   {
     id: 'c002',
@@ -60,8 +73,12 @@ const AUTHORS = [
       '/uploads/006antuoniewa2.png',
       '/uploads/006jiaer.png'
     ],
-    eventCover: '/uploads/711chengdu.jpg',
-    projectCover: '/uploads/2026xinchunyan.png'
+    eventImages: [
+      '/uploads/711chengdu.jpg'
+    ],
+    projectImages: [
+      '/uploads/2026xinchunyan.png'
+    ]
   }
 ];
 
@@ -85,13 +102,15 @@ function bg(url) {
   return url ? `style="background-image:url('${esc(url)}')"` : '';
 }
 
-/** 作品三图叠加；不足三张则有几张叠几张 */
-function stackHtml(images) {
+/** 叠加展示：最多 3 张，不足 3 张有几张叠几张 */
+function stackHtml(images, emptyText) {
   const list = (images || []).filter(Boolean).slice(0, 3);
   if (!list.length) {
-    return `<div class="tile-stack"><div class="empty-ph">暂无最新作品图</div></div>`;
+    return `<div class="tile-stack"><div class="empty-ph">${esc(emptyText || '暂无图片')}</div></div>`;
   }
-  return `<div class="tile-stack">${list.map(u => `<div class="ph" ${bg(u)}></div>`).join('')}</div>`;
+  // 少于 3 张时调整定位，避免空位
+  const n = list.length;
+  return `<div class="tile-stack tile-stack-n${n}">${list.map(u => `<div class="ph" ${bg(u)}></div>`).join('')}</div>`;
 }
 
 function renderHandbook() {
@@ -160,21 +179,21 @@ function renderHandbook() {
 
         <div class="hb-tiles">
           <a class="tile tile-main" href="${circleUrl}#works" title="作品列表">
-            ${stackHtml(a.latestWorkImages)}
+            ${stackHtml(a.latestWorkImages, '暂无最新作品图')}
             <div class="tile-label">
               <b>作品列表</b>
               <span>WORKS</span>
             </div>
           </a>
           <a class="tile" href="${circleUrl}#events" title="参与活动">
-            <div class="tile-img" ${bg(a.eventCover)}></div>
+            ${stackHtml(a.eventImages, '暂无参与活动')}
             <div class="tile-label">
               <b>参与活动</b>
               <span>EVENTS</span>
             </div>
           </a>
           <a class="tile" href="${circleUrl}#projects" title="同人企划">
-            <div class="tile-img" ${bg(a.projectCover)}></div>
+            ${stackHtml(a.projectImages, '暂无同人企划')}
             <div class="tile-label">
               <b>同人企划</b>
               <span>PROJECTS</span>
@@ -184,9 +203,9 @@ function renderHandbook() {
       </div>
     </div>
     <div class="note">
-      <strong>预览</strong> · 作者列表「全部/个人/社团/官方」最右为紫底白字「作者手册」入口。
-      右上角作者名可点击搜索；作品区为最新三张图叠加；活动/企划用对应封面；分区不显示数量角标。
-      正式接入时请挂到 <code>/public/author-handbook/</code>，数据接 API。
+      <strong>预览</strong> · 作者列表筛选条最右为紫底白字「作者手册」。
+      右上角作者名可点击搜索。作品 / 参与活动 / 同人企划均为<strong>图片叠加</strong>（最多 3 张；企划取最新 3 个；不足 3 张有几张显示几张）。
+      分区不显示数量角标。
     </div>
   `;
 

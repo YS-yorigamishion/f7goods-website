@@ -294,7 +294,7 @@ body::before {
   background: linear-gradient(180deg, transparent 40%, rgba(12, 8, 24, 0.78) 100%);
 }
 
-/* 作品：最新三张叠加 */
+/* 作品/活动/企划：最新图叠加（最多 3 张，不足则有几张叠几张） */
 .tile-stack {
   position: absolute;
   inset: 0;
@@ -311,6 +311,7 @@ body::before {
   box-shadow: 0 8px 20px rgba(0,0,0,0.35);
   background-color: #2a2038;
 }
+/* 默认 3 张错落 */
 .tile-stack .ph:nth-child(1) {
   left: 12%; top: 14%;
   transform: rotate(-8deg);
@@ -328,6 +329,30 @@ body::before {
   transform: rotate(-2deg);
   z-index: 3;
 }
+/* 小卡（活动/企划）里的叠加略收紧 */
+.tile:not(.tile-main) .tile-stack .ph {
+  width: 70%;
+  border-width: 2px;
+}
+.tile:not(.tile-main) .tile-stack .ph:nth-child(1) { left: 8%; top: 10%; }
+.tile:not(.tile-main) .tile-stack .ph:nth-child(2) { left: 16%; top: 16%; }
+.tile:not(.tile-main) .tile-stack .ph:nth-child(3) { left: 22%; top: 22%; }
+
+/* 仅 2 张 */
+.tile-stack-n2 .ph:nth-child(1) { left: 14%; top: 16%; transform: rotate(-7deg); }
+.tile-stack-n2 .ph:nth-child(2) { left: 28%; top: 24%; transform: rotate(4deg); }
+/* 仅 1 张：居中 */
+.tile-stack-n1 .ph:nth-child(1) {
+  left: 50%; top: 46%;
+  width: 68%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  opacity: 1;
+}
+.tile:not(.tile-main) .tile-stack-n1 .ph:nth-child(1) {
+  width: 74%;
+  top: 44%;
+}
+
 .tile-stack::after {
   content: '';
   position: absolute;
@@ -341,9 +366,11 @@ body::before {
   left: 50%; top: 42%;
   transform: translate(-50%, -50%);
   color: rgba(232,196,255,0.45);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   letter-spacing: 0.08em;
   z-index: 2;
+  text-align: center;
+  width: 90%;
 }
 
 .tile-label {
