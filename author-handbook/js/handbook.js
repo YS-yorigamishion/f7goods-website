@@ -182,6 +182,7 @@ function renderHandbook() {
 
   root.innerHTML = `
     <div class="handbook">
+      <div class="hb-ribbon" aria-hidden="true"></div>
       <div class="hb-title-static">
         <h1>作者手册</h1>
         <span>HANDBOOK</span>
