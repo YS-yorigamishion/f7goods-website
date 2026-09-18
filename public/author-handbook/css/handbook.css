@@ -126,25 +126,26 @@ body::before {
   display: grid;
   grid-template-columns: minmax(230px, 268px) 1fr;
   gap: 1.15rem;
-  margin-top: 2.6rem;
-  align-items: start;
+  margin-top: 2.2rem;
+  align-items: stretch;
 }
 
-/* ── 左：档案卡（斜向、比右侧更长） ── */
+/* ── 左：档案卡 — 底与右侧齐，顶向上拉长 ── */
 .idcard-wrap {
   position: relative;
-  /* 顶部预留更多空间，夹签下方挂牌颈更长 */
-  padding-top: 36px;
-  min-height: 380px;
+  padding-top: 44px;
+  height: 100%;
+  min-height: 320px;
+  /* 底栏与右侧卡片高度差不多；顶部向上长 */
+  margin-top: -28px;
   margin-bottom: 0;
-  margin-top: -10px;
   z-index: 2;
   display: flex;
   flex-direction: column;
 }
 .idcard-clip {
   position: absolute;
-  top: 0;
+  top: 4px;
   left: calc(var(--clip-center) - var(--hb-pad-x) - 30px);
   width: 60px; height: 24px;
   background: linear-gradient(180deg, #EDEAF4 0%, #B0A8C0 40%, #5C5470 100%);
@@ -165,14 +166,13 @@ body::before {
   border-radius: 2px;
   background: #C8C2D6;
 }
-/* 夹签与内页之间的挂牌颈 */
 .idcard-wrap::before {
   content: '';
   position: absolute;
-  top: 20px;
-  left: calc(var(--clip-center) - var(--hb-pad-x) - 8px);
-  width: 16px;
-  height: 28px;
+  top: 24px;
+  left: calc(var(--clip-center) - var(--hb-pad-x) - 7px);
+  width: 14px;
+  height: 26px;
   background: linear-gradient(180deg, #6A6280, #4A3A52);
   border-radius: 0 0 2px 2px;
   z-index: 2;
@@ -180,17 +180,15 @@ body::before {
   transform-origin: top center;
 }
 
-/* 卡片：顶部深色框拉长，内页下移 */
 .idcard {
   flex: 1 1 auto;
-  min-height: 360px;
-  max-height: 400px;
+  min-height: 100%;
   background: linear-gradient(160deg, #5A4A62 0%, #4A3A52 40%, #3E3048 100%);
   border-radius: 8px;
-  /* 顶部加长的深色挂牌区 */
-  padding: 22px 8px 8px;
+  /* 顶部深色挂牌区加长 */
+  padding: 26px 8px 8px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.35);
-  transform: rotate(-2.5deg) translateY(-2px);
+  transform: rotate(-2.5deg);
   transform-origin: top center;
   display: flex;
   flex-direction: column;
@@ -288,7 +286,7 @@ body::before {
   grid-template-rows: 1fr 1fr;
   gap: 0.7rem;
   min-height: 300px;
-  max-height: 400px;
+  height: 100%;
 }
 .tile {
   position: relative;
@@ -462,21 +460,30 @@ body::before {
 
   .idcard-wrap {
     min-height: 0;
-    padding-top: 10px;
+    padding-top: 32px;
+    margin-top: -12px;
     margin-bottom: 0;
+    height: auto;
   }
   .idcard-clip {
+    top: 2px;
     left: 16px;
     width: 46px; height: 20px;
     transform: rotate(-2deg);
   }
+  .idcard-wrap::before {
+    top: 18px;
+    left: 32px;
+    width: 12px;
+    height: 18px;
+  }
   .idcard {
     transform: rotate(-2deg);
     min-height: 0;
-    padding: 5px;
+    padding: 16px 5px 5px;
   }
   .idcard-inner { padding: 0.8rem 0.7rem 0.75rem; }
-  .hb-tiles { max-height: none; min-height: 0; }
+  .hb-tiles { min-height: 0; height: auto; }
   .id-avatar { width: 50px; height: 50px; }
   .id-name { font-size: 0.96rem; }
   .id-sub { font-size: 0.7rem; }
