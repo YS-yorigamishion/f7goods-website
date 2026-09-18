@@ -465,7 +465,31 @@ body::before {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
   display: block;
+}
+/* 活动 / 企划：详情页顶栏多为横幅，取图顶部 */
+.tile-stack-cover .ph img {
+  object-fit: cover;
+  object-position: center top;
+}
+.tile-stack-cover .ph {
+  /* 横幅感：高度略矮、宽度略大，露出更多顶部构图 */
+  width: 78%;
+  aspect-ratio: 16 / 10;
+}
+.tile-stack-cover.tile-stack-n1 .ph-1 {
+  width: 82%;
+  aspect-ratio: 16 / 10;
+}
+.tile-stack-cover.tile-stack-n2 .ph { width: 74%; }
+.tile:not(.tile-main) .tile-stack-cover .ph {
+  width: 82%;
+  aspect-ratio: 16 / 10;
+  border-width: 2px;
+}
+.tile:not(.tile-main) .tile-stack-cover.tile-stack-n1 .ph-1 {
+  width: 86%;
 }
 .tile-stack .ph-1 {
   left: 12%; top: 14%;
@@ -604,6 +628,13 @@ body::before {
   .tile:not(.tile-main) .tile-stack .ph { width: 58%; }
   .tile-stack-n1 .ph-1 { width: 62%; }
   .tile:not(.tile-main) .tile-stack-n1 .ph-1 { width: 64%; }
+  .tile-stack-cover .ph {
+    width: 78%;
+    aspect-ratio: 16 / 10;
+    border-width: 2px;
+  }
+  .tile:not(.tile-main) .tile-stack-cover .ph { width: 80%; }
+  .tile-stack-cover.tile-stack-n1 .ph-1 { width: 84%; }
 
   .tile-label { padding: 0.55rem 0.65rem 0.65rem; }
   .tile-label b { font-size: 0.9rem; letter-spacing: 0.1em; }

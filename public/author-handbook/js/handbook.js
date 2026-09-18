@@ -177,13 +177,14 @@ function contactHtml(text, url) {
   return '<div class="v muted">—</div>';
 }
 
-function stackHtml(images, emptyText) {
+function stackHtml(images, emptyText, kind) {
   const list = (images || []).map(normImg).filter(Boolean).slice(0, 3);
+  const kindCls = kind === 'cover' ? ' tile-stack-cover' : '';
   if (!list.length) {
-    return `<div class="tile-stack"><div class="empty-ph">${esc(emptyText || '暂无图片')}</div></div>`;
+    return `<div class="tile-stack${kindCls}"><div class="empty-ph">${esc(emptyText || '暂无图片')}</div></div>`;
   }
   const n = list.length;
-  return `<div class="tile-stack tile-stack-n${n}">` +
+  return `<div class="tile-stack${kindCls} tile-stack-n${n}">` +
     list.map((u, i) =>
       `<div class="ph ph-${i + 1}"><img src="${esc(u)}" alt="" loading="lazy" onerror="this.style.display='none'"></div>`
     ).join('') +
@@ -265,21 +266,21 @@ function renderHandbook() {
 
         <div class="hb-tiles">
           <a class="tile tile-main" href="${circleUrl}#works" title="作品列表">
-            ${stackHtml(workImages, '暂无最新作品展示图')}
+            ${stackHtml(workImages, '暂无最新作品展示图', 'work')}
             <div class="tile-label">
               <b>作品列表</b>
               <span>WORKS</span>
             </div>
           </a>
           <a class="tile" href="${circleUrl}#events" title="参与活动">
-            ${stackHtml(eventImages, '暂无参与活动封面')}
+            ${stackHtml(eventImages, '暂无参与活动封面', 'cover')}
             <div class="tile-label">
               <b>参与活动</b>
               <span>EVENTS</span>
             </div>
           </a>
           <a class="tile" href="${circleUrl}#projects" title="同人企划">
-            ${stackHtml(projectImages, '暂无同人企划封面')}
+            ${stackHtml(projectImages, '暂无同人企划封面', 'cover')}
             <div class="tile-label">
               <b>同人企划</b>
               <span>PROJECTS</span>
@@ -359,18 +360,22 @@ function renderAuthorSearchList(q) {
 }
 
 function openAuthorSearch() {
-  const panel = document.getElementById('authorSearchPanel');
+  // DOM 结构：遮罩 id=authorSearchMask，open 类控制显示
+  const mask = document.getElementById('authorSearchMask');
   const input = document.getElementById('authorSearchInput');
-  if (!panel) return;
-  panel.classList.add('open');
+  if (!mask) return;
+  mask.classList.add('open');
   renderAuthorSearchList(input ? input.value : '');
   if (input) {
-    setTimeout(() => input.focus(), 40);
+    setTimeout(() => {
+      try { input.focus(); input.select(); } catch (e) {}
+    }, 50);
   }
 }
 
 function closeAuthorSearch() {
-  document.getElementById('authorSearchPanel')?.classList.remove('open');
+  const mask = document.getElementById('authorSearchMask');
+  if (mask) mask.classList.remove('open');
 }
 
 function buildAuthorsFromApi(circles, works, events, projects) {
@@ -473,32 +478,50 @@ async function loadFromApi() {
   renderHandbook();
 }
 
-document.getElementById('prevAuthor')?.addEventListener('click', () => {
-  if (!AUTHORS.length) return;
-  authorIndex = (authorIndex - 1 + AUTHORS.length) % AUTHORS.length;
-  renderHandbook();
-});
-document.getElementById('nextAuthor')?.addEventListener('click', () => {
-  if (!AUTHORS.length) return;
-  authorIndex = (authorIndex + 1) % AUTHORS.length;
-  renderHandbook();
-});
+function bindChrome() {
+  document.getElementById('prevAuthor')?.addEventListener('click', () => {
+    if (!AUTHORS.length) return;
+    authorIndex = (authorIndex - 1 + AUTHORS.length) % AUTHORS.length;
+    renderHandbook();
+  });
+  document.getElementById('nextAuthor')?.addEventListener('click', () => {
+    if (!AUTHORS.length) return;
+    authorIndex = (authorIndex + 1) % AUTHORS.length;
+    renderHandbook();
+  });
 
-document.getElementById('openAuthorSearch')?.addEventListener('click', openAuthorSearch);
-document.getElementById('authorSearchInput')?.addEventListener('input', (e) => {
-  renderAuthorSearchList(e.target.value);
-});
-document.getElementById('authorSearchInput')?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const first = document.querySelector('#authorSearchList .as-item');
-    if (first) first.click();
+  // 搜索入口：委托 + 直接绑定，避免节点替换后失效
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!t) return;
+    if (t.closest && t.closest('#openAuthorSearch')) {
+      e.preventDefault();
+      openAuthorSearch();
+      return;
+    }
+    if (t.closest && t.closest('#authorSearchClose')) {
+      e.preventDefault();
+      closeAuthorSearch();
+      return;
+    }
+    if (t.id === 'authorSearchMask') {
+      closeAuthorSearch();
+    }
+  });
+
+  const input = document.getElementById('authorSearchInput');
+  if (input) {
+    input.addEventListener('input', (e) => renderAuthorSearchList(e.target.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const first = document.querySelector('#authorSearchList .as-item');
+        if (first) first.click();
+      }
+      if (e.key === 'Escape') closeAuthorSearch();
+    });
   }
-  if (e.key === 'Escape') closeAuthorSearch();
-});
-document.getElementById('authorSearchClose')?.addEventListener('click', closeAuthorSearch);
-document.getElementById('authorSearchMask')?.addEventListener('click', (e) => {
-  if (e.target.id === 'authorSearchMask') closeAuthorSearch();
-});
+}
 
+bindChrome();
 loadFromApi();
