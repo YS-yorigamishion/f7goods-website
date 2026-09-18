@@ -287,13 +287,23 @@ body::before {
   .handbook::before { left: 24px; }
 }
 
-/* 左：档案卡 */
-.idcard-wrap { position: relative; padding-top: 8px; }
+/* 左：档案卡 — 与右侧图卡同高，向下延伸 */
+.idcard-wrap {
+  position: relative;
+  padding-top: 10px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
 .idcard-clip {
   position: absolute;
-  top: 0; left: 50%;
-  transform: translateX(-50%);
-  width: 54px; height: 22px;
+  top: 0;
+  /* 与 handbook::before 同一垂直中心轴 */
+  left: calc(var(--clip-center, 56px) - var(--hb-pad-x, 1.25rem) - 27px);
+  transform: none;
+  width: 54px;
+  height: 22px;
   background: linear-gradient(180deg, #c8c0d8, #8a82a0);
   border-radius: 4px;
   z-index: 2;
@@ -302,9 +312,11 @@ body::before {
 .idcard-clip::after {
   content: '';
   position: absolute;
-  left: 50%; top: 4px;
+  left: 50%;
+  top: 4px;
   transform: translateX(-50%);
-  width: 14px; height: 14px;
+  width: 14px;
+  height: 14px;
   border: 2px solid #5a5468;
   border-radius: 3px;
 }
@@ -315,8 +327,11 @@ body::before {
   border-radius: 6px;
   padding: 1.15rem 0.95rem 1rem;
   box-shadow: 0 8px 24px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.5);
-  min-height: 100%;
   transform: rotate(-0.3deg);
+  flex: 1 1 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .id-head {
@@ -370,7 +385,7 @@ body::before {
 .id-block .v.num { font-variant-numeric: tabular-nums; letter-spacing: 0.04em; font-weight: 600; }
 
 .id-stats {
-  margin-top: 0.75rem;
+  margin-top: auto;
   padding-top: 0.65rem;
   border-top: 1px dashed rgba(42,36,48,0.2);
   display: grid;
@@ -465,31 +480,27 @@ body::before {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center center;
+  /* 作品 / 活动 / 企划统一：长图截取顶部，接近详情顶栏构图 */
+  object-position: center top;
   display: block;
 }
-/* 活动 / 企划：详情页顶栏多为横幅，取图顶部 */
-.tile-stack-cover .ph img {
-  object-fit: cover;
-  object-position: center top;
-}
+/* 活动/企划与作品列表同规格：竖向相框 + 顶部裁切 */
 .tile-stack-cover .ph {
-  /* 横幅感：高度略矮、宽度略大，露出更多顶部构图 */
-  width: 78%;
-  aspect-ratio: 16 / 10;
+  width: 62%;
+  aspect-ratio: 4 / 5;
 }
 .tile-stack-cover.tile-stack-n1 .ph-1 {
-  width: 82%;
-  aspect-ratio: 16 / 10;
+  width: 68%;
+  aspect-ratio: 4 / 5;
 }
-.tile-stack-cover.tile-stack-n2 .ph { width: 74%; }
+.tile-stack-cover.tile-stack-n2 .ph { width: 62%; }
 .tile:not(.tile-main) .tile-stack-cover .ph {
-  width: 82%;
-  aspect-ratio: 16 / 10;
+  width: 70%;
+  aspect-ratio: 4 / 5;
   border-width: 2px;
 }
 .tile:not(.tile-main) .tile-stack-cover.tile-stack-n1 .ph-1 {
-  width: 86%;
+  width: 74%;
 }
 .tile-stack .ph-1 {
   left: 12%; top: 14%;
@@ -628,13 +639,18 @@ body::before {
   .tile:not(.tile-main) .tile-stack .ph { width: 58%; }
   .tile-stack-n1 .ph-1 { width: 62%; }
   .tile:not(.tile-main) .tile-stack-n1 .ph-1 { width: 64%; }
-  .tile-stack-cover .ph {
-    width: 78%;
-    aspect-ratio: 16 / 10;
-    border-width: 2px;
+  .tile-stack-cover .ph,
+  .tile-stack-cover.tile-stack-n2 .ph {
+    width: 56%;
+    aspect-ratio: 4 / 5;
   }
-  .tile:not(.tile-main) .tile-stack-cover .ph { width: 80%; }
-  .tile-stack-cover.tile-stack-n1 .ph-1 { width: 84%; }
+  .tile:not(.tile-main) .tile-stack-cover .ph { width: 58%; }
+  .tile-stack-cover.tile-stack-n1 .ph-1 { width: 62%; }
+  .tile:not(.tile-main) .tile-stack-cover.tile-stack-n1 .ph-1 { width: 64%; }
+
+  .handbook::before { left: 20px; }
+  .idcard-clip { left: calc(20px + 1.25rem - 1.25rem); left: 20px; transform: none; }
+  .idcard-wrap { min-height: 0; }
 
   .tile-label { padding: 0.55rem 0.65rem 0.65rem; }
   .tile-label b { font-size: 0.9rem; letter-spacing: 0.1em; }
