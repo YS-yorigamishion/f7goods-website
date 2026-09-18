@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -70,6 +70,45 @@
     }
     .ab-pill:disabled { opacity: 0.4; cursor: default; }
     .ab-pill:disabled:hover { border-color: var(--border); color: var(--ink); }
+    /* 标签芯片输入 */
+    .tag-chip-box {
+      display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm, 8px);
+      padding: 0.4rem 0.55rem;
+      background: var(--card);
+      min-height: 42px;
+      cursor: text;
+    }
+    .tag-chip-box:focus-within { border-color: var(--accent); }
+    .tag-chip {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      padding: 0.2rem 0.55rem;
+      background: rgba(217, 79, 92, 0.08);
+      color: var(--accent);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      line-height: 1.3;
+      max-width: 100%;
+    }
+    .tag-chip .tag-chip-text {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .tag-chip button {
+      background: none; border: none; color: var(--accent);
+      cursor: pointer; font-weight: 700; padding: 0 0.1rem;
+      font-size: 0.95rem; line-height: 1; font-family: inherit;
+    }
+    .tag-chip button:hover { color: var(--accent-dark, #B83D49); }
+    .tag-chip-box .tag-chip-input {
+      border: none; outline: none; background: transparent;
+      flex: 1; min-width: 120px; font: inherit; font-size: 0.85rem;
+      color: var(--ink); padding: 0.15rem;
+    }
+    .tag-chip-box .tag-chip-input::placeholder { color: var(--haze); }
+    .tag-chip-hint {
+      font-size: 0.72rem; color: var(--haze); margin-top: 0.3rem; line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -455,8 +494,10 @@
               <input type="date" class="form-input" id="batchEndDate">
             </div>
             <div class="form-group">
-              <label>标签（英文逗号分隔，留空不修改）</label>
-              <input class="form-input" id="batchTags" placeholder="标签1, 标签2">
+              <label>标签（留空不修改）</label>
+              <div class="tag-chip-box" id="batchTagsBox" data-for="batchTags"></div>
+              <input type="hidden" id="batchTags" value="">
+              <div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>
             </div>
             <div class="form-group">
               <label>描述（留空不修改）</label>
@@ -683,6 +724,140 @@
       } catch (e) {}
     }
     applyMgmtBrandLogo();
+
+    // ===== 标签芯片输入 =====
+    const TAG_SEP_RE = /[,，、;；]+/;
+
+    function parseTagString(str) {
+      return String(str || '').split(TAG_SEP_RE).map(t => t.trim()).filter(Boolean);
+    }
+
+    function getTagChipValues(hiddenId) {
+      return parseTagString(document.getElementById(hiddenId)?.value || '');
+    }
+
+    function createTagChip(box, text) {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      const label = document.createElement('span');
+      label.className = 'tag-chip-text';
+      label.textContent = text;
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.setAttribute('aria-label', '删除标签 ' + text);
+      rm.innerHTML = '&times;';
+      rm.addEventListener('click', (e) => {
+        e.stopPropagation();
+        chip.remove();
+        syncTagChipHidden(box);
+        box.querySelector('.tag-chip-input')?.focus();
+      });
+      chip.appendChild(label);
+      chip.appendChild(rm);
+      return chip;
+    }
+
+    function getTagChipValuesFromBox(box) {
+      return [...box.querySelectorAll('.tag-chip .tag-chip-text')].map(el => el.textContent).filter(Boolean);
+    }
+
+    function syncTagChipHidden(box) {
+      const hidId = box.dataset.for;
+      const hid = hidId ? document.getElementById(hidId) : null;
+      const tags = getTagChipValuesFromBox(box);
+      if (hid) {
+        hid.value = tags.join(', ');
+        hid.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      return tags;
+    }
+
+    function addTagChip(box, text) {
+      const t = String(text || '').trim();
+      if (!t) return false;
+      const existing = getTagChipValuesFromBox(box);
+      if (existing.includes(t)) return false;
+      const input = box.querySelector('.tag-chip-input');
+      box.insertBefore(createTagChip(box, t), input || null);
+      syncTagChipHidden(box);
+      return true;
+    }
+
+    function setTagChipValues(box, value) {
+      const tags = Array.isArray(value) ? value.map(s => String(s).trim()).filter(Boolean) : parseTagString(value);
+      const input = box.querySelector('.tag-chip-input');
+      box.querySelectorAll('.tag-chip').forEach(c => c.remove());
+      tags.forEach(t => box.insertBefore(createTagChip(box, t), input || null));
+      syncTagChipHidden(box);
+    }
+
+    function commitPendingTag(box, force) {
+      const input = box.querySelector('.tag-chip-input');
+      if (!input) return;
+      const raw = input.value;
+      const parts = raw.split(TAG_SEP_RE);
+      let added = false;
+      parts.forEach((p, i) => {
+        const t = p.trim();
+        if (!t) return;
+        if (i < parts.length - 1 || TAG_SEP_RE.test(raw)) {
+          if (addTagChip(box, t)) added = true;
+        } else if (force) {
+          if (addTagChip(box, t)) added = true;
+          input.value = '';
+        }
+      });
+      if (TAG_SEP_RE.test(raw) || force) input.value = '';
+      else if (parts.length > 1) input.value = parts[parts.length - 1];
+      if (added) input.focus();
+    }
+
+    function initTagChipBox(box) {
+      if (!box || box.dataset.tagChipReady === '1') return;
+      box.dataset.tagChipReady = '1';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'tag-chip-input';
+      input.placeholder = '输入标签后回车';
+      input.autocomplete = 'off';
+      box.appendChild(input);
+
+      const hidId = box.dataset.for;
+      const hid = hidId ? document.getElementById(hidId) : null;
+      if (hid) setTagChipValues(box, hid.value);
+
+      input.addEventListener('keydown', (e) => {
+        if (e.isComposing || e.keyCode === 229) return;
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commitPendingTag(box, true);
+        } else if (e.key === 'Backspace' && input.value === '') {
+          const chips = box.querySelectorAll('.tag-chip');
+          if (chips.length) {
+            chips[chips.length - 1].remove();
+            syncTagChipHidden(box);
+          }
+        }
+      });
+
+      input.addEventListener('input', (e) => {
+        if (e.isComposing) return;
+        if (TAG_SEP_RE.test(input.value)) commitPendingTag(box, false);
+      });
+
+      input.addEventListener('blur', () => {
+        if (input.value.trim()) commitPendingTag(box, true);
+      });
+
+      box.addEventListener('click', (e) => {
+        if (e.target === box || e.target.closest('.tag-chip')) input.focus();
+      });
+    }
+
+    function initTagChipBoxes(root) {
+      (root || document).querySelectorAll('.tag-chip-box[data-for]').forEach(initTagChipBox);
+    }
 
     let authorToken = localStorage.getItem('f7author_token');
     let authorCircleId = localStorage.getItem('f7author_circleId');
@@ -2164,6 +2339,12 @@
       document.getElementById('batchPrice').value = '';
       document.getElementById('batchReleaseDate').value = '';
       document.getElementById('batchEndDate').value = '';
+      document.getElementById('batchTags').value = '';
+      const batchTagsBox = document.getElementById('batchTagsBox');
+      if (batchTagsBox) {
+        initTagChipBox(batchTagsBox);
+        setTagChipValues(batchTagsBox, '');
+      }
 
       // Load events and projects
       const [allEvents, allProjects] = await Promise.all([
@@ -2201,7 +2382,8 @@
       const price = document.getElementById('batchPrice').value;
       const releaseDate = document.getElementById('batchReleaseDate').value;
       const endDate = document.getElementById('batchEndDate').value;
-      const tags = document.getElementById('batchTags').value;
+      const tagsVal = document.getElementById('batchTags')?.value || '';
+      const tags = tagsVal.trim() ? tagsVal : '';
       const description = document.getElementById('batchDescription').value;
       const contactType = document.getElementById('batchContactType').value;
       const contactValue = document.getElementById('batchContactValue').value;
@@ -2213,7 +2395,7 @@
       if (price) data.price = price;
       if (releaseDate) data.releaseDate = releaseDate;
       if (endDate) data.endDate = endDate;
-      if (tags) data.tags = tags.split(',').map(t => t.trim()).filter(Boolean);
+      if (tags) data.tags = parseTagString(tags);
       if (description) data.description = description;
 
       // Handle contact info
@@ -2289,6 +2471,7 @@
       work._relatedProjects = (allProjects || []).filter(p => (p.works || []).includes(workId)).map(p => p.id);
 
       body.innerHTML = await buildWorkFormHTML(work);
+      initTagChipBoxes(body);
     }
 
     async function openAuthorWorkForm() {
@@ -2299,6 +2482,7 @@
       body.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">加载中...</p>';
       overlay.classList.add('open');
       body.innerHTML = await buildWorkFormHTML({});
+      initTagChipBoxes(body);
 
       // Check for saved draft
       const draft = FormDraft.load('work');
@@ -2343,7 +2527,7 @@
           <label>约稿作者</label>
           <input class="form-input" id="wfCommissionedBy" value="${escapeHtml(w.commissionedBy || '')}" placeholder="请输入约稿作者名字">
         </div>
-        <div class="form-group"><label>标签（英文逗号分隔）</label><input class="form-input" id="wfTags" value="${(w.tags||[]).join(', ')}" placeholder="角色名字,作品形式"></div>
+        <div class="form-group"><label>标签</label><div class="tag-chip-box" id="wfTagsBox" data-for="wfTags"></div><input type="hidden" id="wfTags" value="${(w.tags||[]).map(t => String(t).replace(/"/g,'&quot;')).join(', ')}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div></div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="wfDesc" style="min-height:80px;">${w.description || ''}</textarea></div>
         <div class="form-row">
           <div class="form-group"><label>联系方式类型</label><select class="form-input" id="wfContactType"><option value="" ${!w.socialLinks?.qq && !w.socialLinks?.qqGroup && !w.socialLinks?.wechat && !w.socialLinks?.weibo && !w.socialLinks?.bilibili && !w.socialLinks?.custom ? 'selected' : ''}>无</option><option value="qq" ${w.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${w.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${w.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${w.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${w.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${w.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
@@ -2448,7 +2632,7 @@
         price: priceFormatted,
         releaseDate: document.getElementById('wfReleaseDate').value,
         endDate: document.getElementById('wfEndDate').value,
-        tags: document.getElementById('wfTags').value.split(',').map(t => t.trim()).filter(Boolean),
+        tags: getTagChipValues('wfTags'),
         description: document.getElementById('wfDesc').value,
         images: [...document.querySelectorAll('#wfImagesPreview img')].map(img => img.src),
         moreImages: [...document.querySelectorAll('#wfMoreImagesPreview img')].map(img => img.src),
@@ -3895,7 +4079,7 @@
           <div class="form-group"><label>状态</label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && projectData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div>
         </div>
         <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;">${isEdit ? escapeHtml(projectData.description || '') : ''}</textarea></div>
-        <div class="form-group"><label>标签（英文逗号分隔）</label><input class="form-input" id="myProjectTags" value="${isEdit ? (projectData.tags || []).join(', ') : ''}" placeholder="标签1, 标签2"></div>
+        <div class="form-group"><label>标签</label><div class="tag-chip-box" id="myProjectTagsBox" data-for="myProjectTags"></div><input type="hidden" id="myProjectTags" value="${isEdit ? (projectData.tags || []).map(t => String(t).replace(/"/g,'&quot;')).join(', ') : ''}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div></div>
         <div class="form-row">
           <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="" ${!isEdit || (!projectData.socialLinks?.qq && !projectData.socialLinks?.qqGroup && !projectData.socialLinks?.wechat && !projectData.socialLinks?.weibo && !projectData.socialLinks?.bilibili && !projectData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && projectData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && projectData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && projectData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && projectData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
           <div class="form-group"><label>联系方式</label><input class="form-input" id="myProjectContactValue" value="${isEdit ? (projectData.socialLinks?.qq || projectData.socialLinks?.qqGroup || projectData.socialLinks?.wechat || projectData.socialLinks?.weibo || projectData.socialLinks?.bilibili || projectData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div>
@@ -3950,6 +4134,7 @@
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>`;
       overlay.classList.add('open');
+      initTagChipBoxes(body);
     }
 
     async function submitMyProject(projectId = '') {
@@ -3973,7 +4158,7 @@
         category: document.getElementById('myProjectCategory').value,
         status: document.getElementById('myProjectStatus').value,
         description: document.getElementById('myProjectDesc').value,
-        tags: document.getElementById('myProjectTags').value.split(',').map(t => t.trim()).filter(Boolean),
+        tags: getTagChipValues('myProjectTags'),
         coverImage: coverImg ? coverImg.src : '',
         images,
         works: relatedWorks,
@@ -4259,6 +4444,11 @@
           if (el.type === 'checkbox') el.checked = value;
           else if (el.type === 'radio') { /* handled by name selector */ }
           else el.value = value;
+          const chipBox = body.querySelector(`.tag-chip-box[data-for="${id}"]`);
+          if (chipBox) {
+            initTagChipBox(chipBox);
+            setTagChipValues(chipBox, el.value);
+          }
         });
         this._hasChanges = true;
       },
@@ -4306,6 +4496,7 @@
       }
     };
 
+    initTagChipBoxes(document);
     loadLang(_lang, true).finally(() => checkAuthorAuth());
   </script>
 </body>
