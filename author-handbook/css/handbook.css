@@ -133,11 +133,11 @@ body::before {
 /* ── 左：档案卡（斜向、比右侧更长） ── */
 .idcard-wrap {
   position: relative;
-  padding-top: 14px;
-  /* 略长于右侧，但不超出手册底栏 */
-  min-height: 360px;
+  /* 顶部预留更多空间，夹签下方挂牌颈更长 */
+  padding-top: 36px;
+  min-height: 380px;
   margin-bottom: 0;
-  margin-top: -6px;
+  margin-top: -10px;
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -165,20 +165,36 @@ body::before {
   border-radius: 2px;
   background: #C8C2D6;
 }
+/* 夹签与内页之间的挂牌颈 */
+.idcard-wrap::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: calc(var(--clip-center) - var(--hb-pad-x) - 8px);
+  width: 16px;
+  height: 28px;
+  background: linear-gradient(180deg, #6A6280, #4A3A52);
+  border-radius: 0 0 2px 2px;
+  z-index: 2;
+  transform: rotate(-2.5deg);
+  transform-origin: top center;
+}
 
-/* 明显斜向 + 加长，高度超过右侧分区 */
+/* 卡片：顶部深色框拉长，内页下移 */
 .idcard {
   flex: 1 1 auto;
-  min-height: 340px;
-  max-height: 380px;
+  min-height: 360px;
+  max-height: 400px;
   background: linear-gradient(160deg, #5A4A62 0%, #4A3A52 40%, #3E3048 100%);
   border-radius: 8px;
-  padding: 8px;
+  /* 顶部加长的深色挂牌区 */
+  padding: 22px 8px 8px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.35);
-  transform: rotate(-2.5deg) translateY(-4px);
+  transform: rotate(-2.5deg) translateY(-2px);
   transform-origin: top center;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 /* 内页纸 */
 .idcard-inner {
