@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作者手册 · f7goods 预览</title>
+  <title>作者手册 · f7goods</title>
   <meta name="robots" content="noindex">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -11,18 +11,36 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&display=swap">
-  <link rel="stylesheet" href="css/handbook.css?v=20260918z">
+  <link rel="stylesheet" href="css/handbook.css?v=20260920a">
+  <!-- 强制：右侧三卡顶边压到「作者手册」一半，无视旧 CSS 缓存 -->
+  <style id="pw-force-tiles">
+    .hb-body { margin-top: 2.5rem !important; align-items: end !important; }
+    .hb-tiles {
+      margin-top: -1.75rem !important;
+      margin-left: clamp(0px, 8%, 2.4rem) !important;
+      height: 280px !important;
+      min-height: 280px !important;
+      align-self: end !important;
+      position: relative !important;
+      z-index: 3 !important;
+    }
+    .idcard-wrap {
+      margin-top: -2.35rem !important;
+      min-height: 380px !important;
+      align-self: end !important;
+    }
+  </style>
 </head>
 <body>
   <div class="page">
     <div class="chrome">
-      <span class="tag">预览 · 作者手册</span>
+      <span class="tag">作者手册</span>
       <div class="chrome-tools">
-        <button type="button" id="prevAuthor" class="chrome-btn" aria-label="上一位">←</button>
+        <button type="button" id="prevAuthor" class="chrome-btn" aria-label="上一位作者">←</button>
         <span id="authorPicker" class="chrome-name"></span>
-        <button type="button" id="nextAuthor" class="chrome-btn" aria-label="下一位">→</button>
+        <button type="button" id="nextAuthor" class="chrome-btn" aria-label="下一位作者">→</button>
         <button type="button" id="openAuthorSearch" class="chrome-btn search-btn" aria-label="搜索作者">搜索作者</button>
-        <a href="/author-handbook/?v=1">刷新</a>
+        <a href="/circles.html">同人作者</a>
         <a href="/">站内</a>
       </div>
     </div>
@@ -41,7 +59,7 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20260918z"></script>
-  <script src="js/handbook.js?v=20260918z"></script>
+  <script src="/js/api.js?v=20260920a"></script>
+  <script src="js/handbook.js?v=20260920a"></script>
 </body>
 </html>
