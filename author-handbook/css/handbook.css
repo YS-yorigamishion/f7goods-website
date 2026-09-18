@@ -285,7 +285,7 @@ body::before {
 }
 .tile-main {
   grid-row: 1 / 3;
-  min-height: 300px;
+  min-height: 320px;
 }
 
 /* 整图铺满，顶栏构图 */
@@ -407,40 +407,47 @@ body::before {
 
 /* ── 移动端 ── */
 @media (max-width: 720px) {
-  .page { padding: 0.75rem 0.65rem 1.75rem; }
-  .chrome { margin-bottom: 0.65rem; }
-  .chrome a, .chrome-btn { min-height: 40px; padding: 0.4rem 0.7rem; }
-  .chrome-name { min-width: 4.5em; font-size: 0.82rem; }
+  .page { padding: 0.7rem 0.6rem 1.75rem; }
+  .chrome { margin-bottom: 0.6rem; gap: 0.4rem; }
+  .chrome a, .chrome-btn {
+    min-height: 40px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.76rem;
+  }
+  .chrome-name { min-width: 4em; font-size: 0.8rem; }
 
   .handbook {
-    padding: 1rem 0.75rem 0.9rem;
-    margin-top: 0.5rem;
+    padding: 0.95rem 0.65rem 0.85rem;
+    margin-top: 0.45rem;
   }
-  .handbook::before { left: 22px; width: 36px; height: 16px; }
-  .handbook::after { left: 34px; width: 12px; height: 8px; }
+  .handbook::before { left: 18px; width: 34px; height: 15px; }
+  .handbook::after { left: 30px; width: 12px; height: 8px; }
 
   .hb-title-static {
     position: static; text-align: left;
-    margin: 0.25rem 0 0.85rem;
+    margin: 0.2rem 0 0.75rem;
   }
-  .hb-title-static h1 { font-size: 1.4rem; letter-spacing: 0.12em; }
-  .hb-title-static span { font-size: 0.62rem; }
+  .hb-title-static h1 { font-size: 1.35rem; letter-spacing: 0.1em; }
+  .hb-title-static span { font-size: 0.6rem; }
 
   .hb-body {
     grid-template-columns: 1fr;
     margin-top: 0;
-    gap: 0.75rem;
+    gap: 0.7rem;
   }
 
   .idcard-wrap { min-height: 0; padding-top: 10px; }
-  .idcard-clip { left: 18px; width: 48px; height: 20px; }
-  .idcard { transform: none; padding: 6px; }
-  .idcard-inner { padding: 0.85rem 0.75rem 0.8rem; }
-  .id-avatar { width: 52px; height: 52px; }
-  .id-name { font-size: 0.98rem; }
+  .idcard-clip { left: 16px; width: 46px; height: 20px; }
+  .idcard { transform: none; padding: 5px; }
+  .idcard-inner { padding: 0.8rem 0.7rem 0.75rem; }
+  .id-avatar { width: 50px; height: 50px; }
+  .id-name { font-size: 0.96rem; }
+  .id-sub { font-size: 0.7rem; }
   .id-block .k { font-size: 0.74rem; }
-  .id-block .v { font-size: 0.82rem; }
+  .id-block .v { font-size: 0.82rem; line-height: 1.6; }
+  .id-stat { font-size: 0.82rem; }
 
+  /* 作品大图更占屏宽，避免显得太小 */
   .hb-tiles {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto auto;
@@ -450,15 +457,39 @@ body::before {
   .tile-main {
     grid-column: 1 / -1;
     grid-row: auto;
-    min-height: 160px;
+    min-height: 240px;
+    height: 42vw;
+    max-height: 300px;
   }
-  .tile { min-height: 130px; }
-  .tile-label { padding: 0.45rem 0.35rem 0.55rem; }
-  .tile-label b { font-size: 0.88rem; letter-spacing: 0.14em; }
-  .tile-label span { font-size: 0.58rem; }
+  .tile {
+    min-height: 148px;
+  }
+  .tile-label {
+    padding: 0.55rem 0.45rem 0.65rem;
+  }
+  .tile-label b {
+    font-size: 0.95rem;
+    letter-spacing: 0.16em;
+  }
+  .tile-label span { font-size: 0.6rem; }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 400px) {
+  .tile-main {
+    min-height: 200px;
+    height: 48vw;
+    max-height: 260px;
+  }
+  .tile { min-height: 128px; }
+  .tile-label b { font-size: 0.88rem; }
+  .hb-tiles { gap: 0.45rem; }
+}
+
+@media (max-width: 340px) {
   .hb-tiles { grid-template-columns: 1fr; }
-  .tile { min-height: 120px; }
+  .tile { min-height: 140px; }
+  .tile-main {
+    height: auto;
+    min-height: 180px;
+  }
 }
