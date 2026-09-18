@@ -1193,6 +1193,7 @@
       loadAuthorProjects();
       loadAuthorImages();
       loadNotifications();
+      refreshApprovalNotifBadge();
       renderAccountChrome();
       const sel = document.getElementById('accountSelect');
       if (sel) sel.value = localStorage.getItem('f7author_actAs') || authorCircleId;
@@ -1211,6 +1212,7 @@
       loadAuthorProjects();
       loadAuthorImages();
       loadNotifications();
+      refreshApprovalNotifBadge();
       checkAaPopup();
       // 支持前台入口深链：?tab=my-events&new=1 等
       const deep = new URLSearchParams(location.search);
@@ -1801,17 +1803,12 @@
           }
         });
 
-        // Update badge
+        // Update like/want badge only — 审核通知角标由 loadAuthorNotifications 单独维护
         const badge = document.getElementById('notifBadge');
-        const navBadge = document.getElementById('navNotifBadge');
         const unreadCount = notifications.length;
         if (badge) {
           badge.textContent = unreadCount;
           badge.style.display = unreadCount > 0 ? 'block' : 'none';
-        }
-        if (navBadge) {
-          navBadge.textContent = unreadCount;
-          navBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
         }
 
         // Save current stats for next comparison
@@ -1843,11 +1840,25 @@
       </div>`;
       document.body.appendChild(overlay);
 
-      // Mark as read
+      // Mark like/want notification as read
       const badge = document.getElementById('notifBadge');
       if (badge) badge.style.display = 'none';
+    }
+
+    function setApprovalNotifBadge(count) {
       const navBadge = document.getElementById('navNotifBadge');
-      if (navBadge) navBadge.style.display = 'none';
+      if (!navBadge) return;
+      const n = Math.max(0, parseInt(count, 10) || 0);
+      navBadge.textContent = n;
+      navBadge.style.display = n > 0 ? 'flex' : 'none';
+    }
+
+    async function refreshApprovalNotifBadge() {
+      try {
+        const list = await authorAPI('GET', '/api/author/notifications');
+        const unread = (Array.isArray(list) ? list : []).filter(n => !n.read).length;
+        setApprovalNotifBadge(unread);
+      } catch (e) {}
     }
 
     // Load author notifications
@@ -1855,17 +1866,19 @@
       const container = document.getElementById('authorNotificationsContainer');
       try {
         const notifications = await authorAPI('GET', '/api/author/notifications');
-        if (!notifications || notifications.length === 0) {
+        const list = Array.isArray(notifications) ? notifications : [];
+        setApprovalNotifBadge(list.filter(n => !n.read).length);
+        if (!list.length) {
           container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无审核通知</p>';
           return;
         }
         const typeLabels = { work: '作品', event: '活动', project: '企划', update: '动态' };
-        container.innerHTML = notifications.map(n => {
+        container.innerHTML = list.map(n => {
           const time = new Date(n.createdAt).toLocaleString('zh-CN');
           const isApproved = n.message.includes('通过');
           const statusColor = isApproved ? '#2ecc71' : 'var(--accent)';
           const statusIcon = isApproved ? '✓' : '✗';
-          return `<div style="display:flex;gap:0.8rem;padding:0.8rem 0;border-bottom:1px solid var(--border);${!n.read ? 'background:rgba(52,152,219,0.05);' : ''}" onclick="markNotifRead('${n.id}', this)">
+          return `<div style="display:flex;gap:0.8rem;padding:0.8rem 0;border-bottom:1px solid var(--border);${!n.read ? 'background:rgba(52,152,219,0.05);' : ''}" data-unread="${n.read ? '0' : '1'}" onclick="markNotifRead('${n.id}', this)">
             <div style="width:24px;height:24px;border-radius:50%;background:${statusColor};color:white;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;">${statusIcon}</div>
             <div style="flex:1;">
               <div style="font-size:0.85rem;margin-bottom:0.2rem;">
@@ -1884,8 +1897,16 @@
     }
 
     async function markNotifRead(notifId, el) {
-      await authorAPI('PUT', `/api/author/notifications/${notifId}/read`);
-      if (el) el.style.background = '';
+      if (el && el.dataset.unread === '0') return;
+      const result = await authorAPI('PUT', `/api/author/notifications/${notifId}/read`);
+      if (!result) return;
+      if (el) {
+        el.style.background = '';
+        el.dataset.unread = '0';
+      }
+      const navBadge = document.getElementById('navNotifBadge');
+      const current = navBadge ? (parseInt(navBadge.textContent, 10) || 0) : 0;
+      setApprovalNotifBadge(current - 1);
     }
 
     // ===== Author Announcements =====
