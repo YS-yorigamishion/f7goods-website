@@ -4325,7 +4325,7 @@
       body.innerHTML = `
         <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" value="${isEdit ? escapeHtml(updateData.title) : ''}" required></div>
         <div class="form-group"><label>分类 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateCategory"><option value="">请选择</option></select></div>
-        <div class="form-group"><label>状态 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateStatus"><option value="">请选择</option></select></div>
+        <div class="form-group"><label>状态</label><select class="form-input" id="myUpdateStatus"><option value="">不填</option></select></div>
         <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${isEdit ? updateData.publishDate || '' : new Date().toISOString().split('T')[0]}"></div>
         <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:120px;" required>${isEdit ? escapeHtml(updateData.content || '') : ''}</textarea></div>
         <div class="form-group">
@@ -4357,7 +4357,7 @@
         const statusSelect = document.getElementById('myUpdateStatus');
         catSelect.innerHTML = '<option value="">请选择</option>' +
           updCats.map(c => `<option value="${c.id}" ${updateData?.category === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
-        statusSelect.innerHTML = '<option value="">请选择</option>' +
+        statusSelect.innerHTML = '<option value="">不填</option>' +
           updStatus.map(c => `<option value="${c.id}" ${updateData?.status === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
       } catch (e) {}
     }
@@ -4368,7 +4368,7 @@
       const category = document.getElementById('myUpdateCategory').value;
       const status = document.getElementById('myUpdateStatus').value;
       if (!title || !content) { showToast('请填写标题和内容', 'error'); return; }
-      if (!category || !status) { showToast('请选择分类和状态', 'error'); return; }
+      if (!category) { showToast('请选择分类', 'error'); return; }
       const coverImg = document.querySelector('#myUpdateCoverPreview img');
       const images = [...document.querySelectorAll('#myUpdateImagesPreview img')].map(img => img.src);
       const data = {
