@@ -1483,12 +1483,13 @@ app.post('/api/author/my-events', authorAuthMiddleware, async (req, res) => {
   const extraCircles = Array.isArray(req.body.relatedCircles) ? req.body.relatedCircles.filter(Boolean) : [];
   const relatedCircles = [...new Set([req.author.circleId, ...extraCircles])];
   const relatedWorks = Array.isArray(eventData.relatedWorks) ? eventData.relatedWorks.filter(Boolean) : [];
+  const eventApproval = resolveApprovalStatus('requireEventApproval');
   const event = {
     id: 'e' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...eventData,
     relatedWorks,
     relatedCircles,
-    approvalStatus: 'pending',
+    approvalStatus: eventApproval,
     submittedBy: req.author.circleId,
     order: maxOrder + 1
   };
@@ -1508,7 +1509,7 @@ app.post('/api/author/my-events', authorAuthMiddleware, async (req, res) => {
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
-  logEdit(circle?.name || '作者', '提交活动', event.title || event.id, '待审核');
+  logEdit(circle?.name || '作者', '提交活动', event.title || event.id, approvalStatusLabel(eventApproval));
 
   res.json(event);
 });
@@ -1538,7 +1539,11 @@ app.put('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) => {
   }
 
   const prevWorks = new Set(events[index].relatedWorks || []);
-  events[index] = { ...events[index], ...updates, approvalStatus: 'pending' };
+  events[index] = {
+    ...events[index],
+    ...updates,
+    approvalStatus: resolveApprovalStatus('requireEventApproval')
+  };
   // 同步作品 relatedEvents
   if (req.body.relatedWorks !== undefined) {
     const nextList = Array.isArray(events[index].relatedWorks) ? events[index].relatedWorks : [];
@@ -1931,12 +1936,13 @@ app.post('/api/author/my-projects', authorAuthMiddleware, async (req, res) => {
   const extraCircles = Array.isArray(req.body.circles) ? req.body.circles.filter(Boolean) : [];
   const circles = [...new Set([req.author.circleId, ...extraCircles])];
   const works = Array.isArray(projectData.works) ? projectData.works.filter(Boolean) : [];
+  const projectApproval = resolveApprovalStatus('requireProjectApproval');
   const project = {
     id: 'p' + Date.now() + Math.random().toString(36).substr(2, 5),
     ...projectData,
     works,
     circles,
-    approvalStatus: 'pending',
+    approvalStatus: projectApproval,
     submittedBy: req.author.circleId,
     order: maxOrder + 1,
     createdAt: new Date().toISOString()
@@ -1946,7 +1952,7 @@ app.post('/api/author/my-projects', authorAuthMiddleware, async (req, res) => {
 
   const circleList = readJSON('circles.json');
   const circle = circleList.find(c => c.id === req.author.circleId);
-  logEdit(circle?.name || '作者', '提交企划', project.title || project.id, '待审核');
+  logEdit(circle?.name || '作者', '提交企划', project.title || project.id, approvalStatusLabel(projectApproval));
 
   res.json(project);
 });
@@ -1972,7 +1978,11 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res) =>
   }
   if (Array.isArray(updates.works)) updates.works = updates.works.filter(Boolean);
 
-  projects[index] = { ...projects[index], ...updates, approvalStatus: 'pending' };
+  projects[index] = {
+    ...projects[index],
+    ...updates,
+    approvalStatus: resolveApprovalStatus('requireProjectApproval')
+  };
   await writeJSON('projects.json', projects);
   res.json(projects[index]);
 });
@@ -2022,7 +2032,7 @@ app.post('/api/author/my-updates', authorAuthMiddleware, async (req, res) => {
     relatedProjects: req.body.relatedProjects || [],
     category: req.body.category || '',
     status: req.body.status || '',
-    approvalStatus: 'pending',
+    approvalStatus: resolveApprovalStatus('requireUpdateApproval'),
     submittedBy: req.author.circleId,
     createdAt: new Date().toISOString()
   };
@@ -2031,7 +2041,7 @@ app.post('/api/author/my-updates', authorAuthMiddleware, async (req, res) => {
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
-  logEdit(circle?.name || '作者', '提交动态', update.title || update.id, '待审核');
+  logEdit(circle?.name || '作者', '提交动态', update.title || update.id, approvalStatusLabel(update.approvalStatus));
 
   res.json(update);
 });
@@ -2052,7 +2062,11 @@ app.put('/api/author/my-updates/:id', authorAuthMiddleware, async (req, res) => 
     if (req.body[field] !== undefined) updates2[field] = req.body[field];
   });
 
-  updates[index] = { ...updates[index], ...updates2, approvalStatus: 'pending' };
+  updates[index] = {
+    ...updates[index],
+    ...updates2,
+    approvalStatus: resolveApprovalStatus('requireUpdateApproval')
+  };
   await writeJSON('updates.json', updates);
   res.json(updates[index]);
 });
@@ -2212,6 +2226,23 @@ app.post('/api/admin/circles/:id/toggle-visible', authMiddleware, async (req, re
 
 function ensureArray(v, fallback = []) {
   return Array.isArray(v) ? v : fallback;
+}
+
+/**
+ * 全局审核开关：勾选/缺省 = 需审核(pending)；取消勾选 = 免审核(approved)
+ * key: requireWorkApproval | requireEventApproval | requireProjectApproval | requireUpdateApproval
+ */
+function resolveApprovalStatus(key) {
+  try {
+    const settings = readJSON('settings.json');
+    return (settings.site && settings.site[key] !== false) ? 'pending' : 'approved';
+  } catch (e) {
+    return 'pending';
+  }
+}
+
+function approvalStatusLabel(status) {
+  return status === 'approved' ? '免审核直接上架' : '待审核';
 }
 
 // ===== Public API =====

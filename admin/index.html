@@ -370,6 +370,10 @@
           <div class="page-toolbar">
             <h3>活动列表</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;padding:0.4rem 0.8rem;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);">
+                <input type="checkbox" id="requireEventApproval" onchange="toggleContentApproval('requireEventApproval','活动')" style="width:16px;height:16px;accent-color:var(--accent);">
+                <span>活动需审核</span>
+              </label>
               <input type="text" class="form-input" id="eventsSearch" placeholder="搜索活动..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterEvents()">
               <button id="eventsBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteEvents()">批量删除</button>
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminEvents()">导出</button>
@@ -452,6 +456,10 @@
           <div class="page-toolbar">
             <h3>企划列表</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;padding:0.4rem 0.8rem;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);">
+                <input type="checkbox" id="requireProjectApproval" onchange="toggleContentApproval('requireProjectApproval','企划')" style="width:16px;height:16px;accent-color:var(--accent);">
+                <span>企划需审核</span>
+              </label>
               <input type="text" class="form-input" id="projectsSearch" placeholder="搜索企划..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterProjects()">
               <button id="projectsBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteProjects()">批量删除</button>
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminProjects()">导出</button>
@@ -485,6 +493,10 @@
           <div class="page-toolbar">
             <h3>动态管理</h3>
             <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;padding:0.4rem 0.8rem;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);">
+                <input type="checkbox" id="requireUpdateApproval" onchange="toggleContentApproval('requireUpdateApproval','动态')" style="width:16px;height:16px;accent-color:var(--accent);">
+                <span>动态需审核</span>
+              </label>
               <input type="text" class="form-input" id="updatesSearch" placeholder="搜索动态..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterUpdates()">
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminUpdates()">导出</button>
               <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminUpdates(this)"></label>
@@ -999,6 +1011,6 @@
     </div>
   </div>
 
-  <script src="/admin/js/admin.js?v=20260918a"></script>
+  <script src="/admin/js/admin.js?v=20260920a"></script>
 </body>
 </html>

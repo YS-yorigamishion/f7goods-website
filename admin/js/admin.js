@@ -226,15 +226,15 @@ function navigateTo(page) {
   // Load data for the page
   if (page === 'dashboard') loadDashboard();
   else if (page === 'works') { loadWorks(); syncWorkApprovalToggle(); }
-  else if (page === 'events') loadEvents();
+  else if (page === 'events') { loadEvents(); syncContentApprovalToggles(); }
   else if (page === 'booths') loadBoothsPage();
   else if (page === 'circles') loadCircles();
-  else if (page === 'projects') loadProjects();
+  else if (page === 'projects') { loadProjects(); syncContentApprovalToggles(); }
   else if (page === 'categories') loadCategories();
   else if (page === 'images') loadImages();
   else if (page === 'settings') loadSettings();
   else if (page === 'announcements') loadAnnouncements();
-  else if (page === 'updates') loadUpdates();
+  else if (page === 'updates') { loadUpdates(); syncContentApprovalToggles(); }
   else if (page === 'editlog') loadEditLog();
   else if (page === 'approval') loadApprovalPage();
   else if (page === 'author-stats') loadAuthorStats();
@@ -1470,7 +1470,19 @@ async function toggleWorkApproval() {
   if (!settings.site) settings.site = {};
   settings.site.requireWorkApproval = checked;
   await adminAPI('PUT', '/api/admin/settings', settings);
-  showToast(checked ? '已开启作品审核' : '已关闭作品审核', 'success');
+  showToast(checked ? '已开启作品审核' : '已关闭作品审核（免审核）', 'success');
+}
+
+// 活动 / 企划 / 动态：全局需审核开关（取消勾选 = 免审核直接上架）
+async function toggleContentApproval(key, label) {
+  const el = document.getElementById(key);
+  if (!el) return;
+  const checked = el.checked;
+  const settings = await adminAPI('GET', '/api/settings') || {};
+  if (!settings.site) settings.site = {};
+  settings.site[key] = checked;
+  await adminAPI('PUT', '/api/admin/settings', settings);
+  showToast(checked ? `已开启${label}审核` : `已关闭${label}审核（免审核）`, 'success');
 }
 
 // Sync work approval toggle state
@@ -1481,6 +1493,23 @@ async function syncWorkApprovalToggle() {
     if (checkbox && settings?.site) {
       checkbox.checked = settings.site.requireWorkApproval !== false;
     }
+  } catch (e) {}
+}
+
+// 同步活动/企划/动态审核开关（默认勾选=需审核）
+async function syncContentApprovalToggles() {
+  try {
+    const settings = await adminAPI('GET', '/api/settings');
+    const site = settings && settings.site ? settings.site : {};
+    const map = [
+      ['requireEventApproval', 'requireEventApproval'],
+      ['requireProjectApproval', 'requireProjectApproval'],
+      ['requireUpdateApproval', 'requireUpdateApproval']
+    ];
+    map.forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = site[key] !== false;
+    });
   } catch (e) {}
 }
 
