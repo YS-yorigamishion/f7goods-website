@@ -4,7 +4,7 @@ let _i18n = {};
 let _langHooks = [];
 
 // 语言文件版本：新增/修改词条后递增，避免浏览器缓存旧 JSON
-const F7_LANG_VER = '20260913a';
+const F7_LANG_VER = '20260920a';
 
 function t(key, params) {
   if (!key) return '';

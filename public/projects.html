@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -43,8 +43,8 @@
       <div class="cl-toolbar-row">
         <button type="button" class="filter-btn" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
         <select class="form-input" id="sortSelect">
-          <option value="date-desc" selected data-i18n="common.dateDesc">创建日期 ↓ 新→旧</option>
-          <option value="date-asc" data-i18n="common.dateAsc">创建日期 ↑ 旧→新</option>
+          <option value="date-desc" selected>开始日期 ↓ 新→旧</option>
+          <option value="date-asc">开始日期 ↑ 旧→新</option>
           <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
           <option value="progress-desc">进度 ↓</option>
         </select>
@@ -159,17 +159,24 @@
       }
 
       // Sorting（置顶始终在最前）
+      // 与卡片展示一致：按企划开始日期 startDate 排序，缺失时回退 createdAt
+      const projectSortTime = (p) => {
+        const raw = p?.startDate || p?.endDate || p?.createdAt || 0;
+        const t = new Date(raw).getTime();
+        return Number.isFinite(t) ? t : 0;
+      };
       filtered = filtered.slice();
       const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
       let cmp;
       if (sortVal === 'date-asc') {
-        cmp = (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+        cmp = (a, b) => projectSortTime(a) - projectSortTime(b);
       } else if (sortVal === 'name-asc') {
         cmp = (a, b) => (a.title || '').localeCompare(b.title || '');
       } else if (sortVal === 'progress-desc') {
         cmp = (a, b) => (projectProgress(b)?.pct || 0) - (projectProgress(a)?.pct || 0);
       } else {
-        cmp = (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        // date-desc：开始日期新的在前
+        cmp = (a, b) => projectSortTime(b) - projectSortTime(a);
       }
       filtered.sort((a, b) => {
         if (a.pinned && !b.pinned) return -1;
