@@ -64,7 +64,7 @@ body::before {
   background: linear-gradient(165deg, #D8D2E4 0%, #C8C2D6 42%, #B8B2C8 100%);
   border: 3px solid #3E2E5A;
   border-radius: 6px;
-  padding: 1.35rem 1.25rem 1.35rem;
+  padding: 1.25rem 1.25rem 1.2rem;
   box-shadow:
     0 0 0 6px rgba(20, 10, 40, 0.35),
     0 22px 48px rgba(0,0,0,0.42),
