@@ -215,16 +215,20 @@ body::before {
     0 0 0 4px rgba(20, 12, 40, 0.45),
     0 20px 50px rgba(0,0,0,0.4),
     inset 0 1px 0 rgba(255,255,255,0.08);
+  --hb-pad-x: 1.25rem;
+  --clip-center: 56px;
 }
 .handbook::before {
   content: '';
   position: absolute;
   top: -14px;
-  left: 48px;
+  left: calc(var(--clip-center) - 18px);
   width: 36px;
   height: 16px;
-  background: linear-gradient(180deg, #9b8ec4, #6b5f94);
+  background: linear-gradient(180deg, #c8c0d8, #8a82a0);
   border-radius: 4px 4px 0 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  z-index: 3;
 }
 
 /* 右上角标题：静态「作者手册」，无搜索 */
