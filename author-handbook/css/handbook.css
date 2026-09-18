@@ -64,14 +64,14 @@ body::before {
     linear-gradient(165deg, #DCD6E6 0%, #CEC8DA 40%, #C0B8CC 100%);
   border: 3px solid #3A2A52;
   border-radius: 8px;
-  padding: 1.25rem 1.35rem 1.4rem;
-  min-height: 560px;
+  padding: 1.5rem 1.6rem 1.65rem;
+  min-height: 600px;
   box-shadow:
     0 0 0 7px rgba(18, 10, 36, 0.38),
     0 26px 56px rgba(0,0,0,0.45),
     inset 0 1px 0 rgba(255,255,255,0.4);
-  --clip-center: 78px;
-  --hb-pad-x: 1.35rem;
+  --clip-center: 82px;
+  --hb-pad-x: 1.6rem;
 }
 /* 顶栏文档夹签 */
 .handbook::before {
@@ -139,19 +139,19 @@ body::before {
 .hb-body {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(230px, 262px) 1fr;
-  gap: 1.25rem;
-  margin-top: 3.4rem;
+  grid-template-columns: minmax(240px, 275px) 1fr;
+  gap: 1.6rem;
+  margin-top: 3.6rem;
   align-items: start;
-  min-height: 500px;
+  min-height: 520px;
 }
 
 /* ── 左：档案卡 ── */
 .idcard-wrap {
   position: relative;
-  padding-top: 42px;
-  min-height: 500px;
-  margin-top: -3.1rem;
+  padding-top: 46px;
+  min-height: 520px;
+  margin-top: -3.2rem;
   align-self: start;
   z-index: 3;
   display: flex;
@@ -196,10 +196,10 @@ body::before {
 /* 深色外框 + 纸色内页 */
 .idcard {
   flex: 1 1 auto;
-  min-height: 455px;
+  min-height: 475px;
   background: linear-gradient(155deg, #6A5870 0%, #4E3E56 45%, #3C3048 100%);
   border-radius: 10px;
-  padding: 10px;
+  padding: 12px;
   box-shadow:
     0 14px 36px rgba(0,0,0,0.38),
     inset 0 1px 0 rgba(255,255,255,0.12);
@@ -212,7 +212,7 @@ body::before {
   flex: 1;
   background: linear-gradient(175deg, #FAF6EE 0%, #F2EBDF 50%, #E8E0D2 100%);
   border-radius: 5px;
-  padding: 1rem 0.9rem 0.95rem;
+  padding: 1.2rem 1.05rem 1.1rem;
   color: #2A2430;
   display: flex;
   flex-direction: column;
@@ -220,42 +220,42 @@ body::before {
 }
 
 .id-head {
-  display: flex; gap: 0.6rem; align-items: flex-start;
-  margin-bottom: 0.7rem;
-  padding-bottom: 0.55rem;
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.7rem;
   border-bottom: 1px dashed rgba(42,36,48,0.16);
 }
 .id-avatar {
-  width: 68px; height: 68px;
-  border-radius: 5px;
+  width: 72px; height: 72px;
+  border-radius: 6px;
   background: linear-gradient(160deg, #E8E0D2, #D4C8B8);
   border: 2px solid #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   overflow: hidden; flex-shrink: 0;
   display: grid; place-items: center;
   font-family: 'Noto Serif SC', Georgia, serif;
-  font-weight: 700; font-size: 1.2rem; color: #5a5048;
+  font-weight: 700; font-size: 1.25rem; color: #5a5048;
 }
 .id-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.id-head-text { flex: 1; min-width: 0; padding-top: 0.15rem; }
+.id-head-text { flex: 1; min-width: 0; padding-top: 0.2rem; }
 .id-name {
   font-family: 'Noto Serif SC', Georgia, serif;
-  font-weight: 700; font-size: 1.08rem; line-height: 1.35;
+  font-weight: 700; font-size: 1.12rem; line-height: 1.4;
   color: #221C2C;
   letter-spacing: 0.02em;
 }
 .id-sub {
-  margin-top: 0.2rem;
-  font-size: 0.72rem; color: #6b6258;
+  margin-top: 0.28rem;
+  font-size: 0.74rem; color: #6b6258;
   letter-spacing: 0.04em;
 }
 
-.id-block { margin-bottom: 0.55rem; }
+.id-block { margin-bottom: 0.75rem; }
 .id-block .k {
   font-size: 0.8rem; font-weight: 700; color: #3A3248;
-  letter-spacing: 0.06em; margin-bottom: 0.18rem;
+  letter-spacing: 0.06em; margin-bottom: 0.28rem;
 }
-.id-block .v { font-size: 0.86rem; line-height: 1.65; color: #2A2430; }
+.id-block .v { font-size: 0.88rem; line-height: 1.72; color: #2A2430; }
 .id-block .v.muted { color: #8A8078; }
 
 .contact-link {
@@ -282,16 +282,16 @@ body::before {
 
 .id-stats {
   margin-top: auto;
-  padding-top: 0.65rem;
+  padding-top: 0.8rem;
   border-top: 1px dashed rgba(42,36,48,0.16);
-  display: grid; gap: 0.32rem;
+  display: grid; gap: 0.45rem;
 }
 .id-stat {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 0.88rem; gap: 0.5rem;
+  font-size: 0.9rem; gap: 0.65rem;
 }
 .id-stat .k {
-  color: #3A3248; font-weight: 700; font-size: 0.8rem;
+  color: #3A3248; font-weight: 700; font-size: 0.82rem;
   letter-spacing: 0.06em;
 }
 .id-stat .v {
@@ -299,16 +299,16 @@ body::before {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── 右：三格入口 ── */
+/* ── 右：三格入口 — 间距放宽 ── */
 .hb-tiles {
   display: grid;
   grid-template-columns: 1.08fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 0.75rem;
-  height: 430px;
-  min-height: 400px;
-  margin-top: -0.55rem;
-  margin-left: 0.15rem;
+  gap: 1rem;
+  height: 450px;
+  min-height: 420px;
+  margin-top: -0.45rem;
+  margin-left: 0.25rem;
   align-self: start;
   position: relative;
   z-index: 2;
@@ -319,13 +319,13 @@ body::before {
   display: block;
   text-decoration: none;
   color: #fff;
-  border-radius: 3px;
+  border-radius: 4px;
   overflow: hidden;
   border: 2px solid #2E2440;
   background: #1a1428;
   min-height: 0;
   box-shadow:
-    0 6px 18px rgba(0,0,0,0.28),
+    0 8px 22px rgba(0,0,0,0.26),
     inset 0 0 0 1px rgba(255,255,255,0.06);
   transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
@@ -361,14 +361,14 @@ body::before {
   left: 0; right: 0; bottom: 0;
   z-index: 2;
   background: linear-gradient(180deg, rgba(42,32,64,0.08) 0%, #2C2244 22%, #1A142C 100%);
-  padding: 0.65rem 0.5rem 0.75rem;
+  padding: 0.75rem 0.65rem 0.85rem;
   text-align: center;
   border-top: 1px solid rgba(255,255,255,0.08);
 }
 .tile-label b {
   display: block;
   font-family: 'Noto Serif SC', Georgia, serif;
-  font-size: 1.12rem;
+  font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: 0.28em;
   color: #F7F2FF;
@@ -376,7 +376,7 @@ body::before {
 }
 .tile-label span {
   display: block;
-  margin-top: 0.22rem;
+  margin-top: 0.28rem;
   font-size: 0.62rem;
   letter-spacing: 0.28em;
   color: rgba(232,196,255,0.4);
@@ -458,9 +458,9 @@ body::before {
   .chrome { margin-bottom: 0.65rem; }
   .chrome a, .chrome-btn { min-height: 40px; padding: 0.42rem 0.7rem; }
   .handbook {
-    padding: 1rem 0.75rem 1.1rem;
+    padding: 1.1rem 0.9rem 1.25rem;
     min-height: 0;
-    margin-top: 0.4rem;
+    margin-top: 0.45rem;
   }
   .handbook::before { left: 20px; width: 40px; height: 18px; }
   .handbook::after { left: 32px; width: 14px; height: 9px; }
@@ -468,26 +468,27 @@ body::before {
   .hb-title-static { position: static; text-align: left; margin: 0.2rem 0 0.85rem; }
   .hb-title-static h1 { font-size: 1.45rem; letter-spacing: 0.14em; }
   .hb-title-static span { font-size: 0.68rem; letter-spacing: 0.28em; }
-  .hb-body { grid-template-columns: 1fr; margin-top: 0; gap: 0.85rem; min-height: 0; }
-  .idcard-wrap { margin-top: 0; min-height: 0; padding-top: 30px; }
+  .hb-body { grid-template-columns: 1fr; margin-top: 0; gap: 1rem; min-height: 0; }
+  .idcard-wrap { margin-top: 0; min-height: 0; padding-top: 32px; }
   .idcard-clip { left: 14px; width: 52px; height: 22px; }
   .idcard-wrap::before { left: 28px; top: 18px; height: 18px; }
-  .idcard { transform: rotate(-2deg); min-height: 0; padding: 7px; }
-  .idcard-inner { padding: 0.85rem 0.75rem 0.8rem; }
-  .id-avatar { width: 54px; height: 54px; }
-  .id-name { font-size: 1rem; }
+  .idcard { transform: rotate(-2deg); min-height: 0; padding: 8px; }
+  .idcard-inner { padding: 1rem 0.85rem 0.9rem; }
+  .id-avatar { width: 56px; height: 56px; }
+  .id-name { font-size: 1.02rem; }
+  .id-block { margin-bottom: 0.65rem; }
   .id-block .k { font-size: 0.74rem; }
-  .id-block .v { font-size: 0.84rem; }
+  .id-block .v { font-size: 0.86rem; }
   .hb-tiles {
     margin-top: 0; margin-left: 0;
     height: auto; min-height: 0;
     grid-template-columns: 1fr 1fr;
-    gap: 0.55rem;
+    gap: 0.75rem;
   }
-  .tile-main { grid-column: 1 / -1; grid-row: auto; min-height: 220px; }
-  .tile { min-height: 140px; }
-  .tile-label { padding: 0.55rem 0.4rem 0.65rem; }
-  .tile-label b { font-size: 0.95rem; letter-spacing: 0.2em; }
+  .tile-main { grid-column: 1 / -1; grid-row: auto; min-height: 240px; }
+  .tile { min-height: 150px; }
+  .tile-label { padding: 0.65rem 0.5rem 0.75rem; }
+  .tile-label b { font-size: 0.98rem; letter-spacing: 0.2em; }
   .tile-label span { font-size: 0.58rem; }
 }
 
