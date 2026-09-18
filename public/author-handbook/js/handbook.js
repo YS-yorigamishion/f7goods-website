@@ -1,8 +1,9 @@
 /**
  * 作者手册
- * - 数据优先来自 /api/circles + /api/works
- * - 作品列表：最新作品展示图（最多 3 张叠加）
- * - 简介过长可展开；不显示标识、编号
+ * - 作品：最新作品展示图（≤3 张叠加）
+ * - 活动 / 企划：相关页面顶栏封面图（coverImage），≤3 张叠加
+ * - 作者切换右侧：搜索作者
+ * - 联络：设置了网页链接时可点击跳转
  */
 const FALLBACK_AUTHORS = [
   {
@@ -14,7 +15,8 @@ const FALLBACK_AUTHORS = [
     eventCount: 0,
     projectCount: 0,
     intro: '以无偿帮助创作者与企划为主的七都同人平台。',
-    contact: '',
+    contactText: '',
+    contactUrl: '',
     latestWorkImages: [],
     eventImages: ['/uploads/711chengdu.jpg'],
     projectImages: ['/uploads/2026xinchunyan.png']
@@ -25,6 +27,8 @@ let AUTHORS = FALLBACK_AUTHORS.slice();
 let authorIndex = 0;
 let ALL_WORKS = [];
 let ALL_CIRCLES = [];
+let ALL_EVENTS = [];
+let ALL_PROJECTS = [];
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -34,7 +38,6 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-/** 图片地址归一化：站内相对路径 / 外链均可 */
 function normImg(u) {
   if (!u) return '';
   const s = String(u).trim();
@@ -42,6 +45,15 @@ function normImg(u) {
   if (/^https?:\/\//i.test(s)) return s;
   if (s.charAt(0) === '/') return s;
   return '/' + s.replace(/^\.?\/*/, '');
+}
+
+function normUrl(u) {
+  if (!u) return '';
+  const s = String(u).trim();
+  if (!s || s === '#') return '';
+  if (/^https?:\/\//i.test(s)) return s;
+  if (/^mailto:/i.test(s)) return s;
+  return 'https://' + s.replace(/^\/+/, '');
 }
 
 function bg(url) {
@@ -54,17 +66,30 @@ function categoryLabel(id) {
   return map[id] || id || '同人作者';
 }
 
+/** 联络文案 + 可跳转网页链接 */
 function contactFromCircle(c) {
-  if (!c) return '';
+  if (!c) return { text: '', url: '' };
   const sl = c.socialLinks || {};
-  if (sl.contactLabel && (sl.qq || sl.qqGroup || sl.website)) {
-    return sl.contactLabel;
+  const website = normUrl(sl.website);
+  const websiteLabel = String(sl.websiteLabel || '').trim();
+  const qqGroup = String(sl.qqGroup || '').trim();
+  const qq = String(sl.qq || '').trim();
+  const contactLabel = String(sl.contactLabel || '').trim();
+
+  let text = '';
+  if (contactLabel && (qq || qqGroup || website)) {
+    text = contactLabel;
+  } else if (websiteLabel && website) {
+    text = websiteLabel;
+  } else if (qqGroup) {
+    text = 'QQ群 ' + qqGroup;
+  } else if (qq) {
+    text = 'QQ ' + qq;
+  } else if (website) {
+    text = websiteLabel || website;
   }
-  if (sl.websiteLabel && sl.website) return sl.websiteLabel;
-  if (sl.qqGroup) return 'QQ群 ' + sl.qqGroup;
-  if (sl.qq) return 'QQ ' + sl.qq;
-  if (sl.website) return sl.website;
-  return '';
+
+  return { text: text || '', url: website || '' };
 }
 
 function worksOf(circleId) {
@@ -87,7 +112,45 @@ function latestWorkCovers(circleId, limit) {
   };
 }
 
-function introHtml(text, id) {
+/** 活动：relatedCircles 含本作者；取详情页顶栏 coverImage */
+function eventCoversOf(circleId, limit) {
+  const n = limit || 3;
+  const list = (ALL_EVENTS || [])
+    .filter(e => e && (!e.approvalStatus || e.approvalStatus === 'approved'))
+    .filter(e => e && (e.relatedCircles || e.circles || []).indexOf(circleId) !== -1)
+    .filter(e => e && normImg(e.coverImage))
+    .slice()
+    .sort((a, b) => {
+      const ta = Date.parse(a.date || a.createdAt || '') || 0;
+      const tb = Date.parse(b.date || b.createdAt || '') || 0;
+      return tb - ta;
+    });
+  return {
+    images: list.slice(0, n).map(e => normImg(e.coverImage)).filter(Boolean),
+    count: list.length
+  };
+}
+
+/** 企划：circles 含本作者；取详情页顶栏 coverImage（最新优先） */
+function projectCoversOf(circleId, limit) {
+  const n = limit || 3;
+  const list = (ALL_PROJECTS || [])
+    .filter(p => p && (!p.approvalStatus || p.approvalStatus === 'approved'))
+    .filter(p => p && (p.circles || []).indexOf(circleId) !== -1)
+    .filter(p => p && normImg(p.coverImage))
+    .slice()
+    .sort((a, b) => {
+      const ta = Date.parse(a.startDate || a.createdAt || '') || 0;
+      const tb = Date.parse(b.startDate || b.createdAt || '') || 0;
+      return tb - ta;
+    });
+  return {
+    images: list.slice(0, n).map(p => normImg(p.coverImage)).filter(Boolean),
+    count: list.length
+  };
+}
+
+function introHtml(text) {
   const full = String(text || '').trim();
   if (!full) return '<div class="v muted">暂无简介</div>';
   const paras = full.split(/\n+/).filter(Boolean);
@@ -103,7 +166,17 @@ function introHtml(text, id) {
     </div>`;
 }
 
-/** 叠加：img 标签便于加载失败时看见 alt/占位 */
+function contactHtml(text, url) {
+  const t = String(text || '').trim();
+  const u = normUrl(url);
+  if (u) {
+    const label = t || u;
+    return `<div class="v"><a class="contact-link" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(label)} <span class="ext">↗</span></a></div>`;
+  }
+  if (t) return `<div class="v">${esc(t)}</div>`;
+  return '<div class="v muted">—</div>';
+}
+
 function stackHtml(images, emptyText) {
   const list = (images || []).map(normImg).filter(Boolean).slice(0, 3);
   if (!list.length) {
@@ -120,15 +193,28 @@ function stackHtml(images, emptyText) {
 function renderHandbook() {
   if (!AUTHORS.length) AUTHORS = FALLBACK_AUTHORS;
   if (authorIndex >= AUTHORS.length) authorIndex = 0;
+  if (authorIndex < 0) authorIndex = 0;
   const a = AUTHORS[authorIndex];
   const root = document.getElementById('hbRoot');
   if (!root || !a) return;
 
-  const cover = latestWorkCovers(a.id, 3);
-  const workImages = cover.images.length
-    ? cover.images
+  const workCover = latestWorkCovers(a.id, 3);
+  const evCover = eventCoversOf(a.id, 3);
+  const prCover = projectCoversOf(a.id, 3);
+
+  const workImages = workCover.images.length
+    ? workCover.images
     : (a.latestWorkImages || []).map(normImg).filter(Boolean);
-  const workCount = cover.count || a.worksCount || 0;
+  const eventImages = evCover.images.length
+    ? evCover.images
+    : (a.eventImages || []).map(normImg).filter(Boolean);
+  const projectImages = prCover.images.length
+    ? prCover.images
+    : (a.projectImages || []).map(normImg).filter(Boolean);
+
+  const workCount = workCover.count || a.worksCount || 0;
+  const eventCount = evCover.count || a.eventCount || 0;
+  const projectCount = prCover.count || a.projectCount || 0;
 
   const logoSrc = normImg(a.logo);
   const logoHtml = logoSrc
@@ -139,6 +225,8 @@ function renderHandbook() {
   if (picker) picker.textContent = a.name;
 
   const circleUrl = `/circle-detail.html?id=${encodeURIComponent(a.id)}`;
+  const contactText = a.contactText || a.contact || '';
+  const contactUrl = a.contactUrl || '';
 
   root.innerHTML = `
     <div class="handbook">
@@ -164,13 +252,13 @@ function renderHandbook() {
             </div>
             <div class="id-block">
               <div class="k">联络</div>
-              <div class="v">${esc(a.contact || '—')}</div>
+              ${contactHtml(contactText, contactUrl)}
             </div>
 
             <div class="id-stats">
               <div class="id-stat"><span class="k">作品</span><span class="v">${workCount}</span></div>
-              <div class="id-stat"><span class="k">活动</span><span class="v">${a.eventCount || 0}</span></div>
-              <div class="id-stat"><span class="k">企划</span><span class="v">${a.projectCount || 0}</span></div>
+              <div class="id-stat"><span class="k">活动</span><span class="v">${eventCount}</span></div>
+              <div class="id-stat"><span class="k">企划</span><span class="v">${projectCount}</span></div>
             </div>
           </article>
         </div>
@@ -184,14 +272,14 @@ function renderHandbook() {
             </div>
           </a>
           <a class="tile" href="${circleUrl}#events" title="参与活动">
-            ${stackHtml(a.eventImages, '暂无参与活动')}
+            ${stackHtml(eventImages, '暂无参与活动封面')}
             <div class="tile-label">
               <b>参与活动</b>
               <span>EVENTS</span>
             </div>
           </a>
           <a class="tile" href="${circleUrl}#projects" title="同人企划">
-            ${stackHtml(a.projectImages, '暂无同人企划')}
+            ${stackHtml(projectImages, '暂无同人企划封面')}
             <div class="tile-label">
               <b>同人企划</b>
               <span>PROJECTS</span>
@@ -228,7 +316,64 @@ function bindIntroToggle() {
   });
 }
 
-function buildAuthorsFromApi(circles, works) {
+/** 作者搜索（切换栏右侧） */
+function authorSearchHits(q) {
+  const key = String(q || '').trim().toLowerCase();
+  if (!key) return AUTHORS.slice(0, 8);
+  return AUTHORS.filter(a =>
+    String(a.name || '').toLowerCase().indexOf(key) !== -1 ||
+    String(a.category || '').toLowerCase().indexOf(key) !== -1 ||
+    String(a.id || '').toLowerCase().indexOf(key) !== -1
+  ).slice(0, 8);
+}
+
+function renderAuthorSearchList(q) {
+  const list = document.getElementById('authorSearchList');
+  if (!list) return;
+  const hits = authorSearchHits(q);
+  if (!hits.length) {
+    list.innerHTML = '<div class="as-empty">未找到该作者</div>';
+    return;
+  }
+  list.innerHTML = hits.map(a => {
+    const i = AUTHORS.indexOf(a);
+    const logo = normImg(a.logo);
+    const mini = logo
+      ? `<span class="as-mini"><img src="${esc(logo)}" alt="" onerror="this.style.visibility='hidden'"></span>`
+      : `<span class="as-mini as-txt">${esc((a.name || '?').slice(0, 1))}</span>`;
+    return `<button type="button" class="as-item" data-i="${i}">
+      ${mini}
+      <span class="as-meta"><b>${esc(a.name)}</b><small>${esc(a.category || '')}</small></span>
+    </button>`;
+  }).join('');
+  list.querySelectorAll('.as-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = Number(btn.dataset.i);
+      if (!isNaN(i) && AUTHORS[i]) {
+        authorIndex = i;
+        renderHandbook();
+      }
+      closeAuthorSearch();
+    });
+  });
+}
+
+function openAuthorSearch() {
+  const panel = document.getElementById('authorSearchPanel');
+  const input = document.getElementById('authorSearchInput');
+  if (!panel) return;
+  panel.classList.add('open');
+  renderAuthorSearchList(input ? input.value : '');
+  if (input) {
+    setTimeout(() => input.focus(), 40);
+  }
+}
+
+function closeAuthorSearch() {
+  document.getElementById('authorSearchPanel')?.classList.remove('open');
+}
+
+function buildAuthorsFromApi(circles, works, events, projects) {
   const worksBy = {};
   (works || []).forEach(w => {
     (w.circles || []).forEach(cid => {
@@ -240,65 +385,90 @@ function buildAuthorsFromApi(circles, works) {
   const list = (circles || [])
     .filter(c => c && c.id)
     .map(c => {
-      const mine = (worksBy[c.id] || []).filter(w =>
+      const mineWorks = (worksBy[c.id] || []).filter(w =>
         Array.isArray(w.images) && w.images[0] &&
         (!w.approvalStatus || w.approvalStatus === 'approved')
       );
-      const latest = mine.slice().sort((a, b) => {
+      const latest = mineWorks.slice().sort((a, b) => {
         const ta = Date.parse(a.createdAt || '') || 0;
         const tb = Date.parse(b.createdAt || '') || 0;
         return tb - ta;
       }).slice(0, 3).map(w => normImg(w.images[0])).filter(Boolean);
+
+      const evs = (events || []).filter(e =>
+        e && (!e.approvalStatus || e.approvalStatus === 'approved') &&
+        (e.relatedCircles || e.circles || []).indexOf(c.id) !== -1 &&
+        normImg(e.coverImage)
+      );
+      const evImgs = evs.slice().sort((a, b) => {
+        return (Date.parse(b.date || '') || 0) - (Date.parse(a.date || '') || 0);
+      }).slice(0, 3).map(e => normImg(e.coverImage)).filter(Boolean);
+
+      const prs = (projects || []).filter(p =>
+        p && (!p.approvalStatus || p.approvalStatus === 'approved') &&
+        (p.circles || []).indexOf(c.id) !== -1 &&
+        normImg(p.coverImage)
+      );
+      const prImgs = prs.slice().sort((a, b) => {
+        return (Date.parse(b.startDate || b.createdAt || '') || 0) -
+               (Date.parse(a.startDate || a.createdAt || '') || 0);
+      }).slice(0, 3).map(p => normImg(p.coverImage)).filter(Boolean);
+
+      const contact = contactFromCircle(c);
 
       return {
         id: c.id,
         name: c.name || '未命名',
         category: categoryLabel(c.category),
         logo: normImg(c.logo),
-        worksCount: mine.length,
-        eventCount: 0,
-        projectCount: 0,
+        worksCount: mineWorks.length,
+        eventCount: evs.length,
+        projectCount: prs.length,
         intro: c.description || '',
-        contact: contactFromCircle(c),
+        contactText: contact.text,
+        contactUrl: contact.url,
         latestWorkImages: latest,
-        eventImages: [],
-        projectImages: []
+        eventImages: evImgs,
+        projectImages: prImgs
       };
     })
-    // 有作品的优先，其次有简介/头像的入驻作者
-    .sort((a, b) => (b.worksCount - a.worksCount) || String(a.name).localeCompare(String(b.name), 'zh'));
+    .sort((a, b) =>
+      (b.worksCount + b.eventCount + b.projectCount) -
+      (a.worksCount + a.eventCount + a.projectCount) ||
+      String(a.name).localeCompare(String(b.name), 'zh')
+    );
 
-  // 至少展示有作品的作者；若全无则展示前 12 位
-  const withWorks = list.filter(a => a.worksCount > 0);
-  return withWorks.length ? withWorks.slice(0, 24) : list.slice(0, 12);
+  const withAny = list.filter(a =>
+    a.worksCount > 0 || a.eventCount > 0 || a.projectCount > 0 || a.contactUrl || a.intro
+  );
+  return (withAny.length ? withAny : list).slice(0, 24);
+}
+
+async function fetchJsonList(fn) {
+  try {
+    if (typeof fn === 'function') {
+      const data = await fn();
+      return Array.isArray(data) ? data : ((data && data.items) || []);
+    }
+  } catch (e) { /* ignore */ }
+  return [];
 }
 
 async function loadFromApi() {
-  let circles = [];
-  let works = [];
-  try {
-    if (typeof F7API !== 'undefined' && F7API.getWorks) {
-      const wd = await F7API.getWorks();
-      works = Array.isArray(wd) ? wd : ((wd && wd.items) || []);
-    }
-  } catch (e) { works = []; }
-  try {
-    if (typeof F7API !== 'undefined' && F7API.getCircles) {
-      const cd = await F7API.getCircles();
-      circles = Array.isArray(cd) ? cd : ((cd && cd.items) || []);
-    }
-  } catch (e) { circles = []; }
+  const [works, circles, events, projects] = await Promise.all([
+    fetchJsonList(typeof F7API !== 'undefined' ? F7API.getWorks : null),
+    fetchJsonList(typeof F7API !== 'undefined' ? F7API.getCircles : null),
+    fetchJsonList(typeof F7API !== 'undefined' ? F7API.getEvents : null),
+    fetchJsonList(typeof F7API !== 'undefined' ? F7API.getProjects : null)
+  ]);
 
   ALL_WORKS = works;
   ALL_CIRCLES = circles;
+  ALL_EVENTS = events;
+  ALL_PROJECTS = projects;
 
-  const built = buildAuthorsFromApi(circles, works);
-  if (built.length) {
-    AUTHORS = built;
-  } else {
-    // API 无数据时：用兜底作者 + 若能读到 works 则仍按 id 取图
-    AUTHORS = FALLBACK_AUTHORS.slice();
-  }
+  const built = buildAuthorsFromApi(circles, works, events, projects);
+  AUTHORS = built.length ? built : FALLBACK_AUTHORS.slice();
   authorIndex = 0;
   renderHandbook();
 }
@@ -312,6 +482,23 @@ document.getElementById('nextAuthor')?.addEventListener('click', () => {
   if (!AUTHORS.length) return;
   authorIndex = (authorIndex + 1) % AUTHORS.length;
   renderHandbook();
+});
+
+document.getElementById('openAuthorSearch')?.addEventListener('click', openAuthorSearch);
+document.getElementById('authorSearchInput')?.addEventListener('input', (e) => {
+  renderAuthorSearchList(e.target.value);
+});
+document.getElementById('authorSearchInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const first = document.querySelector('#authorSearchList .as-item');
+    if (first) first.click();
+  }
+  if (e.key === 'Escape') closeAuthorSearch();
+});
+document.getElementById('authorSearchClose')?.addEventListener('click', closeAuthorSearch);
+document.getElementById('authorSearchMask')?.addEventListener('click', (e) => {
+  if (e.target.id === 'authorSearchMask') closeAuthorSearch();
 });
 
 loadFromApi();

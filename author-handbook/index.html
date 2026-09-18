@@ -5,19 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>作者手册 · f7goods</title>
   <meta name="robots" content="noindex">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&display=swap">
-  <link rel="stylesheet" href="css/handbook.css">
+  <link rel="stylesheet" href="css/handbook.css?v=20260918q">
 </head>
 <body>
   <div class="page">
     <div class="chrome">
       <span class="tag">作者手册</span>
-      <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
-        <button type="button" id="prevAuthor">←</button>
-        <span id="authorPicker" style="min-width:7em;text-align:center;font-size:0.85rem;font-weight:600;"></span>
-        <button type="button" id="nextAuthor">→</button>
+      <div class="chrome-tools">
+        <button type="button" id="prevAuthor" class="chrome-btn" aria-label="上一位作者">←</button>
+        <span id="authorPicker" class="chrome-name"></span>
+        <button type="button" id="nextAuthor" class="chrome-btn" aria-label="下一位作者">→</button>
+        <button type="button" id="openAuthorSearch" class="chrome-btn search-btn" aria-label="搜索作者">搜索作者</button>
         <a href="/circles.html">同人作者</a>
         <a href="/">站内</a>
       </div>
@@ -25,7 +29,20 @@
 
     <div id="hbRoot"></div>
   </div>
-  <script src="/js/api.js"></script>
-  <script src="js/handbook.js"></script>
+
+  <!-- 作者搜索（切换栏右侧按钮打开） -->
+  <div class="as-mask" id="authorSearchMask" role="dialog" aria-modal="true" aria-label="搜索作者">
+    <div class="as-panel">
+      <div class="as-head">
+        <h3>搜索作者</h3>
+        <button type="button" id="authorSearchClose" class="as-close" aria-label="关闭">×</button>
+      </div>
+      <input type="search" id="authorSearchInput" class="as-input" placeholder="输入作者名称…" autocomplete="off">
+      <div class="as-list" id="authorSearchList"></div>
+    </div>
+  </div>
+
+  <script src="/js/api.js?v=20260918q"></script>
+  <script src="js/handbook.js?v=20260918q"></script>
 </body>
 </html>
