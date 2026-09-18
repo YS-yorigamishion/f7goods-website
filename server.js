@@ -165,22 +165,36 @@ if (IS_PROD && !process.env.ALLOWED_ORIGIN) {
   console.warn('WARNING: ALLOWED_ORIGIN not set in production — CORS is locked down. Set ALLOWED_ORIGIN for browser clients on another origin.');
 }
 app.use(express.json({ limit: '10mb' }));
-// HTML 不缓存，其他静态资源缓存 1 天
+// 静态资源：HTML 禁止缓存；带 ?v= 的资源可长缓存；未带版本的 css/js 短缓存
 app.use(express.static('public', {
-  maxAge: '1d',
   etag: true,
+  lastModified: true,
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
+    const base = filePath.replace(/\\/g, '/');
+    if (base.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      return;
     }
+    if (/\.(css|js)(\?|$)/.test(base) || base.endsWith('.css') || base.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
+      return;
+    }
+    if (/\.(png|jpe?g|gif|webp|svg|ico|woff2?)$/i.test(base)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return;
+    }
+    res.setHeader('Cache-Control', 'public, max-age=3600');
   }
 }));
 app.use('/admin', express.static('admin', {
-  maxAge: '1d',
   etag: true,
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
     }
   }
 }));
