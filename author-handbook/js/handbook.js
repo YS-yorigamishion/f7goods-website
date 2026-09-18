@@ -1,8 +1,5 @@
 /**
- * 作者手册 — 对照庭域手册布局
- * - 左：深色外框档案卡（简介可展开、联络可跳转、作品/活动/企划数）
- * - 右：整图分区 + 深色标签条
- * - 切换栏右侧可搜索作者
+ * 作者手册 — UI 对照庭域手册
  */
 const FALLBACK_AUTHORS = [{
   id: 'c1785520414879',
@@ -81,13 +78,10 @@ function worksOf(id) {
 }
 
 function latestWorkCover(id) {
-  const list = worksOf(id).slice().sort((a, b) => {
-    return (Date.parse(b.createdAt || '') || 0) - (Date.parse(a.createdAt || '') || 0);
-  });
-  return {
-    cover: list[0] ? normImg(list[0].images[0]) : '',
-    count: list.length
-  };
+  const list = worksOf(id).slice().sort((a, b) =>
+    (Date.parse(b.createdAt || '') || 0) - (Date.parse(a.createdAt || '') || 0)
+  );
+  return { cover: list[0] ? normImg(list[0].images[0]) : '', count: list.length };
 }
 
 function latestEventCover(id) {
@@ -96,10 +90,7 @@ function latestEventCover(id) {
     (e.relatedCircles || e.circles || []).indexOf(id) !== -1 &&
     normImg(e.coverImage)
   ).sort((a, b) => (Date.parse(b.date || '') || 0) - (Date.parse(a.date || '') || 0));
-  return {
-    cover: list[0] ? normImg(list[0].coverImage) : '',
-    count: list.length
-  };
+  return { cover: list[0] ? normImg(list[0].coverImage) : '', count: list.length };
 }
 
 function latestProjectCover(id) {
@@ -107,21 +98,25 @@ function latestProjectCover(id) {
     p && (!p.approvalStatus || p.approvalStatus === 'approved') &&
     (p.circles || []).indexOf(id) !== -1 &&
     normImg(p.coverImage)
-  ).sort((a, b) => {
-    return (Date.parse(b.startDate || b.createdAt || '') || 0) -
-           (Date.parse(a.startDate || a.createdAt || '') || 0);
-  });
-  return {
-    cover: list[0] ? normImg(list[0].coverImage) : '',
-    count: list.length
-  };
+  ).sort((a, b) =>
+    (Date.parse(b.startDate || b.createdAt || '') || 0) -
+    (Date.parse(a.startDate || a.createdAt || '') || 0)
+  );
+  return { cover: list[0] ? normImg(list[0].coverImage) : '', count: list.length };
+}
+
+/** 作品密度条：对照参考图「等级」下的能量条 */
+function activityBar(worksCount) {
+  const n = Number(worksCount) || 0;
+  const pct = Math.max(8, Math.min(100, Math.round(Math.log10(n + 1) / Math.log10(80) * 100)));
+  return `<div class="id-bar" aria-hidden="true"><i style="width:${pct}%"></i></div>`;
 }
 
 function introHtml(text) {
   const full = String(text || '').trim();
   if (!full) return '<div class="v muted">暂无简介</div>';
   const paras = full.split(/\n+/).filter(Boolean);
-  const isLong = paras.length > 2 || full.length > 90;
+  const isLong = paras.length > 2 || full.length > 80;
   if (!isLong) {
     return `<div class="v">${esc(full).replace(/\n/g, '<br>')}</div>`;
   }
@@ -162,7 +157,6 @@ function renderHandbook() {
   const w = latestWorkCover(a.id);
   const ev = latestEventCover(a.id);
   const pr = latestProjectCover(a.id);
-
   const workCover = w.cover || normImg(a.workCover);
   const eventCover = ev.cover || normImg(a.eventCover);
   const projectCover = pr.cover || normImg(a.projectCover);
@@ -177,7 +171,6 @@ function renderHandbook() {
 
   const picker = document.getElementById('authorPicker');
   if (picker) picker.textContent = a.name;
-
   const circleUrl = `/circle-detail.html?id=${encodeURIComponent(a.id)}`;
 
   root.innerHTML = `
@@ -197,20 +190,37 @@ function renderHandbook() {
                 <div class="id-head-text">
                   <div class="id-name">${esc(a.name)}</div>
                   <div class="id-sub">${esc(a.category || '同人作者')}</div>
+                  ${activityBar(workCount)}
                 </div>
               </div>
-              <div class="id-block">
-                <div class="k">作者简介</div>
-                ${introHtml(a.intro)}
+
+              <div class="id-rows">
+                <div class="id-row">
+                  <span class="k">作者简介</span>
+                </div>
+                <div class="id-goal">${introHtml(a.intro)}</div>
               </div>
-              <div class="id-block">
-                <div class="k">联络</div>
-                ${contactHtml(a.contactText || a.contact || '', a.contactUrl || '')}
+
+              <div class="id-rows">
+                <div class="id-row">
+                  <span class="k">联络</span>
+                  <span class="v-inline">${contactHtml(a.contactText || a.contact || '', a.contactUrl || '')}</span>
+                </div>
               </div>
-              <div class="id-stats">
-                <div class="id-stat"><span class="k">作品</span><span class="v">${workCount}</span></div>
-                <div class="id-stat"><span class="k">活动</span><span class="v">${eventCount}</span></div>
-                <div class="id-stat"><span class="k">企划</span><span class="v">${projectCount}</span></div>
+
+              <div class="id-rows id-nums">
+                <div class="id-row">
+                  <span class="k">作品</span>
+                  <span class="v num">${workCount}</span>
+                </div>
+                <div class="id-row">
+                  <span class="k">活动</span>
+                  <span class="v num">${eventCount}</span>
+                </div>
+                <div class="id-row">
+                  <span class="k">企划</span>
+                  <span class="v num">${projectCount}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -219,24 +229,15 @@ function renderHandbook() {
         <div class="hb-tiles">
           <a class="tile tile-main" href="${circleUrl}#works" title="作品列表">
             ${coverHtml(workCover, '暂无作品展示图')}
-            <div class="tile-label">
-              <b>作品列表</b>
-              <span>WORKS</span>
-            </div>
+            <div class="tile-label"><b>作品列表</b><span>WORKS</span></div>
           </a>
           <a class="tile" href="${circleUrl}#events" title="参与活动">
             ${coverHtml(eventCover, '暂无活动封面')}
-            <div class="tile-label">
-              <b>参与活动</b>
-              <span>EVENTS</span>
-            </div>
+            <div class="tile-label"><b>参与活动</b><span>EVENTS</span></div>
           </a>
           <a class="tile" href="${circleUrl}#projects" title="同人企划">
             ${coverHtml(projectCover, '暂无企划封面')}
-            <div class="tile-label">
-              <b>同人企划</b>
-              <span>PROJECTS</span>
-            </div>
+            <div class="tile-label"><b>同人企划</b><span>PROJECTS</span></div>
           </a>
         </div>
       </div>
@@ -339,10 +340,10 @@ function buildAuthorsFromApi(circles, works, events, projects) {
     const prs = (projects || []).filter(p =>
       p && (!p.approvalStatus || p.approvalStatus === 'approved') &&
       (p.circles || []).indexOf(c.id) !== -1
-    ).sort((a, b) => {
-      return (Date.parse(b.startDate || b.createdAt || '') || 0) -
-             (Date.parse(a.startDate || a.createdAt || '') || 0);
-    });
+    ).sort((a, b) =>
+      (Date.parse(b.startDate || b.createdAt || '') || 0) -
+      (Date.parse(a.startDate || a.createdAt || '') || 0)
+    );
 
     const contact = contactFromCircle(c);
     return {
