@@ -261,20 +261,6 @@ body::before {
   font-size: 0.78rem; color: #5C544C;
   letter-spacing: 0.04em; font-weight: 600;
 }
-/* 参考图能量条 */
-.id-bar {
-  margin-top: 0.45rem;
-  height: 10px;
-  border-radius: 2px;
-  background: rgba(42,36,48,0.1);
-  border: 1px solid rgba(42,36,48,0.08);
-  overflow: hidden;
-}
-.id-bar > i {
-  display: block; height: 100%;
-  background: linear-gradient(90deg, #6EC6C0 0%, #3BA8A0 100%);
-  border-radius: 1px;
-}
 
 /* 行：标签左 / 值右（对照标识、编号、人数） */
 .id-rows { margin-bottom: 0.7rem; }

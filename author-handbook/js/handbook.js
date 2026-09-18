@@ -190,7 +190,6 @@ function renderHandbook() {
                 <div class="id-head-text">
                   <div class="id-name">${esc(a.name)}</div>
                   <div class="id-sub">${esc(a.category || '同人作者')}</div>
-                  ${activityBar(workCount)}
                 </div>
               </div>
 
