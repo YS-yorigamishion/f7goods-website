@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260918k">
+  <link rel="stylesheet" href="/css/style.css?v=20260918n">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -35,7 +35,10 @@
 
   <main class="main-content">
     <div class="cl-toolbar-card">
-      <div class="cl-toolbar-row" id="categoryFilters"></div>
+      <div class="cl-toolbar-row" id="categoryFiltersRow" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">
+        <div id="categoryFilters" style="display:contents;"></div>
+        <a class="cl-handbook-btn" href="/author-handbook/" title="进入作者手册视图">作者手册</a>
+      </div>
       <div class="cl-toolbar-row">
         <button type="button" class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">关注</button>
         <select class="form-input" id="sortSelect">

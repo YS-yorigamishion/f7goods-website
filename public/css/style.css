@@ -145,6 +145,32 @@ a { color: inherit; }
 .filter-btn:hover { border-color: #D4C8B8; color: var(--ink); background: var(--paper); }
 .filter-btn:active { transform: scale(0.98); }
 .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+/* 同人作者列表：筛选条最右「作者手册」入口 */
+.cl-handbook-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  background: #6B3FA0;
+  color: #fff !important;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border: none;
+  box-shadow: 0 4px 14px rgba(107, 63, 160, 0.4);
+  transition: background 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+.cl-handbook-btn:hover {
+  background: #7d4bb8;
+  transform: translateY(-1px);
+}
 .search-input {
   padding: 0.35rem 0.9rem; border: 1px solid var(--line); border-radius: 999px;
   font-size: 0.8rem; background: var(--card); color: var(--ink); min-width: 180px;
