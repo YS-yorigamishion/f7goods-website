@@ -3006,9 +3006,19 @@ function openEventModal(event = null) {
     if (!data.title) { showToast('请填写活动名称', 'error'); return; }
 
     if (isEdit) {
-      await adminAPI('PUT', `/api/admin/events/${event.id}`, data);
+      const result = await adminAPI('PUT', `/api/admin/events/${event.id}`, data);
+      if (!result || result.error) {
+        showToast(result?.error || '保存失败', 'error');
+        return;
+      }
+      showToast('已保存', 'success');
     } else {
-      await adminAPI('POST', '/api/admin/events', data);
+      const result = await adminAPI('POST', '/api/admin/events', data);
+      if (!result || result.error) {
+        showToast(result?.error || '创建失败', 'error');
+        return;
+      }
+      showToast('活动已创建', 'success');
     }
     closeModal();
     loadEvents();

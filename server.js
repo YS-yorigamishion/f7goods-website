@@ -3803,7 +3803,7 @@ app.post('/api/admin/events', authMiddleware, async (req, res) => {
   const events = readJSON('events.json');
   const maxOrder = events.reduce((max, e) => Math.max(max, e.order ?? 0), 0);
   // Whitelist allowed fields
-  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'type', 'booths', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'editableBy'];
+  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'type', 'booths', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'socialLinks', 'editableBy'];
   const eventData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) eventData[field] = req.body[field];
@@ -3862,7 +3862,7 @@ app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'type', 'booths', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'order', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
+  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'type', 'booths', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'socialLinks', 'order', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
