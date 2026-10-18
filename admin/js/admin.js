@@ -5288,10 +5288,10 @@ async function deleteImage(filename) {
   if (!await showConfirm(`确定要删除图片 ${filename} 吗？`, { danger: true })) return;
   const result = await adminAPI('DELETE', `/api/admin/images/${filename}`);
   if (result && result.success) {
-    showToast('图片已删除', 'success');
+    showToast('图片已移入回收站', 'success');
     loadImages();
   } else {
-    showToast('删除失败', 'error');
+    showToast(result?.error || '删除失败', 'error');
   }
 }
 

@@ -434,7 +434,7 @@ function collectAllUploadRefs() {
   const refs = new Set();
   const files = [
     'works.json', 'events.json', 'circles.json', 'projects.json', 'updates.json',
-    'announcements.json', 'author-announcements.json', 'settings.json', 'edit-log.json'
+    'announcements.json', 'author-announcements.json', 'settings.json'
   ];
   for (const file of files) {
     try { collectUploadRefs(readJSON(file), refs); } catch (e) { console.error('[upload-refs]', file, e.message); }
