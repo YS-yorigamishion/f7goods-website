@@ -596,6 +596,24 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Attribute-safe image URL: escape entities, reject quotes/angle brackets/whitespace.
+function safeImgUrl(url) {
+  const s = String(url == null ? '' : url).trim();
+  if (!s) return '';
+  return /^[^"'<>\s]+$/.test(s) ? escapeHtml(s) : '';
+}
+
+// JS-string-safe argument for inline handlers.
+function jsArg(v) { return escapeHtml(JSON.stringify(v == null ? '' : String(v))); }
+
+// Resized upload URL. Non-upload (external) images are returned unchanged.
+function imgUrl(url, width = 640) {
+  const s = String(url == null ? '' : url);
+  const m = s.match(/^\/uploads\/([^/?#]+)$/) || s.match(/^https?:\/\/[^/]+\/uploads\/([^/?#]+)$/);
+  if (!m) return s;
+  return '/img/' + encodeURIComponent(m[1]) + '?w=' + encodeURIComponent(width);
+}
+
 // Make cards keyboard-accessible
 function initCardAccessibility() {
   document.querySelectorAll('.card[onclick]').forEach(card => {

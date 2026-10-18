@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260918p">
+  <link rel="stylesheet" href="/css/style.css?v=20261019a">
   <style>
     /* ===== 心愿单：卡片价格旁的加减控件 ===== */
     .cl-w-foot-l { display:inline-flex; align-items:center; gap:0.5rem; min-width:0; flex:1; }
@@ -343,10 +343,10 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20260918p"></script>
+  <script src="/js/api.js?v=20261019a"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20260918p"></script>
-  <script src="/js/main.js?v=20260918p"></script>
+  <script src="/js/i18n.js?v=20261019a"></script>
+  <script src="/js/main.js?v=20261019a"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -355,7 +355,7 @@
       document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
     }, 8000);
 
-    // fetchWithTimeout is provided by /js/api.js?v=20260918p
+    // fetchWithTimeout is provided by /js/api.js?v=20261019a
 
     initPage('works');
     if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '发布周边', tab: 'works' });
@@ -392,7 +392,7 @@
     function boardThumb(work) {
       const img = (work.images && work.images[0]) || '';
       return img
-        ? `<div class="board-thumb"><img src="${img}" alt="" loading="lazy"></div>`
+        ? `<div class="board-thumb"><img src="${escapeHtml(imgUrl(img, 96))}" alt="" loading="lazy"></div>`
         : `<div class="board-thumb">🎨</div>`;
     }
 
@@ -604,7 +604,7 @@
       const dots = document.getElementById('boardFeatDots');
       track.innerHTML = boardFeatureSlides.map((s, i) => `
         <div class="board-feature-slide ${i === 0 ? 'on' : ''} ${s.cover ? 'has-cover' : ''}"
-             style="${s.cover ? `background-image:url('${escapeHtml(s.cover)}')` : ''}"
+             style="${s.cover ? `background-image:url('${escapeHtml(imgUrl(s.cover, 1600))}')` : ''}"
              onclick="location.href='${s.href}'">
           <div class="board-feature-shade"></div>
           <span class="board-feature-tag ${s.tagClass}">${escapeHtml(s.tag)}</span>
@@ -652,7 +652,7 @@
               : '';
             return `<a class="board-list-row" href="/project-detail.html?id=${encodeURIComponent(p.id)}" onclick="location.href=this.href;return false;">
               ${cover
-                ? `<div class="board-thumb"><img src="${escapeHtml(cover)}" alt="" loading="lazy"></div>`
+                ? `<div class="board-thumb"><img src="${escapeHtml(imgUrl(cover, 96))}" alt="" loading="lazy"></div>`
                 : `<div class="board-thumb">📋</div>`}
               <div class="t"><b>${escapeHtml(p.title)}</b><small>${escapeHtml(name)}</small>${recruitLine}</div>
               <span class="card-tag ${stClass}" style="font-size:0.65rem;padding:0.1rem 0.45rem;margin:0;">${escapeHtml(projectStatusLabel(p.status))}</span>
@@ -676,7 +676,7 @@
             const href = only ? onlyEventHref(e) : '/event-detail.html?id=' + encodeURIComponent(e.id);
             return `<a class="board-list-row" href="${href}">
               ${cover
-                ? `<div class="board-thumb"><img src="${cover}" alt="" loading="lazy"></div>`
+                ? `<div class="board-thumb"><img src="${escapeHtml(imgUrl(cover, 96))}" alt="" loading="lazy"></div>`
                 : `<div class="board-thumb">📅</div>`}
               <div class="t"><b>${escapeHtml(e.title)}</b><small>${escapeHtml(e.location || '')}</small></div>
               ${only
@@ -737,7 +737,7 @@
             <a class="card" href="/work-detail.html?id=${w.id}" style="text-decoration:none;color:inherit;">
               ${isWorkNew(w) ? `<span class="card-new-badge" aria-label="新上架">新</span>` : ''}
               <div class="card-image">
-                ${w.images && w.images[0] ? `<img src="${w.images[0]}" alt="${escapeHtml(w.title)}" loading="lazy">` : '<span class="placeholder-icon">🎨</span>'}
+                ${w.images && w.images[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 320))}" alt="${escapeHtml(w.title)}" loading="lazy">` : '<span class="placeholder-icon">🎨</span>'}
               </div>
               <div class="card-body">
                 <span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || ''}</span>
@@ -763,7 +763,7 @@
             const cover = e.coverImage || (e.images && e.images[0]) || '';
             return `<a class="board-list-row" href="/event-detail.html?id=${e.id}">
               ${cover
-                ? `<div class="board-thumb"><img src="${cover}" alt="" loading="lazy"></div>`
+                ? `<div class="board-thumb"><img src="${escapeHtml(imgUrl(cover, 96))}" alt="" loading="lazy"></div>`
                 : `<div class="board-thumb">📅</div>`}
               <div class="t"><b>${escapeHtml(e.title)}</b><small>${escapeHtml(e.location || '')}</small></div>
               <span class="badge-urgent" style="background:rgba(74,123,167,0.12);color:var(--info);font-weight:500;">${formatDate(e.date || e.startDate)}</span>
@@ -786,7 +786,7 @@
             const title = u.title || '';
             return `<a class="board-list-row" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
               ${logo
-                ? `<div class="board-avatar"><img src="${escapeHtml(logo)}" alt="" loading="lazy"></div>`
+                ? `<div class="board-avatar"><img src="${escapeHtml(imgUrl(logo, 96))}" alt="" loading="lazy"></div>`
                 : `<div class="board-avatar">${escapeHtml((name || '·').charAt(0))}</div>`}
               <div class="t" style="flex:1;min-width:0;"><b>${escapeHtml(title)}</b></div>
               ${name ? `<span style="font-size:11px;color:var(--muted);flex-shrink:0;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>` : ''}
@@ -1003,7 +1003,7 @@
         const meta = [authors, statusLabel].filter(Boolean).join(' · ');
         return `<div class="wl-item">
           ${img
-            ? `<img class="thumb" src="${escapeHtml(img)}" alt="" loading="lazy">`
+            ? `<img class="thumb" src="${escapeHtml(imgUrl(img, 96))}" alt="" loading="lazy">`
             : `<span class="thumb">${escapeHtml((work.title || '?').charAt(0))}</span>`}
           <div class="n">
             <div class="t"><a href="/work-detail.html?id=${encodeURIComponent(work.id)}">${escapeHtml(work.title)}</a></div>
@@ -1606,7 +1606,7 @@
             ${statusLabel ? `<span class="cl-w-status ${workStatusClass(work.status, statusLabel)}">${escapeHtml(statusLabel)}</span>` : ''}
             ${isDeadlineSoon(work.endDate) ? `<span class="cl-w-deadline">${t('common.deadlineSoon')}</span>` : ''}
             ${work.images && work.images.length > 0
-              ? `<img src="${work.images[0]}" alt="${escapeHtml(work.title)}" loading="lazy">`
+              ? `<img src="${escapeHtml(imgUrl(work.images[0], 320))}" alt="${escapeHtml(work.title)}" loading="lazy">`
               : `<span>${escapeHtml((work.title || '?').charAt(0))}</span>`}
           </div>
           <div class="cl-w-body">

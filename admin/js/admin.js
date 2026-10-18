@@ -297,7 +297,7 @@ async function uploadImagesToField(inputId, previewId, shape = 'square') {
     if (res.url) {
       const div = document.createElement('div');
       div.style.cssText = 'position:relative;';
-      div.innerHTML = `<img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:${borderRadius};">` + removeImageButton();
+      div.innerHTML = `<img src="${safeImgUrl(res.url)}" style="width:80px;height:80px;object-fit:cover;border-radius:${borderRadius};">` + removeImageButton();
       preview.appendChild(div);
     }
   }
@@ -1569,10 +1569,11 @@ async function reorderItem(type, id, direction) {
 }
 
 function renderOrderControls(type, id, index, total) {
+  const t = escAttr(type);
   return `
     <div style="display:flex;gap:2px;">
-      <button class="btn-sm" onclick="reorderItem('${type}', '${id}', -1)" ${index === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
-      <button class="btn-sm" onclick="reorderItem('${type}', '${id}', 1)" ${index === total - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
+      <button class="btn-sm" onclick="reorderItem('${t}', ${jsArg(id)}, -1)" ${index === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
+      <button class="btn-sm" onclick="reorderItem('${t}', ${jsArg(id)}, 1)" ${index === total - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
     </div>
   `;
 }
@@ -1585,41 +1586,53 @@ function renderWorksTable(works) {
   }
   tbody.innerHTML = works.map((w, i) => {
     const hasImg = w.images && w.images.length > 0;
+    const wid = escAttr(w.id);
+    const wtitle = escText(w.title);
+    const wprice = escText(w.price);
+    const wcat = escText(CATEGORIES[w.category] || w.category || '');
+    const wstatus = escText(STATUS_LABELS[w.status] || w.status || '');
+    const wstatusCls = escAttr(String(w.status || '').replace(/[^A-Za-z0-9_-]/g, ''));
+    const wimg = safeImgUrl(hasImg ? w.images[0] : '');
+    const circleNames = escText((w.circles || []).map(cid => adminCirclesMap[cid] || cid).join(', ') || '-');
+    const circlesJson = escAttr(JSON.stringify(w.circles || []));
     const approvalBadge = w.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
       : w.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
       : w.approvalStatus === 'pending' ? '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>'
       : '<span style="background:var(--haze);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">-</span>';
-    const approveBtn = w.approvalStatus === 'pending' ? `<button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveWork('${w.id}')">批准</button><button class="btn-sm btn-delete" onclick="rejectWork('${w.id}')">拒绝</button>` : '';
+    const revisionBadge = w.pendingRevision ? '<span style="background:#8e44ad;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.68rem;margin-left:0.3rem;">新版本待审</span>' : '';
+    const approveBtn = (w.approvalStatus === 'pending' || w.approvalStatus === 'rejected')
+      ? `<button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveWork(${jsArg(w.id)})">批准</button><button class="btn-sm btn-delete" onclick="rejectWork(${jsArg(w.id)})">拒绝</button>`
+      : '';
     return `
-    <tr data-work-id="${w.id}">
+    <tr data-work-id="${wid}">
       <td>${renderOrderControls('works', w.id, i, works.length)}</td>
-      <td><input type="checkbox" class="work-checkbox" value="${w.id}" onchange="updateBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
+      <td><input type="checkbox" class="work-checkbox" value="${wid}" onchange="updateBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
       <td>
         <div style="display:flex;align-items:center;gap:0.4rem;">
           <div style="position:relative;width:50px;height:50px;border-radius:6px;overflow:hidden;border:1px solid var(--border);flex-shrink:0;background:var(--paper);">
-            ${hasImg ? `<img src="${w.images[0]}" style="width:100%;height:100%;object-fit:cover;">` : '<span style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--haze);font-size:1.2rem;">🎨</span>'}
-            ${hasImg ? `<button onclick="removeWorkImage('${w.id}', 0)" style="position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button>` : ''}
+            ${wimg ? `<img src="${safeImgUrl(wimg)}" alt="" style="width:100%;height:100%;object-fit:cover;">` : '<span style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--haze);font-size:1.2rem;">🎨</span>'}
+            ${wimg ? `<button onclick="removeWorkImage(${jsArg(w.id)}, 0)" aria-label="移除封面" style="position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button>` : ''}
           </div>
           <label style="cursor:pointer;font-size:0.7rem;color:var(--accent);flex-shrink:0;" title="上传图片">
             📷
-            <input type="file" accept="image/*" style="display:none;" onchange="quickUploadWorkImage('${w.id}', this)">
+            <input type="file" accept="image/*" style="display:none;" onchange="quickUploadWorkImage(${jsArg(w.id)}, this)">
           </label>
         </div>
       </td>
-      <td class="editable-cell" onclick="makeEditable(this, '${w.id}', 'title', '${escapeHtml(w.title)}')">${w.title}<br><span style="font-size:0.6rem;color:var(--haze);">${w.id}</span></td>
-      <td>${approvalBadge}</td>
-      <td class="editable-cell" onclick="makeSelectCircles(this, '${w.id}', ${JSON.stringify(w.circles || []).replace(/"/g, '&quot;')})">${(w.circles || []).map(cid => adminCirclesMap[cid] || cid).join(', ') || '-'}</td>
-      <td class="editable-cell" onclick="makeSelectCategory(this, '${w.id}', '${w.category}')">${CATEGORIES[w.category] || w.category}</td>
-      <td class="editable-cell" onclick="makeEditable(this, '${w.id}', 'price', '${escapeHtml(w.price)}')">${w.price}</td>
-      <td style="text-align:center;">${w.likes || 0}</td>
-      <td style="text-align:center;color:#3498db;font-weight:600;">${w.wants || 0}</td>
-      <td class="editable-cell" onclick="makeSelectStatus(this, '${w.id}', '${w.status}')"><span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || w.status}</span></td>
+      <td class="editable-cell" data-value="${escAttr(w.title)}" onclick="makeEditable(this, '${wid}', 'title', this.dataset.value)">${wtitle}<br><span style="font-size:0.6rem;color:var(--haze);">${escText(w.id)}</span></td>
+      <td>${approvalBadge}${revisionBadge}</td>
+      <td class="editable-cell" data-circles="${circlesJson}" onclick="makeSelectCircles(this, '${wid}', JSON.parse(this.dataset.circles))">${circleNames}</td>
+      <td class="editable-cell" onclick="makeSelectCategory(this, '${wid}', '${escAttr(w.category)}')">${wcat}</td>
+      <td class="editable-cell" data-value="${escAttr(w.price)}" onclick="makeEditable(this, '${wid}', 'price', this.dataset.value)">${wprice}</td>
+      <td style="text-align:center;">${Number(w.likes) || 0}</td>
+      <td style="text-align:center;color:#3498db;font-weight:600;">${Number(w.wants) || 0}</td>
+      <td class="editable-cell" onclick="makeSelectStatus(this, '${wid}', '${escAttr(w.status)}')"><span class="card-tag ${wstatusCls}">${wstatus}</span></td>
       <td>
         <div class="table-actions">
           ${approveBtn}
-          <button class="btn-sm btn-edit" onclick="manageWorkRelations('${w.id}')">关联</button>
-          <button class="btn-sm btn-edit" onclick="editWork('${w.id}')">编辑</button>
-          <button class="btn-sm btn-delete" onclick="deleteWork('${w.id}')">删除</button>
+          <button class="btn-sm btn-edit" onclick="manageWorkRelations(${jsArg(w.id)})">关联</button>
+          <button class="btn-sm btn-edit" onclick="editWork(${jsArg(w.id)})">编辑</button>
+          <button class="btn-sm btn-delete" onclick="deleteWork(${jsArg(w.id)})">删除</button>
         </div>
       </td>
     </tr>
@@ -1678,6 +1691,24 @@ function escapeHtml(str) {
   if (str == null) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
+
+// ---- Output-encoding helpers (admin) ----
+function escText(str) { return escapeHtml(str == null ? '' : String(str)); }
+function escAttr(str) { return escapeHtml(str == null ? '' : String(str)); }
+function safeImgUrl(url) {
+  const s = String(url == null ? '' : url).trim();
+  if (!s) return '';
+  if (/^\/uploads\/[^"'<>\s]+$/i.test(s)) return escAttr(s);
+  if (/^https?:\/\/[^"'<>\s]+$/i.test(s)) return escAttr(s);
+  return '';
+}
+function safeHref(url) {
+  const s = String(url == null ? '' : url).trim();
+  if (!s) return '';
+  if (/^(https?:\/\/|mailto:|\/)[^"'<>\s]*$/i.test(s)) return escAttr(s);
+  return '';
+}
+function jsArg(v) { return escapeHtml(JSON.stringify(v == null ? '' : String(v))); }
 
 // ===== 标签芯片输入 =====
 const TAG_SEP_RE = /[,，、;；]+/;
@@ -1815,8 +1846,9 @@ function initTagChipBoxes(root) {
 function makeEditable(cell, workId, field, currentValue) {
   if (cell.querySelector('input')) return;
   const original = cell.innerHTML;
-  cell.innerHTML = `<input type="text" class="form-input" value="${currentValue}" style="padding:0.3rem 0.5rem;font-size:0.85rem;width:100%;">`;
+  cell.innerHTML = '<input type="text" class="form-input" style="padding:0.3rem 0.5rem;font-size:0.85rem;width:100%;">';
   const input = cell.querySelector('input');
+  input.value = currentValue == null ? '' : String(currentValue);
   input.focus();
   input.select();
   const save = async () => {
@@ -1873,7 +1905,7 @@ function makeSelectCircles(cell, workId, currentCircles) {
   if (cell.querySelector('input')) return;
   const original = cell.innerHTML;
   const circles = Array.isArray(currentCircles) ? [...currentCircles] : [];
-  const datalistOptions = adminCirclesData.map(c => `<option value="${c.name}">`).join('');
+  const datalistOptions = adminCirclesData.map(c => `<option value="${escText(c.name)}">`).join('');
 
   function renderCell() {
     const tags = circles.map((cid, i) => {
@@ -2173,7 +2205,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
     <div class="form-row">
       <div class="form-group">
         <label>标题 <span style="color:var(--accent)">*</span></label>
-        <input class="form-input" id="wTitle" value="${work?.title || ''}" required>
+        <input class="form-input" id="wTitle" value="${escAttr(work?.title || '')}" required>
       </div>
     </div>
     <div class="form-row">
@@ -2197,15 +2229,15 @@ function openWorkModal(work = null, returnToCircleId = null) {
     <div class="form-row">
       <div class="form-group">
         <label>价格</label>
-        <input class="form-input" id="wPrice" value="${work?.price || ''}" placeholder="¥0">
+        <input class="form-input" id="wPrice" value="${escAttr(work?.price || '')}" placeholder="¥0">
       </div>
       <div class="form-group">
         <label>发售日</label>
-        <input type="date" class="form-input" id="wReleaseDate" value="${work?.releaseDate || ''}">
+        <input type="date" class="form-input" id="wReleaseDate" value="${escAttr(work?.releaseDate || '')}">
       </div>
       <div class="form-group">
         <label>截止日</label>
-        <input type="date" class="form-input" id="wEndDate" value="${work?.endDate || ''}">
+        <input type="date" class="form-input" id="wEndDate" value="${escAttr(work?.endDate || '')}">
       </div>
     </div>
     ${isEdit ? `<div class="form-row">
@@ -2225,7 +2257,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
       </div>
       <div style="display:flex;gap:0.4rem;">
         <input list="wCircleList" class="form-input" id="wCircleInput" placeholder="输入作者名添加..." style="flex:1;padding:0.35rem 0.6rem;font-size:0.85rem;">
-        <datalist id="wCircleList">${adminCirclesData.map(c => `<option value="${c.name}">`).join('')}</datalist>
+        <datalist id="wCircleList">${adminCirclesData.map(c => `<option value="${escText(c.name)}">`).join('')}</datalist>
         <button type="button" class="btn-sm btn-edit" id="addCircleBtn">添加</button>
       </div>
     </div>
@@ -2237,7 +2269,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
     </div>
     <div class="form-group">
       <label>描述</label>
-      <textarea class="form-input" id="wDesc">${work?.description || ''}</textarea>
+      <textarea class="form-input" id="wDesc">${escText(work?.description || '')}</textarea>
     </div>
     <div class="form-group">
       <label>联系方式类型</label>
@@ -2249,26 +2281,26 @@ function openWorkModal(work = null, returnToCircleId = null) {
     </div>
     <div class="form-group">
       <label>联系方式</label>
-      <input class="form-input" id="wContactValue" value="${work?.socialLinks?.qq || work?.socialLinks?.qqGroup || ''}" placeholder="QQ号或QQ群号">
+      <input class="form-input" id="wContactValue" value="${escAttr(work?.socialLinks?.qq || work?.socialLinks?.qqGroup || '')}" placeholder="QQ号或QQ群号">
     </div>
     <div class="form-group">
       <label>显示名称（前台显示的中文）</label>
-      <input class="form-input" id="wContactLabel" value="${work?.socialLinks?.contactLabel || ''}" placeholder="如：QQ联系、加入QQ群">
+      <input class="form-input" id="wContactLabel" value="${escAttr(work?.socialLinks?.contactLabel || '')}" placeholder="如：QQ联系、加入QQ群">
     </div>
     <div class="form-group">
       <label>网站链接</label>
-      <input class="form-input" id="wWebsite" value="${work?.socialLinks?.website || ''}" placeholder="https://...">
+      <input class="form-input" id="wWebsite" value="${escAttr(work?.socialLinks?.website || '')}" placeholder="https://...">
     </div>
     <div class="form-group">
       <label>网站显示名称</label>
-      <input class="form-input" id="wWebsiteLabel" value="${work?.socialLinks?.websiteLabel || ''}" placeholder="如：访问官网、购买链接">
+      <input class="form-input" id="wWebsiteLabel" value="${escAttr(work?.socialLinks?.websiteLabel || '')}" placeholder="如：访问官网、购买链接">
     </div>
     <div class="form-group">
       <label>展示图片</label>
       <div id="wImagePreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
         ${(work?.images || []).map((img, i) => `
           <div style="position:relative;">
-            <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+            <img src="${safeImgUrl(img)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
             ${removeImageButton()}
           </div>
         `).join('')}
@@ -2284,7 +2316,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
       <div id="wMoreImagePreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
         ${(work?.moreImages || []).map((img, i) => `
           <div style="position:relative;">
-            <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+            <img src="${safeImgUrl(img)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
             ${removeImageButton()}
           </div>
         `).join('')}
@@ -2558,7 +2590,7 @@ function renderBatchEditForm(selectedWorks, returnToCircleId = null) {
         <div id="batchCirclesTags" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem;"></div>
         <div style="display:flex;gap:0.4rem;">
           <input list="batchCircleList" class="form-input" id="batchCircleInput" placeholder="输入作者名添加..." style="flex:1;padding:0.35rem 0.6rem;font-size:0.85rem;">
-          <datalist id="batchCircleList">${adminCirclesData.map(c => `<option value="${c.name}">`).join('')}</datalist>
+          <datalist id="batchCircleList">${adminCirclesData.map(c => `<option value="${escText(c.name)}">`).join('')}</datalist>
           <button type="button" class="btn-sm btn-edit" onclick="addBatchCircleTag()">添加</button>
         </div>
         <button type="button" class="btn-sm" style="background:var(--border);color:var(--ink);margin-top:0.3rem;font-size:0.75rem;" onclick="clearBatchCircles()">清除所有作者</button>
@@ -2665,11 +2697,11 @@ function renderEventsTable(events) {
     <tr>
       <td>${renderOrderControls('events', e.id, i, events.length)}</td>
       <td><input type="checkbox" class="event-checkbox" value="${e.id}" onchange="updateEventBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
-      <td class="editable-cell" onclick="makeEventEditable(this, '${e.id}', 'title', '${escapeHtml(e.title)}')">${e.title}</td>
+      <td class="editable-cell" data-value="${escAttr(e.title)}" onclick="makeEventEditable(this, '${escAttr(e.id)}', 'title', this.dataset.value)">${escText(e.title)}</td>
       <td>${approvalBadge}</td>
-      <td><span class="card-tag ${e.status || ''}">${EVENT_STATUS_LABELS[e.status] || e.status || '-'}</span></td>
-      <td class="editable-cell" onclick="makeEventEditable(this, '${e.id}', 'date', '${e.date || ''}')">${e.date || '-'}</td>
-      <td class="editable-cell truncate" onclick="makeEventEditable(this, '${e.id}', 'location', '${escapeHtml(e.location || '')}')">${e.location || '-'}</td>
+      <td><span class="card-tag ${escAttr(String(e.status || '').replace(/[^A-Za-z0-9_-]/g, ''))}">${escText(EVENT_STATUS_LABELS[e.status] || e.status || '-')}</span></td>
+      <td class="editable-cell" data-value="${escAttr(e.date || '')}" onclick="makeEventEditable(this, '${escAttr(e.id)}', 'date', this.dataset.value)">${escText(e.date || '-')}</td>
+      <td class="editable-cell truncate" data-value="${escAttr(e.location || '')}" onclick="makeEventEditable(this, '${escAttr(e.id)}', 'location', this.dataset.value)">${escText(e.location || '-')}</td>
       <td>作品${worksCount} / 企划${projectsCount}</td>
       <td>${editableAuthors} <button class="btn-sm" style="font-size:0.7rem;padding:0.1rem 0.3rem;" onclick="manageEditableAuthors('events','${e.id}')">管理</button></td>
       <td>
@@ -2874,13 +2906,13 @@ function openEventModal(event = null) {
   document.getElementById('modalBody').innerHTML = `
     <div class="form-group">
       <label>活动名称 <span style="color:var(--accent)">*</span></label>
-      <input class="form-input" id="eTitle" value="${event?.title || ''}" required>
+      <input class="form-input" id="eTitle" value="${escAttr(event?.title || '')}" required>
     </div>
     <div class="form-group">
       <label>状态</label>
       <select class="form-input" id="eStatus">
         ${(EVENT_STATUS_ORDERED.length > 0 ? EVENT_STATUS_ORDERED : [{id:'jijiangkaiqi',name:'即将开启'},{id:'jinxingzhong',name:'进行中'},{id:'yijiesu',name:'已结束'}]).map(s =>
-          `<option value="${s.id}" ${event?.status === s.id ? 'selected' : ''}>${s.name}</option>`
+          `<option value="${escAttr(s.id)}" ${event?.status === s.id ? 'selected' : ''}>${escText(s.name)}</option>`
         ).join('')}
       </select>
     </div>
@@ -2902,24 +2934,24 @@ function openEventModal(event = null) {
     <div class="form-row">
       <div class="form-group">
         <label>开始日期</label>
-        <input type="date" class="form-input" id="eDate" value="${event?.date || ''}">
+        <input type="date" class="form-input" id="eDate" value="${escAttr(event?.date || '')}">
       </div>
       <div class="form-group">
         <label>结束日期</label>
-        <input type="date" class="form-input" id="eEndDate" value="${event?.endDate || ''}">
+        <input type="date" class="form-input" id="eEndDate" value="${escAttr(event?.endDate || '')}">
       </div>
     </div>
     <div class="form-group">
       <label>地点</label>
-      <input class="form-input" id="eLocation" value="${event?.location || ''}">
+      <input class="form-input" id="eLocation" value="${escAttr(event?.location || '')}">
     </div>
     <div class="form-group">
       <label>展位</label>
-      <input class="form-input" id="eBooth" value="${event?.booth || ''}">
+      <input class="form-input" id="eBooth" value="${escAttr(event?.booth || '')}">
     </div>
     <div class="form-group">
       <label>描述</label>
-      <textarea class="form-input" id="eDesc">${event?.description || ''}</textarea>
+      <textarea class="form-input" id="eDesc">${escText(event?.description || '')}</textarea>
     </div>
     <div class="form-group">
       <label>联系方式类型</label>
@@ -2931,24 +2963,24 @@ function openEventModal(event = null) {
     </div>
     <div class="form-group">
       <label>联系方式</label>
-      <input class="form-input" id="eContactValue" value="${event?.socialLinks?.qq || event?.socialLinks?.qqGroup || ''}" placeholder="QQ号或QQ群号">
+      <input class="form-input" id="eContactValue" value="${escAttr(event?.socialLinks?.qq || event?.socialLinks?.qqGroup || '')}" placeholder="QQ号或QQ群号">
     </div>
     <div class="form-group">
       <label>显示名称（前台显示的中文）</label>
-      <input class="form-input" id="eContactLabel" value="${event?.socialLinks?.contactLabel || ''}" placeholder="如：QQ联系、加入QQ群">
+      <input class="form-input" id="eContactLabel" value="${escAttr(event?.socialLinks?.contactLabel || '')}" placeholder="如：QQ联系、加入QQ群">
     </div>
     <div class="form-group">
       <label>网站链接</label>
-      <input class="form-input" id="eWebsite" value="${event?.socialLinks?.website || ''}" placeholder="https://...">
+      <input class="form-input" id="eWebsite" value="${escAttr(event?.socialLinks?.website || '')}" placeholder="https://...">
     </div>
     <div class="form-group">
       <label>网站显示名称</label>
-      <input class="form-input" id="eWebsiteLabel" value="${event?.socialLinks?.websiteLabel || ''}" placeholder="如：访问官网、活动主页">
+      <input class="form-input" id="eWebsiteLabel" value="${escAttr(event?.socialLinks?.websiteLabel || '')}" placeholder="如：访问官网、活动主页">
     </div>
     <div class="form-group">
       <label>首图（时间轴和多格视图的封面图，仅限1张）</label>
       <div id="eCoverPreview" style="margin-bottom:0.5rem;">
-        ${event?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${event.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
+        ${event?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(event.coverImage)}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
       </div>
       <input type="file" id="eCoverInput" accept="image/*" style="font-size:0.85rem;">
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -2961,7 +2993,7 @@ function openEventModal(event = null) {
       <div id="eImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
         ${(event?.images || []).map((img, i) => `
           <div style="position:relative;">
-            <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+            <img src="${safeImgUrl(img)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
             ${removeImageButton()}
           </div>
         `).join('')}
@@ -3099,7 +3131,7 @@ async function manageEventWorks(eventId) {
               return `<label class="event-work-item" data-title="${(w.title || '').toLowerCase()}" data-circle="${(circleName || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="event-work-checkbox" value="${w.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${w.title}</span>
+                <span style="flex:1;">${escText(w.title)}</span>
                 <span style="color:var(--haze);">${circleName}</span>
               </label>`;
             }).join('')}
@@ -3117,7 +3149,7 @@ async function manageEventWorks(eventId) {
           <tbody>
             ${relatedCircles.map(c => `
               <tr>
-                <td>${c.name}</td>
+                <td>${escText(c.name)}</td>
                 <td><button class="btn-sm btn-delete" onclick="removeEventCircle('${eventId}', '${c.id}')">移除</button></td>
               </tr>
             `).join('')}
@@ -3133,7 +3165,7 @@ async function manageEventWorks(eventId) {
               <label class="event-circle-item" data-name="${(c.name || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="event-circle-checkbox" value="${c.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${c.name}</span>
+                <span style="flex:1;">${escText(c.name)}</span>
               </label>
             `).join('')}
           </div>
@@ -3148,7 +3180,7 @@ async function manageEventWorks(eventId) {
         <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;">
           ${relatedProjects.map(p => `
             <span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;background:rgba(243,156,18,0.06);border-radius:100px;font-size:0.8rem;">
-              ${p.title}
+              ${escText(p.title)}
               <button onclick="removeEventProject('${eventId}', '${p.id}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.9rem;padding:0 0.2rem;" title="移除">&times;</button>
             </span>
           `).join('')}
@@ -3163,7 +3195,7 @@ async function manageEventWorks(eventId) {
               <label class="event-project-item" data-title="${(p.title || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="event-project-checkbox" value="${p.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${p.title}</span>
+                <span style="flex:1;">${escText(p.title)}</span>
                 <span style="color:var(--haze);">${PROJECT_STATUS_LABELS[p.status] || p.status || ''}</span>
               </label>
             `).join('')}
@@ -3302,7 +3334,7 @@ async function manageWorkRelations(workId, returnToCircleId) {
         <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;">
           ${relatedEvents.map(e => `
             <span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;background:rgba(15,52,96,0.06);border-radius:100px;font-size:0.8rem;">
-              ${e.title}
+              ${escText(e.title)}
               <button onclick="removeWorkEvent('${workId}', '${e.id}', '${returnToCircleId}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.9rem;padding:0 0.2rem;" title="移除">&times;</button>
             </span>
           `).join('')}
@@ -3317,7 +3349,7 @@ async function manageWorkRelations(workId, returnToCircleId) {
               <label class="work-event-item" data-title="${(e.title || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="work-event-checkbox" value="${e.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${e.title}</span>
+                <span style="flex:1;">${escText(e.title)}</span>
                 <span style="color:var(--haze);">${e.date || ''}</span>
               </label>
             `).join('')}
@@ -3333,7 +3365,7 @@ async function manageWorkRelations(workId, returnToCircleId) {
         <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;">
           ${relatedProjects.map(p => `
             <span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;background:rgba(243,156,18,0.06);border-radius:100px;font-size:0.8rem;">
-              ${p.title}
+              ${escText(p.title)}
               <button onclick="removeWorkProject('${workId}', '${p.id}', '${returnToCircleId}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.9rem;padding:0 0.2rem;" title="移除">&times;</button>
             </span>
           `).join('')}
@@ -3348,7 +3380,7 @@ async function manageWorkRelations(workId, returnToCircleId) {
               <label class="work-project-item" data-title="${(p.title || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="work-project-checkbox" value="${p.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${p.title}</span>
+                <span style="flex:1;">${escText(p.title)}</span>
                 <span style="color:var(--haze);">${PROJECT_STATUS_LABELS[p.status] || p.status || ''}</span>
               </label>
             `).join('')}
@@ -3461,7 +3493,7 @@ async function uploadEventCover() {
   if (!input.files.length) { showToast('请选择首图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
-    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(res.url)}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
   }
   input.value = '';
 }
@@ -3539,8 +3571,8 @@ function renderCirclesTable(circles) {
     <tr>
       <td>${renderOrderControls('circles', c.id, i, circles.length)}</td>
       <td><input type="checkbox" class="circle-checkbox" value="${c.id}" onchange="updateCircleBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
-      <td class="editable-cell" onclick="makeCircleEditable(this, '${c.id}', 'name', '${escapeHtml(c.name)}')">${c.name}</td>
-      <td>${CIRCLE_CATEGORIES[c.category] || c.category || '-'}</td>
+      <td class="editable-cell" data-value="${escAttr(c.name)}" onclick="makeCircleEditable(this, '${escAttr(c.id)}', 'name', this.dataset.value)">${escText(c.name)}</td>
+      <td>${escText(CIRCLE_CATEGORIES[c.category] || c.category || '-')}</td>
       <td>${c._worksCount || 0}</td>
       <td>${c.follows || 0}</td>
       <td>${accountHtml}</td>
@@ -3854,10 +3886,10 @@ async function manageCircleWorks(circleId) {
             ${circleWorks.map(w => `
               <tr>
                 <td><input type="checkbox" class="circle-work-checkbox" value="${w.id}" onchange="updateCircleBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
-                <td class="truncate">${w.title}<span style="color:var(--haze);font-size:0.7rem;margin-left:0.3rem;">活${allEvents.filter(e => (e.relatedWorks || []).includes(w.id)).length} / 企${allProjects.filter(p => (p.works || []).includes(w.id)).length}</span></td>
+                <td class="truncate">${escText(w.title)}<span style="color:var(--haze);font-size:0.7rem;margin-left:0.3rem;">活${allEvents.filter(e => (e.relatedWorks || []).includes(w.id)).length} / 企${allProjects.filter(p => (p.works || []).includes(w.id)).length}</span></td>
                 <td>${CATEGORIES[w.category] || w.category}</td>
-                <td>${w.price}</td>
-                <td><span class="card-tag ${w.status}">${STATUS_LABELS[w.status] || w.status}</span></td>
+                <td>${escText(w.price)}</td>
+                <td><span class="card-tag ${escText(w.status)}">${STATUS_LABELS[w.status] || w.status}</span></td>
                 <td>
                   <div class="table-actions">
                     <button class="btn-sm btn-edit" onclick="manageWorkRelations('${w.id}', '${circleId}')">关联</button>
@@ -3878,7 +3910,7 @@ async function manageCircleWorks(circleId) {
               <label style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="add-work-checkbox" value="${w.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${w.title}</span>
+                <span style="flex:1;">${escText(w.title)}</span>
                 <span style="color:var(--haze);">${CATEGORIES[w.category] || w.category}</span>
               </label>
             `).join('')}
@@ -3894,7 +3926,7 @@ async function manageCircleWorks(circleId) {
         <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;">
           ${relatedEvents.map(e => `
             <span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;background:rgba(15,52,96,0.06);border-radius:100px;font-size:0.8rem;">
-              ${e.title}
+              ${escText(e.title)}
               <button onclick="removeCircleEvent('${circleId}', '${e.id}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.9rem;padding:0 0.2rem;" title="移除">&times;</button>
             </span>
           `).join('')}
@@ -3909,7 +3941,7 @@ async function manageCircleWorks(circleId) {
               <label class="circle-event-item" data-title="${(e.title || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="add-event-checkbox" value="${e.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${e.title}</span>
+                <span style="flex:1;">${escText(e.title)}</span>
                 <span style="color:var(--haze);">${e.date || ''}</span>
               </label>
             `).join('')}
@@ -3925,7 +3957,7 @@ async function manageCircleWorks(circleId) {
         <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;">
           ${relatedProjects.map(p => `
             <span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;background:rgba(243,156,18,0.06);border-radius:100px;font-size:0.8rem;">
-              ${p.title}
+              ${escText(p.title)}
               <button onclick="removeCircleProject('${circleId}', '${p.id}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.9rem;padding:0 0.2rem;" title="移除">&times;</button>
             </span>
           `).join('')}
@@ -3940,7 +3972,7 @@ async function manageCircleWorks(circleId) {
               <label class="circle-project-item" data-title="${(p.title || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="add-project-checkbox" value="${p.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${p.title}</span>
+                <span style="flex:1;">${escText(p.title)}</span>
                 <span style="color:var(--haze);">${PROJECT_STATUS_LABELS[p.status] || p.status || ''}</span>
               </label>
             `).join('')}
@@ -4126,7 +4158,7 @@ function openCircleModal(circle = null) {
   document.getElementById('modalBody').innerHTML = `
     <div class="form-group">
       <label>作者名称 <span style="color:var(--accent)">*</span></label>
-      <input class="form-input" id="cName" value="${circle?.name || ''}" required>
+      <input class="form-input" id="cName" value="${escAttr(circle?.name || '')}" required>
     </div>
     <div class="form-group">
       <label>分类</label>
@@ -4139,7 +4171,7 @@ function openCircleModal(circle = null) {
     </div>
     <div class="form-group">
       <label>简介</label>
-      <textarea class="form-input" id="cDesc">${circle?.description || ''}</textarea>
+      <textarea class="form-input" id="cDesc">${escText(circle?.description || '')}</textarea>
     </div>
     <div class="form-group">
       <label>联系方式类型</label>
@@ -4150,24 +4182,24 @@ function openCircleModal(circle = null) {
     </div>
     <div class="form-group">
       <label>联系方式</label>
-      <input class="form-input" id="cContactValue" value="${circle?.socialLinks?.qq || circle?.socialLinks?.qqGroup || ''}" placeholder="QQ号或QQ群号">
+      <input class="form-input" id="cContactValue" value="${escAttr(circle?.socialLinks?.qq || circle?.socialLinks?.qqGroup || '')}" placeholder="QQ号或QQ群号">
     </div>
     <div class="form-group">
       <label>显示名称（前台显示的中文）</label>
-      <input class="form-input" id="cContactLabel" value="${circle?.socialLinks?.contactLabel || ''}" placeholder="如：QQ联系、加入QQ群">
+      <input class="form-input" id="cContactLabel" value="${escAttr(circle?.socialLinks?.contactLabel || '')}" placeholder="如：QQ联系、加入QQ群">
     </div>
     <div class="form-group">
       <label>网站链接</label>
-      <input class="form-input" id="cWebsite" value="${circle?.socialLinks?.website || ''}" placeholder="https://...">
+      <input class="form-input" id="cWebsite" value="${escAttr(circle?.socialLinks?.website || '')}" placeholder="https://...">
     </div>
     <div class="form-group">
       <label>网站显示名称</label>
-      <input class="form-input" id="cWebsiteLabel" value="${circle?.socialLinks?.websiteLabel || ''}" placeholder="如：访问官网、查看作品集">
+      <input class="form-input" id="cWebsiteLabel" value="${escAttr(circle?.socialLinks?.websiteLabel || '')}" placeholder="如：访问官网、查看作品集">
     </div>
     <div class="form-group">
       <label>作者头像</label>
       <div id="cLogoPreview" style="margin-bottom:0.5rem;">
-        ${circle?.logo ? `<div style="position:relative;display:inline-block;"><img src="${circle.logo}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;">${removeImageButton("document.getElementById('cLogoInput').dataset.cleared='1'")}</div>` : ''}
+        ${circle?.logo ? `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(circle.logo)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;">${removeImageButton("document.getElementById('cLogoInput').dataset.cleared='1'")}</div>` : ''}
       </div>
       <input type="file" id="cLogoInput" accept="image/*" style="font-size:0.85rem;">
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -4180,7 +4212,7 @@ function openCircleModal(circle = null) {
       <div id="cImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
         ${(circle?.images || []).map((img, i) => `
           <div style="position:relative;">
-            <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+            <img src="${safeImgUrl(img)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
             ${removeImageButton()}
           </div>
         `).join('')}
@@ -4267,7 +4299,7 @@ async function uploadCircleLogo() {
   if (!input.files.length) { showToast('请选择头像图片', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
-    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;">${removeImageButton()}</div>`;
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(res.url)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;">${removeImageButton()}</div>`;
   }
   input.value = '';
 }
@@ -4279,7 +4311,7 @@ async function uploadCircleImages() {
 function appendImagePreview(container, url) {
   const div = document.createElement('div');
   div.style.cssText = 'position:relative;';
-  div.innerHTML = `<img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">` + removeImageButton();
+  div.innerHTML = `<img src="${safeImgUrl(url)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">` + removeImageButton();
   container.appendChild(div);
 }
 
@@ -4308,7 +4340,7 @@ async function pickImageFromLibrary(type) {
     <div id="imageLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.5rem;max-height:350px;overflow-y:auto;">
       ${images.map(img => `
         <div class="image-pick-item" data-url="${img.url}" data-name="${(img.name || '').toLowerCase()}" onclick="this.classList.toggle('selected');this.style.outline=this.classList.contains('selected')?'3px solid var(--accent)':'none';" style="border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:var(--transition);">
-          <img src="${img.url}" alt="${img.name}" style="width:100%;height:80px;object-fit:cover;display:block;">
+          <img src="${safeImgUrl(img.url)}" alt="${escAttr(img.name)}" style="width:100%;height:80px;object-fit:cover;display:block;">
           <div style="padding:0.2rem;font-size:0.6rem;color:var(--haze);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${img.name}">${img.name}</div>
         </div>
       `).join('')}
@@ -4326,19 +4358,19 @@ async function pickImageFromLibrary(type) {
 
     if (type === 'circle-logo') {
       const preview = document.getElementById('cLogoPreview');
-      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(selected[0])}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
     } else if (type === 'circle-images') {
       const preview = document.getElementById('cImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
     } else if (type === 'event-cover') {
       const preview = document.getElementById('eCoverPreview');
-      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(selected[0])}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
     } else if (type === 'event-images') {
       const preview = document.getElementById('eImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
     } else if (type === 'project-cover') {
       const preview = document.getElementById('pCoverPreview');
-      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(selected[0])}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
     } else if (type === 'project-images') {
       const preview = document.getElementById('pImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
@@ -4350,7 +4382,7 @@ async function pickImageFromLibrary(type) {
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
     } else if (type === 'update-cover') {
       const preview = document.getElementById('updCoverPreview');
-      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(selected[0])}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
     } else if (type === 'update-images') {
       const preview = document.getElementById('updImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
@@ -4359,7 +4391,7 @@ async function pickImageFromLibrary(type) {
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
     } else if (type === 'booth-logo') {
       const preview = document.getElementById('boothLogoPreview');
-      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${selected[0]}" style="width:48px;height:48px;object-fit:cover;border-radius:10px;"></div>`;
+      if (preview) preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(selected[0])}" style="width:48px;height:48px;object-fit:cover;border-radius:10px;"></div>`;
     } else if (type === 'booth-images') {
       const preview = document.getElementById('boothImagesPreview');
       if (preview) selected.forEach(url => appendImagePreview(preview, url));
@@ -4415,10 +4447,10 @@ function renderProjectsTable(projects) {
     <tr>
       <td>${renderOrderControls('projects', p.id, i, projects.length)}</td>
       <td><input type="checkbox" class="project-checkbox" value="${p.id}" onchange="updateProjectBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
-      <td class="editable-cell" onclick="makeProjectEditable(this, '${p.id}', 'title', '${escapeHtml(p.title)}')">${pinnedBadge}${p.title}</td>
+      <td class="editable-cell" data-value="${escAttr(p.title)}" onclick="makeProjectEditable(this, '${escAttr(p.id)}', 'title', this.dataset.value)">${pinnedBadge}${escText(p.title)}</td>
       <td>${approvalBadge}</td>
-      <td class="editable-cell" onclick="makeSelectProjectCategory(this, '${p.id}', '${p.category}')">${PROJECT_CATEGORIES[p.category] || p.category}</td>
-      <td class="editable-cell" onclick="makeSelectProjectStatus(this, '${p.id}', '${p.status}')"><span class="card-tag ${p.status}">${PROJECT_STATUS_LABELS[p.status] || p.status}</span></td>
+      <td class="editable-cell" onclick="makeSelectProjectCategory(this, '${escAttr(p.id)}', '${escAttr(p.category)}')">${escText(PROJECT_CATEGORIES[p.category] || p.category || '')}</td>
+      <td class="editable-cell" onclick="makeSelectProjectStatus(this, '${escAttr(p.id)}', '${escAttr(p.status)}')"><span class="card-tag ${escAttr(String(p.status || '').replace(/[^A-Za-z0-9_-]/g, ''))}">${escText(PROJECT_STATUS_LABELS[p.status] || p.status || '')}</span></td>
       <td>作者${circlesCount} / 活动${eventsCount}</td>
       <td>${editableAuthors} <button class="btn-sm" style="font-size:0.7rem;padding:0.1rem 0.3rem;" onclick="manageEditableAuthors('projects','${p.id}')">管理</button></td>
       <td>
@@ -4583,7 +4615,7 @@ function openProjectModal(project = null) {
     <div class="form-row">
       <div class="form-group">
         <label>企划名称 <span style="color:var(--accent)">*</span></label>
-        <input class="form-input" id="pTitle" value="${project?.title || ''}" required>
+        <input class="form-input" id="pTitle" value="${escAttr(project?.title || '')}" required>
       </div>
     </div>
     <div class="form-row">
@@ -4607,24 +4639,24 @@ function openProjectModal(project = null) {
     <div class="form-row">
       <div class="form-group">
         <label>开始日期</label>
-        <input type="date" class="form-input" id="pStartDate" value="${project?.startDate || ''}">
+        <input type="date" class="form-input" id="pStartDate" value="${escAttr(project?.startDate || '')}">
       </div>
       <div class="form-group">
         <label>结束日期</label>
-        <input type="date" class="form-input" id="pEndDate" value="${project?.endDate || ''}">
+        <input type="date" class="form-input" id="pEndDate" value="${escAttr(project?.endDate || '')}">
       </div>
     </div>
     <div class="form-group">
       <label>标签（逗号分隔）</label>
-      <input class="form-input" id="pTags" value="${project?.tags?.join(', ') || ''}" placeholder="游戏, 东方">
+      <input class="form-input" id="pTags" value="${escAttr((project?.tags || []).join(', '))}" placeholder="游戏, 东方">
     </div>
     <div class="form-group">
       <label>描述</label>
-      <textarea class="form-input" id="pDesc">${project?.description || ''}</textarea>
+      <textarea class="form-input" id="pDesc">${escText(project?.description || '')}</textarea>
     </div>
     <div class="form-group">
       <label>参与方式/联系方式</label>
-      <textarea class="form-input" id="pContact">${project?.contactInfo || ''}</textarea>
+      <textarea class="form-input" id="pContact">${escText(project?.contactInfo || '')}</textarea>
     </div>
     <div class="form-group">
       <label>联系方式类型</label>
@@ -4636,19 +4668,19 @@ function openProjectModal(project = null) {
     </div>
     <div class="form-group">
       <label>联系方式</label>
-      <input class="form-input" id="pContactValue" value="${project?.socialLinks?.qq || project?.socialLinks?.qqGroup || ''}" placeholder="QQ号或QQ群号">
+      <input class="form-input" id="pContactValue" value="${escAttr(project?.socialLinks?.qq || project?.socialLinks?.qqGroup || '')}" placeholder="QQ号或QQ群号">
     </div>
     <div class="form-group">
       <label>显示名称（前台显示的中文）</label>
-      <input class="form-input" id="pContactLabel" value="${project?.socialLinks?.contactLabel || ''}" placeholder="如：QQ联系、加入QQ群">
+      <input class="form-input" id="pContactLabel" value="${escAttr(project?.socialLinks?.contactLabel || '')}" placeholder="如：QQ联系、加入QQ群">
     </div>
     <div class="form-group">
       <label>网站链接</label>
-      <input class="form-input" id="pWebsite" value="${project?.socialLinks?.website || ''}" placeholder="https://...">
+      <input class="form-input" id="pWebsite" value="${escAttr(project?.socialLinks?.website || '')}" placeholder="https://...">
     </div>
     <div class="form-group">
       <label>网站显示名称</label>
-      <input class="form-input" id="pWebsiteLabel" value="${project?.socialLinks?.websiteLabel || ''}" placeholder="如：访问官网、企划主页">
+      <input class="form-input" id="pWebsiteLabel" value="${escAttr(project?.socialLinks?.websiteLabel || '')}" placeholder="如：访问官网、企划主页">
     </div>
     <div class="form-group">
       <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
@@ -4678,7 +4710,7 @@ function openProjectModal(project = null) {
     <div class="form-group">
       <label>首图（列表页封面图，仅限1张）</label>
       <div id="pCoverPreview" style="margin-bottom:0.5rem;">
-        ${project?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${project.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
+        ${project?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(project.coverImage)}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
       </div>
       <input type="file" id="pCoverInput" accept="image/*" style="font-size:0.85rem;">
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -4691,7 +4723,7 @@ function openProjectModal(project = null) {
       <div id="pImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
         ${(project?.images || []).map((img, i) => `
           <div style="position:relative;">
-            <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+            <img src="${safeImgUrl(img)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
             ${removeImageButton()}
           </div>
         `).join('')}
@@ -4786,7 +4818,7 @@ async function manageProjectRelations(projectId) {
         <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;">
           ${relatedCircles.map(c => `
             <span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;background:rgba(233,69,96,0.06);border-radius:100px;font-size:0.8rem;">
-              ${c.name}
+              ${escText(c.name)}
               <button onclick="removeProjectCircle('${projectId}', '${c.id}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.9rem;padding:0 0.2rem;" title="移除">&times;</button>
             </span>
           `).join('')}
@@ -4801,7 +4833,7 @@ async function manageProjectRelations(projectId) {
               <label class="project-circle-item" data-name="${(c.name || '').toLowerCase()}" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="project-circle-checkbox" value="${c.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${c.name}</span>
+                <span style="flex:1;">${escText(c.name)}</span>
               </label>
             `).join('')}
           </div>
@@ -4818,7 +4850,7 @@ async function manageProjectRelations(projectId) {
           <tbody>
             ${relatedEvents.map(e => `
               <tr>
-                <td>${e.title}</td>
+                <td>${escText(e.title)}</td>
                 <td>${e.date || '-'}</td>
                 <td>${e.location || '-'}</td>
                 <td><button class="btn-sm btn-delete" onclick="removeProjectEvent('${projectId}', '${e.id}')">移除</button></td>
@@ -4835,7 +4867,7 @@ async function manageProjectRelations(projectId) {
               <label style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.8rem;"
                      onmouseover="this.style.background='rgba(233,69,96,0.03)'" onmouseout="this.style.background='transparent'">
                 <input type="checkbox" class="project-event-checkbox" value="${e.id}" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="flex:1;">${e.title}</span>
+                <span style="flex:1;">${escText(e.title)}</span>
                 <span style="color:var(--haze);">${e.date || ''}</span>
               </label>
             `).join('')}
@@ -4898,7 +4930,7 @@ async function uploadProjectCover() {
   if (!input.files.length) { showToast('请选择首图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
-    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(res.url)}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
   }
   input.value = '';
 }
@@ -5205,11 +5237,11 @@ async function loadImages() {
       return `
       <div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--paper);">
         <input type="checkbox" class="image-checkbox" value="${img.name}" style="position:absolute;top:6px;left:6px;z-index:2;width:16px;height:16px;accent-color:var(--accent);cursor:pointer;" onchange="updateImageBatchBtn()">
-        <img src="${img.url}" alt="${img.name}" style="width:100%;height:120px;object-fit:cover;display:block;cursor:pointer;" onclick="copyImageUrl('${img.url}')" title="点击复制链接">
+        <img src="${safeImgUrl(img.url)}" alt="${escAttr(img.name)}" style="width:100%;height:120px;object-fit:cover;display:block;cursor:pointer;" data-url="${safeImgUrl(img.url)}" onclick="copyImageUrl(this.dataset.url)" title="点击复制链接">
         <div style="padding:0.4rem 0.5rem;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:0.65rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${img.name}</span>
-            <button onclick="deleteImage('${img.name}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;padding:0 0.3rem;" title="删除">&times;</button>
+            <span style="font-size:0.65rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${escText(img.name)}</span>
+            <button onclick="deleteImage(${jsArg(img.name)})" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;padding:0 0.3rem;" title="删除">&times;</button>
           </div>
           <div style="font-size:0.6rem;color:var(--haze);margin-top:0.15rem;">${sizeMB} MB</div>
           ${uploader ? '<div style="font-size:0.6rem;color:var(--accent-alt);margin-top:0.1rem;">' + escapeHtml(uploader) + (uploadDate ? ' · ' + uploadDate : '') + '</div>' : ''}
@@ -5280,22 +5312,22 @@ async function cleanupUnusedImages() {
     // Show preview modal
     document.getElementById('modalTitle').textContent = '清理未使用图片';
     document.getElementById('modalBody').innerHTML = `
-      <p style="margin-bottom:1rem;">共 ${preview.total} 张图片，其中 <strong style="color:var(--accent);">${preview.count} 张</strong> 未被使用：</p>
+      <p style="margin-bottom:1rem;">共 ${preview.total} 张图片，其中 <strong style="color:var(--accent);">${preview.count} 张</strong> 未在任何作品、活动、公告、页面设置或摊位中引用：</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.6rem;max-height:300px;overflow-y:auto;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius-sm);">
         ${preview.unused.map(img => `
           <div style="border-radius:6px;overflow:hidden;border:1px solid var(--border);background:var(--paper);">
-            <img src="${img.url}" alt="${img.name}" style="width:100%;height:80px;object-fit:cover;display:block;">
-            <div style="padding:0.2rem 0.3rem;font-size:0.6rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${img.name}">${img.name}</div>
+            <img src="${safeImgUrl(img.url)}" alt="${escAttr(img.name)}" style="width:100%;height:80px;object-fit:cover;display:block;">
+            <div style="padding:0.2rem 0.3rem;font-size:0.6rem;color:var(--haze);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escAttr(img.name)}">${escText(img.name)}</div>
           </div>
         `).join('')}
       </div>
-      <p style="margin-top:1rem;color:var(--accent);font-size:0.85rem;">此操作不可撤销，确定要删除以上图片吗？</p>
+      <p style="margin-top:1rem;color:var(--accent);font-size:0.85rem;">图片会移动到回收站，可在「回收站」中恢复；不会直接删除原图。</p>
     `;
-    document.getElementById('modalSave').textContent = `删除 ${preview.count} 张`;
+    document.getElementById('modalSave').textContent = `移到回收站 (${preview.count})`;
     document.getElementById('modalSave').onclick = () => wrapSaveButton(async () => {
       const result = await adminAPI('POST', '/api/admin/images/cleanup');
       if (result && result.success) {
-        showToast(`已删除 ${result.deleted} 张未使用图片`, 'success');
+        showToast(`已移动 ${result.trashed} 张图片到回收站`, 'success');
         closeModal();
         document.getElementById('modalSave').textContent = '保存';
         loadImages();
@@ -5306,6 +5338,55 @@ async function cleanupUnusedImages() {
     openModal();
   } catch (e) {
     showToast('查询失败: ' + e.message, 'error');
+  }
+}
+
+async function showImageTrash() {
+  try {
+    const data = await adminAPI('GET', '/api/admin/images/trash');
+    const items = (data && data.items) || [];
+    document.getElementById('modalTitle').textContent = '图片回收站';
+    document.getElementById('modalBody').innerHTML = items.length === 0
+      ? '<p style="color:var(--haze);padding:1rem 0;">回收站是空的。</p>'
+      : `<p style="margin-bottom:0.8rem;color:var(--haze);font-size:0.85rem;">共 ${items.length} 张。恢复后会回到 /uploads/，彻底删除不可撤销。</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.6rem;max-height:360px;overflow-y:auto;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius-sm);">
+          ${items.map(it => `
+            <div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--paper);">
+              <div style="height:80px;display:flex;align-items:center;justify-content:center;color:var(--haze);font-size:0.7rem;padding:0.3rem;text-align:center;word-break:break-all;">${escText(it.original)}</div>
+              <div style="display:flex;gap:0.2rem;padding:0.3rem;">
+                <button class="btn-sm btn-edit" style="flex:1;" onclick="restoreTrashImage(${jsArg(it.stored)})">恢复</button>
+                <button class="btn-sm btn-delete" onclick="purgeTrashImage(${jsArg(it.stored)})">彻底删</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+    document.getElementById('modalSave').textContent = '关闭';
+    document.getElementById('modalSave').onclick = () => { closeModal(); document.getElementById('modalSave').textContent = '保存'; };
+    openModal();
+  } catch (e) {
+    showToast('读取回收站失败: ' + e.message, 'error');
+  }
+}
+
+async function restoreTrashImage(stored) {
+  const result = await adminAPI('POST', `/api/admin/images/trash/${encodeURIComponent(stored)}/restore`);
+  if (result && result.success) {
+    showToast('已恢复 ' + result.name, 'success');
+    showImageTrash();
+    loadImages();
+  } else {
+    showToast(result?.error || '恢复失败', 'error');
+  }
+}
+
+async function purgeTrashImage(stored) {
+  if (!await showConfirm('彻底删除后无法恢复，确定吗？', { danger: true, title: '彻底删除图片' })) return;
+  const result = await adminAPI('DELETE', `/api/admin/images/trash/${encodeURIComponent(stored)}`);
+  if (result && result.success) {
+    showToast('已彻底删除', 'success');
+    showImageTrash();
+  } else {
+    showToast(result?.error || '删除失败', 'error');
   }
 }
 
@@ -5366,7 +5447,7 @@ function renderSettings() {
         <div class="form-group">
           <label>网站图标 (Favicon)</label>
           <div id="faviconPreview" style="margin-bottom:0.5rem;">
-            ${site.favicon ? `<div style="position:relative;display:inline-block;"><img src="${site.favicon}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeFavicon()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : '<span style="color:var(--haze);font-size:0.85rem;">未设置</span>'}
+            ${site.favicon ? `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(site.favicon)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeFavicon()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : '<span style="color:var(--haze);font-size:0.85rem;">未设置</span>'}
           </div>
           <input type="file" id="faviconInput" accept="image/*" style="font-size:0.85rem;">
           <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -5417,7 +5498,7 @@ function renderSettings() {
             <div class="form-group">
               <label>顶部背景图</label>
               <div id="setting_${key}_heroBgPreview" style="margin-bottom:0.5rem;">
-                ${pages[key]?.heroBg ? `<div style="position:relative;display:inline-block;"><img src="${pages[key].heroBg}" style="width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeHeroBg('${key}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : '<span style="color:var(--haze);font-size:0.85rem;">未设置（使用默认渐变背景）</span>'}
+                ${pages[key]?.heroBg ? `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(pages[key].heroBg)}" style="width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeHeroBg('${key}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : '<span style="color:var(--haze);font-size:0.85rem;">未设置（使用默认渐变背景）</span>'}
               </div>
               <input type="file" id="setting_${key}_heroBgInput" accept="image/*" style="font-size:0.85rem;">
               <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -5479,7 +5560,7 @@ function renderSettings() {
             <div class="form-group">
               <label>顶部背景图</label>
               <div id="setting_${key}_heroBgPreview" style="margin-bottom:0.5rem;">
-                ${pages[key]?.heroBg ? `<div style="position:relative;display:inline-block;"><img src="${pages[key].heroBg}" style="width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeHeroBg('${key}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : '<span style="color:var(--haze);font-size:0.85rem;">未设置（使用默认渐变背景）</span>'}
+                ${pages[key]?.heroBg ? `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(pages[key].heroBg)}" style="width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeHeroBg('${key}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>` : '<span style="color:var(--haze);font-size:0.85rem;">未设置（使用默认渐变背景）</span>'}
               </div>
               <input type="file" id="setting_${key}_heroBgInput" accept="image/*" style="font-size:0.85rem;">
               <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -5629,7 +5710,7 @@ async function uploadFavicon() {
   if (res.url) {
     currentSettings.site = currentSettings.site || {};
     currentSettings.site.favicon = res.url;
-    document.getElementById('faviconPreview').innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeFavicon()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`;
+    document.getElementById('faviconPreview').innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(res.url)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeFavicon()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`;
     showToast('图标已上传，请点击保存设置', 'success');
   }
   input.value = '';
@@ -5659,7 +5740,7 @@ function pickFaviconFromLibrary() {
       <div id="imageLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.8rem;max-height:400px;overflow-y:auto;">
         ${images.map(img => `
           <div style="position:relative;cursor:pointer;border:2px solid transparent;border-radius:8px;overflow:hidden;transition:var(--transition);" class="image-pick-item" data-url="${img.url}" data-name="${(img.name || '').toLowerCase()}" onclick="selectFaviconFromLibrary('${img.url}')">
-            <img src="${img.url}" style="width:100%;height:80px;object-fit:cover;display:block;">
+            <img src="${safeImgUrl(img.url)}" style="width:100%;height:80px;object-fit:cover;display:block;">
             <div style="font-size:0.65rem;padding:0.2rem;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${img.name}</div>
           </div>
         `).join('')}
@@ -5673,7 +5754,7 @@ function pickFaviconFromLibrary() {
 function selectFaviconFromLibrary(url) {
   currentSettings.site = currentSettings.site || {};
   currentSettings.site.favicon = url;
-  document.getElementById('faviconPreview').innerHTML = `<div style="position:relative;display:inline-block;"><img src="${url}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeFavicon()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`;
+  document.getElementById('faviconPreview').innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(url)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeFavicon()" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`;
   closeModal();
   showToast('图标已选择，请点击保存设置', 'success');
 }
@@ -5685,7 +5766,7 @@ async function uploadHeroBg(pageKey) {
   const res = await uploadImage(input.files[0]);
   if (res.url) {
     document.getElementById(`setting_${pageKey}_heroBg`).value = res.url;
-    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeHeroBg('${pageKey}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`;
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(res.url)}" style="width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeHeroBg('${pageKey}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`;
     showToast('背景图已上传，请点击保存设置', 'success');
   }
   input.value = '';
@@ -5719,7 +5800,7 @@ function pickImageForHeroBg(pageKey) {
       <div id="imageLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.8rem;max-height:400px;overflow-y:auto;">
         ${images.map(img => `
           <div style="position:relative;cursor:pointer;border:2px solid transparent;border-radius:8px;overflow:hidden;transition:var(--transition);" class="image-pick-item" data-url="${img.url}" data-name="${(img.name || '').toLowerCase()}" onclick="selectHeroBgFromLibrary(this, '${pageKey}')">
-            <img src="${img.url}" style="width:100%;height:90px;object-fit:cover;display:block;">
+            <img src="${safeImgUrl(img.url)}" style="width:100%;height:90px;object-fit:cover;display:block;">
             <div style="font-size:0.7rem;padding:0.3rem;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${img.name}</div>
           </div>
         `).join('')}
@@ -5733,7 +5814,7 @@ function pickImageForHeroBg(pageKey) {
 function selectHeroBgFromLibrary(el, pageKey) {
   const url = el.dataset.url;
   document.getElementById(`setting_${pageKey}_heroBg`).value = url;
-  document.getElementById(`setting_${pageKey}_heroBgPreview`).innerHTML = `<div style="position:relative;display:inline-block;"><img src="${url}" style="width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeHeroBg('${pageKey}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`;
+  document.getElementById(`setting_${pageKey}_heroBgPreview`).innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(url)}" style="width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removeHeroBg('${pageKey}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:9px;cursor:pointer;line-height:1;">&times;</button></div>`;
   closeModal();
   showToast('背景图已选择，请点击保存设置', 'success');
 }
@@ -5822,7 +5903,7 @@ function openAnnouncementModal(announcement = null) {
       <div id="annImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
         ${(announcement?.images || []).map(img => `
           <div style="position:relative;">
-            <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+            <img src="${safeImgUrl(img)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
             ${removeImageButton()}
           </div>
         `).join('')}
@@ -5947,7 +6028,7 @@ async function loadUpdates(page = 1) {
         return `
         <tr>
           <td><input type="checkbox" class="update-checkbox" value="${u.id}" onchange="updateUpdateBatchBtn()" style="width:16px;height:16px;accent-color:var(--accent);"></td>
-          <td>${u.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escapeHtml(u.title)}</td>
+          <td>${u.pinned ? '<span style="color:var(--accent);margin-right:0.3rem;">📌</span>' : ''}${escText(u.title)}</td>
           <td>${catDisplay}</td>
           <td>${approvalBadge}</td>
           <td>${formatDateAdmin(u.publishDate)}</td>
@@ -5989,7 +6070,7 @@ async function viewApprovalDetail(type, id) {
       <div style="margin-bottom:1rem;"><strong>分类：</strong>${CIRCLE_CATEGORIES[item.category] || item.category || '未分类'}</div>
       <div style="margin-bottom:1rem;"><strong>描述：</strong>${escapeHtml(item.description || '无')}</div>
       <div style="margin-bottom:1rem;"><strong>联系方式：</strong>${item.socialLinks?.qq || item.socialLinks?.qqGroup || '无'}</div>
-      ${item.logo ? `<div style="margin-bottom:1rem;"><strong>头像：</strong><br><img src="${item.logo}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;margin-top:0.5rem;"></div>` : ''}
+      ${item.logo ? `<div style="margin-bottom:1rem;"><strong>头像：</strong><br><img src="${safeImgUrl(item.logo)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;margin-top:0.5rem;"></div>` : ''}
     `;
   } else if (type === 'work') {
     const works = await adminAPI('GET', '/api/admin/works');
@@ -6009,7 +6090,7 @@ async function viewApprovalDetail(type, id) {
       <div style="margin-bottom:1rem;"><strong>截止日期：</strong>${item.endDate || '未设置'}</div>
       ${item.tags && item.tags.length ? `<div style="margin-bottom:1rem;"><strong>标签：</strong>${item.tags.map(t => `<span style="background:var(--paper);padding:2px 8px;border-radius:4px;font-size:0.8rem;margin-right:4px;">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
       ${item.description ? `<div style="margin-bottom:1rem;"><strong>描述：</strong><div style="background:var(--paper);padding:1rem;border-radius:8px;margin-top:0.5rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escapeHtml(item.description)}</div></div>` : ''}
-      ${allImages.length ? `<div style="margin-bottom:1rem;"><strong>图片：</strong><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:0.5rem;">${allImages.map(img => `<img src="${img}" style="max-width:150px;max-height:150px;object-fit:contain;border-radius:6px;cursor:pointer;" onclick="window.open('${img}','_blank')">`).join('')}</div></div>` : ''}
+      ${allImages.length ? `<div style="margin-bottom:1rem;"><strong>图片：</strong><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:0.5rem;">${allImages.map(img => `<img src="${safeImgUrl(img)}" style="max-width:150px;max-height:150px;object-fit:contain;border-radius:6px;cursor:pointer;" onclick="window.open('${img}','_blank')">`).join('')}</div></div>` : ''}
     `;
   } else if (type === 'event') {
     const events = await adminAPI('GET', '/api/admin/events');
@@ -6022,7 +6103,7 @@ async function viewApprovalDetail(type, id) {
       <div style="margin-bottom:1rem;"><strong>地点：</strong>${escapeHtml(item.location || '未设置')}</div>
       <div style="margin-bottom:1rem;"><strong>状态：</strong>${EVENT_STATUS_LABELS[item.status] || item.status || '未设置'}</div>
       <div style="margin-bottom:1rem;"><strong>描述：</strong>${escapeHtml(item.description || '无')}</div>
-      ${item.coverImage ? `<div style="margin-bottom:1rem;"><strong>封面图：</strong><br><img src="${item.coverImage}" style="max-width:100%;max-height:200px;object-fit:contain;margin-top:0.5rem;border-radius:8px;"></div>` : ''}
+      ${item.coverImage ? `<div style="margin-bottom:1rem;"><strong>封面图：</strong><br><img src="${safeImgUrl(item.coverImage)}" style="max-width:100%;max-height:200px;object-fit:contain;margin-top:0.5rem;border-radius:8px;"></div>` : ''}
     `;
   } else if (type === 'project') {
     const projects = await adminAPI('GET', '/api/admin/projects');
@@ -6034,7 +6115,7 @@ async function viewApprovalDetail(type, id) {
       <div style="margin-bottom:1rem;"><strong>状态：</strong>${PROJECT_STATUS_LABELS[item.status] || item.status || '未设置'}</div>
       <div style="margin-bottom:1rem;"><strong>标签：</strong>${(item.tags || []).join(', ') || '无'}</div>
       <div style="margin-bottom:1rem;"><strong>描述：</strong>${escapeHtml(item.description || '无')}</div>
-      ${item.coverImage ? `<div style="margin-bottom:1rem;"><strong>封面图：</strong><br><img src="${item.coverImage}" style="max-width:100%;max-height:200px;object-fit:contain;margin-top:0.5rem;border-radius:8px;"></div>` : ''}
+      ${item.coverImage ? `<div style="margin-bottom:1rem;"><strong>封面图：</strong><br><img src="${safeImgUrl(item.coverImage)}" style="max-width:100%;max-height:200px;object-fit:contain;margin-top:0.5rem;border-radius:8px;"></div>` : ''}
     `;
   } else if (type === 'update') {
     const updates = await adminAPI('GET', '/api/admin/updates');
@@ -6044,7 +6125,7 @@ async function viewApprovalDetail(type, id) {
       <div style="margin-bottom:1rem;"><strong>标题：</strong>${escapeHtml(item.title)}</div>
       <div style="margin-bottom:1rem;"><strong>发布日期：</strong>${item.publishDate || '未设置'}</div>
       <div style="margin-bottom:1rem;"><strong>内容：</strong><div style="background:var(--paper);padding:1rem;border-radius:8px;margin-top:0.5rem;white-space:pre-wrap;max-height:300px;overflow-y:auto;">${escapeHtml(item.content || '无')}</div></div>
-      ${item.coverImage ? `<div style="margin-bottom:1rem;"><strong>封面图：</strong><br><img src="${item.coverImage}" style="max-width:100%;max-height:200px;object-fit:contain;margin-top:0.5rem;border-radius:8px;"></div>` : ''}
+      ${item.coverImage ? `<div style="margin-bottom:1rem;"><strong>封面图：</strong><br><img src="${safeImgUrl(item.coverImage)}" style="max-width:100%;max-height:200px;object-fit:contain;margin-top:0.5rem;border-radius:8px;"></div>` : ''}
     `;
   }
 
@@ -6106,7 +6187,7 @@ function openUpdateModal(update = null) {
     document.getElementById('modalBody').innerHTML = `
       <div class="form-group">
         <label>动态标题 <span style="color:var(--accent)">*</span></label>
-        <input class="form-input" id="updTitle" value="${update?.title || ''}" required>
+        <input class="form-input" id="updTitle" value="${escAttr(update?.title || '')}" required>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -6137,12 +6218,12 @@ function openUpdateModal(update = null) {
       </div>
       <div class="form-group">
         <label>动态内容 <span style="color:var(--accent)">*</span></label>
-        <textarea class="form-input" id="updContent" style="min-height:150px;">${update?.content || ''}</textarea>
+        <textarea class="form-input" id="updContent" style="min-height:150px;">${escText(update?.content || '')}</textarea>
       </div>
       <div class="form-group">
         <label>首图</label>
         <div id="updCoverPreview" style="margin-bottom:0.5rem;">
-          ${update?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${update.coverImage}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
+          ${update?.coverImage ? `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(update.coverImage)}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>` : ''}
         </div>
         <input type="file" id="updCoverInput" accept="image/*" style="font-size:0.85rem;">
         <div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
@@ -6155,7 +6236,7 @@ function openUpdateModal(update = null) {
         <div id="updImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
           ${(update?.images || []).map((img, i) => `
             <div style="position:relative;">
-              <img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+              <img src="${safeImgUrl(img)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
               ${removeImageButton()}
             </div>
           `).join('')}
@@ -6263,7 +6344,7 @@ async function uploadUpdateCover() {
   if (!input.files.length) { showToast('请选择首图', 'error'); return; }
   const res = await uploadImage(input.files[0]);
   if (res.url) {
-    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${res.url}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
+    preview.innerHTML = `<div style="position:relative;display:inline-block;"><img src="${safeImgUrl(res.url)}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;">${removeImageButton()}</div>`;
   }
   input.value = '';
 }
@@ -6358,7 +6439,7 @@ async function searchEditLogByDate(page = 1) {
       else if (entry.action.includes('删除')) actionColor = 'var(--accent)';
       else if (entry.action.includes('创建')) actionColor = '#3498db';
       else if (entry.action.includes('编辑')) actionColor = '#f39c12';
-      const imgThumb = entry.imageUrl ? `<img src="${entry.imageUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex-shrink:0;">` : '';
+      const imgThumb = entry.imageUrl ? `<img src="${safeImgUrl(entry.imageUrl)}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex-shrink:0;">` : '';
       return `<div style="display:flex;gap:0.8rem;padding:0.7rem 0;border-bottom:1px solid var(--border);font-size:0.85rem;align-items:center;">
         <span style="color:var(--haze);white-space:nowrap;min-width:130px;">${time}</span>
         <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
@@ -6407,7 +6488,7 @@ async function loadEditLog(page = 1) {
       else if (entry.action.includes('删除')) actionColor = 'var(--accent)';
       else if (entry.action.includes('创建')) actionColor = '#3498db';
       else if (entry.action.includes('编辑')) actionColor = '#f39c12';
-      const imgThumb = entry.imageUrl ? `<img src="${entry.imageUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex-shrink:0;">` : '';
+      const imgThumb = entry.imageUrl ? `<img src="${safeImgUrl(entry.imageUrl)}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex-shrink:0;">` : '';
       return `<div style="display:flex;gap:0.8rem;padding:0.7rem 0;border-bottom:1px solid var(--border);font-size:0.85rem;align-items:center;">
         <span style="color:var(--haze);white-space:nowrap;min-width:130px;">${time}</span>
         <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
@@ -6655,8 +6736,9 @@ async function loadApprovalPage() {
     } else {
       worksDiv.innerHTML = pendingWorks.map(w => {
         const author = circles?.find(c => (w.circles || []).includes(c.id));
+        const display = w.pendingRevision ? { ...w, ...w.pendingRevision } : w;
         return `<div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
-          <span style="font-weight:600;flex:1;">${escapeHtml(w.title)}</span>
+          <span style="font-weight:600;flex:1;">${escapeHtml(display.title)}</span>
           <span style="font-size:0.8rem;color:var(--haze);">作者: ${author ? escapeHtml(author.name) : '未知'}</span>
           <span style="font-size:0.8rem;color:var(--haze);">${w.category || ''}</span>
           <button class="btn-sm btn-edit" onclick="viewApprovalDetail('work','${w.id}')">查看</button>

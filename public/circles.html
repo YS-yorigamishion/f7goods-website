@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260918p">
+  <link rel="stylesheet" href="/css/style.css?v=20261019a">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -66,10 +66,10 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20260918p"></script>
+  <script src="/js/api.js?v=20261019a"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20260918p"></script>
-  <script src="/js/main.js?v=20260918p"></script>
+  <script src="/js/i18n.js?v=20261019a"></script>
+  <script src="/js/main.js?v=20261019a"></script>
   <script>
     initPage('circles');
     if (typeof isAuthorLoggedIn === 'function' && isAuthorLoggedIn() && typeof mountAuthorCreateFab === 'function') {
@@ -226,13 +226,13 @@
         <a class="cl-author-card" href="/circle-detail.html?id=${encodeURIComponent(circle.id)}">
           <div class="cl-author-cover">
             ${cover
-              ? `<img src="${escapeHtml(cover)}" alt="" loading="lazy">`
+              ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="" loading="lazy">`
               : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-family:'Noto Serif SC',Georgia,serif;font-size:1.4rem;">${escapeHtml((circle.name || '?').charAt(0))}</div>`}
           </div>
           <div class="cl-author-body">
             <div class="cl-author-avatar">
               ${circle.logo
-                ? `<img src="${escapeHtml(circle.logo)}" alt="${escapeHtml(circle.name)}" loading="lazy">`
+                ? `<img src="${escapeHtml(imgUrl(circle.logo, 160))}" alt="${escapeHtml(circle.name)}" loading="lazy">`
                 : escapeHtml((circle.name || '?').charAt(0))}
             </div>
             <div class="cl-author-name">${escapeHtml(circle.name)}</div>

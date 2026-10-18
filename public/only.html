@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260918p">
+  <link rel="stylesheet" href="/css/style.css?v=20261019a">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -438,9 +438,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20260918p"></script>
-  <script src="/js/i18n.js?v=20260918p"></script>
-  <script src="/js/main.js?v=20260918p"></script>
+  <script src="/js/api.js?v=20261019a"></script>
+  <script src="/js/i18n.js?v=20261019a"></script>
+  <script src="/js/main.js?v=20261019a"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -822,7 +822,7 @@
         const img = (g.images && g.images[0]) || '';
         const claim = String((booth?.claimConditions || {})[g.id] || '').trim();
         return `<a class="only-g${claim ? ' is-claim' : ''}" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
-          <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
+          <div class="img">${img ? `<img src="${esc(imgUrl(img, 320))}" alt="" loading="lazy">` : ''}</div>
           <div class="body">
             <div class="name">${esc(g.title)}</div>
             <div class="price">${esc(formatPriceLabel(g.price))}${claim ? `<button type="button" class="claim-chip" data-claim="${esc(g.id)}" aria-label="查看领取条件">条件领取<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg></button>` : ''}</div>
@@ -880,7 +880,7 @@
         const claim = String((pack?.booth?.claimConditions || {})[g.id] || '').trim();
         const boothName = pack?.booth?.id === '_unassigned' ? tText('only.unassigned', '未分摊') : boothLabel(pack?.booth || { code: '—', title: '' });
         return `<a class="only-g${claim ? ' is-claim' : ''}" href="/work-detail.html?id=${esc(g.id)}" style="text-decoration:none;color:inherit;">
-          <div class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
+          <div class="img">${img ? `<img src="${esc(imgUrl(img, 320))}" alt="" loading="lazy">` : ''}</div>
           <div class="body">
             <div class="name">${esc(g.title)}</div>
             <div class="price">${esc(formatPriceLabel(g.price))}${claim ? `<button type="button" class="claim-chip" data-claim="${esc(g.id)}" aria-label="查看领取条件">条件领取<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg></button>` : ''}</div>
@@ -997,7 +997,7 @@
             return `
             <a class="only-owner-card" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">
               <div class="only-owner-avatar">
-                ${c.logo ? `<img src="${esc(c.logo)}" alt="" loading="lazy">` : esc((c.name || '?').charAt(0))}
+                ${c.logo ? `<img src="${esc(imgUrl(c.logo, 96))}" alt="" loading="lazy">` : esc((c.name || '?').charAt(0))}
               </div>
               <div class="only-owner-body">
                 <div class="only-owner-name">${esc(c.name || '')}</div>
@@ -1061,7 +1061,7 @@
         const bannersHtml = images.length
           ? `<div class="only-sec"><div class="only-sec-label">宣传图</div><div class="only-banners">${images.map((u, i) => `
               <button type="button" class="only-banner" data-booth="${esc(b.id)}" data-banner="${i}" aria-label="查看宣传图 ${i + 1}">
-                <img src="${esc(u)}" alt="" loading="lazy">
+                <img src="${esc(imgUrl(u, 320))}" alt="" loading="lazy">
               </button>`).join('')}</div></div>`
           : '';
         const introHtml = `
@@ -1075,7 +1075,7 @@
           <div class="only-booth${open ? ' open' : ''}" id="only-booth-${esc(b.id)}">
             <div class="only-booth-head" data-booth-toggle="${esc(b.id)}" role="button" tabindex="0"
                  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleOnlyBooth('${esc(b.id)}')}">
-              <div class="only-avatar">${b.logo ? `<img src="${esc(b.logo)}" alt="">` : esc((b.code || ownerNames || '?').slice(0,1))}</div>
+              <div class="only-avatar">${b.logo ? `<img src="${esc(imgUrl(b.logo, 96))}" alt="">` : esc((b.code || ownerNames || '?').slice(0,1))}</div>
               <div class="info">
                 <h3>${esc(boothLabel(b))}</h3>
                 <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件关联周边${images.length ? ' · ' + images.length + ' 张宣传图' : ''}${tiers.length ? ' · 摊位活动' : ''}</div>
@@ -1318,7 +1318,7 @@
         }
         return `
         <div class="only-ci">
-          ${img ? `<img class="thumb" src="${esc(img)}" alt="">` : '<div class="thumb"></div>'}
+          ${img ? `<img class="thumb" src="${esc(imgUrl(img, 96))}" alt="">` : '<div class="thumb"></div>'}
           <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}${(!e.isGift && e.claim) ? '<span class="claim-tag">条件领取</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : esc(formatPriceLabel(e.priceLabel != null && e.priceLabel !== '' ? e.priceLabel : e.price))}</small></div>
           <div class="only-qty">
             <button type="button" data-q="${esc(e.id)}" data-d="-1">−</button>

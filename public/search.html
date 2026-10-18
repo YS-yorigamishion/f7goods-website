@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260918p">
+  <link rel="stylesheet" href="/css/style.css?v=20261019a">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -46,9 +46,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20260918p"></script>
-  <script src="/js/i18n.js?v=20260918p"></script>
-  <script src="/js/main.js?v=20260918p"></script>
+  <script src="/js/api.js?v=20261019a"></script>
+  <script src="/js/i18n.js?v=20261019a"></script>
+  <script src="/js/main.js?v=20261019a"></script>
   <script>
     initPage('search');
 
@@ -127,7 +127,7 @@
         <a class="cl-w-card" href="/work-detail.html?id=${encodeURIComponent(w.id)}">
           <div class="cl-w-cover">
             ${st ? `<span class="${stCls}">${escapeHtml(st)}</span>` : ''}
-            ${cover ? `<img src="${escapeHtml(cover)}" alt="" loading="lazy">` : `<span>${escapeHtml((w.title || '?').charAt(0))}</span>`}
+            ${cover ? `<img src="${escapeHtml(imgUrl(cover, 320))}" alt="" loading="lazy">` : `<span>${escapeHtml((w.title || '?').charAt(0))}</span>`}
           </div>
           <div class="cl-w-body">
             <div class="cl-w-title">${hl(w.title, SRQ)}</div>
@@ -146,10 +146,10 @@
       return `
         <a class="cl-author-card" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">
           <div class="cl-author-cover">
-            ${cover ? `<img src="${escapeHtml(cover)}" alt="" loading="lazy">` : `<span style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-family:'Noto Serif SC',Georgia,serif;font-size:1.4rem;">${escapeHtml((c.name || '?').charAt(0))}</span>`}
+            ${cover ? `<img src="${escapeHtml(imgUrl(cover, 320))}" alt="" loading="lazy">` : `<span style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-family:'Noto Serif SC',Georgia,serif;font-size:1.4rem;">${escapeHtml((c.name || '?').charAt(0))}</span>`}
           </div>
           <div class="cl-author-body">
-            <div class="cl-author-avatar">${c.logo ? `<img src="${escapeHtml(c.logo)}" alt="">` : escapeHtml((c.name || '?').charAt(0))}</div>
+            <div class="cl-author-avatar">${c.logo ? `<img src="${escapeHtml(imgUrl(c.logo, 96))}" alt="">` : escapeHtml((c.name || '?').charAt(0))}</div>
             <div class="cl-author-name">${hl(c.name, SRQ)}</div>
             <div class="cl-author-meta">
               ${cat ? `<span class="cl-author-chip cat">${escapeHtml(cat)}</span>` : ''}

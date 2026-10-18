@@ -46,3 +46,6 @@ _fix_async3.mjs
 _fix_broken_async.cjs
 _fix_writejson.mjs
 test-api.js
+# Runtime image variants / trash
+uploads/.cache/
+uploads-trash/

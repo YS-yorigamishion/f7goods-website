@@ -3950,3 +3950,16 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   }
   #circleDetail .card-image { height: 120px !important; }
 }
+
+/* Reserve board content height while data loads (CLS) */
+#boardFeatureRow { min-height: 300px; }
+#boardProjectList { min-height: 64px; }
+#boardActiveEventsList { min-height: 60px; }
+#boardSaleStrip { min-height: 190px; }
+#boardDeadlineList { min-height: 120px; }
+#boardEventsList { min-height: 72px; }
+#boardUpdatesList { min-height: 72px; }
+@media (max-width: 768px) {
+  #boardFeatureRow { min-height: 240px; }
+  #boardSaleStrip { min-height: 170px; }
+}

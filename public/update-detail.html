@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20260918p">
+  <link rel="stylesheet" href="/css/style.css?v=20261019a">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -46,9 +46,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20260918p"></script>
-  <script src="/js/i18n.js?v=20260918p"></script>
-  <script src="/js/main.js?v=20260918p"></script>
+  <script src="/js/api.js?v=20261019a"></script>
+  <script src="/js/i18n.js?v=20261019a"></script>
+  <script src="/js/main.js?v=20261019a"></script>
   <script>
     async function loadUpdate() {
       const params = new URLSearchParams(location.search);
@@ -100,8 +100,8 @@
             <span>${escapeHtml(update.title)}</span>
           </div>
           ${update.coverImage ? `
-          <div class="cl-u-cover" onclick="openLightbox(['${escapeHtml(update.coverImage).replace(/'/g, '&#39;')}'], 0)" role="button" tabindex="0">
-            <img src="${escapeHtml(update.coverImage)}" alt="${escapeHtml(update.title)}">
+          <div class="cl-u-cover" onclick="openLightbox([${jsArg(update.coverImage)}], 0)" role="button" tabindex="0">
+            <img src="${escapeHtml(imgUrl(update.coverImage, 800))}" alt="${escapeHtml(update.title)}">
           </div>` : ''}
           <div class="cl-u-head">
             <div class="cl-u-date">
@@ -133,7 +133,7 @@
               </div>
               ${images.length ? `
                 <div class="cl-u-gallery">
-                  ${images.map((img, i) => `<button type="button" onclick="openLightbox(${JSON.stringify(images).replace(/"/g, '&quot;')}, ${i})"><img src="${escapeHtml(img)}" alt="" loading="lazy"></button>`).join('')}
+                  ${images.map((img, i) => `<button type="button" onclick="openLightbox(${JSON.stringify(images).replace(/"/g, '&quot;')}, ${i})"><img src="${escapeHtml(imgUrl(img, 800))}" alt="" loading="lazy"></button>`).join('')}
                 </div>
               ` : ''}
             </div>
@@ -168,7 +168,7 @@
                 <h3>${t('updates.relatedAuthors')}</h3>
                 ${relatedCircles.map(c => `
                   <a class="cl-u-row" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">
-                    <div class="th round">${c.logo ? `<img src="${escapeHtml(c.logo)}" alt="">` : escapeHtml((c.name || '?').charAt(0))}</div>
+                    <div class="th round">${c.logo ? `<img src="${escapeHtml(imgUrl(c.logo, 96))}" alt="">` : escapeHtml((c.name || '?').charAt(0))}</div>
                     <div class="t"><b>${escapeHtml(c.name)}</b></div>
                   </a>
                 `).join('')}
@@ -179,7 +179,7 @@
                 <h3>${t('updates.relatedEvents')}</h3>
                 ${relatedEvents.map(e => `
                   <a class="cl-u-row" href="/event-detail.html?id=${encodeURIComponent(e.id)}">
-                    <div class="th">${e.coverImage ? `<img src="${escapeHtml(e.coverImage)}" alt="">` : 'A'}</div>
+                    <div class="th">${e.coverImage ? `<img src="${escapeHtml(imgUrl(e.coverImage, 96))}" alt="">` : 'A'}</div>
                     <div class="t">
                       <b>${escapeHtml(e.title)}</b>
                       <small>${formatDate(e.date)}${e.location ? ' · ' + escapeHtml(e.location) : ''}</small>
@@ -193,7 +193,7 @@
                 <h3>${t('updates.relatedProjects')}</h3>
                 ${relatedProjects.map(p => `
                   <a class="cl-u-row" href="/project-detail.html?id=${encodeURIComponent(p.id)}">
-                    <div class="th">${p.coverImage ? `<img src="${escapeHtml(p.coverImage)}" alt="">` : 'P'}</div>
+                    <div class="th">${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 96))}" alt="">` : 'P'}</div>
                     <div class="t">
                       <b>${escapeHtml(p.title)}</b>
                       ${PROJECT_STATUS_LABELS[p.status] ? `<small>${escapeHtml(PROJECT_STATUS_LABELS[p.status])}</small>` : ''}

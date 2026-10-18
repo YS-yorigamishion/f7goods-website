@@ -14,11 +14,17 @@
     ready: false
   };
 
+  function pwImg(url, width) {
+    const s = String(url == null ? '' : url);
+    const m = s.match(/^\/uploads\/([^/?#]+)$/) || s.match(/^https?:\/\/[^/]+\/uploads\/([^/?#]+)$/);
+    if (!m) return s;
+    return '/img/' + encodeURIComponent(m[1]) + '?w=' + encodeURIComponent(width);
+  }
+
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const t = a[i]; a[i] = a[j]; a[j] = t;
+      const j = Math.floor(Math.random() * (i + 1));      const t = a[i]; a[i] = a[j]; a[j] = t;
     }
     return a;
   }
@@ -299,7 +305,7 @@
       wall.innerHTML =
         '<a class="pw-shot" href="' + detailHref(w0.id) + '"' +
         ' style="left:28%;top:28%;width:22%;z-index:6;transform:rotate(-4deg);">' +
-        '<img src="' + escapeHtml(w0.image) + '" alt="' + escapeHtml(w0.title) + '">' +
+        '<img src="' + escapeHtml(pwImg(w0.image, 800)) + '" alt="' + escapeHtml(w0.title) + '">' +
         '</a>';
       return;
     }
@@ -320,7 +326,7 @@
         ' --delay:' + p.delay + 's;' +
         ' transform:rotate(' + Number(p.r).toFixed(1) + 'deg);"' +
         ' aria-label="' + escapeHtml(w.title) + '">' +
-        '<img src="' + escapeHtml(w.image) + '" alt="' + escapeHtml(w.title) + '" loading="lazy"' +
+        '<img src="' + escapeHtml(pwImg(w.image, 800)) + '" alt="' + escapeHtml(w.title) + '" loading="lazy"' +
         (w.nw ? ' width="' + w.nw + '"' : '') +
         (w.nh ? ' height="' + w.nh + '"' : '') +
         '>' +

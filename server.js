@@ -200,6 +200,43 @@ app.use('/admin', express.static('admin', {
 }));
 app.use('/uploads', express.static('uploads', { maxAge: '7d', etag: true }));
 
+// On-demand resized WebP variants for uploads. Keeps originals untouched.
+const IMG_CACHE_DIR = path.join(__dirname, 'uploads', '.cache');
+fs.mkdirSync(IMG_CACHE_DIR, { recursive: true });
+const imgJobs = new Map();
+app.get('/img/:filename', async (req, res) => {
+  const name = safeUploadName(req.params.filename);
+  if (!name) return res.status(404).end();
+  const src = path.join(UPLOADS_DIR, name);
+  if (!fs.existsSync(src)) return res.status(404).end();
+  const ext = path.extname(name).toLowerCase();
+  const width = Math.min(Math.max(parseInt(req.query.w, 10) || 640, 32), 2400);
+  if (!sharp || ['.gif', '.svg'].includes(ext)) {
+    return res.sendFile(src);
+  }
+  const base = path.basename(name, ext);
+  const dest = path.join(IMG_CACHE_DIR, `${base}-w${width}.webp`);
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  if (fs.existsSync(dest)) return res.sendFile(dest);
+  try {
+    let job = imgJobs.get(dest);
+    if (!job) {
+      job = sharp(src)
+        .rotate()
+        .resize({ width, withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toFile(dest)
+        .finally(() => imgJobs.delete(dest));
+      imgJobs.set(dest, job);
+    }
+    await job;
+    return res.sendFile(dest);
+  } catch (e) {
+    console.error('[img]', name, e.message);
+    return res.sendFile(src);
+  }
+});
+
 // Request logging
 if (process.env.NODE_ENV === 'production') {
   const logDir = path.join(__dirname, 'logs');
@@ -280,7 +317,7 @@ function withFileLock(file, fn) {
 const LIST_JSON_FILES = new Set([
   'works.json', 'circles.json', 'events.json', 'projects.json', 'updates.json',
   'announcements.json', 'contact.json', 'edit-log.json', 'author-notifications.json',
-  'author-announcements.json'
+  'author-announcements.json', 'uploads-trash.json'
 ]);
 
 // Helper: read/write JSON files
@@ -359,6 +396,102 @@ async function mutateJSON(file, mutator) {
     if (file === 'circles.json') circlesAuthCache = { data: null, ts: 0 };
     return ret === undefined ? current : ret;
   });
+}
+
+// ===== Upload reference scanning / trash =====
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const UPLOADS_TRASH_DIR = path.join(__dirname, 'uploads-trash');
+const UPLOADS_TRASH_INDEX = 'uploads-trash.json';
+const UPLOAD_IMAGE_RE = /\/uploads\/([^/?#\s"'<>]+)/g;
+
+function ensureTrashDir() {
+  fs.mkdirSync(UPLOADS_TRASH_DIR, { recursive: true });
+}
+
+// Walk any JSON value and collect every /uploads/<file> reference, including
+// nested objects (booths, page settings, announcements, card covers, ...).
+function collectUploadRefs(value, out) {
+  if (value == null) return out;
+  if (typeof value === 'string') {
+    UPLOAD_IMAGE_RE.lastIndex = 0;
+    let m;
+    while ((m = UPLOAD_IMAGE_RE.exec(value))) {
+      try { out.add(decodeURIComponent(m[1])); } catch { out.add(m[1]); }
+    }
+    return out;
+  }
+  if (Array.isArray(value)) {
+    for (const v of value) collectUploadRefs(v, out);
+    return out;
+  }
+  if (typeof value === 'object') {
+    for (const v of Object.values(value)) collectUploadRefs(v, out);
+  }
+  return out;
+}
+
+function collectAllUploadRefs() {
+  const refs = new Set();
+  const files = [
+    'works.json', 'events.json', 'circles.json', 'projects.json', 'updates.json',
+    'announcements.json', 'author-announcements.json', 'settings.json', 'edit-log.json'
+  ];
+  for (const file of files) {
+    try { collectUploadRefs(readJSON(file), refs); } catch (e) { console.error('[upload-refs]', file, e.message); }
+  }
+  return refs;
+}
+
+// A generated variant such as foo-800.webp is considered used when foo.<ext> is used.
+function isUploadVariantUsed(filename, refs) {
+  const m = String(filename).match(/^(.+)-(\d+)\.(webp|jpe?g|png)$/i);
+  if (!m) return false;
+  for (const ext of ['png', 'jpg', 'jpeg', 'webp', 'gif']) {
+    if (refs.has(`${m[1]}.${ext}`)) return true;
+  }
+  return false;
+}
+
+function listUploadFiles() {
+  try {
+    return fs.readdirSync(UPLOADS_DIR).filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f));
+  } catch { return []; }
+}
+
+function safeUploadName(name) {
+  const base = path.basename(String(name || ''));
+  if (!base || base === '.' || base === '..' || base !== String(name)) return null;
+  if (!/^[^/\\<>:"|?*\x00-\x1f]+\.(jpg|jpeg|png|gif|webp|svg)$/i.test(base)) return null;
+  return base;
+}
+
+function readTrashIndex() {
+  try {
+    const idx = readJSON(UPLOADS_TRASH_INDEX);
+    return Array.isArray(idx) ? idx : [];
+  } catch { return []; }
+}
+
+async function writeTrashIndex(list) {
+  await writeJSON(UPLOADS_TRASH_INDEX, list);
+}
+
+function trashUpload(filename, uploader) {
+  const safe = safeUploadName(filename);
+  if (!safe) throw new Error('非法文件名');
+  const src = path.join(UPLOADS_DIR, safe);
+  if (!fs.existsSync(src)) throw new Error('文件不存在');
+  ensureTrashDir();
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const stored = `${stamp}__${safe}`;
+  fs.renameSync(src, path.join(UPLOADS_TRASH_DIR, stored));
+  return { stored, original: safe, size: fs.statSync(path.join(UPLOADS_TRASH_DIR, stored)).size, uploader: uploader || '' };
+}
+
+// Return the image references that make a file "used", for the admin dry-run UI.
+function uploadRefOwners(filename, refs) {
+  // We only know the set here; detailed owners are resolved by the API below.
+  return refs.has(filename);
 }
 
 // Edit log system
@@ -693,7 +826,9 @@ app.post('/api/author/refresh-token', authorAuthMiddleware, (req, res) => {
 // Author: get own works
 app.get('/api/author/works', authorAuthMiddleware, (req, res) => {
   const works = readJSON('works.json');
-  const circleWorks = works.filter(w => (w.circles || []).includes(req.author.circleId));
+  const circleWorks = works
+    .filter(w => (w.circles || []).includes(req.author.circleId))
+    .map(authorWorkView);
   circleWorks.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   // 支持分页
@@ -1006,9 +1141,10 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
     return res.status(403).json({ error: '无权编辑此作品' });
   }
 
-  const oldTitle = works[index].title;
-  const oldImages = works[index].images || [];
-  const oldMoreImages = works[index].moreImages || [];
+  const work = works[index];
+  const oldTitle = work.title;
+  const oldImages = work.images || [];
+  const oldMoreImages = work.moreImages || [];
 
   // Only allow updating specific fields
   const allowed = ['title', 'description', 'category', 'status', 'price', 'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks', 'isCommissioned', 'commissionedBy', 'relatedEvents'];
@@ -1017,7 +1153,47 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
 
-  works[index] = { ...works[index], ...updates };
+  // Keep non-content fields (e.g. event associations) outside the approval snapshot.
+  const nonContentUpdates = { ...updates };
+  WORK_CONTENT_FIELDS.forEach(f => { delete nonContentUpdates[f]; });
+  Object.assign(work, nonContentUpdates);
+
+  const contentChanged = WORK_CONTENT_FIELDS.some(f =>
+    updates[f] !== undefined && JSON.stringify(updates[f]) !== JSON.stringify(work[f])
+  );
+
+  if (contentChanged) {
+    const circle = readJSON('circles.json').find(c => c.id === req.author.circleId);
+    const requireApproval = workRequireApproval(circle);
+    const isApproved = !work.approvalStatus || work.approvalStatus === 'approved';
+    if (!requireApproval) {
+      Object.assign(work, updates);
+      work.approvalStatus = 'approved';
+      work.published = pickWorkContent(work);
+      delete work.pendingRevision;
+      delete work.rejectReason;
+    } else if (!work.published && !isApproved) {
+      // First submission (pending/rejected with no published version): keep editing the same draft.
+      Object.assign(work, updates);
+      work.approvalStatus = 'pending';
+      delete work.pendingRevision;
+      work.submittedAt = new Date().toISOString();
+      work.submittedBy = req.author.circleId;
+    } else {
+      // Approved version stays public; new content waits in pendingRevision.
+      if (!work.published) work.published = pickWorkContent(work);
+      work.pendingRevision = {
+        ...pickWorkContent({ ...work, ...updates }),
+        submittedAt: new Date().toISOString(),
+        submittedBy: req.author.circleId
+      };
+      work.approvalStatus = 'pending';
+      work.rejectReason = '';
+    }
+  } else {
+    Object.assign(work, updates);
+  }
+
   await writeJSON('works.json', works);
 
   // Handle project associations if provided
@@ -1039,19 +1215,31 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
 
   // Handle event associations if provided
   if (req.body.relatedEvents !== undefined) {
+    const newEventIds = [...new Set((Array.isArray(req.body.relatedEvents) ? req.body.relatedEvents : []).filter(Boolean))];
+    work.relatedEvents = newEventIds;
     let events = readJSON('events.json');
-    const newEventIds = req.body.relatedEvents || [];
+    let changed = false;
     events.forEach(evt => {
-      const hasWork = (evt.relatedWorks || []).includes(req.params.id);
+      const hasWork = (evt.relatedWorks || []).includes(work.id);
       const shouldHave = newEventIds.includes(evt.id);
       if (hasWork && !shouldHave) {
-        evt.relatedWorks = evt.relatedWorks.filter(id => id !== req.params.id);
+        evt.relatedWorks = (evt.relatedWorks || []).filter(id => id !== work.id);
+        changed = true;
       } else if (!hasWork && shouldHave) {
         if (!evt.relatedWorks) evt.relatedWorks = [];
-        evt.relatedWorks.push(req.params.id);
+        evt.relatedWorks.push(work.id);
+        changed = true;
+      }
+      // Add the author to the event when a new work is associated, but never
+      // remove relatedCircles automatically: it may be manually curated.
+      if (shouldHave && !(evt.relatedCircles || []).includes(req.author.circleId)) {
+        if (!evt.relatedCircles) evt.relatedCircles = [];
+        evt.relatedCircles.push(req.author.circleId);
+        changed = true;
       }
     });
-    await writeJSON('events.json', events);
+    if (changed) await writeJSON('events.json', events);
+    await writeJSON('works.json', works);
   }
 
   // Log changes
@@ -1174,13 +1362,16 @@ app.post('/api/author/works', authorAuthMiddleware, async (req, res) => {
   }
 
   // Handle event associations
-  if (req.body.relatedEvents && req.body.relatedEvents.length > 0) {
+  if (Array.isArray(req.body.relatedEvents) && req.body.relatedEvents.length > 0) {
     let events = readJSON('events.json');
-    req.body.relatedEvents.forEach(eid => {
+    const ids = [...new Set(req.body.relatedEvents.filter(Boolean))];
+    ids.forEach(eid => {
       const evt = events.find(e => e.id === eid);
       if (evt) {
-        if (!evt.relatedWorks) evt.relatedWorks = [];
-        evt.relatedWorks.push(work.id);
+        if (!Array.isArray(evt.relatedWorks)) evt.relatedWorks = [];
+        if (!evt.relatedWorks.includes(work.id)) evt.relatedWorks.push(work.id);
+        if (!Array.isArray(evt.relatedCircles)) evt.relatedCircles = [];
+        if (!evt.relatedCircles.includes(req.author.circleId)) evt.relatedCircles.push(req.author.circleId);
       }
     });
     await writeJSON('events.json', events);
@@ -1290,18 +1481,27 @@ app.delete('/api/author/images/:filename', authorAuthMiddleware, async (req, res
   if ((meta[safeFilename]?.uploader || '') !== authorName) {
     return res.status(403).json({ error: '只能删除自己上传的图片' });
   }
-  const uploadsDir = path.join(__dirname, 'uploads');
-  const filePath = path.join(uploadsDir, safeFilename);
-  if (!filePath.startsWith(uploadsDir)) return res.status(403).json({ error: '禁止访问' });
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-    delete meta[filename];
+  // Refuse to delete an image still referenced by any work/event/announcement/setting.
+  try {
+    const refs = collectAllUploadRefs();
+    if (refs.has(safeFilename) || isUploadVariantUsed(safeFilename, refs)) {
+      return res.status(409).json({ error: '图片仍在使用中，请先从内容中移除' });
+    }
+  } catch (e) {
+    return res.status(500).json({ error: '检查图片引用失败' });
+  }
+  try {
+    const item = trashUpload(safeFilename, authorName);
+    const index = readTrashIndex();
+    index.push({ ...item, trashedAt: new Date().toISOString() });
+    await writeTrashIndex(index);
+    delete meta[safeFilename];
     await writeJSON('uploads-meta.json', meta);
-    logEdit(authorName, '删除图片', filename, '');
+    logEdit(authorName, '删除图片（回收站）', safeFilename, '');
     clearEditLogImageUrl('/uploads/' + safeFilename);
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: '文件不存在' });
+    res.json({ success: true, trashed: true });
+  } catch (e) {
+    res.status(500).json({ error: '删除失败: ' + e.message });
   }
 });
 
@@ -1314,53 +1514,16 @@ app.get('/api/author/images/unused', authorAuthMiddleware, (req, res) => {
   const circle = circles.find(c => c.id === req.author.circleId);
   const authorName = circle?.name || '未知作者';
 
-  function extractFilename(imgPath) {
-    if (!imgPath) return null;
-    const match = imgPath.match(/\/uploads\/([^/?#]+)/);
-    return match ? match[1] : null;
-  }
-
-  // 收集该作者作品中引用的图片
-  const referenced = new Set();
-  const works = readJSON('works.json');
-  works.filter(w => (w.circles || []).includes(req.author.circleId)).forEach(w => {
-    (w.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
-    (w.moreImages || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
-  });
-
-  // 收集该作者提交的活动/企划/动态中引用的图片
-  const events = readJSON('events.json');
-  events.filter(e => e.submittedBy === req.author.circleId).forEach(e => {
-    (e.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
-    if (e.coverImage) { const f = extractFilename(e.coverImage); if (f) referenced.add(f); }
-  });
-  const projects = readJSON('projects.json');
-  projects.filter(p => p.submittedBy === req.author.circleId).forEach(p => {
-    (p.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
-    if (p.coverImage) { const f = extractFilename(p.coverImage); if (f) referenced.add(f); }
-  });
-  const updates = readJSON('updates.json');
-  updates.filter(u => u.submittedBy === req.author.circleId).forEach(u => {
-    (u.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
-    if (u.coverImage) { const f = extractFilename(u.coverImage); if (f) referenced.add(f); }
-  });
-
-  // 收集该作者圈子中引用的图片（logo + images）
-  if (circle) {
-    if (circle.logo) { const f = extractFilename(circle.logo); if (f) referenced.add(f); }
-    (circle.images || []).forEach(img => { const f = extractFilename(img); if (f) referenced.add(f); });
-  }
-
   // 获取该作者的所有图片
   try {
-    const allFiles = fs.readdirSync(uploadsDir)
-      .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f))
+    const referenced = collectAllUploadRefs();
+    const allFiles = listUploadFiles()
       .filter(f => (meta[f]?.uploader || '') === authorName);
 
-    const unused = allFiles.filter(f => !referenced.has(f)).map(f => ({
+    const unused = allFiles.filter(f => !referenced.has(f) && !isUploadVariantUsed(f, referenced)).map(f => ({
       name: f,
       url: '/uploads/' + f,
-      size: fs.statSync(path.join(uploadsDir, f)).size,
+      size: fs.statSync(path.join(UPLOADS_DIR, f)).size,
       uploadedAt: meta[f]?.uploadedAt || null
     }));
 
@@ -2263,6 +2426,57 @@ function approvalStatusLabel(status) {
   return status === 'approved' ? '免审核直接上架' : '待审核';
 }
 
+// ===== Work approval snapshot (方案 B) =====
+// Public keeps the last approved content while a new revision waits for review.
+const WORK_CONTENT_FIELDS = [
+  'title', 'titleEn', 'description', 'category', 'status', 'price',
+  'releaseDate', 'endDate', 'tags', 'images', 'moreImages', 'socialLinks',
+  'isCommissioned', 'commissionedBy'
+];
+
+function pickWorkContent(work) {
+  const out = {};
+  for (const f of WORK_CONTENT_FIELDS) {
+    if (work[f] !== undefined) out[f] = work[f];
+  }
+  // Deep copy arrays/objects so later mutation cannot change the snapshot.
+  return JSON.parse(JSON.stringify(out));
+}
+
+function isWorkPublic(work) {
+  if (!work) return false;
+  if (!work.approvalStatus || work.approvalStatus === 'approved') return true;
+  // A pending/rejected revision is not public, but the last approved snapshot stays visible.
+  return !!(work.published && (work.approvalStatus === 'pending' || work.approvalStatus === 'rejected'));
+}
+
+function publicWorkView(work) {
+  const view = work.published ? { ...work, ...work.published } : { ...work };
+  delete view.pendingRevision;
+  delete view.published;
+  if (view.approvalStatus && view.approvalStatus !== 'approved') view.approvalStatus = 'approved';
+  return view;
+}
+
+function authorWorkView(work) {
+  if (!work || !work.pendingRevision) return work;
+  return {
+    ...work,
+    ...work.pendingRevision,
+    approvalStatus: work.approvalStatus === 'rejected' ? 'rejected' : 'pending',
+    _hasPendingRevision: true
+  };
+}
+
+function workRequireApproval(circle) {
+  try {
+    const settings = readJSON('settings.json');
+    const globalRequire = settings.site?.requireWorkApproval !== false;
+    const authorRequire = circle?.requireApproval !== false;
+    return globalRequire && authorRequire;
+  } catch { return true; }
+}
+
 // ===== Admin batch approval =====
 const BATCH_APPROVAL_MAX = 200;
 const BATCH_APPROVAL_TYPES = {
@@ -2340,8 +2554,8 @@ function registerBatchApprovalRoutes(typeKey) {
 // Works
 app.get('/api/works', cacheMiddleware(60), (req, res) => {
   let works = ensureArray(readJSON('works.json'));
-  // Only return approved works (or legacy works without approvalStatus)
-  works = works.filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
+  // Approved content + last-approved snapshot of works with pending/rejected revisions.
+  works = works.filter(isWorkPublic).map(publicWorkView);
   // 未上传封面图的周边暂不对外展示
   works = works.filter(w => Array.isArray(w.images) && w.images[0]);
   const { category, search, status, circleId, eventId } = req.query;
@@ -2381,15 +2595,16 @@ app.get('/api/works/:id', (req, res) => {
   const works = readJSON('works.json');
   const work = works.find(w => w.id === req.params.id);
   if (!work) return res.status(404).json({ error: '作品未找到' });
-  // Only return approved works (or legacy works without approvalStatus)
-  if (work.approvalStatus && work.approvalStatus !== 'approved') {
+  // Only return public content (last approved snapshot while a revision is pending).
+  if (!isWorkPublic(work)) {
     return res.status(404).json({ error: '作品未找到' });
   }
+  const pub = publicWorkView(work);
   // 未上传封面图的周边暂不对外展示
-  if (!Array.isArray(work.images) || !work.images[0]) {
+  if (!Array.isArray(pub.images) || !pub.images[0]) {
     return res.status(404).json({ error: '作品未找到' });
   }
-  res.json(work);
+  res.json(pub);
 });
 
 // ===== Like System (in-memory + file sync) =====
@@ -3710,12 +3925,23 @@ app.post('/api/admin/works/:id/approve', authMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  works[index].approvalStatus = 'approved';
+  const work = works[index];
+  // Apply the pending revision (if any), then snapshot it as the public version.
+  if (work.pendingRevision) {
+    const rev = work.pendingRevision;
+    for (const f of WORK_CONTENT_FIELDS) {
+      if (rev[f] !== undefined) work[f] = rev[f];
+    }
+    delete work.pendingRevision;
+  }
+  work.approvalStatus = 'approved';
+  work.published = pickWorkContent(work);
+  delete work.rejectReason;
   await writeJSON('works.json', works);
-  logEdit('管理员', '批准作品', works[index].title || req.params.id, '');
+  logEdit('管理员', '批准作品', work.title || req.params.id, '');
   // Notify author
-  if (works[index].submittedBy) {
-    addAuthorNotification(works[index].submittedBy, 'work', works[index].title, '已通过审核');
+  if (work.submittedBy) {
+    await addAuthorNotification(work.submittedBy, 'work', work.title, '已通过审核');
   }
   res.json({ success: true });
 });
@@ -3725,13 +3951,14 @@ app.post('/api/admin/works/:id/reject', authMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  works[index].approvalStatus = 'rejected';
-  if (req.body.reason) works[index].rejectReason = req.body.reason;
+  const work = works[index];
+  // Keep the last approved snapshot public; the rejected revision stays for the author to edit.
+  work.approvalStatus = 'rejected';
+  if (req.body.reason) work.rejectReason = req.body.reason;
   await writeJSON('works.json', works);
-  logEdit('管理员', '拒绝作品', works[index].title || req.params.id, req.body.reason || '');
-  // Notify author
-  if (works[index].submittedBy) {
-    addAuthorNotification(works[index].submittedBy, 'work', works[index].title, '未通过审核', req.body.reason);
+  logEdit('管理员', '拒绝作品', work.title || req.params.id, req.body.reason || '');
+  if (work.submittedBy) {
+    await addAuthorNotification(work.submittedBy, 'work', work.title, '未通过审核', req.body.reason);
   }
   res.json({ success: true });
 });
@@ -3740,17 +3967,23 @@ app.put('/api/admin/works/:id', authMiddleware, async (req, res) => {
   let works = readJSON('works.json');
   const index = works.findIndex(w => w.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
-  const oldTitle = works[index].title;
+  const work = works[index];
+  const oldTitle = work.title;
   // Whitelist allowed fields to prevent mass assignment
   const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'likes', 'wants', 'order', 'isCommissioned', 'commissionedBy', 'socialLinks', 'approvalStatus', 'rejectReason', 'submittedBy'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
-  works[index] = { ...works[index], ...updates };
+  Object.assign(work, updates);
+  // Admin edits publish immediately and clear any stale pending revision.
+  work.approvalStatus = 'approved';
+  work.published = pickWorkContent(work);
+  delete work.pendingRevision;
+  delete work.rejectReason;
   await writeJSON('works.json', works);
   logEdit('管理员', '编辑作品', oldTitle || req.params.id, '');
-  res.json(works[index]);
+  res.json(work);
 });
 
 app.delete('/api/admin/works/:id', authMiddleware, async (req, res) => {
@@ -4875,121 +5108,102 @@ app.get('/api/admin/images', authMiddleware, (req, res) => {
 // Delete an uploaded image
 app.delete('/api/admin/images/:filename', authMiddleware, async (req, res) => {
   const filename = path.basename(req.params.filename); // Prevent path traversal
-  const uploadsDir = path.join(__dirname, 'uploads');
-  const filePath = path.join(uploadsDir, filename);
-  if (!filePath.startsWith(uploadsDir)) return res.status(403).json({ error: '禁止访问' });
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-    // Clean up uploads-meta.json
+  try {
+    const refs = collectAllUploadRefs();
+    if (refs.has(filename) || isUploadVariantUsed(filename, refs)) {
+      return res.status(409).json({ error: '图片仍在使用中，请先从内容中移除' });
+    }
+    const item = trashUpload(filename, '管理员');
+    const index = readTrashIndex();
+    index.push({ ...item, trashedAt: new Date().toISOString() });
+    await writeTrashIndex(index);
     try {
       const meta = readJSON('uploads-meta.json');
-      delete meta[req.params.filename];
+      delete meta[filename];
       await writeJSON('uploads-meta.json', meta);
     } catch {}
-    logEdit('管理员', '删除图片', req.params.filename, '');
+    logEdit('管理员', '删除图片（回收站）', filename, '');
     clearEditLogImageUrl('/uploads/' + filename);
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: '文件不存在' });
+    res.json({ success: true, trashed: true });
+  } catch (e) {
+    res.status(500).json({ error: '删除失败: ' + e.message });
   }
 });
 
 // Preview unused images (GET - no deletion)
 app.get('/api/admin/images/unused', authMiddleware, (req, res) => {
-  const uploadsDir = path.join(__dirname, 'uploads');
   try {
-    const referencedFiles = new Set();
-    function extractFilename(imgPath) {
-      if (!imgPath) return null;
-      const match = imgPath.match(/\/uploads\/([^/?#]+)/);
-      return match ? match[1] : null;
-    }
-    try {
-      const settings = readJSON('settings.json');
-      const f = extractFilename(settings.site?.favicon);
-      if (f) referencedFiles.add(f);
-    } catch {}
-    const dataFiles = ['works.json', 'events.json', 'circles.json', 'projects.json', 'updates.json'];
-    dataFiles.forEach(file => {
-      try {
-        const items = readJSON(file);
-        items.forEach(item => {
-          if (item.images) item.images.forEach(img => { const f = extractFilename(img); if (f) referencedFiles.add(f); });
-          if (item.moreImages) item.moreImages.forEach(img => { const f = extractFilename(img); if (f) referencedFiles.add(f); });
-          if (item.logo) { const f = extractFilename(item.logo); if (f) referencedFiles.add(f); }
-          if (item.coverImage) { const f = extractFilename(item.coverImage); if (f) referencedFiles.add(f); }
-        });
-      } catch {}
-    });
-    const files = fs.readdirSync(uploadsDir)
-      .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f));
-    const unused = files.filter(f => !referencedFiles.has(f)).map(f => ({
+    const refs = collectAllUploadRefs();
+    const files = listUploadFiles();
+    const unused = files.filter(f => !refs.has(f) && !isUploadVariantUsed(f, refs)).map(f => ({
       name: f,
-      url: '/uploads/' + f
+      url: '/uploads/' + f,
+      size: (() => { try { return fs.statSync(path.join(UPLOADS_DIR, f)).size; } catch { return 0; } })()
     }));
-    res.json({ total: files.length, unused, count: unused.length });
+    res.json({ total: files.length, unused, count: unused.length, referenced: refs.size, trashCount: readTrashIndex().length });
   } catch (e) {
     res.status(500).json({ error: '查询失败: ' + e.message });
   }
 });
 
-// Cleanup unused images
-app.post('/api/admin/images/cleanup', authMiddleware, (req, res) => {
-  const uploadsDir = path.join(__dirname, 'uploads');
+// Move unused images to trash. Never unlink directly.
+app.post('/api/admin/images/cleanup', authMiddleware, async (req, res) => {
   try {
-    // Collect all referenced image filenames from data files
-    const referencedFiles = new Set();
-
-    function extractFilename(imgPath) {
-      if (!imgPath) return null;
-      // Handle both relative paths and full URLs
-      const match = imgPath.match(/\/uploads\/([^/?#]+)/);
-      return match ? match[1] : null;
-    }
-
-    // Check settings.json for favicon
-    try {
-      const settings = readJSON('settings.json');
-      const f = extractFilename(settings.site?.favicon);
-      if (f) referencedFiles.add(f);
-    } catch {}
-
-    // Check all entity files for image references
-    const dataFiles = ['works.json', 'events.json', 'circles.json', 'projects.json', 'updates.json'];
-    dataFiles.forEach(file => {
+    const refs = collectAllUploadRefs();
+    const files = listUploadFiles();
+    const unused = files.filter(f => !refs.has(f) && !isUploadVariantUsed(f, refs));
+    const trashed = [];
+    for (const f of unused) {
       try {
-        const items = readJSON(file);
-        items.forEach(item => {
-          // Check images array
-          if (item.images) item.images.forEach(img => { const f = extractFilename(img); if (f) referencedFiles.add(f); });
-          // Check moreImages array (works)
-          if (item.moreImages) item.moreImages.forEach(img => { const f = extractFilename(img); if (f) referencedFiles.add(f); });
-          // Check logo field
-          if (item.logo) { const f = extractFilename(item.logo); if (f) referencedFiles.add(f); }
-          // Check coverImage field
-          if (item.coverImage) { const f = extractFilename(item.coverImage); if (f) referencedFiles.add(f); }
-        });
-      } catch {}
-    });
-
-    // Get all files in uploads directory
-    const files = fs.readdirSync(uploadsDir)
-      .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f));
-
-    // Find unused files
-    const unused = files.filter(f => !referencedFiles.has(f));
-
-    // Delete unused files
-    let deleted = 0;
-    unused.forEach(f => {
-      fs.unlinkSync(path.join(uploadsDir, f));
-      deleted++;
-    });
-
-    res.json({ success: true, total: files.length, deleted, kept: files.length - deleted });
+        const item = trashUpload(f, '管理员');
+        trashed.push(item);
+      } catch (e) {
+        console.error('[image-cleanup]', f, e.message);
+      }
+    }
+    if (trashed.length) {
+      const index = readTrashIndex();
+      const now = new Date().toISOString();
+      trashed.forEach(t => index.push({ ...t, trashedAt: now }));
+      await writeTrashIndex(index);
+      logEdit('管理员', '清理未使用图片', `移动到回收站 ${trashed.length} 张`, '');
+    }
+    res.json({ success: true, total: files.length, trashed: trashed.length, kept: files.length - trashed.length });
   } catch (e) {
     res.status(500).json({ error: '清理失败: ' + e.message });
   }
+});
+
+// Trash listing / restore / permanent delete
+app.get('/api/admin/images/trash', authMiddleware, (req, res) => {
+  res.json({ items: readTrashIndex() });
+});
+
+app.post('/api/admin/images/trash/:name/restore', authMiddleware, async (req, res) => {
+  const name = path.basename(String(req.params.name || ''));
+  const index = readTrashIndex();
+  const item = index.find(x => x.stored === name);
+  if (!item) return res.status(404).json({ error: '回收站记录不存在' });
+  const src = path.join(UPLOADS_TRASH_DIR, item.stored);
+  if (!fs.existsSync(src)) return res.status(404).json({ error: '回收站文件不存在' });
+  const dest = path.join(UPLOADS_DIR, item.original);
+  if (fs.existsSync(dest)) return res.status(409).json({ error: '同名文件已存在，无法恢复' });
+  fs.renameSync(src, dest);
+  await writeTrashIndex(index.filter(x => x.stored !== name));
+  logEdit('管理员', '恢复图片', item.original, '');
+  res.json({ success: true, name: item.original });
+});
+
+app.delete('/api/admin/images/trash/:name', authMiddleware, async (req, res) => {
+  const name = path.basename(String(req.params.name || ''));
+  const index = readTrashIndex();
+  const item = index.find(x => x.stored === name);
+  if (!item) return res.status(404).json({ error: '回收站记录不存在' });
+  const file = path.join(UPLOADS_TRASH_DIR, item.stored);
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+  await writeTrashIndex(index.filter(x => x.stored !== name));
+  logEdit('管理员', '彻底删除图片', item.original, '');
+  res.json({ success: true });
 });
 
 // --- Change password ---
