@@ -3712,6 +3712,7 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
   function deepMerge(target, source) {
     const result = { ...target };
     for (const key of Object.keys(source)) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
       if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
           target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])) {
         result[key] = deepMerge(target[key], source[key]);
@@ -3722,6 +3723,12 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
     return result;
   }
   const merged = deepMerge(existing, incoming);
+  // Remove legacy UI-only field accidentally persisted by the old page settings form.
+  if (merged.pages && typeof merged.pages === 'object') {
+    for (const page of Object.values(merged.pages)) {
+      if (page && typeof page === 'object') delete page.heroBgInput;
+    }
+  }
   await writeJSON('settings.json', merged);
   res.json({ success: true });
 });

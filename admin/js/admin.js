@@ -4359,7 +4359,7 @@ async function pickImageFromLibrary(type) {
     <p style="color:var(--haze);font-size:0.85rem;margin-bottom:0.8rem;">点击图片选中，然后点击"确定选择"添加。</p>
     <div id="imageLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.5rem;max-height:350px;overflow-y:auto;">
       ${images.map(img => `
-        <div class="image-pick-item" data-url="${img.url}" data-name="${(img.name || '').toLowerCase()}" onclick="this.classList.toggle('selected');this.style.outline=this.classList.contains('selected')?'3px solid var(--accent)':'none';" style="border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:var(--transition);">
+        <div class="image-pick-item" data-url="${escAttr(img.url)}" data-name="${escAttr((img.name || '').toLowerCase())}" onclick="this.classList.toggle('selected');this.style.outline=this.classList.contains('selected')?'3px solid var(--accent)':'none';" style="border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:var(--transition);">
           <img src="${safeImgUrl(img.url)}" alt="${escAttr(img.name)}" style="width:100%;height:80px;object-fit:cover;display:block;">
           <div style="padding:0.2rem;font-size:0.6rem;color:var(--haze);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${img.name}">${img.name}</div>
         </div>
@@ -5455,12 +5455,12 @@ function renderSettings() {
         <div class="form-row">
           <div class="form-group">
             <label>Logo图标文字</label>
-            <input class="form-input" id="setting_site_logoText" value="${site.logoText || 'F7'}" placeholder="F7">
+            <input class="form-input" id="setting_site_logoText" value="${escAttr(site.logoText || 'F7')}" placeholder="F7">
             <p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">显示在左上角图标内的文字（1-2个字符）</p>
           </div>
           <div class="form-group">
             <label>品牌名称</label>
-            <input class="form-input" id="setting_site_brandName" value="${site.brandName || 'f7goods'}" placeholder="f7goods">
+            <input class="form-input" id="setting_site_brandName" value="${escAttr(site.brandName || 'f7goods')}" placeholder="f7goods">
             <p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">显示在Logo图标右边的文字</p>
           </div>
         </div>
@@ -5483,16 +5483,16 @@ function renderSettings() {
         <h3 style="margin-bottom:1rem;">底栏设置</h3>
         <div class="form-group">
           <label>底栏描述</label>
-          <textarea class="form-input" id="setting_footer_description" style="min-height:80px;">${currentSettings.footer?.description || ''}</textarea>
+          <textarea class="form-input" id="setting_footer_description" style="min-height:80px;">${escText(currentSettings.footer?.description || '')}</textarea>
         </div>
         <div class="form-group">
           <label>社交链接</label>
           <div id="socialLinksContainer">
             ${(currentSettings.footer?.socialLinks || []).map((link, i) => `
               <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;" class="social-link-row">
-                <input class="form-input social-icon" value="${link.icon || ''}" style="width:50px;text-align:center;" placeholder="图标">
-                <input class="form-input social-name" value="${link.name || ''}" style="flex:1;" placeholder="名称">
-                <input class="form-input social-url" value="${link.url || ''}" style="flex:2;" placeholder="链接">
+                <input class="form-input social-icon" value="${escAttr(link.icon || '')}" style="width:50px;text-align:center;" placeholder="图标">
+                <input class="form-input social-name" value="${escAttr(link.name || '')}" style="flex:1;" placeholder="名称">
+                <input class="form-input social-url" value="${escAttr(link.url || '')}" style="flex:2;" placeholder="链接">
                 <button class="btn-sm btn-delete" onclick="this.parentElement.remove()">删除</button>
               </div>
             `).join('')}
@@ -5509,11 +5509,11 @@ function renderSettings() {
           ${key === 'about' ? `
             <div class="form-group">
               <label>顶部标题</label>
-              <input class="form-input" id="setting_${key}_heroTitle" value="${pages[key]?.heroTitle || ''}">
+              <input class="form-input" id="setting_${key}_heroTitle" value="${escAttr(pages[key]?.heroTitle || '')}">
             </div>
             <div class="form-group">
               <label>顶部副标题</label>
-              <input class="form-input" id="setting_${key}_heroSubtitle" value="${pages[key]?.heroSubtitle || ''}">
+              <input class="form-input" id="setting_${key}_heroSubtitle" value="${escAttr(pages[key]?.heroSubtitle || '')}">
             </div>
             <div class="form-group">
               <label>顶部背景图</label>
@@ -5525,27 +5525,27 @@ function renderSettings() {
                 <button type="button" class="btn-sm btn-edit" onclick="uploadHeroBg('${key}')">上传背景图</button>
                 <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageForHeroBg('${key}')">从图片库选择</button>
               </div>
-              <input type="hidden" id="setting_${key}_heroBg" value="${pages[key]?.heroBg || ''}">
+              <input type="hidden" id="setting_${key}_heroBg" value="${escAttr(pages[key]?.heroBg || '')}">
             </div>
             <div class="form-group">
               <label>故事标题</label>
-              <input class="form-input" id="setting_${key}_storyTitle" value="${pages[key]?.storyTitle || ''}">
+              <input class="form-input" id="setting_${key}_storyTitle" value="${escAttr(pages[key]?.storyTitle || '')}">
             </div>
             <div class="form-group">
               <label>故事内容</label>
-              <textarea class="form-input" id="setting_${key}_storyContent" style="min-height:120px;">${pages[key]?.storyContent || ''}</textarea>
+              <textarea class="form-input" id="setting_${key}_storyContent" style="min-height:120px;">${escText(pages[key]?.storyContent || '')}</textarea>
             </div>
             <div class="form-group">
               <label>联系标题</label>
-              <input class="form-input" id="setting_${key}_contactTitle" value="${pages[key]?.contactTitle || ''}">
+              <input class="form-input" id="setting_${key}_contactTitle" value="${escAttr(pages[key]?.contactTitle || '')}">
             </div>
             <div class="form-group">
               <label>联系标题英文小标（显示在「联系我们」右侧）</label>
-              <input class="form-input" id="setting_${key}_contactLabel" value="${pages[key]?.contactLabel || ''}" placeholder="如 REACH US">
+              <input class="form-input" id="setting_${key}_contactLabel" value="${escAttr(pages[key]?.contactLabel || '')}" placeholder="如 REACH US">
             </div>
             <div class="form-group">
               <label>联系区说明小字（显示在「联系我们」下方）</label>
-              <textarea class="form-input" id="setting_${key}_contactContent">${pages[key]?.contactContent || ''}</textarea>
+              <textarea class="form-input" id="setting_${key}_contactContent">${escText(pages[key]?.contactContent || '')}</textarea>
             </div>
             <div class="form-group">
               <label>联系方式列表（卡片英文标签与底部小字可分别命名）</label>
@@ -5553,7 +5553,7 @@ function renderSettings() {
                 ${(pages[key]?.contactLinks || []).map((link, i) => `
                   <div style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.65rem;padding:0.55rem 0.65rem;border:1px solid var(--border);border-radius:8px;" class="about-link-row">
                     <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-                      <input class="form-input about-link-icon" value="${link.icon || ''}" style="width:50px;text-align:center;" placeholder="图标">
+                      <input class="form-input about-link-icon" value="${escAttr(link.icon || '')}" style="width:50px;text-align:center;" placeholder="图标">
                       <input class="form-input about-link-text" value="${escapeHtml(link.text || '')}" style="flex:1;min-width:120px;" placeholder="显示文字">
                       <input class="form-input about-link-url" value="${escapeHtml(link.url || '')}" style="flex:1.5;min-width:140px;" placeholder="链接">
                       <button class="btn-sm btn-delete" onclick="this.closest('.about-link-row').remove()">删除</button>
@@ -5571,11 +5571,11 @@ function renderSettings() {
           ` : `
             <div class="form-group">
               <label>顶部标题</label>
-              <input class="form-input" id="setting_${key}_heroTitle" value="${pages[key]?.heroTitle || ''}">
+              <input class="form-input" id="setting_${key}_heroTitle" value="${escAttr(pages[key]?.heroTitle || '')}">
             </div>
             <div class="form-group">
               <label>顶部副标题</label>
-              <input class="form-input" id="setting_${key}_heroSubtitle" value="${pages[key]?.heroSubtitle || ''}">
+              <input class="form-input" id="setting_${key}_heroSubtitle" value="${escAttr(pages[key]?.heroSubtitle || '')}">
             </div>
             <div class="form-group">
               <label>顶部背景图</label>
@@ -5587,15 +5587,15 @@ function renderSettings() {
                 <button type="button" class="btn-sm btn-edit" onclick="uploadHeroBg('${key}')">上传背景图</button>
                 <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="pickImageForHeroBg('${key}')">从图片库选择</button>
               </div>
-              <input type="hidden" id="setting_${key}_heroBg" value="${pages[key]?.heroBg || ''}">
+              <input type="hidden" id="setting_${key}_heroBg" value="${escAttr(pages[key]?.heroBg || '')}">
             </div>
             <div class="form-group">
               <label>页面标题</label>
-              <input class="form-input" id="setting_${key}_pageTitle" value="${pages[key]?.pageTitle || ''}">
+              <input class="form-input" id="setting_${key}_pageTitle" value="${escAttr(pages[key]?.pageTitle || '')}">
             </div>
             <div class="form-group">
               <label>页面副标题</label>
-              <input class="form-input" id="setting_${key}_pageSubtitle" value="${pages[key]?.pageSubtitle || ''}">
+              <input class="form-input" id="setting_${key}_pageSubtitle" value="${escAttr(pages[key]?.pageSubtitle || '')}">
             </div>
           `}
         </div>
@@ -5608,7 +5608,7 @@ function renderSettings() {
         <h3 style="margin-bottom:1rem;">作者注册须知</h3>
         <div class="form-group">
           <label>注册须知内容</label>
-          <textarea class="form-input" id="setting_author_registrationNotice" style="min-height:200px;" placeholder="请输入注册须知内容...">${currentSettings.authorRegistrationNotice || ''}</textarea>
+          <textarea class="form-input" id="setting_author_registrationNotice" style="min-height:200px;" placeholder="请输入注册须知内容...">${escText(currentSettings.authorRegistrationNotice || '')}</textarea>
           <p style="color:var(--haze);font-size:0.75rem;margin-top:0.3rem;">此内容将显示在作者登录页面的"注册须知"弹窗中</p>
         </div>
       </div>
@@ -5633,6 +5633,8 @@ async function saveSettings() {
     pages[key] = {};
     const inputs = document.querySelectorAll(`[id^="setting_${key}_"]`);
     inputs.forEach(input => {
+      if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(input.tagName)) return;
+      if (input.type === 'file') return;
       const field = input.id.replace(`setting_${key}_`, '');
       pages[key][field] = input.value;
     });
@@ -5759,7 +5761,7 @@ function pickFaviconFromLibrary() {
       <input type="text" class="form-input" id="imageLibSearch" placeholder="搜索图片名称..." style="margin-bottom:0.8rem;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterImageLibrary(this.value)">
       <div id="imageLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.8rem;max-height:400px;overflow-y:auto;">
         ${images.map(img => `
-          <div style="position:relative;cursor:pointer;border:2px solid transparent;border-radius:8px;overflow:hidden;transition:var(--transition);" class="image-pick-item" data-url="${img.url}" data-name="${(img.name || '').toLowerCase()}" onclick="selectFaviconFromLibrary('${img.url}')">
+          <div style="position:relative;cursor:pointer;border:2px solid transparent;border-radius:8px;overflow:hidden;transition:var(--transition);" class="image-pick-item" data-url="${escAttr(img.url)}" data-name="${escAttr((img.name || '').toLowerCase())}" onclick="selectFaviconFromLibrary(this.dataset.url)">
             <img src="${safeImgUrl(img.url)}" style="width:100%;height:80px;object-fit:cover;display:block;">
             <div style="font-size:0.65rem;padding:0.2rem;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${img.name}</div>
           </div>
@@ -5819,7 +5821,7 @@ function pickImageForHeroBg(pageKey) {
       <input type="text" class="form-input" id="imageLibSearch" placeholder="搜索图片名称..." style="margin-bottom:0.8rem;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterImageLibrary(this.value)">
       <div id="imageLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.8rem;max-height:400px;overflow-y:auto;">
         ${images.map(img => `
-          <div style="position:relative;cursor:pointer;border:2px solid transparent;border-radius:8px;overflow:hidden;transition:var(--transition);" class="image-pick-item" data-url="${img.url}" data-name="${(img.name || '').toLowerCase()}" onclick="selectHeroBgFromLibrary(this, '${pageKey}')">
+          <div style="position:relative;cursor:pointer;border:2px solid transparent;border-radius:8px;overflow:hidden;transition:var(--transition);" class="image-pick-item" data-url="${escAttr(img.url)}" data-name="${escAttr((img.name || '').toLowerCase())}" onclick="selectHeroBgFromLibrary(this, '${pageKey}')">
             <img src="${safeImgUrl(img.url)}" style="width:100%;height:90px;object-fit:cover;display:block;">
             <div style="font-size:0.7rem;padding:0.3rem;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${img.name}</div>
           </div>
