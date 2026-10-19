@@ -378,8 +378,19 @@
     let currentUserFilter = 'none'; // 'none', 'liked', 'wanted'
     let currentFollowFilter = false;
     let currentDeadlineFilter = false;
-    let wishlistMode = false;
-    let wishlistItems = {}; // { workId: quantity }
+    let wishlistMode = localStorage.getItem('f7wishlistMode') === '1';
+    let wishlistItems = (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem('f7wishlist') || '{}');
+        return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+      } catch { return {}; }
+    })();
+    function saveWishlist() {
+      try {
+        localStorage.setItem('f7wishlist', JSON.stringify(wishlistItems));
+        localStorage.setItem('f7wishlistMode', wishlistMode ? '1' : '0');
+      } catch {}
+    }
     let homeView = 'board';
     let featuredProjectId = null;
 
@@ -848,6 +859,7 @@
       if (wishlistMode) {
         wishlistMode = false;
         wishlistItems = {};
+        saveWishlist();
         document.getElementById('wishlistToggleBtn')?.classList.remove('active');
         closeWishlistDrawer();
         updateWishlistBar();
@@ -864,6 +876,7 @@
       if (!confirmed) return;
       wishlistMode = true;
       wishlistItems = {};
+      saveWishlist();
       document.getElementById('wishlistToggleBtn')?.classList.add('active');
       updateWishlistBar();
     }
@@ -912,6 +925,7 @@
         if (!wishlistMode) return;
       }
       wishlistItems[workId] = (wishlistItems[workId] || 0) + 1;
+      saveWishlist();
       refreshWishlistUI(workId);
     }
 
@@ -919,6 +933,7 @@
       if (e) { e.preventDefault(); e.stopPropagation(); }
       if (!wishlistMode) return;
       wishlistItems[workId] = (wishlistItems[workId] || 0) + 1;
+      saveWishlist();
       refreshWishlistUI(workId);
     }
 
@@ -927,6 +942,7 @@
       if (!wishlistItems[workId]) return;
       wishlistItems[workId]--;
       if (wishlistItems[workId] <= 0) delete wishlistItems[workId];
+      saveWishlist();
       refreshWishlistUI(workId);
     }
 
@@ -939,6 +955,7 @@
         if (next <= 0) delete wishlistItems[workId];
         else wishlistItems[workId] = next;
       }
+      saveWishlist();
       refreshWishlistUI(workId);
     }
 
@@ -1093,6 +1110,7 @@
       }
       if (!ok) return;
       wishlistItems = {};
+      saveWishlist();
       refreshAllWishlistControls();
       updateWishlistBar();
       renderWishlistDrawer();
