@@ -621,7 +621,9 @@
       const dots = document.getElementById('boardFeatDots');
       track.innerHTML = boardFeatureSlides.map((s, i) => `
         <div class="board-feature-slide ${i === 0 ? 'on' : ''} ${s.cover ? 'has-cover' : ''}"
+             tabindex="0" role="link" aria-label="${escapeHtml(s.title)}"
              style="${s.cover ? `background-image:url('${escapeHtml(imgUrl(s.cover, 1600))}')` : ''}"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href='${s.href}'}"
              onclick="location.href='${s.href}'">
           <div class="board-feature-shade"></div>
           <span class="board-feature-tag ${s.tagClass}">${escapeHtml(s.tag)}</span>
@@ -632,7 +634,7 @@
         </div>
       `).join('');
       dots.innerHTML = boardFeatureSlides.map((_, i) =>
-        `<i class="${i === 0 ? 'on' : ''}" data-i="${i}" onclick="goBoardFeature(${i});startBoardFeatureTimer()"></i>`
+        `<i class="${i === 0 ? 'on' : ''}" data-i="${i}" role="button" tabindex="0" aria-label="第 ${i + 1} 张" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goBoardFeature(${i});startBoardFeatureTimer()}" onclick="goBoardFeature(${i});startBoardFeatureTimer()"></i>`
       ).join('');
       boardFeatIndex = 0;
       const prev = document.getElementById('boardFeatPrev');
