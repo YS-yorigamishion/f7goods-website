@@ -645,6 +645,34 @@ function collectAllUploadRefs() {
   return refs;
 }
 
+// Human-readable usage map for the admin image library.
+function collectUploadUsageMap() {
+  const map = new Map();
+  const add = (label, value) => {
+    const refs = collectUploadRefs(value, new Set());
+    for (const file of refs) {
+      if (!map.has(file)) map.set(file, []);
+      map.get(file).push(label);
+    }
+  };
+  const sources = [
+    ['works.json', '作品', 'title'],
+    ['events.json', '活动', 'title'],
+    ['circles.json', '作者', 'name'],
+    ['projects.json', '企划', 'title'],
+    ['updates.json', '动态', 'title'],
+    ['announcements.json', '公告', 'title'],
+    ['author-announcements.json', '作者公告', 'title']
+  ];
+  for (const [file, type, titleField] of sources) {
+    try {
+      for (const item of readJSON(file)) add(`${type}：${item[titleField] || item.id || '未命名'}`, item);
+    } catch {}
+  }
+  try { add('页面设置', readJSON('settings.json')); } catch {}
+  return map;
+}
+
 // A generated variant such as foo-800.webp is considered used when foo.<ext> is used.
 function isUploadVariantUsed(filename, refs) {
   const m = String(filename).match(/^(.+)-(\d+)\.(webp|jpe?g|png)$/i);
@@ -5395,6 +5423,7 @@ app.get('/api/admin/images', authMiddleware, (req, res) => {
   let meta = {};
   try { meta = readJSON('uploads-meta.json'); } catch {}
   try {
+    const usage = collectUploadUsageMap();
     const files = fs.readdirSync(uploadsDir)
       .filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f))
       .map(f => ({
@@ -5403,7 +5432,8 @@ app.get('/api/admin/images', authMiddleware, (req, res) => {
         size: fs.statSync(path.join(uploadsDir, f)).size,
         time: fs.statSync(path.join(uploadsDir, f)).mtime,
         uploader: meta[f]?.uploader || '未知',
-        uploadedAt: meta[f]?.uploadedAt || null
+        uploadedAt: meta[f]?.uploadedAt || null,
+        usedBy: usage.get(f) || []
       }))
       .sort((a, b) => b.time - a.time);
     res.json(files);

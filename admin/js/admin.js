@@ -74,6 +74,13 @@ async function loadCategoriesFromAPI() {
 
 let token = localStorage.getItem('f7admin_token');
 let currentPage = 'dashboard';
+let adminDirty = false;
+const ADMIN_PAGES = new Set(['dashboard','approval','page-stats','author-stats','editlog','works','circles','events','booths','projects','updates','images','categories','settings','backup','announcements','contacts']);
+
+function pageFromHash() {
+  const page = (location.hash || '').replace(/^#/, '');
+  return ADMIN_PAGES.has(page) ? page : 'dashboard';
+}
 let adminWorksData = [];
 let adminEventsData = [];
 let adminCirclesData = [];
@@ -178,7 +185,7 @@ async function showAdmin() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminApp').style.display = 'flex';
   await loadCategoriesFromAPI();
-  loadDashboard();
+  navigateTo(pageFromHash());
 }
 
 // Check existing token on load
@@ -203,7 +210,32 @@ document.querySelectorAll('.sidebar-link[data-page]').forEach(link => {
   });
 });
 
+window.addEventListener('hashchange', () => navigateTo(pageFromHash()));
+
+// Warn before losing unsaved page-setting edits.
+document.addEventListener('input', (e) => {
+  if (e.target.closest('#settingsContent')) adminDirty = true;
+});
+document.addEventListener('change', (e) => {
+  if (e.target.closest('#settingsContent')) adminDirty = true;
+});
+window.addEventListener('beforeunload', (e) => {
+  if (!adminDirty) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+
 function navigateTo(page) {
+  if (!ADMIN_PAGES.has(page)) page = 'dashboard';
+  if (adminDirty && page !== currentPage) {
+    if (!confirm('当前设置还没有保存，确定离开吗？')) {
+      // Restore the hash so the URL does not point at the abandoned page.
+      history.replaceState(null, '', '#' + currentPage);
+      return;
+    }
+    adminDirty = false;
+  }
+  if (location.hash !== '#' + page) history.replaceState(null, '', '#' + page);
   currentPage = page;
   document.querySelectorAll('.sidebar-link[data-page]').forEach(l => l.classList.remove('active'));
   document.querySelector(`.sidebar-link[data-page="${page}"]`)?.classList.add('active');
@@ -1697,6 +1729,21 @@ async function runAdminBatchApproval(type, action, items, itemLabel, reloadFn) {
   if (failed.length) showToast(`${itemLabel}: 成功 ${ok}，失败 ${failed.length}`, 'error');
   else showToast(`已${verb} ${ok} 个${itemLabel}`, 'success');
   if (typeof reloadFn === 'function') reloadFn();
+}
+
+function selectedApprovalItems(type) {
+  const ids = new Set([...document.querySelectorAll(`.approval-cb[data-type="${type}"]:checked`)].map(cb => cb.dataset.id));
+  return approvalPending(type).filter(item => ids.has(item.id));
+}
+
+async function batchApproveSelected(type) {
+  const labels = { works: '作品', events: '活动', projects: '企划', updates: '动态' };
+  await runAdminBatchApproval(type, 'approve', selectedApprovalItems(type), labels[type] || '内容', loadApprovalPage);
+}
+
+async function batchRejectSelected(type) {
+  const labels = { works: '作品', events: '活动', projects: '企划', updates: '动态' };
+  await runAdminBatchApproval(type, 'reject', selectedApprovalItems(type), labels[type] || '内容', loadApprovalPage);
 }
 
 async function batchApproveWorks() {
@@ -3733,6 +3780,17 @@ async function loadAdminBackups() {
   try {
     const data = await adminAPI('GET', '/api/admin/backups');
     const list = data?.backups || [];
+    const health = document.getElementById('backupHealth');
+    if (health) {
+      const latest = list[0];
+      const totalSize = list.reduce((s, b) => s + (b.size || 0), 0);
+      health.innerHTML = [
+        ['最近备份', latest ? new Date(latest.mtime).toLocaleString('zh-CN') : '暂无'],
+        ['自动备份', '每日 03:17（服务器 cron）'],
+        ['备份数量', list.length + ' 个'],
+        ['占用空间', formatBackupSize(totalSize)]
+      ].map(([label, value]) => `<div style="padding:0.7rem;border:1px solid var(--border);border-radius:8px;background:var(--paper);"><div style="font-size:0.7rem;color:var(--haze);">${label}</div><div style="font-weight:600;margin-top:0.2rem;font-size:0.85rem;">${escapeHtml(value)}</div></div>`).join('');
+    }
     if (!list.length) {
       container.innerHTML = '<p style="color:var(--haze);margin:0;font-size:0.9rem;">暂无备份，点击「一键备份」创建。</p>';
       return;
@@ -5269,6 +5327,9 @@ async function loadImages() {
             <button onclick="deleteImage(${jsArg(img.name)})" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;padding:0 0.3rem;" title="删除">&times;</button>
           </div>
           <div style="font-size:0.6rem;color:var(--haze);margin-top:0.15rem;">${sizeMB} MB</div>
+          ${(img.usedBy && img.usedBy.length)
+            ? `<div title="${escAttr(img.usedBy.join('、'))}" style="font-size:0.6rem;color:#2e7d32;margin-top:0.1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">使用中 · ${img.usedBy.length} 处</div>`
+            : '<div style="font-size:0.6rem;color:var(--haze);margin-top:0.1rem;">未使用</div>'}
           ${uploader ? '<div style="font-size:0.6rem;color:var(--accent-alt);margin-top:0.1rem;">' + escapeHtml(uploader) + (uploadDate ? ' · ' + uploadDate : '') + '</div>' : ''}
         </div>
       </div>`;
@@ -5429,6 +5490,18 @@ async function loadSettings() {
   }
 }
 
+function settingLangFields(key, fields) {
+  const langs = [['En', 'English'], ['Ja', '日本語'], ['Ko', '한국어']];
+  return `<details style="margin-top:1rem;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;">
+    <summary style="cursor:pointer;font-size:0.85rem;color:var(--accent-alt);">多语言版本（${langs.map(x => x[1]).join(' / ')}）</summary>
+    ${fields.map(([field, label]) => langs.map(([suffix, langName]) => `
+      <div class="form-group" style="margin-top:0.6rem;">
+        <label>${label} · ${langName}</label>
+        <input class="form-input" id="setting_${key}_${field}${suffix}" value="${escAttr(currentSettings.pages?.[key]?.[field + suffix] || '')}">
+      </div>`).join('')).join('')}
+  </details>`;
+}
+
 function renderSettings() {
   if (!currentSettings) return;
   const container = document.getElementById('settingsContent');
@@ -5489,6 +5562,11 @@ function renderSettings() {
         <div class="form-group">
           <label>底栏描述</label>
           <textarea class="form-input" id="setting_footer_description" style="min-height:80px;">${escText(currentSettings.footer?.description || '')}</textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>底栏描述 · English</label><input class="form-input" id="setting_footer_descriptionEn" value="${escAttr(currentSettings.footer?.descriptionEn || '')}"></div>
+          <div class="form-group"><label>底栏描述 · 日本語</label><input class="form-input" id="setting_footer_descriptionJa" value="${escAttr(currentSettings.footer?.descriptionJa || '')}"></div>
+          <div class="form-group"><label>底栏描述 · 한국어</label><input class="form-input" id="setting_footer_descriptionKo" value="${escAttr(currentSettings.footer?.descriptionKo || '')}"></div>
         </div>
         <div class="form-group">
           <label>社交链接</label>
@@ -5573,6 +5651,7 @@ function renderSettings() {
               <button class="btn-sm btn-edit" onclick="addAboutContactLink()" style="margin-top:0.5rem;">+ 添加联系方式</button>
               <div style="font-size:0.75rem;color:var(--haze);margin-top:0.35rem;">英文标签 = 卡片顶部小字（如 SOCIAL / EMAIL）；底部小字 = 卡片下方说明（如 动态与公告）。留空则使用默认值。</div>
             </div>
+            ${settingLangFields(key, [['heroTitle','顶部标题'],['heroSubtitle','顶部副标题'],['storyTitle','故事标题'],['contactTitle','联系标题'],['contactContent','联系说明'],['contactLabel','联系英文小标']])}
           ` : `
             <div class="form-group">
               <label>顶部标题</label>
@@ -5602,6 +5681,7 @@ function renderSettings() {
               <label>页面副标题</label>
               <input class="form-input" id="setting_${key}_pageSubtitle" value="${escAttr(pages[key]?.pageSubtitle || '')}">
             </div>
+            ${settingLangFields(key, [['heroTitle','顶部标题'],['heroSubtitle','顶部副标题'],['pageTitle','页面标题'],['pageSubtitle','页面副标题']])}
           `}
         </div>
       </div>
@@ -5675,6 +5755,9 @@ async function saveSettings() {
 
   const footer = {
     description: document.getElementById('setting_footer_description')?.value || '',
+    descriptionEn: document.getElementById('setting_footer_descriptionEn')?.value || '',
+    descriptionJa: document.getElementById('setting_footer_descriptionJa')?.value || '',
+    descriptionKo: document.getElementById('setting_footer_descriptionKo')?.value || '',
     socialLinks
   };
 
@@ -5687,7 +5770,8 @@ async function saveSettings() {
       currentSettings.footer = footer;
       currentSettings.pages = pages;
       currentSettings.authorRegistrationNotice = authorRegistrationNotice;
-      showToast('设置保存成功', 'success');
+      adminDirty = false;
+      showToast('设置保存成功，前台刷新后生效', 'success');
     } else {
       showToast('保存失败', 'error');
     }
@@ -6472,7 +6556,7 @@ async function searchEditLogByDate(page = 1) {
         <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
         <span style="color:${actionColor};font-weight:500;min-width:70px;">${escapeHtml(entry.action)}</span>
         ${imgThumb}
-        <span style="flex:1;color:var(--ink);min-width:0;">${escapeHtml(entry.target)}${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
+        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
       </div>`;
     }).join('');
 
@@ -6521,7 +6605,7 @@ async function loadEditLog(page = 1) {
         <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
         <span style="color:${actionColor};font-weight:500;min-width:70px;">${escapeHtml(entry.action)}</span>
         ${imgThumb}
-        <span style="flex:1;color:var(--ink);min-width:0;">${escapeHtml(entry.target)}${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
+        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
       </div>`;
     }).join('');
 
@@ -6765,7 +6849,7 @@ async function loadApprovalPage() {
         const author = circles?.find(c => (w.circles || []).includes(c.id));
         const display = w.pendingRevision ? { ...w, ...w.pendingRevision } : w;
         return `<div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
-          <span style="font-weight:600;flex:1;">${escapeHtml(display.title)}</span>
+          <input type="checkbox" class="approval-cb" data-type="works" data-id="${w.id}" style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0;"><span style="font-weight:600;flex:1;">${escapeHtml(display.title)}</span>
           <span style="font-size:0.8rem;color:var(--haze);">作者: ${author ? escapeHtml(author.name) : '未知'}</span>
           <span style="font-size:0.8rem;color:var(--haze);">${w.category || ''}</span>
           <button class="btn-sm btn-edit" onclick="viewApprovalDetail('work','${w.id}')">查看</button>
@@ -6785,7 +6869,7 @@ async function loadApprovalPage() {
         const author = circles?.find(c => c.id === e.submittedBy);
         return `
         <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
-          <span style="font-weight:600;flex:1;">${escapeHtml(e.title)}</span>
+          <input type="checkbox" class="approval-cb" data-type="events" data-id="${e.id}" style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0;"><span style="font-weight:600;flex:1;">${escapeHtml(e.title)}</span>
           <span style="font-size:0.8rem;color:var(--haze);">提交者: ${author ? escapeHtml(author.name) : '未知'}</span>
           <span style="font-size:0.8rem;color:var(--haze);">${e.date || ''}</span>
           <button class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="viewApprovalDetail('event','${e.id}')">查看</button>
@@ -6805,7 +6889,7 @@ async function loadApprovalPage() {
         const author = circles?.find(c => c.id === p.submittedBy);
         return `
         <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
-          <span style="font-weight:600;flex:1;">${escapeHtml(p.title)}</span>
+          <input type="checkbox" class="approval-cb" data-type="projects" data-id="${p.id}" style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0;"><span style="font-weight:600;flex:1;">${escapeHtml(p.title)}</span>
           <span style="font-size:0.8rem;color:var(--haze);">提交者: ${author ? escapeHtml(author.name) : '未知'}</span>
           <button class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="viewApprovalDetail('project','${p.id}')">查看</button>
           <button class="btn-sm" style="background:#2ecc71;color:white;" onclick="approveProject('${p.id}')">批准</button>
@@ -6830,7 +6914,7 @@ async function loadApprovalPage() {
         const author = circles?.find(c => c.id === u.submittedBy);
         return `
         <div style="display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
-          <span style="font-weight:600;flex:1;">${escapeHtml(u.title)}</span>
+          <input type="checkbox" class="approval-cb" data-type="updates" data-id="${u.id}" style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0;"><span style="font-weight:600;flex:1;">${escapeHtml(u.title)}</span>
           <span style="font-size:0.8rem;color:var(--haze);">提交者: ${author ? escapeHtml(author.name) : '未知'}</span>
           <span style="font-size:0.8rem;color:var(--haze);">${u.publishDate || ''}</span>
           <button class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="viewApprovalDetail('update','${u.id}')">查看</button>
@@ -7658,3 +7742,10 @@ async function moveBoothGood(boothId, workId, dir) {
 }
 
 
+
+// Refresh the approval queue while it is open (keeps new submissions visible).
+setInterval(() => {
+  if (currentPage === 'approval' && !document.hidden && !document.querySelector('.approval-cb:checked')) {
+    loadApprovalPage().catch(() => {});
+  }
+}, 30000);
