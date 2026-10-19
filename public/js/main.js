@@ -1511,3 +1511,17 @@ function authorHomeCircleId() {
     return '';
   }
 }
+
+// Live-refresh public branding/footer when admin saves page settings.
+if ('BroadcastChannel' in window) {
+  const f7SettingsChannel = new BroadcastChannel('f7settings');
+  f7SettingsChannel.onmessage = async () => {
+    await loadSettingsFromAPI();
+    applyFavicon();
+    if (typeof _applyPageSettingsText === 'function') _applyPageSettingsText();
+    const navbar = document.getElementById('navbar');
+    if (navbar && typeof buildNavbar === 'function') navbar.innerHTML = buildNavbar(navbar.dataset.activePage);
+    const footer = document.getElementById('footer');
+    if (footer && typeof buildFooter === 'function') footer.innerHTML = buildFooter();
+  };
+}

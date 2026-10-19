@@ -726,7 +726,7 @@ function uploadRefOwners(filename, refs) {
 }
 
 // Edit log system
-async function logEdit(user, action, target, details, imageUrl) {
+async function logEdit(user, action, target, details, imageUrl, changes) {
   let log = [];
   try { log = readJSON('edit-log.json'); } catch {}
   if (!Array.isArray(log)) log = [];
@@ -737,7 +737,8 @@ async function logEdit(user, action, target, details, imageUrl) {
     action: action || '',
     target: target || '',
     details: details || '',
-    imageUrl: imageUrl || ''
+    imageUrl: imageUrl || '',
+    ...(changes ? { changes } : {})
   });
   // Keep max 500 entries
   if (log.length > 500) log = log.slice(-500);
@@ -3758,6 +3759,12 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
     }
   }
   await writeJSON('settings.json', merged);
+  const changedKeys = ['site', 'footer', 'pages', 'authorRegistrationNotice'].filter(k => JSON.stringify(existing[k]) !== JSON.stringify(merged[k]));
+  if (changedKeys.length) {
+    const before = {}; const after = {};
+    for (const k of changedKeys) { before[k] = existing[k]; after[k] = merged[k]; }
+    await logEdit('管理员', '更新页面设置', 'settings.json', changedKeys.join(', '), '', { before, after });
+  }
   res.json({ success: true });
 });
 

@@ -75,6 +75,7 @@ async function loadCategoriesFromAPI() {
 let token = localStorage.getItem('f7admin_token');
 let currentPage = 'dashboard';
 let adminDirty = false;
+let modalDirty = false;
 const ADMIN_PAGES = new Set(['dashboard','approval','page-stats','author-stats','editlog','works','circles','events','booths','projects','updates','images','categories','settings','backup','announcements','contacts']);
 
 function pageFromHash() {
@@ -215,12 +216,14 @@ window.addEventListener('hashchange', () => navigateTo(pageFromHash()));
 // Warn before losing unsaved page-setting edits.
 document.addEventListener('input', (e) => {
   if (e.target.closest('#settingsContent')) adminDirty = true;
+  if (e.target.closest('#modalBody')) modalDirty = true;
 });
 document.addEventListener('change', (e) => {
   if (e.target.closest('#settingsContent')) adminDirty = true;
+  if (e.target.closest('#modalBody')) modalDirty = true;
 });
 window.addEventListener('beforeunload', (e) => {
-  if (!adminDirty) return;
+  if (!adminDirty && !modalDirty) return;
   e.preventDefault();
   e.returnValue = '';
 });
@@ -5771,7 +5774,14 @@ async function saveSettings() {
       currentSettings.pages = pages;
       currentSettings.authorRegistrationNotice = authorRegistrationNotice;
       adminDirty = false;
-      showToast('设置保存成功，前台刷新后生效', 'success');
+      try {
+        if ('BroadcastChannel' in window) {
+          const ch = new BroadcastChannel('f7settings');
+          ch.postMessage({ type: 'settings-updated', at: Date.now() });
+          ch.close();
+        }
+      } catch {}
+      showToast('设置保存成功，已通知已打开的前台页面', 'success');
     } else {
       showToast('保存失败', 'error');
     }
@@ -6556,7 +6566,7 @@ async function searchEditLogByDate(page = 1) {
         <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
         <span style="color:${actionColor};font-weight:500;min-width:70px;">${escapeHtml(entry.action)}</span>
         ${imgThumb}
-        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
+        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}${entry.changes ? `<details style="margin-top:0.35rem;"><summary style="cursor:pointer;font-size:0.75rem;color:var(--accent-alt);">查看前后值</summary><pre style="max-height:180px;overflow:auto;background:var(--paper);border:1px solid var(--border);padding:0.5rem;font-size:0.7rem;white-space:pre-wrap;">${escapeHtml(JSON.stringify(entry.changes, null, 2))}</pre></details>` : ''}</span>
       </div>`;
     }).join('');
 
@@ -6605,7 +6615,7 @@ async function loadEditLog(page = 1) {
         <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
         <span style="color:${actionColor};font-weight:500;min-width:70px;">${escapeHtml(entry.action)}</span>
         ${imgThumb}
-        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}</span>
+        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}${entry.changes ? `<details style="margin-top:0.35rem;"><summary style="cursor:pointer;font-size:0.75rem;color:var(--accent-alt);">查看前后值</summary><pre style="max-height:180px;overflow:auto;background:var(--paper);border:1px solid var(--border);padding:0.5rem;font-size:0.7rem;white-space:pre-wrap;">${escapeHtml(JSON.stringify(entry.changes, null, 2))}</pre></details>` : ''}</span>
       </div>`;
     }).join('');
 
@@ -7198,6 +7208,7 @@ async function viewContactMessage(index) {
 
 // ===== Modal =====
 function openModal() {
+  modalDirty = false;
   document.getElementById('modalOverlay').classList.add('open');
 }
 
