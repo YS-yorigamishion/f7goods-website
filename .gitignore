@@ -50,3 +50,4 @@ test-api.js
 uploads/.cache/
 uploads-trash/
 !public/uploads/og-image.png
+backups/

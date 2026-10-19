@@ -471,11 +471,13 @@ async function initPage(activePage, itemId) {
           dropdown.classList.remove('open');
         }
       });
-      // 全局搜索：统一进入「搜索结果」页，按类型分组展示
-      const gs = document.getElementById('appGlobalSearch');
-      if (gs) {
-        gs.addEventListener('keydown', (e) => {
+      // 全局搜索：统一进入「搜索结果」页，按类型分组展示。
+      // 事件委托绑定在 document 上，切换语言重建 navbar 后仍然有效。
+      if (!window.__f7GlobalSearchBound) {
+        window.__f7GlobalSearchBound = true;
+        document.addEventListener('keydown', (e) => {
           if (e.key !== 'Enter') return;
+          if (!e.target || e.target.id !== 'appGlobalSearch') return;
           const q = (e.target.value || '').trim();
           if (q) location.href = '/search.html?q=' + encodeURIComponent(q);
         });
@@ -573,11 +575,12 @@ function parsePriceNum(p) {
 
 /** 空/0/无料 → 无料；有数字 → ¥xx */
 function formatPriceLabel(p) {
-  if (p == null || String(p).trim() === '') return '无料';
+  const freeLabel = (typeof t === 'function' && t('common.free') !== 'common.free') ? t('common.free') : '无料';
+  if (p == null || String(p).trim() === '') return freeLabel;
   const raw = String(p).trim();
-  if (/无料|免费|free/i.test(raw)) return '无料';
+  if (/无料|免费|free/i.test(raw)) return freeLabel;
   const n = parsePriceNum(raw);
-  if (!n) return '无料';
+  if (!n) return freeLabel;
   return (Number.isInteger(n) ? '¥' + n : '¥' + n.toFixed(2));
 }
 
@@ -605,6 +608,14 @@ function safeImgUrl(url) {
 
 // JS-string-safe argument for inline handlers.
 function jsArg(v) { return escapeHtml(JSON.stringify(v == null ? '' : String(v))); }
+
+// Localized work title: use titleEn/Ja/Ko when available, fall back to title.
+function workTitle(work) {
+  if (!work) return '';
+  const suffix = { en: 'En', ja: 'Ja', ko: 'Ko' }[_lang] || '';
+  const localized = suffix ? work['title' + suffix] : '';
+  return localized || work.title || '';
+}
 
 // Resized upload URL. Non-upload (external) images are returned unchanged.
 function imgUrl(url, width = 640) {

@@ -98,7 +98,8 @@
     "noMatchingAuthors": "조건에 맞는 작가가 없습니다",
     "noUpdates": "아직 뉴스가 없습니다",
     "refresh": "새로고침",
-    "sortRandom": "무작위"
+    "sortRandom": "무작위",
+    "free": "무료"
   },
   "home": {
     "board": "보드",

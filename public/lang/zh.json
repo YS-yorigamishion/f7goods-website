@@ -98,7 +98,8 @@
     "noMatchingAuthors": "暂无符合条件的作者",
     "noUpdates": "暂无动态",
     "refresh": "刷新",
-    "sortRandom": "随机排序"
+    "sortRandom": "随机排序",
+    "free": "无料"
   },
   "home": {
     "board": "看板",

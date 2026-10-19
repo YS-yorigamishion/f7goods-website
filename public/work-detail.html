@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261019a">
+  <link rel="stylesheet" href="/css/style.css?v=20261020a">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -46,15 +46,17 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261019a"></script>
-  <script src="/js/i18n.js?v=20261019a"></script>
-  <script src="/js/main.js?v=20261019a"></script>
+  <script src="/js/api.js?v=20261020a"></script>
+  <script src="/js/i18n.js?v=20261020a"></script>
+  <script src="/js/main.js?v=20261020a"></script>
   <script>
     async function loadWork() {
       const params = new URLSearchParams(location.search);
       const id = params.get('id');
       if (!id) { location.href = '/'; return; }
       initPage('works', id);
+      // Detail pages are rendered once; reload keeps labels and meta in the selected language.
+      if (typeof onLangChange === 'function') onLangChange(() => location.reload());
 
       try {
         await loadCategoriesFromAPI();
@@ -67,8 +69,8 @@
         const workCircles = (work.circles || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
         const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(work.id));
         const relatedProjects = allProjects.filter(p => (p.works || []).includes(work.id));
-        document.title = `${work.title} — f7goods`;
-        document.querySelector('meta[property="og:title"]').content = work.title;
+        document.title = `${workTitle(work)} — f7goods`;
+        document.querySelector('meta[property="og:title"]').content = workTitle(work);
         document.querySelector('meta[property="og:description"]').content = (work.description || '').substring(0, 160);
         if (work.images && work.images[0]) document.querySelector('meta[property="og:image"]').content = new URL(work.images[0], location.origin).href;
 
@@ -78,8 +80,8 @@
         const jsonLd = {
           '@context': 'https://schema.org',
           '@type': 'Product',
-          'name': work.title,
-          'description': work.description || work.title,
+          'name': workTitle(work),
+          'description': work.description || workTitle(work),
           'image': (work.images || []).map(u => new URL(u, location.origin).href),
           'url': window.location.href,
           'brand': { '@type': 'Organization', 'name': 'f7goods' },
@@ -100,13 +102,13 @@
             <div class="exhibit-crumb">
               <a href="/">← ${t('nav.works')}</a>
               <span> › </span>
-              <span>${escapeHtml(work.title)}</span>
+              <span>${escapeHtml(workTitle(work))}</span>
             </div>
             <div class="exhibit-grid">
               <div class="exhibit-frame">
                 <div class="exhibit-art" id="detailMainImg" onclick="${galleryImages.length ? `openLightbox(${JSON.stringify(galleryImages).replace(/"/g, '&quot;')}, 0)` : ''}">
                   ${mainImg
-                    ? `<img src="${escapeHtml(imgUrl(mainImg, 800))}" alt="${escapeHtml(work.title)}" id="detailMainImgEl">`
+                    ? `<img src="${escapeHtml(imgUrl(mainImg, 800))}" alt="${escapeHtml(workTitle(work))}" id="detailMainImgEl">`
                     : '<span class="placeholder-icon">🎨</span>'}
                 </div>
                 ${galleryImages.length > 1 ? `
@@ -117,7 +119,7 @@
               </div>
               <div class="exhibit-plaque">
                 <div class="exhibit-status">${STATUS_LABELS[work.status] || ''}</div>
-                <h1 class="exhibit-title">${escapeHtml(work.title)}${isDeadlineSoon(work.endDate) ? ' <span class="deadline-badge" style="position:static;font-size:0.7rem;vertical-align:middle;">即将截止</span>' : ''}</h1>
+                <h1 class="exhibit-title">${escapeHtml(workTitle(work))}${isDeadlineSoon(work.endDate) ? ` <span class="deadline-badge" style="position:static;font-size:0.7rem;vertical-align:middle;">${t('common.deadlineSoon')}</span>` : ''}</h1>
                 <div class="exhibit-subtitle">${authorLine}${catLabel ? (authorLine ? ' · ' : '') + escapeHtml(catLabel) : ''}</div>
                 <div class="exhibit-rule"></div>
                 <div class="exhibit-meta">
@@ -151,11 +153,11 @@
                   ${renderWantButton(work.id, work.wants)}
                   <span class="act-sep" aria-hidden="true"></span>
                   ${renderLikeButton(work.id, work.likes)}
-                  ${renderShareButton(work.title, location.href)}
+                  ${renderShareButton(workTitle(work), location.href)}
                 </div>
               </div>
             </div>
-            <div class="exhibit-caption">f7goods · ${escapeHtml(work.title)}</div>
+            <div class="exhibit-caption">f7goods · ${escapeHtml(workTitle(work))}</div>
           </div>
           <div class="exhibit-side">
             ${work.socialLinks && Object.keys(work.socialLinks).filter(k => work.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `

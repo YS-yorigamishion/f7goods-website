@@ -98,7 +98,8 @@
     "noMatchingAuthors": "該当する作者はありません",
     "noUpdates": "ニュースはまだありません",
     "refresh": "更新",
-    "sortRandom": "ランダム"
+    "sortRandom": "ランダム",
+    "free": "無料"
   },
   "home": {
     "board": "ボード",

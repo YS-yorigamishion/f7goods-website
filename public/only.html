@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261019a">
+  <link rel="stylesheet" href="/css/style.css?v=20261020a">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -438,15 +438,17 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261019a"></script>
-  <script src="/js/i18n.js?v=20261019a"></script>
-  <script src="/js/main.js?v=20261019a"></script>
+  <script src="/js/api.js?v=20261020a"></script>
+  <script src="/js/i18n.js?v=20261020a"></script>
+  <script src="/js/main.js?v=20261020a"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
       const id = params.get('id');
       if (!id) { location.href = '/events.html'; return; }
       initPage('events', id);
+      // Detail pages are rendered once; reload keeps labels and meta in the selected language.
+      if (typeof onLangChange === 'function') onLangChange(() => location.reload());
       if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '我的摊位', tab: 'only-booths' });
       const root = document.getElementById('onlyRoot');
       try {
