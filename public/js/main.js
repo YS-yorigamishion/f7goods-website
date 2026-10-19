@@ -293,8 +293,8 @@ function showAnnouncementPopup(ann) {
   var overlay = document.createElement('div');
   overlay.id = 'annPopupOverlay';
   overlay.className = 'ann-popup-overlay';
-  overlay.innerHTML = '<div class="ann-popup">' +
-    '<button class="ann-popup-close" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">×</button>' +
+  overlay.innerHTML = '<div class="ann-popup" role="dialog" aria-modal="true" aria-label="' + escapeHtml(ann.title) + '">' +
+    '<button class="ann-popup-close" aria-label="关闭" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">×</button>' +
     '<h3 class="ann-popup-title">' + escapeHtml(ann.title) + '</h3>' +
     '<div class="ann-popup-date">' + formatDate(ann.publishDate) + '</div>' +
     '<div class="ann-popup-content">' + nl2br(ann.content) + '</div>' +
@@ -302,15 +302,25 @@ function showAnnouncementPopup(ann) {
     '<button class="btn btn-primary ann-popup-btn" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">' + t('common.gotIt') + '</button>' +
   '</div>';
   document.body.appendChild(overlay);
+  overlay._previousFocus = document.activeElement;
+  overlay.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { e.preventDefault(); closeAnnouncementPopup(ann.id); }
+  });
   overlay.addEventListener('click', function(e) { if (e.target === overlay) closeAnnouncementPopup(ann.id); });
-  requestAnimationFrame(function() { overlay.classList.add('open'); });
+  requestAnimationFrame(function() {
+    overlay.classList.add('open');
+    var btn = overlay.querySelector('.ann-popup-close');
+    if (btn) btn.focus();
+  });
 }
 
 function closeAnnouncementPopup(id) {
   var overlay = document.getElementById('annPopupOverlay');
   if (overlay) {
+    var previous = overlay._previousFocus;
     overlay.classList.remove('open');
     setTimeout(function() { overlay.remove(); }, 200);
+    if (previous && typeof previous.focus === 'function') setTimeout(function() { previous.focus(); }, 0);
   }
   var seen = getSeenPopups();
   if (!seen.includes(id)) {
@@ -366,13 +376,14 @@ function buildNavbar(activePage) {
   };
   const pageTitle = pageTitleMap[activePage] || brandName;
   return `
+    <a class="skip-link" href="#mainContent">跳到主要内容</a>
     <aside class="app-rail" aria-label="主导航">
       <a href="/" class="rail-home" aria-label="${brandName}">${logoContent}</a>
       ${railBtns}
       <div class="rail-spacer"></div>
     </aside>
     <header class="app-topbar">
-      <h1 class="app-title" id="appPageTitle">${pageTitle}</h1>
+      <div class="app-title" id="appPageTitle">${pageTitle}</div>
       <div class="app-search">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
         <input type="search" id="appGlobalSearch" placeholder="${tText('common.globalSearch', tText('common.searchPlaceholder', '搜索…'))}" title="${tText('common.globalSearch', tText('common.searchPlaceholder', '搜索…'))}" autocomplete="off" />
@@ -463,6 +474,8 @@ async function initPage(activePage, itemId) {
       navbar.dataset.activePage = activePage;
       navbar.className = 'app-shell';
       navbar.innerHTML = buildNavbar(activePage);
+    const mainEl = document.querySelector('main');
+    if (mainEl && !mainEl.id) mainEl.id = 'mainContent';
       // Close lang dropdown when clicking outside
       document.addEventListener('click', (e) => {
         const dropdown = document.querySelector('.lang-dropdown');

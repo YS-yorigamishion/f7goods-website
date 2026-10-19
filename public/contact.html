@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020a">
+  <link rel="stylesheet" href="/css/style.css?v=20261020b">
   <style>
     .settings-pending { visibility: hidden; }
 
@@ -387,7 +387,7 @@
       <header class="about-hero">
         <div class="about-hero-mark">ABOUT · CONTACT</div>
         <div class="about-hero-rule"><span>F7GOODS</span></div>
-        <h1 id="aboutDisplayTitle">关于 f7goods</h1>
+        <h2 id="aboutDisplayTitle" style="font-size:2em;font-weight:700;margin:.67em 0;">关于 f7goods</h2>
         <p id="aboutDisplaySubtitle">连接创作者与爱好者的同人周边展示平台</p>
       </header>
 
@@ -431,20 +431,20 @@
         <form id="contactForm">
           <div class="form-row">
             <div class="form-group">
-              <label data-i18n="contact.name">昵称</label>
+              <label for="contactName" data-i18n="contact.name">昵称</label>
               <input class="form-input" id="contactName" placeholder="请输入昵称（选填）" data-i18n-placeholder="contact.namePlaceholder">
             </div>
             <div class="form-group">
-              <label data-i18n="contact.email">联系方式</label>
-              <input class="form-input" id="contactEmail" placeholder="邮箱、QQ、微信等（选填）" data-i18n-placeholder="contact.emailPlaceholder">
+              <label for="contactEmail" data-i18n="contact.email">联系方式</label>
+              <input class="form-input" id="contactEmail" type="text" placeholder="邮箱、QQ、微信等（选填）" data-i18n-placeholder="contact.emailPlaceholder">
             </div>
           </div>
           <div class="form-group">
-            <label data-i18n="contact.subject">主题</label>
+            <label for="contactSubject" data-i18n="contact.subject">主题</label>
             <input class="form-input" id="contactSubject" placeholder="咨询/合作/建议..." data-i18n-placeholder="contact.subjectPlaceholder">
           </div>
           <div class="form-group">
-            <label data-i18n="contact.message">消息内容 <span style="color:var(--accent)">*</span></label>
+            <label for="contactMessage" data-i18n="contact.message">消息内容 <span style="color:var(--accent)">*</span></label>
             <textarea class="form-input" id="contactMessage" required placeholder="请输入您想说的话..." maxlength="1000" oninput="updateCharCount()" data-i18n-placeholder="contact.messagePlaceholder"></textarea>
             <div id="charCount" style="text-align:right;font-size:0.8rem;color:var(--haze);margin-top:0.3rem;">0 / 1000</div>
           </div>
@@ -464,9 +464,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020a"></script>
-  <script src="/js/i18n.js?v=20261020a"></script>
-  <script src="/js/main.js?v=20261020a"></script>
+  <script src="/js/api.js?v=20261020b"></script>
+  <script src="/js/i18n.js?v=20261020b"></script>
+  <script src="/js/main.js?v=20261020b"></script>
   <script>
     initPage('contact');
 
