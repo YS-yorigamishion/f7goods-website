@@ -49,3 +49,4 @@ test-api.js
 # Runtime image variants / trash
 uploads/.cache/
 uploads-trash/
+!public/uploads/og-image.png

@@ -165,6 +165,159 @@ if (IS_PROD && !process.env.ALLOWED_ORIGIN) {
   console.warn('WARNING: ALLOWED_ORIGIN not set in production — CORS is locked down. Set ALLOWED_ORIGIN for browser clients on another origin.');
 }
 app.use(express.json({ limit: '10mb' }));
+
+// ===== SEO: server-side meta + readable snapshot for detail pages =====
+const SITE_ORIGIN = (process.env.SITE_ORIGIN || 'https://f7goods.com').replace(/\/$/, '');
+const DETAIL_PAGES = {
+  '/work-detail.html': { file: 'work-detail.html', type: 'work', container: 'workDetail' },
+  '/event-detail.html': { file: 'event-detail.html', type: 'event', container: 'eventDetail' },
+  '/circle-detail.html': { file: 'circle-detail.html', type: 'circle', container: 'circleDetail' },
+  '/project-detail.html': { file: 'project-detail.html', type: 'project', container: 'projectDetail' },
+  '/update-detail.html': { file: 'update-detail.html', type: 'update', container: 'updateDetail' },
+  '/only.html': { file: 'only.html', type: 'event', container: null, snapshot: false, path: '/only.html' }
+};
+
+function escapeHtmlServer(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function absUrl(url) {
+  const s = String(url || '').trim();
+  if (!s) return '';
+  if (/^https?:\/\//i.test(s)) return s;
+  return SITE_ORIGIN + (s.startsWith('/') ? s : '/' + s);
+}
+function detailPath(type, item, pathOverride) {
+  const id = encodeURIComponent(item.id || '');
+  if (pathOverride) return `${pathOverride}?id=${id}`;
+  if (type === 'work') return `/work-detail.html?id=${id}`;
+  if (type === 'event') return `/event-detail.html?id=${id}`;
+  if (type === 'circle') return `/circle-detail.html?id=${id}`;
+  if (type === 'project') return `/project-detail.html?id=${id}`;
+  return `/update-detail.html?id=${id}`;
+}
+function detailMeta(type, item, pathOverride) {
+  const title = item.title || item.name || '详情';
+  const desc = String(item.description || item.content || `${title} — f7goods 同人周边展示平台`).replace(/\s+/g, ' ').slice(0, 180);
+  const image = type === 'circle'
+    ? (item.cardCover || item.logo || '')
+    : (item.coverImage || (item.images && item.images[0]) || '');
+  return { title, desc, image, url: SITE_ORIGIN + detailPath(type, item, pathOverride) };
+}
+function seoSnapshot(type, item) {
+  const title = escapeHtmlServer(item.title || item.name || '详情');
+  const desc = item.description || item.content || '';
+  const image = type === 'circle'
+    ? (item.cardCover || item.logo || '')
+    : (item.coverImage || (item.images && item.images[0]) || '');
+  const circles = type === 'work' ? (item.circles || []).map(cid => {
+    const c = readJSON('circles.json').find(x => x.id === cid);
+    return c ? c.name : cid;
+  }).filter(Boolean).join(' · ') : '';
+  const metaLine = type === 'event'
+    ? [item.date, item.endDate && item.endDate !== item.date ? item.endDate : '', item.location].filter(Boolean).join(' · ')
+    : type === 'project'
+      ? [item.status, item.startDate, item.endDate].filter(Boolean).join(' · ')
+      : type === 'update'
+        ? (item.publishDate || '')
+        : type === 'circle'
+          ? '同人作者'
+          : [circles, item.price, item.releaseDate].filter(Boolean).join(' · ');
+  return `<article id="seoSnapshot" style="max-width:820px;margin:1.5rem auto;padding:0 1.5rem;color:var(--ink);font-family:'Noto Serif SC',Georgia,serif;">
+    <h1 style="font-size:1.6rem;margin:0 0 .6rem;">${title}</h1>
+    ${metaLine ? `<p style="color:var(--muted);font-size:.85rem;margin:0 0 1rem;">${escapeHtmlServer(metaLine)}</p>` : ''}
+    ${image ? `<p style="margin:0 0 1rem;"><img src="${escapeHtmlServer(absUrl(image))}" alt="${title}" style="max-width:100%;height:auto;border-radius:8px;"></p>` : ''}
+    ${desc ? `<p style="line-height:1.9;white-space:pre-wrap;">${escapeHtmlServer(desc)}</p>` : ''}
+  </article>
+  <style>#seoSnapshot + #detailSkeleton{display:none}</style>`;
+}
+function seoJsonLd(type, item, meta) {
+  const base = { '@context': 'https://schema.org', name: meta.title, description: meta.desc, url: meta.url };
+  if (meta.image) base.image = [absUrl(meta.image)];
+  if (type === 'work') {
+    const price = parseFloat(String(item.price || '').replace(/[^\d.]/g, ''));
+    return { ...base, '@type': 'Product', brand: { '@type': 'Organization', name: 'f7goods' }, ...(Number.isFinite(price) && price > 0 ? { offers: { '@type': 'Offer', price, priceCurrency: 'CNY' } } : {}) };
+  }
+  if (type === 'event') {
+    return { ...base, '@type': 'Event', startDate: item.date, ...(item.endDate ? { endDate: item.endDate } : {}), ...(item.location ? { location: { '@type': 'Place', name: item.location } } : {}), eventStatus: 'https://schema.org/EventScheduled' };
+  }
+  if (type === 'circle') return { ...base, '@type': 'Organization', ...(item.logo ? { logo: absUrl(item.logo) } : {}) };
+  if (type === 'project') return { ...base, '@type': 'CreativeWork' };
+  return { ...base, '@type': 'Article', headline: meta.title, ...(item.publishDate ? { datePublished: item.publishDate } : {}) };
+}
+function renderDetailSeo(type, item, cfg) {
+  const meta = detailMeta(type, item, cfg && cfg.path);
+  const jsonLd = JSON.stringify(seoJsonLd(type, item, meta)).replace(/</g, '\\u003c');
+  const ogType = type === 'work' ? 'product' : type === 'event' ? 'article' : 'website';
+  const ogImage = meta.image ? absUrl(meta.image) : `${SITE_ORIGIN}/uploads/og-image.png`;
+  return {
+    head: `<title>${escapeHtmlServer(meta.title)} — f7goods</title>
+<meta name="description" content="${escapeHtmlServer(meta.desc)}">
+<link rel="canonical" href="${escapeHtmlServer(meta.url)}">
+<meta property="og:type" content="${ogType}">
+<meta property="og:site_name" content="f7goods">
+<meta property="og:title" content="${escapeHtmlServer(meta.title)}">
+<meta property="og:description" content="${escapeHtmlServer(meta.desc)}">
+<meta property="og:image" content="${escapeHtmlServer(ogImage)}">
+<meta property="og:url" content="${escapeHtmlServer(meta.url)}">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="zh-CN" href="${escapeHtmlServer(meta.url)}">
+<link rel="alternate" hreflang="x-default" href="${escapeHtmlServer(meta.url)}">
+<script type="application/ld+json">${jsonLd}</script>`,
+    snapshot: seoSnapshot(type, item)
+  };
+}
+
+app.get(Object.keys(DETAIL_PAGES), (req, res, next) => {
+  const cfg = DETAIL_PAGES[req.path];
+  if (!cfg) return next();
+  const id = String(req.query.id || '');
+  let item = null;
+  try {
+    if (cfg.type === 'work') {
+      const w = readJSON('works.json').find(x => x.id === id);
+      if (w && isWorkPublic(w)) item = publicWorkView(w);
+    } else if (cfg.type === 'event') {
+      const e = readJSON('events.json').find(x => x.id === id);
+      if (e && (!e.approvalStatus || e.approvalStatus === 'approved') && (cfg.path !== '/only.html' || e.type === 'only')) item = e;
+    } else if (cfg.type === 'circle') {
+      const c = readJSON('circles.json').find(x => x.id === id);
+      if (c && c.visible !== false) item = c;
+    } else if (cfg.type === 'project') {
+      const p = readJSON('projects.json').find(x => x.id === id);
+      if (p && (!p.approvalStatus || p.approvalStatus === 'approved')) item = p;
+    } else if (cfg.type === 'update') {
+      const u = readJSON('updates.json').find(x => x.id === id);
+      if (u && (!u.approvalStatus || u.approvalStatus === 'approved')) item = u;
+    }
+  } catch (e) {
+    console.error('[seo detail]', cfg.type, e.message);
+    return next();
+  }
+  if (!item) {
+    res.status(404);
+    res.setHeader('X-Robots-Tag', 'noindex');
+    return res.sendFile(path.join(__dirname, 'public', '404.html'));
+  }
+  const htmlPath = path.join(__dirname, 'public', cfg.file);
+  if (!fs.existsSync(htmlPath)) return next();
+  const seo = renderDetailSeo(cfg.type, item, cfg);
+  let html = fs.readFileSync(htmlPath, 'utf-8');
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, '');
+  html = html.replace(/<meta\s+name="description"[^>]*>\s*/gi, '');
+  html = html.replace(/<meta\s+property="og:[^"]+"[^>]*>\s*/gi, '');
+  html = html.replace(/<meta\s+name="twitter:[^"]+"[^>]*>\s*/gi, '');
+  html = html.replace(/<link\s+rel="canonical"[^>]*>\s*/gi, '');
+  html = html.replace(/<link\s+rel="alternate"\s+hreflang="[^"]+"[^>]*>\s*/gi, '');
+  html = html.replace('</head>', seo.head + '\n</head>');
+  const marker = cfg.container ? `<div id="${cfg.container}">` : '';
+  if (cfg.snapshot !== false && marker && html.includes(marker)) {
+    html = html.replace(marker, marker + seo.snapshot);
+  }
+  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+  res.type('html').send(html);
+});
+
 // 静态资源：HTML 禁止缓存；带 ?v= 的资源可长缓存；未带版本的 css/js 短缓存
 app.use(express.static('public', {
   etag: true,
@@ -3388,26 +3541,35 @@ app.get('/api/settings', (req, res) => {
 // Dynamic sitemap
 app.get('/sitemap.xml', cacheMiddleware(3600), (req, res) => {
   try {
-    const baseUrl = req.protocol + '://' + req.get('host');
-    const works = readJSON('works.json').filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
-    const circles = readJSON('circles.json');
+    const baseUrl = SITE_ORIGIN;
+    const works = readJSON('works.json').filter(isWorkPublic).map(publicWorkView);
+    const circles = readJSON('circles.json').filter(c => c.visible !== false);
     const events = readJSON('events.json').filter(e => !e.approvalStatus || e.approvalStatus === 'approved');
     const projects = readJSON('projects.json').filter(p => !p.approvalStatus || p.approvalStatus === 'approved');
+    const updates = readJSON('updates.json').filter(u => (!u.approvalStatus || u.approvalStatus === 'approved') && u.publishDate <= getChinaDate());
+    const lastmod = (value) => {
+      const d = value ? new Date(value) : null;
+      return d && !Number.isNaN(d.getTime()) ? `\n    <lastmod>${d.toISOString().slice(0, 10)}</lastmod>` : '';
+    };
+    const url = (path, value) => `  <url><loc>${baseUrl}${path}</loc>${lastmod(value)}<changefreq>weekly</changefreq></url>\n`;
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-    // Static pages
-    ['/', '/events', '/projects', '/updates', '/circles', '/announcements', '/contact', '/photowall.html'].forEach(p => {
+    ['/', '/events.html', '/projects.html', '/updates.html', '/circles.html', '/announcements.html', '/contact.html', '/photowall.html'].forEach(p => {
       xml += `  <url><loc>${baseUrl}${p}</loc><changefreq>daily</changefreq></url>\n`;
     });
-    // Dynamic pages
-    works.forEach(w => { xml += `  <url><loc>${baseUrl}/work-detail.html?id=${w.id}</loc><changefreq>weekly</changefreq></url>\n`; });
-    circles.forEach(c => { xml += `  <url><loc>${baseUrl}/circle-detail.html?id=${c.id}</loc><changefreq>weekly</changefreq></url>\n`; });
-    events.forEach(e => { xml += `  <url><loc>${baseUrl}/event-detail.html?id=${e.id}</loc><changefreq>weekly</changefreq></url>\n`; });
-    projects.forEach(p => { xml += `  <url><loc>${baseUrl}/project-detail.html?id=${p.id}</loc><changefreq>weekly</changefreq></url>\n`; });
+    works.forEach(w => { xml += url(`/work-detail.html?id=${encodeURIComponent(w.id)}`, w.updatedAt || w.createdAt); });
+    circles.forEach(c => { xml += url(`/circle-detail.html?id=${encodeURIComponent(c.id)}`, c.updatedAt || c.createdAt); });
+    events.forEach(e => {
+      xml += url(`/event-detail.html?id=${encodeURIComponent(e.id)}`, e.updatedAt || e.date);
+      if (e.type === 'only') xml += url(`/only.html?id=${encodeURIComponent(e.id)}`, e.updatedAt || e.date);
+    });
+    projects.forEach(p => { xml += url(`/project-detail.html?id=${encodeURIComponent(p.id)}`, p.updatedAt || p.createdAt); });
+    updates.forEach(u => { xml += url(`/update-detail.html?id=${encodeURIComponent(u.id)}`, u.updatedAt || u.publishDate); });
     xml += '</urlset>';
     res.type('application/xml').send(xml);
   } catch (e) {
+    console.error('[sitemap]', e.message);
     res.status(500).send('Error generating sitemap');
   }
 });
@@ -5243,6 +5405,9 @@ app.use((err, req, res, next) => {
 
 // 404 handler for HTML pages
 app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: '未找到' });
+  }
   if (req.accepts('html')) {
     res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
   } else {

@@ -72,7 +72,7 @@
         document.title = `${update.title} — f7goods`;
         document.querySelector('meta[property="og:title"]').content = update.title;
         document.querySelector('meta[property="og:description"]').content = (update.content || '').substring(0, 160);
-        if (update.coverImage) document.querySelector('meta[property="og:image"]').content = update.coverImage;
+        if (update.coverImage) document.querySelector('meta[property="og:image"]').content = new URL(update.coverImage, location.origin).href;
 
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('updateDetail');

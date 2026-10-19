@@ -73,7 +73,7 @@
         document.title = `${project.title} — f7goods`;
         document.querySelector('meta[property="og:title"]').content = project.title;
         document.querySelector('meta[property="og:description"]').content = (project.description || '').substring(0, 160);
-        if (project.coverImage) document.querySelector('meta[property="og:image"]').content = project.coverImage;
+        if (project.coverImage) document.querySelector('meta[property="og:image"]').content = new URL(project.coverImage, location.origin).href;
 
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('projectDetail');

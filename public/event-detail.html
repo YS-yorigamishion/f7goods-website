@@ -148,7 +148,7 @@
         document.title = `${event.title} — f7goods`;
         document.querySelector('meta[property="og:title"]').content = event.title;
         document.querySelector('meta[property="og:description"]').content = (event.description || '').substring(0, 160);
-        if (event.coverImage) document.querySelector('meta[property="og:image"]').content = event.coverImage;
+        if (event.coverImage) document.querySelector('meta[property="og:image"]').content = new URL(event.coverImage, location.origin).href;
 
         // JSON-LD structured data
         const jsonLd = {

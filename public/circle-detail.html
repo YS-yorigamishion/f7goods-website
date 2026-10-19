@@ -138,7 +138,7 @@
         document.title = `${circle.name} — f7goods`;
         document.querySelector('meta[property="og:title"]').content = circle.name;
         document.querySelector('meta[property="og:description"]').content = (circle.description || '').substring(0, 160);
-        if (circle.cardCover || circle.logo) document.querySelector('meta[property="og:image"]').content = circle.cardCover || circle.logo;
+        if (circle.cardCover || circle.logo) document.querySelector('meta[property="og:image"]').content = new URL(circle.cardCover || circle.logo, location.origin).href;
 
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('circleDetail');
