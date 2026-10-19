@@ -408,10 +408,10 @@ function buildFooter() {
   // Get description in current language from settings API
   const descSuffix = _lang === 'zh' ? '' : _lang.charAt(0).toUpperCase() + _lang.slice(1);
   const description = footer['description' + descSuffix] || footer.description || '';
-  const socialLinks = footer.socialLinks || [
+  const socialLinks = (footer.socialLinks || [
     { name: 'Twitter / X', url: '#', icon: '🐦' },
     { name: 'Weibo', url: '#', icon: '📱' }
-  ];
+  ]).filter(link => link && link.url && link.url !== '#' && !/baidu\.com/i.test(link.url));
 
   return `
     <div class="footer-inner">
