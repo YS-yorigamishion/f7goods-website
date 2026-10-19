@@ -3778,31 +3778,26 @@ async function createAdminBackup(skipConfirm = false) {
   }
 }
 
-function downloadAdminBackup(name) {
+async function downloadAdminBackup(name) {
   const token = localStorage.getItem('f7admin_token');
-  const a = document.createElement('a');
-  a.href = `/api/admin/backups/${encodeURIComponent(name)}/download`;
-  a.download = `${name}.tar.gz`;
-  // fetch with auth then blob
-  fetch(a.href, { headers: { 'Authorization': 'Bearer ' + token } })
-    .then(async (res) => {
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || '下载失败');
-      }
-      return res.blob();
-    })
-    .then((blob) => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${name}.tar.gz`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    })
-    .catch((e) => showToast(e.message || '下载失败', 'error'));
+  try {
+    // Get a short-lived URL token, then let the browser download natively.
+    // (Holding a 100MB response in a blob can fail or be blocked by browsers.)
+    const res = await fetch(`/api/admin/backups/${encodeURIComponent(name)}/download-token`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.token) throw new Error(data.error || '获取下载链接失败');
+    const a = document.createElement('a');
+    a.href = `/api/admin/backups/${encodeURIComponent(name)}/download?token=${encodeURIComponent(data.token)}`;
+    a.download = `${name}.tar.gz`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast('已开始下载，请查看浏览器下载列表', 'success');
+  } catch (e) {
+    showToast(e.message || '下载失败', 'error');
+  }
 }
 
 async function restoreAdminBackup(name, restart) {

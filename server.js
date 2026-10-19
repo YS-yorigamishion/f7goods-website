@@ -5159,7 +5159,7 @@ app.post('/api/admin/backups', authMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/admin/backups/:name/download', authMiddleware, (req, res) => {
+function sendBackupDownload(req, res) {
   const src = resolveBackupPath(req.params.name);
   if (!src) return res.status(400).json({ error: '无效的备份名称' });
   const archiveName = `${req.params.name}.tar.gz`;
@@ -5177,6 +5177,31 @@ app.get('/api/admin/backups/:name/download', authMiddleware, (req, res) => {
   } catch (e) {
     console.error('backup download failed:', e.message);
     res.status(500).json({ error: '下载备份失败' });
+  }
+}
+
+// Short-lived download token: a normal <a> click can download directly,
+// avoiding a 100MB blob held in browser memory.
+app.get('/api/admin/backups/:name/download-token', authMiddleware, (req, res) => {
+  if (!resolveBackupPath(req.params.name)) return res.status(400).json({ error: '无效的备份名称' });
+  const downloadToken = jwt.sign(
+    { purpose: 'backup-download', backup: req.params.name },
+    JWT_SECRET,
+    { expiresIn: '2m' }
+  );
+  res.json({ token: downloadToken, name: req.params.name });
+});
+
+app.get('/api/admin/backups/:name/download', (req, res, next) => {
+  if (!req.query.token) return authMiddleware(req, res, () => sendBackupDownload(req, res));
+  try {
+    const decoded = jwt.verify(String(req.query.token), JWT_SECRET);
+    if (decoded.purpose !== 'backup-download' || decoded.backup !== req.params.name) {
+      return res.status(403).json({ error: '下载令牌无效' });
+    }
+    sendBackupDownload(req, res);
+  } catch {
+    res.status(401).json({ error: '下载令牌已过期' });
   }
 });
 
