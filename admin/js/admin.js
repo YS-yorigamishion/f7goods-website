@@ -210,7 +210,7 @@ function navigateTo(page) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${page}`)?.classList.add('active');
 
-  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计', approval: '审核管理', 'author-stats': '作者统计' };
+  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', backup: '数据备份', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计', approval: '审核管理', 'author-stats': '作者统计' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
   // 顶栏分组标签
@@ -218,7 +218,7 @@ function navigateTo(page) {
     dashboard: '总览', approval: '总览', 'page-stats': '总览', 'author-stats': '总览', editlog: '总览',
     works: '内容', circles: '内容', events: '内容', booths: '内容', projects: '内容', updates: '内容',
     images: '素材', categories: '素材',
-    settings: '站点', announcements: '站点', contacts: '站点'
+    settings: '站点', backup: '站点', announcements: '站点', contacts: '站点'
   };
   const crumb = document.getElementById('headerCrumb');
   if (crumb) crumb.textContent = groups[page] || '';
@@ -232,7 +232,8 @@ function navigateTo(page) {
   else if (page === 'projects') { loadProjects(); syncContentApprovalToggles(); }
   else if (page === 'categories') loadCategories();
   else if (page === 'images') loadImages();
-  else if (page === 'settings') { loadSettings(); loadAdminBackups(); }
+  else if (page === 'settings') loadSettings();
+  else if (page === 'backup') loadAdminBackups();
   else if (page === 'announcements') loadAnnouncements();
   else if (page === 'updates') { loadUpdates(); syncContentApprovalToggles(); }
   else if (page === 'editlog') loadEditLog();
@@ -3733,7 +3734,7 @@ async function loadAdminBackups() {
     const data = await adminAPI('GET', '/api/admin/backups');
     const list = data?.backups || [];
     if (!list.length) {
-      container.innerHTML = '<p style="color:var(--haze);margin:0;font-size:0.9rem;">暂无备份，点击「立即备份」创建。</p>';
+      container.innerHTML = '<p style="color:var(--haze);margin:0;font-size:0.9rem;">暂无备份，点击「一键备份」创建。</p>';
       return;
     }
     container.innerHTML = `<table class="admin-table"><thead><tr><th>备份名称</th><th>时间</th><th>体积</th><th>内容</th><th>操作</th></tr></thead><tbody>${list.map((b) => {
@@ -3756,15 +3757,24 @@ async function loadAdminBackups() {
   }
 }
 
-async function createAdminBackup() {
-  if (!await showConfirm('立即备份当前 data/ 和 uploads/ 目录？')) return;
-  showToast('备份中...', 'info');
-  const result = await adminAPI('POST', '/api/admin/backups');
-  if (result && result.success) {
-    showToast('备份完成: ' + result.backup.name, 'success');
-    loadAdminBackups();
-  } else {
-    showToast(result?.error || '备份失败', 'error');
+async function createAdminBackup(skipConfirm = false) {
+  if (!skipConfirm && !await showConfirm('立即备份当前 data/ 和 uploads/ 目录？')) return;
+  const btn = document.getElementById('backupCreateBtn');
+  const oldText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '备份中...'; }
+  showToast('正在备份，请稍候...', 'info');
+  try {
+    const result = await adminAPI('POST', '/api/admin/backups');
+    if (result && result.success) {
+      showToast('备份完成: ' + result.backup.name, 'success');
+      loadAdminBackups();
+    } else {
+      showToast(result?.error || '备份失败', 'error');
+    }
+  } catch (e) {
+    showToast('备份失败: ' + (e.message || '网络错误'), 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = oldText; }
   }
 }
 
