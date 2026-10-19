@@ -2655,6 +2655,15 @@ async function runBatchApproval(typeKey, action, ids, reason) {
       continue;
     }
     if (action === 'approve') {
+      if (typeKey === 'works') {
+        if (item.pendingRevision) {
+          for (const f of WORK_CONTENT_FIELDS) {
+            if (item.pendingRevision[f] !== undefined) item[f] = item.pendingRevision[f];
+          }
+          delete item.pendingRevision;
+        }
+        item.published = pickWorkContent(item);
+      }
       item.approvalStatus = 'approved';
       delete item.rejectReason;
       logEdit('管理员', `批准${conf.label}`, item.title || id, '');
@@ -4997,15 +5006,10 @@ function listBackupDirs() {
       .filter((d) => d.isDirectory() && BACKUP_NAME_RE.test(d.name))
       .map((d) => {
         const full = path.join(__dirname, d.name);
-        let size = 0;
-        try {
-          for (const f of fs.readdirSync(full)) {
-            try { size += fs.statSync(path.join(full, f)).size; } catch {}
-          }
-        } catch {}
+        const size = backupDirSize(full);
         let mtime = null;
         try { mtime = fs.statSync(full).mtime.toISOString(); } catch {}
-        return { name: d.name, mtime, size };
+        return { name: d.name, mtime, size, includesUploads: !!backupUploadsRoot(full) };
       })
       .sort((a, b) => new Date(b.mtime || 0) - new Date(a.mtime || 0));
   } catch (e) {
@@ -5020,6 +5024,46 @@ function makeBackupStamp() {
 function copyDataDir(src, dest) {
   if (fs.existsSync(dest)) throw new Error('目标目录已存在: ' + path.basename(dest));
   fs.cpSync(src, dest, { recursive: true });
+}
+
+function uploadsDirPath() { return path.join(__dirname, 'uploads'); }
+
+function backupDirSize(dir) {
+  let total = 0;
+  try {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) total += backupDirSize(full);
+      else if (ent.isFile()) total += fs.statSync(full).size;
+    }
+  } catch {}
+  return total;
+}
+
+function backupDataRoot(backupDir) {
+  const nested = path.join(backupDir, 'data');
+  return fs.existsSync(nested) ? nested : backupDir;
+}
+function backupUploadsRoot(backupDir) {
+  const nested = path.join(backupDir, 'uploads');
+  return fs.existsSync(nested) ? nested : null;
+}
+
+function copyBackupDir(dest) {
+  fs.mkdirSync(dest, { recursive: false });
+  fs.cpSync(dataDirPath(), path.join(dest, 'data'), { recursive: true });
+  const uploadsRoot = uploadsDirPath();
+  if (fs.existsSync(uploadsRoot)) {
+    fs.cpSync(uploadsRoot, path.join(dest, 'uploads'), {
+      recursive: true,
+      filter: (src) => !src.includes(`${path.sep}.cache`) && !src.includes('uploads-trash')
+    });
+  }
+  fs.writeFileSync(path.join(dest, 'manifest.json'), JSON.stringify({
+    version: 2,
+    createdAt: new Date().toISOString(),
+    includesUploads: fs.existsSync(path.join(dest, 'uploads'))
+  }, null, 2), 'utf8');
 }
 
 function scheduleServiceRestart() {
@@ -5049,9 +5093,9 @@ app.post('/api/admin/backups', authMiddleware, async (req, res) => {
   try {
     const name = `data.bak.${makeBackupStamp()}`;
     const dest = path.join(__dirname, name);
-    copyDataDir(dataDirPath(), dest);
-    logEdit('管理员', '创建数据备份', name, '');
-    res.json({ success: true, backup: { name, mtime: new Date().toISOString() } });
+    copyBackupDir(dest);
+    logEdit('管理员', '创建数据备份', name, '包含 data 与 uploads');
+    res.json({ success: true, backup: { name, mtime: new Date().toISOString(), includesUploads: true } });
   } catch (e) {
     console.error('backup create failed:', e.message);
     res.status(500).json({ error: '创建备份失败: ' + e.message });
@@ -5083,19 +5127,38 @@ app.post('/api/admin/backups/:name/restore', authMiddleware, async (req, res) =>
   const src = resolveBackupPath(req.params.name);
   if (!src) return res.status(400).json({ error: '无效的备份名称' });
   const restart = req.body?.restart === true || req.body?.restart === 'true';
+  const dataSrc = backupDataRoot(src);
+  const uploadsSrc = backupUploadsRoot(src);
+  if (!fs.existsSync(dataSrc) || !fs.readdirSync(dataSrc).some(f => f.endsWith('.json'))) {
+    return res.status(400).json({ error: '备份缺少有效的 data 文件' });
+  }
   try {
     const preName = `data.bak.pre-restore-${makeBackupStamp()}`;
     const prePath = path.join(__dirname, preName);
     copyDataDir(dataDirPath(), prePath);
+    let preUploadsName = '';
+    if (uploadsSrc) {
+      preUploadsName = `uploads.bak.pre-restore-${makeBackupStamp()}`;
+      copyDataDir(uploadsDirPath(), path.join(__dirname, preUploadsName));
+    }
+    // Restore into new directories first, then swap.
     fs.rmSync(dataDirPath(), { recursive: true, force: true });
-    copyDataDir(src, dataDirPath());
+    copyDataDir(dataSrc, dataDirPath());
+    if (uploadsSrc) {
+      fs.rmSync(uploadsDirPath(), { recursive: true, force: true });
+      copyDataDir(uploadsSrc, uploadsDirPath());
+    }
     clearApiCache();
-    logEdit('管理员', '恢复数据备份', req.params.name, `自动备份: ${preName}${restart ? ' · 恢复并重启' : ''}`);
+    circlesAuthCache = { data: null, ts: 0 };
+    try { likesCache = readJSON('likes.json'); wantsCache = readJSON('wants.json'); followsCache = readJSON('follows.json'); } catch {}
+    logEdit('管理员', '恢复数据备份', req.params.name, `自动备份: ${preName}${preUploadsName ? ' / ' + preUploadsName : ''}${restart ? ' · 恢复并重启' : ''}`);
     res.json({
       success: true,
       preBackup: preName,
+      preUploadsBackup: preUploadsName,
+      includesUploads: !!uploadsSrc,
       restart,
-      message: restart ? '已恢复，服务即将重启' : '已恢复数据；建议手动重启服务（pm2 restart f7goods）'
+      message: restart ? '已恢复（含图片），服务即将重启' : '已恢复数据与图片；建议手动重启服务（pm2 restart f7goods）'
     });
     if (restart) scheduleServiceRestart();
   } catch (e) {

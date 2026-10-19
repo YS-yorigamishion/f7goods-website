@@ -51,3 +51,4 @@ uploads/.cache/
 uploads-trash/
 !public/uploads/og-image.png
 backups/
+uploads.bak.*

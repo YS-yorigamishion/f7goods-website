@@ -1651,6 +1651,18 @@ async function rejectWork(id) {
 }
 
 // Batch approve/reject — server-side batch endpoints
+function approvalPending(type) {
+  const preloaded = window._approvalPending && window._approvalPending[type];
+  if (Array.isArray(preloaded)) return preloaded.filter(x => x.approvalStatus === 'pending');
+  const map = {
+    works: typeof adminWorksData !== 'undefined' ? adminWorksData : [],
+    events: typeof adminEventsData !== 'undefined' ? adminEventsData : [],
+    projects: typeof adminProjectsData !== 'undefined' ? adminProjectsData : [],
+    updates: typeof adminUpdatesData !== 'undefined' ? adminUpdatesData : []
+  };
+  return (map[type] || []).filter(x => x.approvalStatus === 'pending');
+}
+
 async function runAdminBatchApproval(type, action, items, itemLabel, reloadFn) {
   if (!items || items.length === 0) {
     showToast(`没有待审核的${itemLabel}`, 'error');
@@ -1664,27 +1676,34 @@ async function runAdminBatchApproval(type, action, items, itemLabel, reloadFn) {
   const verb = action === 'approve' ? '批准' : '拒绝';
   if (!await showConfirm(`确定${verb}全部 ${items.length} 个待审核${itemLabel}？`)) return;
 
-  const result = await adminAPI('POST', `/api/admin/${type}/batch-${action}`, {
-    ids: items.map((x) => x.id),
-    ...(reason ? { reason } : {})
-  });
-  if (!result || result.error) {
-    showToast(result?.error || '批量操作失败', 'error');
-    return;
+  const ids = [...new Set(items.map(x => x.id).filter(Boolean))];
+  let ok = 0;
+  const failed = [];
+  // The server caps one request at 200; split larger queues.
+  for (let i = 0; i < ids.length; i += 200) {
+    const chunk = ids.slice(i, i + 200);
+    const result = await adminAPI('POST', `/api/admin/${type}/batch-${action}`, {
+      ids: chunk,
+      ...(reason ? { reason } : {})
+    });
+    if (!result || result.error) {
+      failed.push(...chunk.map(id => ({ id, error: result?.error || '请求失败' })));
+      continue;
+    }
+    ok += result.processed || 0;
+    if (Array.isArray(result.failed)) failed.push(...result.failed);
   }
-  const ok = result.processed || 0;
-  const fail = (result.failed || []).length;
-  if (fail) showToast(`${itemLabel}: 成功 ${ok}，失败 ${fail}`, 'error');
+  if (failed.length) showToast(`${itemLabel}: 成功 ${ok}，失败 ${failed.length}`, 'error');
   else showToast(`已${verb} ${ok} 个${itemLabel}`, 'success');
   if (typeof reloadFn === 'function') reloadFn();
 }
 
 async function batchApproveWorks() {
-  await runAdminBatchApproval('works', 'approve', adminWorksData.filter(w => w.approvalStatus === 'pending'), '作品', loadWorks);
+  await runAdminBatchApproval('works', 'approve', approvalPending('works'), '作品', loadApprovalPage);
 }
 
 async function batchRejectWorks() {
-  await runAdminBatchApproval('works', 'reject', adminWorksData.filter(w => w.approvalStatus === 'pending'), '作品', loadWorks);
+  await runAdminBatchApproval('works', 'reject', approvalPending('works'), '作品', loadApprovalPage);
 }
 
 function escapeHtml(str) {
@@ -2723,11 +2742,11 @@ async function approveEvent(id) {
 
 // Batch approve/reject events
 async function batchApproveEvents() {
-  await runAdminBatchApproval('events', 'approve', (typeof adminEventsData !== 'undefined' ? adminEventsData : []).filter(e => e.approvalStatus === 'pending'), '活动', loadEvents);
+  await runAdminBatchApproval('events', 'approve', approvalPending('events'), '活动', loadApprovalPage);
 }
 
 async function batchRejectEvents() {
-  await runAdminBatchApproval('events', 'reject', (typeof adminEventsData !== 'undefined' ? adminEventsData : []).filter(e => e.approvalStatus === 'pending'), '活动', loadEvents);
+  await runAdminBatchApproval('events', 'reject', approvalPending('events'), '活动', loadApprovalPage);
 }
 
 // Batch delete events
@@ -3717,13 +3736,14 @@ async function loadAdminBackups() {
       container.innerHTML = '<p style="color:var(--haze);margin:0;font-size:0.9rem;">暂无备份，点击「立即备份」创建。</p>';
       return;
     }
-    container.innerHTML = `<table class="admin-table"><thead><tr><th>备份名称</th><th>时间</th><th>体积</th><th>操作</th></tr></thead><tbody>${list.map((b) => {
+    container.innerHTML = `<table class="admin-table"><thead><tr><th>备份名称</th><th>时间</th><th>体积</th><th>内容</th><th>操作</th></tr></thead><tbody>${list.map((b) => {
       const name = escapeHtml(b.name);
       const time = b.mtime ? new Date(b.mtime).toLocaleString('zh-CN') : '-';
       return `<tr>
         <td><code style="font-size:0.8rem;">${name}</code></td>
         <td style="font-size:0.85rem;">${time}</td>
         <td style="font-size:0.85rem;">${formatBackupSize(b.size)}</td>
+        <td style="font-size:0.8rem;color:var(--haze);">${b.includesUploads ? '数据 + 图片' : '仅数据'}</td>
         <td style="white-space:nowrap;">
           <button class="btn-sm btn-edit" onclick="downloadAdminBackup('${name}')">下载</button>
           <button class="btn-sm" style="background:#C48A2A;color:white;" onclick="restoreAdminBackup('${name}', true)">恢复并重启</button>
@@ -3737,7 +3757,7 @@ async function loadAdminBackups() {
 }
 
 async function createAdminBackup() {
-  if (!await showConfirm('立即备份当前 data/ 目录？')) return;
+  if (!await showConfirm('立即备份当前 data/ 和 uploads/ 目录？')) return;
   showToast('备份中...', 'info');
   const result = await adminAPI('POST', '/api/admin/backups');
   if (result && result.success) {
@@ -3777,8 +3797,8 @@ function downloadAdminBackup(name) {
 
 async function restoreAdminBackup(name, restart) {
   const msg = restart
-    ? `确定从「${name}」恢复数据吗？\n将覆盖当前 data/，并自动重启服务。恢复前会先自动备份当前数据。`
-    : `确定从「${name}」恢复数据吗？\n将覆盖当前 data/。恢复前会先自动备份当前数据。`;
+    ? `确定从「${name}」恢复数据吗？\n将覆盖当前 data/；若备份包含图片，也会覆盖 uploads/。恢复前会自动备份当前数据。完成后重启服务。`
+    : `确定从「${name}」恢复数据吗？\n将覆盖当前 data/；若备份包含图片，也会覆盖 uploads/。恢复前会自动备份当前数据。`;
   if (!await showConfirm(msg, { danger: true, title: '恢复数据备份' })) return;
   showToast('恢复中...', 'info');
   const result = await adminAPI('POST', `/api/admin/backups/${encodeURIComponent(name)}/restore`, { restart: !!restart });
@@ -4478,11 +4498,11 @@ async function rejectProject(id) {
 
 // Batch approve/reject projects
 async function batchApproveProjects() {
-  await runAdminBatchApproval('projects', 'approve', adminProjectsData.filter(p => p.approvalStatus === 'pending'), '企划', loadProjects);
+  await runAdminBatchApproval('projects', 'approve', approvalPending('projects'), '企划', loadApprovalPage);
 }
 
 async function batchRejectProjects() {
-  await runAdminBatchApproval('projects', 'reject', adminProjectsData.filter(p => p.approvalStatus === 'pending'), '企划', loadProjects);
+  await runAdminBatchApproval('projects', 'reject', approvalPending('projects'), '企划', loadApprovalPage);
 }
 
 // Batch delete projects
@@ -6158,11 +6178,11 @@ async function rejectUpdate(id) {
 
 // Batch approve/reject updates
 async function batchApproveUpdates() {
-  await runAdminBatchApproval('updates', 'approve', adminUpdatesData.filter(u => u.approvalStatus === 'pending'), '动态', loadUpdates);
+  await runAdminBatchApproval('updates', 'approve', approvalPending('updates'), '动态', loadApprovalPage);
 }
 
 async function batchRejectUpdates() {
-  await runAdminBatchApproval('updates', 'reject', adminUpdatesData.filter(u => u.approvalStatus === 'pending'), '动态', loadUpdates);
+  await runAdminBatchApproval('updates', 'reject', approvalPending('updates'), '动态', loadApprovalPage);
 }
 
 function openUpdateModal(update = null) {
@@ -6789,6 +6809,12 @@ async function loadApprovalPage() {
 
     // Pending updates
     const pendingUpdates = (updates || []).filter(u => u.approvalStatus === 'pending');
+    window._approvalPending = {
+      works: pendingWorks,
+      events: pendingEvents,
+      projects: pendingProjects,
+      updates: pendingUpdates
+    };
     const updatesDiv = document.getElementById('approvalUpdates');
     if (pendingUpdates.length === 0) {
       updatesDiv.innerHTML = '<p style="color:var(--haze);">无待审核动态</p>';
