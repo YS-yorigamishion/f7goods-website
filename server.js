@@ -5106,17 +5106,17 @@ function backupUploadsRoot(backupDir) {
   return fs.existsSync(nested) ? nested : null;
 }
 
-function copyBackupDir(dest) {
-  fs.mkdirSync(dest, { recursive: false });
-  fs.cpSync(dataDirPath(), path.join(dest, 'data'), { recursive: true });
+async function copyBackupDir(dest) {
+  await fs.promises.mkdir(dest, { recursive: false });
+  await fs.promises.cp(dataDirPath(), path.join(dest, 'data'), { recursive: true });
   const uploadsRoot = uploadsDirPath();
   if (fs.existsSync(uploadsRoot)) {
-    fs.cpSync(uploadsRoot, path.join(dest, 'uploads'), {
+    await fs.promises.cp(uploadsRoot, path.join(dest, 'uploads'), {
       recursive: true,
       filter: (src) => !src.includes(`${path.sep}.cache`) && !src.includes('uploads-trash')
     });
   }
-  fs.writeFileSync(path.join(dest, 'manifest.json'), JSON.stringify({
+  await fs.promises.writeFile(path.join(dest, 'manifest.json'), JSON.stringify({
     version: 2,
     createdAt: new Date().toISOString(),
     includesUploads: fs.existsSync(path.join(dest, 'uploads'))
@@ -5150,7 +5150,7 @@ app.post('/api/admin/backups', authMiddleware, async (req, res) => {
   try {
     const name = `data.bak.${makeBackupStamp()}`;
     const dest = path.join(__dirname, name);
-    copyBackupDir(dest);
+    await copyBackupDir(dest);
     logEdit('管理员', '创建数据备份', name, '包含 data 与 uploads');
     res.json({ success: true, backup: { name, mtime: new Date().toISOString(), includesUploads: true } });
   } catch (e) {
