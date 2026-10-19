@@ -115,9 +115,14 @@ async function loadLang(lang, isInit = false) {
     _applyPageSettingsText();
     applyTranslations();
     updateLangButtons();
-    _langHooks.forEach((fn) => {
-      try { fn(_lang); } catch (e) { console.error('[i18n hook]', e); }
-    });
+    // Hooks are for actual language switches. Do not run them during initial
+    // page bootstrap: detail pages register a reload hook, and running it on
+    // init caused an infinite reload loop.
+    if (!isInit) {
+      _langHooks.forEach((fn) => {
+        try { fn(_lang); } catch (e) { console.error('[i18n hook]', e); }
+      });
+    }
     // 不整页 reload：页面通过 onLangChange 重渲染
     if (!isInit && localStorage.getItem('f7lang_switch')) {
       localStorage.removeItem('f7lang_switch');
