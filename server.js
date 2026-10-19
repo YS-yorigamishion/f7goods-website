@@ -53,6 +53,32 @@ const crypto = require('crypto');
 
 const app = express();
 app.set('trust proxy', 1);
+
+// Wrap async route handlers so rejected promises reach the error middleware.
+// (Express 4 does not catch async rejections by itself.)
+const ASYNC_ROUTE_METHODS = ['get', 'post', 'put', 'patch', 'delete'];
+for (const method of ASYNC_ROUTE_METHODS) {
+  const original = app[method].bind(app);
+  app[method] = (routePath, ...handlers) => original(routePath, ...handlers.map((fn) => {
+    if (typeof fn !== 'function') return fn;
+    return function wrappedAsyncRoute(req, res, next) {
+      try {
+        const ret = fn(req, res, next);
+        if (ret && typeof ret.catch === 'function') ret.catch(next);
+        return ret;
+      } catch (e) {
+        return next(e);
+      }
+    };
+  }));
+}
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason && reason.stack ? reason.stack : reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err && err.stack ? err.stack : err);
+});
 // Redirect www to non-www
 app.use((req, res, next) => {
   if (req.hostname === 'www.f7goods.com') {
@@ -165,6 +191,30 @@ if (IS_PROD && !process.env.ALLOWED_ORIGIN) {
   console.warn('WARNING: ALLOWED_ORIGIN not set in production — CORS is locked down. Set ALLOWED_ORIGIN for browser clients on another origin.');
 }
 app.use(express.json({ limit: '10mb' }));
+
+// Serialize mutating HTTP requests. Most legacy handlers still do
+// readJSON -> mutate -> writeJSON; this prevents two requests from racing
+// between the read and the write. File-level atomic writes remain in writeJSON.
+let mutationQueueTail = Promise.resolve();
+app.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  if (!req.path.startsWith('/api/')) return next();
+  const previous = mutationQueueTail;
+  let release;
+  mutationQueueTail = new Promise((resolve) => { release = resolve; });
+  previous.then(() => {
+    let released = false;
+    const done = () => {
+      if (released) return;
+      released = true;
+      release();
+    };
+    res.once('finish', done);
+    res.once('close', done);
+    setTimeout(done, 120000).unref?.();
+    next();
+  });
+});
 
 // ===== SEO: server-side meta + readable snapshot for detail pages =====
 const SITE_ORIGIN = (process.env.SITE_ORIGIN || 'https://f7goods.com').replace(/\/$/, '');
@@ -2642,7 +2692,7 @@ const BATCH_APPROVAL_TYPES = {
 async function runBatchApproval(typeKey, action, ids, reason) {
   const conf = BATCH_APPROVAL_TYPES[typeKey];
   if (!conf) throw new Error('未知类型');
-  const data = readJSON(conf.file);
+  return mutateJSON(conf.file, async (data) => {
   const byId = new Map(data.map(item => [item.id, item]));
   let processed = 0;
   const failed = [];
@@ -2681,8 +2731,8 @@ async function runBatchApproval(typeKey, action, ids, reason) {
     processed += 1;
   }
 
-  if (processed > 0) await writeJSON(conf.file, data);
   return { success: true, processed, failed, total: ids.length };
+  });
 }
 
 function registerBatchApprovalRoutes(typeKey) {
@@ -5464,6 +5514,16 @@ app.use((err, req, res, next) => {
     return res.status(500).json({ error: '服务器内部错误' });
   }
   next();
+});
+
+// Central error handler: async route rejections land here.
+app.use((err, req, res, next) => {
+  console.error('[request error]', req.method, req.originalUrl, err && err.stack ? err.stack : err);
+  if (res.headersSent) return next(err);
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ error: '服务器内部错误' });
+  }
+  res.status(500).type('html').send('<!doctype html><meta charset="utf-8"><title>500</title><p>服务器内部错误，请稍后再试。</p>');
 });
 
 // 404 handler for HTML pages
