@@ -4232,6 +4232,7 @@ app.put('/api/admin/works/:id', authMiddleware, async (req, res) => {
   if (index === -1) return res.status(404).json({ error: '作品未找到' });
   const work = works[index];
   const oldTitle = work.title;
+  const beforeEdit = JSON.parse(JSON.stringify(work));
   // Whitelist allowed fields to prevent mass assignment
   const allowedFields = ['title', 'titleEn', 'category', 'price', 'status', 'releaseDate', 'endDate', 'tags', 'description', 'images', 'moreImages', 'circles', 'likes', 'wants', 'order', 'isCommissioned', 'commissionedBy', 'socialLinks', 'approvalStatus', 'rejectReason', 'submittedBy'];
   const updates = {};
@@ -4245,7 +4246,7 @@ app.put('/api/admin/works/:id', authMiddleware, async (req, res) => {
   delete work.pendingRevision;
   delete work.rejectReason;
   await writeJSON('works.json', works);
-  logEdit('管理员', '编辑作品', oldTitle || req.params.id, '');
+  await logEdit('管理员', '编辑作品', oldTitle || req.params.id, '', '', { before: beforeEdit, after: work });
   res.json(work);
 });
 
