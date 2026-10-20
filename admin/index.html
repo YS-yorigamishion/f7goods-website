@@ -97,6 +97,10 @@
             动态管理
             <span class="sidebar-badge quiet" data-badge="updates">0</span>
           </a>
+          <a href="#" class="sidebar-link" data-page="carousel">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9l4 3-4 3V9zM16 9v6"/></svg></span>
+            首页轮播
+          </a>
         </div>
 
         <div class="nav-grp">
@@ -427,6 +431,32 @@
               <tbody id="eventsTableBody"></tbody>
             </table>
             <div id="eventsPagination"></div>
+          </div>
+        </div>
+
+        <!-- Homepage Carousel -->
+        <div id="page-carousel" class="admin-page">
+          <div class="page-toolbar">
+            <h3>首页轮播</h3>
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="loadCarouselAdmin()">刷新</button>
+              <a class="btn" href="/" target="_blank" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;text-decoration:none;">查看首页</a>
+            </div>
+          </div>
+          <div class="admin-card">
+            <p style="margin:0 0 1rem;color:var(--haze);font-size:0.82rem;line-height:1.7;">
+              自动模式沿用原来的时间/状态规则。改成「强制显示」可把已结束或未招募的内容也放进轮播；「关闭」会覆盖自动结果，但自动资格仍保留。
+            </p>
+            <div class="carousel-admin-tools">
+              <input type="text" class="form-input" id="carouselAdminSearch" placeholder="搜索活动/企划..." oninput="renderCarouselAdmin()">
+              <select class="form-input" id="carouselAdminFilter" onchange="renderCarouselAdmin()">
+                <option value="all">全部</option>
+                <option value="visible">显示中</option>
+                <option value="hidden">已关闭</option>
+              </select>
+              <span id="carouselAdminCount" class="carousel-admin-count"></span>
+            </div>
+            <div id="carouselAdminList"></div>
           </div>
         </div>
 
@@ -1069,6 +1099,6 @@
     </div>
   </div>
 
-  <script src="/admin/js/admin.js?v=20261020m"></script>
+  <script src="/admin/js/admin.js?v=20261020n"></script>
 </body>
 </html>

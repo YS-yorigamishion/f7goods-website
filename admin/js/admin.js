@@ -76,7 +76,7 @@ let token = localStorage.getItem('f7admin_token');
 let currentPage = 'dashboard';
 let adminDirty = false;
 let modalDirty = false;
-const ADMIN_PAGES = new Set(['dashboard','approval','page-stats','author-stats','editlog','works','circles','events','booths','projects','updates','images','categories','settings','backup','announcements','contacts']);
+const ADMIN_PAGES = new Set(['dashboard','approval','page-stats','author-stats','editlog','works','circles','events','booths','projects','updates','carousel','images','categories','settings','backup','announcements','contacts']);
 
 function pageFromHash() {
   const page = (location.hash || '').replace(/^#/, '');
@@ -245,13 +245,13 @@ function navigateTo(page) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${page}`)?.classList.add('active');
 
-  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', categories: '分类管理', images: '图片管理', settings: '页面设置', backup: '数据备份', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计', approval: '审核管理', 'author-stats': '作者统计' };
+  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', carousel: '首页轮播', categories: '分类管理', images: '图片管理', settings: '页面设置', backup: '数据备份', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计', approval: '审核管理', 'author-stats': '作者统计' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
   // 顶栏分组标签
   const groups = {
     dashboard: '总览', approval: '总览', 'page-stats': '总览', 'author-stats': '总览', editlog: '总览',
-    works: '内容', circles: '内容', events: '内容', booths: '内容', projects: '内容', updates: '内容',
+    works: '内容', circles: '内容', events: '内容', booths: '内容', projects: '内容', updates: '内容', carousel: '内容',
     images: '素材', categories: '素材',
     settings: '站点', backup: '站点', announcements: '站点', contacts: '站点'
   };
@@ -271,6 +271,7 @@ function navigateTo(page) {
   else if (page === 'backup') loadAdminBackups();
   else if (page === 'announcements') loadAnnouncements();
   else if (page === 'updates') { loadUpdates(); syncContentApprovalToggles(); }
+  else if (page === 'carousel') loadCarouselAdmin();
   else if (page === 'editlog') loadEditLog();
   else if (page === 'approval') loadApprovalPage();
   else if (page === 'author-stats') loadAuthorStats();
@@ -2982,6 +2983,120 @@ function toggleOnlyBoothsUI() {
   const t = document.getElementById('eType')?.value;
   const wrap = document.getElementById('eOnlyBoothsWrap');
   if (wrap) wrap.style.display = t === 'only' ? 'block' : 'none';
+}
+
+// ===== Homepage carousel manager =====
+let carouselAdminEvents = [];
+let carouselAdminProjects = [];
+
+async function loadCarouselAdmin() {
+  const list = document.getElementById('carouselAdminList');
+  if (!list) return;
+  list.innerHTML = '<div class="carousel-admin-empty">加载中…</div>';
+  try {
+    const [events, projects] = await Promise.all([
+      adminAPI('GET', '/api/admin/events'),
+      adminAPI('GET', '/api/admin/projects')
+    ]);
+    carouselAdminEvents = Array.isArray(events) ? events : [];
+    carouselAdminProjects = Array.isArray(projects) ? projects : [];
+    renderCarouselAdmin();
+  } catch (e) {
+    list.innerHTML = '<div class="carousel-admin-empty">加载失败，请刷新重试</div>';
+  }
+}
+
+function carouselItemMode(item) {
+  return item.carouselMode === 'show' || item.carouselMode === 'hide' ? item.carouselMode : 'auto';
+}
+
+function carouselSortValue(item) {
+  const n = item.carouselOrder === null || item.carouselOrder === undefined || item.carouselOrder === '' ? NaN : Number(item.carouselOrder);
+  return Number.isFinite(n) ? n : Infinity;
+}
+
+function renderCarouselAdmin() {
+  const list = document.getElementById('carouselAdminList');
+  const countEl = document.getElementById('carouselAdminCount');
+  if (!list) return;
+  const q = (document.getElementById('carouselAdminSearch')?.value || '').trim().toLowerCase();
+  const filter = document.getElementById('carouselAdminFilter')?.value || 'all';
+
+  const rowHtml = (kind, item) => {
+    const mode = carouselItemMode(item);
+    const title = kind === 'event' ? '活动' : '企划';
+    const date = item.date || item.startDate || '';
+    const cover = item.coverImage || (item.images && item.images[0]) || '';
+    const meta = [title, date, item.status || ''].filter(Boolean).join(' · ');
+    const hidden = mode === 'hide';
+    return `
+      <div class="carousel-admin-row${hidden ? ' carousel-admin-hidden' : ''}">
+        <div class="carousel-admin-thumb">${cover ? `<img src="${safeImgUrl(cover)}" alt="">` : escapeHtml(title)}</div>
+        <div class="carousel-admin-main"><b>${escapeHtml(item.title || '未命名')}</b><small>${escapeHtml(meta)}</small></div>
+        <select class="form-input" onchange="updateCarouselSetting('${kind}','${encodeURIComponent(item.id)}','carouselMode',this.value)">
+          <option value="auto" ${mode === 'auto' ? 'selected' : ''}>自动</option>
+          <option value="show" ${mode === 'show' ? 'selected' : ''}>强制显示</option>
+          <option value="hide" ${mode === 'hide' ? 'selected' : ''}>关闭</option>
+        </select>
+        <input class="form-input carousel-admin-order" type="number" value="${item.carouselOrder ?? ''}" placeholder="顺序" title="轮播顺序，数字越小越靠前" onchange="updateCarouselSetting('${kind}','${encodeURIComponent(item.id)}','carouselOrder',this.value === '' ? null : Number(this.value))">
+        <button type="button" class="btn-sm btn-edit carousel-admin-edit" onclick="openCarouselItemEditor('${kind}','${encodeURIComponent(item.id)}')">编辑</button>
+      </div>`;
+  };
+
+  const blocks = [
+    { kind: 'event', label: '活动', items: carouselAdminEvents },
+    { kind: 'project', label: '企划', items: carouselAdminProjects }
+  ].map(block => {
+    const items = block.items
+      .filter(item => {
+        const mode = carouselItemMode(item);
+        if (filter === 'visible' && mode === 'hide') return false;
+        if (filter === 'hidden' && mode !== 'hide') return false;
+        if (!q) return true;
+        return String(item.title || '').toLowerCase().includes(q);
+      })
+      .sort((a, b) => {
+        const av = carouselSortValue(a);
+        const bv = carouselSortValue(b);
+        if (av !== bv) return av - bv;
+        return String(a.title || '').localeCompare(String(b.title || ''), 'zh');
+      });
+    return { ...block, items };
+  });
+
+  const total = blocks.reduce((s, b) => s + b.items.length, 0);
+  const hidden = [...carouselAdminEvents, ...carouselAdminProjects].filter(i => carouselItemMode(i) === 'hide').length;
+  if (countEl) countEl.textContent = `显示 ${total} 项 · 已关闭 ${hidden} 项`;
+  list.innerHTML = blocks.map(block => block.items.length ? `
+    <div class="carousel-admin-group-title">${block.label} · ${block.items.length}</div>
+    ${block.items.map(item => rowHtml(block.kind, item)).join('')}
+  ` : '').join('') || '<div class="carousel-admin-empty">没有匹配的内容</div>';
+}
+
+function openCarouselItemEditor(kind, encodedId) {
+  const id = decodeURIComponent(encodedId);
+  const item = kind === 'event'
+    ? carouselAdminEvents.find(e => e.id === id)
+    : carouselAdminProjects.find(p => p.id === id);
+  if (!item) return;
+  if (kind === 'event') openEventModal(item);
+  else openProjectModal(item);
+}
+
+async function updateCarouselSetting(kind, encodedId, field, value) {
+  const id = decodeURIComponent(encodedId);
+  const endpoint = kind === 'event' ? `/api/admin/events/${encodeURIComponent(id)}` : `/api/admin/projects/${encodeURIComponent(id)}`;
+  try {
+    const result = await adminAPI('PUT', endpoint, { [field]: value });
+    if (!result) return;
+    const list = kind === 'event' ? carouselAdminEvents : carouselAdminProjects;
+    const item = list.find(x => x.id === id);
+    if (item) item[field] = value;
+    showToast('轮播设置已保存', 'success');
+    renderCarouselAdmin();
+  } catch (e) {
+    showToast('保存失败，请重试', 'error');
+  }
 }
 
 function openEventModal(event = null) {
