@@ -4145,3 +4145,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 .status-badge.is-info { color: var(--info); background: rgba(74,123,167,.10); }
 .status-badge.is-warning { color: var(--warning); background: rgba(148,101,31,.12); }
+
+.cl-project-title-row {
+  display: block; padding: .85rem 0; border-bottom: 1px solid var(--line);
+  color: var(--ink); text-decoration: none; font-weight: 600; font-size: .95rem;
+}
+.cl-project-title-row:hover { color: var(--accent); }
+.cl-update-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  padding: .8rem 0; border-bottom: 1px solid var(--line);
+  color: var(--ink); text-decoration: none;
+}
+.cl-update-row b { font-size: .92rem; }
+.cl-update-row small { color: var(--haze); font-size: .75rem; white-space: nowrap; }

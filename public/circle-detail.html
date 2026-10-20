@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020o">
+  <link rel="stylesheet" href="/css/style.css?v=20261020p">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -45,9 +45,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020o"></script>
-  <script src="/js/i18n.js?v=20261020o"></script>
-  <script src="/js/main.js?v=20261020o"></script>
+  <script src="/js/api.js?v=20261020p"></script>
+  <script src="/js/i18n.js?v=20261020p"></script>
+  <script src="/js/main.js?v=20261020p"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -297,7 +297,7 @@
           </div>
         `;
         renderCircleWorks();
-        setupCircleTabs(container, circleWorks, relatedEvents, relatedProjects);
+        setupCircleTabs(container, circleWorks, relatedEvents, relatedProjects, relatedUpdates);
         if (typeof applyTranslations === 'function') applyTranslations();
       } catch (e) {
         document.getElementById('circleDetail').innerHTML =
@@ -305,7 +305,7 @@
       }
     }
 
-    function setupCircleTabs(container, works, events, projects) {
+    function setupCircleTabs(container, works, events, projects, updates = []) {
       const detail = container.querySelector('.detail-content');
       if (!detail) return;
       const main = detail.querySelector('.detail-main');
@@ -327,7 +327,8 @@
         ['home', '主页', works.length],
         ['works', '作品', works.length],
         ['events', '活动', events.length],
-        ['projects', '企划', projects.length]
+        ['projects', '企划', projects.length],
+        ['updates', '动态', updates.length]
       ];
       bar.innerHTML = tabs.map(([key, label, count], i) =>
         `<button type="button" role="tab" data-cl-tab="${key}" aria-selected="${i === 0}" aria-controls="cl-panel-${key}" class="${i === 0 ? 'on' : ''}">${label}${count ? ` <b>${count}</b>` : ''}</button>`
@@ -368,14 +369,21 @@
       projectsPanel.className = 'cl-tab-panel';
       projectsPanel.setAttribute('role', 'tabpanel');
       projectsPanel.innerHTML = projects.length ? projects.map(p => `
-        <a class="cl-project-row" href="/project-detail.html?id=${encodeURIComponent(p.id)}">
-          ${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 160))}" alt="" loading="lazy">` : '<span class="cl-project-placeholder">企划</span>'}
-          <div class="cl-project-main"><b>${escapeHtml(p.title)}</b><small>${escapeHtml(p.description || '')}</small></div>
-          <span class="status-badge is-warning">${escapeHtml(PROJECT_STATUS_LABELS[p.status] || '企划')}</span>
-        </a>`).join('') : '<div class="empty-state"><div class="icon">·</div><p>暂无公开企划</p></div>';
+        <a class="cl-project-title-row" href="/project-detail.html?id=${encodeURIComponent(p.id)}">${escapeHtml(p.title)}</a>`).join('') : '<div class="empty-state"><div class="icon">·</div><p>暂无公开企划</p></div>';
       panels.projects = projectsPanel;
 
-      container.append(bar, home, worksPanel, eventsPanel, projectsPanel);
+      const updatesPanel = document.createElement('div');
+      updatesPanel.id = 'cl-panel-updates';
+      updatesPanel.className = 'cl-tab-panel';
+      updatesPanel.setAttribute('role', 'tabpanel');
+      updatesPanel.innerHTML = updates.length ? updates.map(u => `
+        <a class="cl-update-row" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
+          <b>${escapeHtml(u.title)}</b>
+          <small>${formatDate(u.publishDate)}</small>
+        </a>`).join('') : '<div class="empty-state"><div class="icon">·</div><p>暂无公开动态</p></div>';
+      panels.updates = updatesPanel;
+
+      container.append(bar, home, worksPanel, eventsPanel, projectsPanel, updatesPanel);
 
       function activate(key, updateHash = true) {
         if (!panels[key]) key = 'home';
