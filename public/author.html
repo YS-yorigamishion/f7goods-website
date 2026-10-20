@@ -3556,31 +3556,38 @@
             ${pack.canManageAll ? `<button class="ab-pill" onclick="openAuthorBoothForm('${ev.id}')">+ 新增摊位</button>` : ''}
           </div>
           <div style="display:flex;flex-direction:column;gap:0.55rem;">
-            ${pack.booths.map((b, bi) => `
-              <div style="border:1px solid var(--border);border-radius:10px;padding:0.65rem 0.75rem;background:var(--bg);">
-                <div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;align-items:flex-start;">
-                  <div style="min-width:0;">
-                    <div style="font-weight:600;font-size:0.88rem;">
-                      ${escapeHtml(b.code || '摊位')}${b.title ? ' · ' + escapeHtml(b.title) : ''}
-                      ${b.isOwner && !b.canFullEdit ? '<span style="font-size:0.7rem;color:var(--haze);margin-left:0.35rem;">我的摊位</span>' : ''}
+            ${pack.booths.map((b, bi) => {
+              const goods = authorBoothGoods(pack, b);
+              const cover = (Array.isArray(b.images) && b.images[0]) || b.logo || '';
+              return `
+              <div class="author-booth-card">
+                <div class="author-booth-cover">${cover ? `<img src="${escapeHtml(imgUrl(cover, 160))}" alt="${escapeHtml(b.title || b.code || '摊位')}" loading="lazy">` : escapeHtml((b.code || '摊').slice(0, 1))}</div>
+                <div class="author-booth-body">
+                  <div class="author-booth-top">
+                    <div style="min-width:0;">
+                      <div class="author-booth-title">
+                        ${escapeHtml(b.code || '摊位')}${b.title ? ' · ' + escapeHtml(b.title) : ''}
+                        ${b.isOwner && !b.canFullEdit ? '<span class="status-badge is-info">我的摊位</span>' : ''}
+                      </div>
+                      <div class="author-booth-sub">摊主 ${(b.circleIds || []).length} 人 · ${goods.length} 件周边</div>
                     </div>
-                    <div style="font-size:0.72rem;color:var(--haze);margin-top:0.15rem;">
-                      摊主 ${(b.circleIds || []).length} 人 · ${Array.isArray(b.workIds) && b.workIds.length ? `已选作品 ${b.workIds.length} 件` : '展示摊主全部作品'}
+                    <div class="author-booth-actions">
+                      <button type="button" class="ab-pill ghost" onclick="window.open('/only.html?id=${encodeURIComponent(ev.id)}#only-booth-${encodeURIComponent(b.id)}','_blank')">预览</button>
+                      <button type="button" class="ab-pill" onclick='openAuthorBoothForm(${escapeHtml(JSON.stringify({ eventId: ev.id, booth: b, canFullEdit: !!pack.canManageAll }))})'>编辑</button>
+                      <details class="author-booth-more">
+                        <summary>更多</summary>
+                        <div>
+                          ${pack.canManageAll ? `<button type="button" onclick="authorMoveBooth('${ev.id}','${b.id}',-1)" ${bi === 0 ? 'disabled' : ''}>上移</button><button type="button" onclick="authorMoveBooth('${ev.id}','${b.id}',1)" ${bi === pack.booths.length - 1 ? 'disabled' : ''}>下移</button>` : ''}
+                          ${pack.canManageAll ? `<button type="button" class="danger" onclick="authorDeleteBooth('${ev.id}','${b.id}')">删除摊位</button>` : ''}
+                        </div>
+                      </details>
                     </div>
                   </div>
-                  <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
-                    ${pack.canManageAll ? `
-                      <button class="ab-pill" style="font-size:0.7rem;padding:0.15rem 0.5rem;" onclick="authorMoveBooth('${ev.id}','${b.id}',-1)" ${bi === 0 ? 'disabled' : ''}>↑</button>
-                      <button class="ab-pill" style="font-size:0.7rem;padding:0.15rem 0.5rem;" onclick="authorMoveBooth('${ev.id}','${b.id}',1)" ${bi === pack.booths.length - 1 ? 'disabled' : ''}>↓</button>
-                    ` : ''}
-                    <button class="ab-pill" style="font-size:0.7rem;padding:0.15rem 0.55rem;" onclick='openAuthorBoothForm(${escapeHtml(JSON.stringify({ eventId: ev.id, booth: b, canFullEdit: !!pack.canManageAll }))})'>编辑</button>
-                    <button type="button" class="ab-pill ghost" style="font-size:0.7rem;padding:0.15rem 0.55rem;" onclick="window.open('/only.html?id=${encodeURIComponent(ev.id)}#only-booth-${encodeURIComponent(b.id)}','_blank')">预览</button>
-                    ${pack.canManageAll ? `<button class="ab-pill danger" style="font-size:0.7rem;padding:0.15rem 0.55rem;" onclick="authorDeleteBooth('${ev.id}','${b.id}')">删除</button>` : ''}
-                  </div>
+                  ${goods.length ? `<div class="author-booth-thumbs">${goods.slice(0, 4).map(g => g.images?.[0] ? `<img src="${escapeHtml(imgUrl(g.images[0], 96))}" alt="${escapeHtml(g.title)}" loading="lazy">` : '<span>周边</span>').join('')}${goods.length > 4 ? `<span>+${goods.length - 4}</span>` : ''}</div>` : ''}
+                  <div id="authorGoods-${ev.id}-${b.id}" class="author-booth-goods"></div>
                 </div>
-                <div id="authorGoods-${ev.id}-${b.id}" style="margin-top:0.5rem;"></div>
-              </div>
-            `).join('')}
+              </div>`;
+            }).join('')}
           </div>
         </div>`;
       }).join('');
