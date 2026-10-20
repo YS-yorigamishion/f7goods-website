@@ -415,6 +415,22 @@
           </div>
         </div>
 
+        <!-- 待处理工作台 -->
+        <div class="mgmt-card" style="padding:1rem;margin-bottom:1.2rem;">
+          <h3 style="margin:0 0 0.7rem;font-size:1rem;">待处理</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.7rem;">
+            <button type="button" class="ab-pill" style="justify-content:space-between;padding:0.6rem 0.8rem;" onclick="switchMgmtTab('works')">
+              <span>审核中</span><b id="statPendingReview" style="color:var(--warning);">0</b>
+            </button>
+            <button type="button" class="ab-pill" style="justify-content:space-between;padding:0.6rem 0.8rem;" onclick="switchMgmtTab('works')">
+              <span>被拒绝待修改</span><b id="statRejectedWorks" style="color:var(--accent);">0</b>
+            </button>
+            <button type="button" class="ab-pill" style="justify-content:space-between;padding:0.6rem 0.8rem;" onclick="switchMgmtTab('works')">
+              <span>已上线</span><b id="statPublishedWorks" style="color:var(--success);">0</b>
+            </button>
+          </div>
+        </div>
+
         <!-- Statistics Section -->
         <div class="mgmt-card">
           <h3 style="margin-bottom:1rem;">数据统计</h3>
@@ -1389,6 +1405,12 @@
       document.getElementById('statTotalWorks').textContent = totalWorks;
       document.getElementById('statTotalLikes').textContent = totalLikes;
       document.getElementById('statTotalWants').textContent = totalWants;
+      const pendingReview = authorWorksData.filter(w => w.approvalStatus === 'pending' || w._hasPendingRevision).length;
+      const rejected = authorWorksData.filter(w => w.approvalStatus === 'rejected').length;
+      const published = authorWorksData.filter(w => !w.approvalStatus || w.approvalStatus === 'approved').length;
+      if (document.getElementById('statPendingReview')) document.getElementById('statPendingReview').textContent = pendingReview;
+      if (document.getElementById('statRejectedWorks')) document.getElementById('statRejectedWorks').textContent = rejected;
+      if (document.getElementById('statPublishedWorks')) document.getElementById('statPublishedWorks').textContent = published;
 
       // Category distribution
       const categoryStats = document.getElementById('categoryStats');

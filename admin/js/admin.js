@@ -7778,3 +7778,89 @@ setInterval(() => {
     loadApprovalPage().catch(() => {});
   }
 }, 30000);
+
+// Lightweight command palette (Ctrl/Cmd+K).
+let adminCmdOverlay = null;
+function closeAdminCommandPalette() {
+  adminCmdOverlay?.remove();
+  adminCmdOverlay = null;
+}
+function openAdminCommandPalette() {
+  if (adminCmdOverlay) return;
+  const nav = [
+    ['仪表盘', 'dashboard'], ['审核管理', 'approval'], ['作品管理', 'works'],
+    ['活动管理', 'events'], ['作者管理', 'circles'], ['企划管理', 'projects'],
+    ['动态管理', 'updates'], ['图片管理', 'images'], ['分类管理', 'categories'],
+    ['页面设置', 'settings'], ['数据备份', 'backup'], ['公告管理', 'announcements'],
+    ['联系消息', 'contacts'], ['编辑历史', 'editlog']
+  ].map(([label, page]) => ({ label, page, type: '页面' }));
+  const overlay = document.createElement('div');
+  overlay.className = 'cmd-overlay';
+  overlay.innerHTML = '<div class="cmd-box"><input id="adminCmdInput" placeholder="搜索页面、作品、作者、活动、企划、动态…" autocomplete="off"><div class="cmd-list" id="adminCmdList"></div></div>';
+  document.body.appendChild(overlay);
+  adminCmdOverlay = overlay;
+  const input = overlay.querySelector('#adminCmdInput');
+  const list = overlay.querySelector('#adminCmdList');
+  let entries = nav.slice();
+  let shown = [];
+  const render = () => {
+    const q = input.value.trim().toLowerCase();
+    shown = entries.filter(x => !q || x.label.toLowerCase().includes(q) || (x.type || '').toLowerCase().includes(q)).slice(0, 30);
+    list.innerHTML = '';
+    if (!shown.length) {
+      list.innerHTML = '<div class="cmd-empty">没有匹配结果</div>';
+      return;
+    }
+    shown.forEach((item, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'cmd-item' + (idx === 0 ? ' active' : '');
+      btn.type = 'button';
+      btn.innerHTML = '<span>' + escapeHtml(item.label) + '</span><small>' + escapeHtml(item.type || '') + '</small>';
+      btn.onclick = () => choose(item);
+      list.appendChild(btn);
+    });
+  };
+  const choose = (item) => {
+    closeAdminCommandPalette();
+    navigateTo(item.page);
+    if (item.query) {
+      setTimeout(() => {
+        const box = document.getElementById('page-' + item.page);
+        const search = box?.querySelector('input[type="search"], input[placeholder*="搜索"]');
+        if (search) { search.value = item.query; search.dispatchEvent(new Event('input', { bubbles: true })); }
+      }, 500);
+    }
+  };
+  input.addEventListener('input', render);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAdminCommandPalette();
+    if (e.key === 'Enter' && shown[0]) choose(shown[0]);
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeAdminCommandPalette(); });
+  render();
+  input.focus();
+  Promise.allSettled([
+    adminAPI('GET', '/api/admin/works'),
+    adminAPI('GET', '/api/admin/circles'),
+    adminAPI('GET', '/api/admin/events'),
+    adminAPI('GET', '/api/admin/projects'),
+    adminAPI('GET', '/api/admin/updates')
+  ]).then(([w, c, e, p, u]) => {
+    const add = (arr, type, page, field) => (arr || []).forEach(x => entries.push({
+      label: x[field] || x.name || x.id, page, type, query: x[field] || x.name || ''
+    }));
+    add(w.value, '作品', 'works', 'title');
+    add(c.value, '作者', 'circles', 'name');
+    add(e.value, '活动', 'events', 'title');
+    add(p.value, '企划', 'projects', 'title');
+    add(u.value, '动态', 'updates', 'title');
+    render();
+  });
+}
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    openAdminCommandPalette();
+  }
+  if (e.key === 'Escape') closeAdminCommandPalette();
+});
