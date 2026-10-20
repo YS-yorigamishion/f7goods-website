@@ -295,6 +295,7 @@ async function adminAPI(method, path, body) {
     location.reload();
     return;
   }
+  if (method !== 'GET' && res.ok) modalDirty = false;
   return res.json();
 }
 
@@ -7212,7 +7213,11 @@ function openModal() {
   document.getElementById('modalOverlay').classList.add('open');
 }
 
-function closeModal() {
+function closeModal(force = false) {
+  if (modalDirty && !force) {
+    if (!confirm('当前表单还没有保存，确定关闭吗？')) return;
+  }
+  modalDirty = false;
   document.getElementById('modalOverlay').classList.remove('open');
   document.getElementById('modalSave').textContent = '保存';
   document.getElementById('modalSave').style.display = '';

@@ -4358,6 +4358,7 @@ app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
   let events = readJSON('events.json');
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
+  const before = JSON.parse(JSON.stringify(events[index]));
   // Whitelist allowed fields to prevent mass assignment
   const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'type', 'booths', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'socialLinks', 'order', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
   const updates = {};
@@ -4367,6 +4368,7 @@ app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
   if (updates.booths !== undefined) updates.booths = sanitizeBoothsClaimFields(updates.booths);
   events[index] = { ...events[index], ...updates };
   await writeJSON('events.json', events);
+  await logEdit('管理员', '编辑活动', events[index].title || req.params.id, '', '', { before, after: events[index] });
   res.json(events[index]);
 });
 
@@ -4525,6 +4527,8 @@ app.put('/api/admin/circles/:id', authMiddleware, async (req, res) => {
   let circles = readJSON('circles.json');
   const index = circles.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '作者未找到' });
+  const before = JSON.parse(JSON.stringify(circles[index]));
+  delete before.passwordHash;
   // Whitelist allowed fields - NEVER allow passwordHash, username, authorStatus to be set directly
   const allowedFields = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'order', 'editableBy'];
   const updates = {};
@@ -4533,6 +4537,9 @@ app.put('/api/admin/circles/:id', authMiddleware, async (req, res) => {
   });
   circles[index] = { ...circles[index], ...updates };
   await writeJSON('circles.json', circles);
+  const afterCircle = { ...circles[index] };
+  delete afterCircle.passwordHash;
+  await logEdit('管理员', '编辑作者', circles[index].name || req.params.id, '', '', { before, after: afterCircle });
   res.json(circles[index]);
 });
 
@@ -4850,6 +4857,7 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   let projects = readJSON('projects.json');
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
+  const before = JSON.parse(JSON.stringify(projects[index]));
   // Whitelist allowed fields
   const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'order', 'socialLinks', 'coverImage', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy', 'pinned', 'recruiting', 'recruitNote', 'recruitJobs'];
   const updates = {};
@@ -4858,6 +4866,7 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   });
   projects[index] = { ...projects[index], ...updates };
   await writeJSON('projects.json', projects);
+  await logEdit('管理员', '编辑企划', projects[index].title || req.params.id, '', '', { before, after: projects[index] });
   res.json(projects[index]);
 });
 
@@ -5000,6 +5009,7 @@ app.put('/api/admin/updates/:id', authMiddleware, async (req, res) => {
   let updates = readJSON('updates.json');
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
+  const before = JSON.parse(JSON.stringify(updates[index]));
   // Whitelist allowed fields
   const allowedFields = ['title', 'content', 'publishDate', 'pinned', 'coverImage', 'images', 'relatedCircles', 'relatedEvents', 'relatedProjects', 'category', 'status', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
   const updates2 = {};
@@ -5008,6 +5018,7 @@ app.put('/api/admin/updates/:id', authMiddleware, async (req, res) => {
   });
   updates[index] = { ...updates[index], ...updates2 };
   await writeJSON('updates.json', updates);
+  await logEdit('管理员', '编辑动态', updates[index].title || req.params.id, '', '', { before, after: updates[index] });
   res.json(updates[index]);
 });
 
