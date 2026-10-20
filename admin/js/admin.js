@@ -3029,6 +3029,23 @@ function openEventModal(event = null) {
       <label>地点</label>
       <input class="form-input" id="eLocation" value="${escAttr(event?.location || '')}">
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>首页轮播</label>
+        <select class="form-input" id="eCarouselMode">
+          <option value="auto" ${!event?.carouselMode || event.carouselMode === 'auto' ? 'selected' : ''}>自动（按时间/状态）</option>
+          <option value="show" ${event?.carouselMode === 'show' ? 'selected' : ''}>强制加入轮播</option>
+          <option value="hide" ${event?.carouselMode === 'hide' ? 'selected' : ''}>关闭轮播显示</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>轮播顺序</label>
+        <input type="number" class="form-input" id="eCarouselOrder" value="${event?.carouselOrder ?? ''}" placeholder="数字越小越靠前">
+      </div>
+    </div>
+    <p style="font-size:0.75rem;color:var(--haze);margin:-0.4rem 0 0.8rem;">
+      自动：继续按活动时间自动显示；强制加入：即使不在自动范围也显示；关闭：以后台设置为准，自动规则仍保留。
+    </p>
     <div class="form-group">
       <label>展位</label>
       <input class="form-input" id="eBooth" value="${escAttr(event?.booth || '')}">
@@ -3098,6 +3115,8 @@ function openEventModal(event = null) {
       endDate: document.getElementById('eEndDate').value,
       location: document.getElementById('eLocation').value,
       booth: document.getElementById('eBooth').value,
+      carouselMode: document.getElementById('eCarouselMode').value,
+      carouselOrder: document.getElementById('eCarouselOrder').value === '' ? null : Number(document.getElementById('eCarouselOrder').value),
       description: document.getElementById('eDesc').value,
       coverImage: document.querySelector('#eCoverPreview img')?.src || '',
       images: [...document.querySelectorAll('#eImagesPreview img')].map(img => img.src),
@@ -4746,6 +4765,23 @@ function openProjectModal(project = null) {
         <input type="date" class="form-input" id="pEndDate" value="${escAttr(project?.endDate || '')}">
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>首页轮播</label>
+        <select class="form-input" id="pCarouselMode">
+          <option value="auto" ${!project?.carouselMode || project.carouselMode === 'auto' ? 'selected' : ''}>自动（按时间/状态）</option>
+          <option value="show" ${project?.carouselMode === 'show' ? 'selected' : ''}>强制加入轮播</option>
+          <option value="hide" ${project?.carouselMode === 'hide' ? 'selected' : ''}>关闭轮播显示</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>轮播顺序</label>
+        <input type="number" class="form-input" id="pCarouselOrder" value="${project?.carouselOrder ?? ''}" placeholder="数字越小越靠前">
+      </div>
+    </div>
+    <p style="font-size:0.75rem;color:var(--haze);margin:-0.4rem 0 0.8rem;">
+      自动：继续按企划时间自动显示；强制加入：即使不在自动范围也显示；关闭：以后台设置为准，自动规则仍保留。
+    </p>
     <div class="form-group">
       <label>标签（逗号分隔）</label>
       <input class="form-input" id="pTags" value="${escAttr((project?.tags || []).join(', '))}" placeholder="游戏, 东方">
@@ -4843,6 +4879,8 @@ function openProjectModal(project = null) {
       status: document.getElementById('pStatus').value,
       startDate: document.getElementById('pStartDate').value,
       endDate: document.getElementById('pEndDate').value,
+      carouselMode: document.getElementById('pCarouselMode').value,
+      carouselOrder: document.getElementById('pCarouselOrder').value === '' ? null : Number(document.getElementById('pCarouselOrder').value),
       tags: document.getElementById('pTags').value.split(',').map(t => t.trim()).filter(Boolean),
       description: document.getElementById('pDesc').value,
       contactInfo: document.getElementById('pContact').value,

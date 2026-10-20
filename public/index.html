@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020y">
+  <link rel="stylesheet" href="/css/style.css?v=20261020z">
   <style>
     /* ===== 心愿单：卡片价格旁的加减控件 ===== */
     .cl-w-foot-l { display:inline-flex; align-items:center; gap:0.5rem; min-width:0; flex:1; }
@@ -349,10 +349,10 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020y"></script>
+  <script src="/js/api.js?v=20261020z"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20261020y"></script>
-  <script src="/js/main.js?v=20261020y"></script>
+  <script src="/js/i18n.js?v=20261020z"></script>
+  <script src="/js/main.js?v=20261020z"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -361,7 +361,7 @@
       document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
     }, 8000);
 
-    // fetchWithTimeout is provided by /js/api.js?v=20261020y
+    // fetchWithTimeout is provided by /js/api.js?v=20261020z
 
     initPage('works');
     if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '发布周边', tab: 'works' });
@@ -482,6 +482,8 @@
           tagClass: 'only',
           title: currentOnly.title || '',
           cover: currentOnly.coverImage || (currentOnly.images && currentOnly.images[0]) || '',
+          carouselMode: currentOnly.carouselMode || 'auto',
+          carouselOrder: currentOnly.carouselOrder,
           pills: [
             { cls: 'price', text: 'ONLY' },
             currentOnly.date || currentOnly.startDate ? { cls: '', text: formatDate(currentOnly.date || currentOnly.startDate) } : null,
@@ -502,6 +504,8 @@
           tagClass: projectStatusClass(p.status) || 'recruiting',
           title: p.title || '',
           cover: p.coverImage || (p.images && p.images[0]) || '',
+          carouselMode: p.carouselMode || 'auto',
+          carouselOrder: p.carouselOrder,
           pills: [catLabel ? { cls: 'price', text: catLabel } : null, period ? { cls: '', text: period } : null].filter(Boolean)
         });
       });
@@ -519,10 +523,72 @@
           tagClass: String(e.status) === 'jijiangkaiqi' || String(e.status) === 'upcoming' ? 'in_progress' : 'recruiting',
           title: e.title || '',
           cover: e.coverImage || (e.images && e.images[0]) || '',
+          carouselMode: e.carouselMode || 'auto',
+          carouselOrder: e.carouselOrder,
           pills: [{ cls: 'price', text: '活动' }, e.date || e.startDate ? { cls: '', text: formatDate(e.date || e.startDate) } : null, loc ? { cls: '', text: loc } : null].filter(Boolean)
         });
       });
-      return slides;
+
+      // 后台手动加入轮播：不受“进行中/招募中”的自动规则限制。
+      const autoKeys = new Set(slides.map(s => s.key));
+      (allProjects || []).forEach(p => {
+        if (p.carouselMode !== 'show') return;
+        const key = 'p:' + p.id;
+        if (autoKeys.has(key)) return;
+        autoKeys.add(key);
+        const catLabel = (typeof PROJECT_CATEGORIES !== 'undefined' && PROJECT_CATEGORIES[p.category]) || '';
+        const start = p.startDate ? formatDate(p.startDate) : '';
+        const end = p.endDate ? formatDate(p.endDate) : '';
+        const period = start && end ? `${start} → ${end}` : (start || end || '');
+        slides.push({
+          key,
+          href: '/project-detail.html?id=' + encodeURIComponent(p.id),
+          tag: projectStatusLabel(p.status),
+          tagClass: projectStatusClass(p.status) || 'recruiting',
+          title: p.title || '',
+          cover: p.coverImage || (p.images && p.images[0]) || '',
+          carouselMode: 'show',
+          carouselOrder: p.carouselOrder,
+          pills: [catLabel ? { cls: 'price', text: catLabel } : null, period ? { cls: '', text: period } : null].filter(Boolean)
+        });
+      });
+      (allEvents || []).forEach(e => {
+        if (e.carouselMode !== 'show') return;
+        const isOnly = e.type === 'only';
+        const key = (isOnly ? 'only:' : 'e:') + e.id;
+        if (autoKeys.has(key)) return;
+        autoKeys.add(key);
+        const stLabel = (typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[e.status]) || '';
+        const loc = e.location || '';
+        slides.push({
+          key,
+          href: isOnly ? onlyEventHref(e) : '/event-detail.html?id=' + encodeURIComponent(e.id),
+          tag: isOnly ? tText('only.onlyBadge', 'ONLY 专场') : stLabel,
+          tagClass: isOnly ? 'only' : (String(e.status) === 'jijiangkaiqi' || String(e.status) === 'upcoming' ? 'in_progress' : 'recruiting'),
+          title: e.title || '',
+          cover: e.coverImage || (e.images && e.images[0]) || '',
+          carouselMode: 'show',
+          carouselOrder: e.carouselOrder,
+          pills: [
+            { cls: 'price', text: isOnly ? 'ONLY' : '活动' },
+            e.date || e.startDate ? { cls: '', text: formatDate(e.date || e.startDate) } : null,
+            loc ? { cls: '', text: loc } : null
+          ].filter(Boolean)
+        });
+      });
+
+      return slides
+        .filter(s => s.carouselMode !== 'hide')
+        .map((s, i) => ({ ...s, _autoIndex: i }))
+        .sort((a, b) => {
+          const ao = (a.carouselOrder === null || a.carouselOrder === undefined || a.carouselOrder === '') ? Infinity : Number(a.carouselOrder);
+          const bo = (b.carouselOrder === null || b.carouselOrder === undefined || b.carouselOrder === '') ? Infinity : Number(b.carouselOrder);
+          const av = Number.isFinite(ao) ? ao : Infinity;
+          const bv = Number.isFinite(bo) ? bo : Infinity;
+          if (av !== bv) return av - bv;
+          return a._autoIndex - b._autoIndex;
+        })
+        .map(({ _autoIndex, ...s }) => s);
     }
 
     function goBoardFeature(n) {

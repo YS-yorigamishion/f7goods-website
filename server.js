@@ -4301,7 +4301,7 @@ app.post('/api/admin/events', authMiddleware, async (req, res) => {
   const events = readJSON('events.json');
   const maxOrder = events.reduce((max, e) => Math.max(max, e.order ?? 0), 0);
   // Whitelist allowed fields
-  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'type', 'booths', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'socialLinks', 'editableBy'];
+  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'type', 'booths', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'socialLinks', 'editableBy', 'carouselMode', 'carouselOrder'];
   const eventData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) eventData[field] = req.body[field];
@@ -4361,7 +4361,7 @@ app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
   const before = JSON.parse(JSON.stringify(events[index]));
   // Whitelist allowed fields to prevent mass assignment
-  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'type', 'booths', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'socialLinks', 'order', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy'];
+  const allowedFields = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'type', 'booths', 'relatedWorks', 'relatedCircles', 'relatedProjects', 'socialLinks', 'order', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy', 'carouselMode', 'carouselOrder'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -4803,7 +4803,7 @@ app.post('/api/admin/projects', authMiddleware, async (req, res) => {
   const projects = readJSON('projects.json');
   const maxOrder = projects.reduce((max, p) => Math.max(max, p.order ?? 0), 0);
   // Whitelist allowed fields
-  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'editableBy', 'pinned', 'recruiting', 'recruitNote', 'recruitJobs'];
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'editableBy', 'pinned', 'recruiting', 'recruitNote', 'recruitJobs', 'carouselMode', 'carouselOrder'];
   const projectData = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) projectData[field] = req.body[field];
@@ -4860,7 +4860,7 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
   const before = JSON.parse(JSON.stringify(projects[index]));
   // Whitelist allowed fields
-  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'order', 'socialLinks', 'coverImage', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy', 'pinned', 'recruiting', 'recruitNote', 'recruitJobs'];
+  const allowedFields = ['title', 'description', 'status', 'category', 'images', 'circles', 'events', 'works', 'tags', 'contactInfo', 'startDate', 'endDate', 'order', 'socialLinks', 'coverImage', 'approvalStatus', 'rejectReason', 'submittedBy', 'editableBy', 'pinned', 'recruiting', 'recruitNote', 'recruitJobs', 'carouselMode', 'carouselOrder'];
   const updates = {};
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
