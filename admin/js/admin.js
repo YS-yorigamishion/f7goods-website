@@ -3926,9 +3926,10 @@ async function loadHealthPage() {
   const trashEl = document.getElementById('healthTrash');
   if (todoEl) todoEl.innerHTML = '<div class="health-body">正在检查…</div>';
   try {
-    const [health, trash] = await Promise.all([
+    const [health, trash, settings] = await Promise.all([
       adminAPI('GET', '/api/admin/health'),
-      adminAPI('GET', '/api/admin/trash')
+      adminAPI('GET', '/api/admin/trash'),
+      adminAPI('GET', '/api/settings')
     ]);
 
     if (todoEl) {
@@ -3980,8 +3981,39 @@ async function loadHealthPage() {
         </tbody></table>`;
       }
     }
+    const featuresEl = document.getElementById('healthFeatures');
+    if (featuresEl) {
+      const f = settings?.features || {};
+      featuresEl.innerHTML = `
+        <label class="feature-switch">
+          <input type="checkbox" id="health_feature_maintenanceMode" ${f.maintenanceMode ? 'checked' : ''}>
+          <span><b>维护模式</b><small>前台显示维护页，后台和 API 保持可用</small></span>
+        </label>
+        <label class="feature-switch">
+          <input type="checkbox" id="health_feature_contactForm" ${f.contactForm === false ? '' : 'checked'}>
+          <span><b>联系表单</b><small>关闭后访客无法提交新的联系消息</small></span>
+        </label>
+        <label class="feature-switch">
+          <input type="checkbox" id="health_feature_announcementPopup" ${f.announcementPopup === false ? '' : 'checked'}>
+          <span><b>公告弹窗</b><small>关闭后不再自动弹出公告</small></span>
+        </label>`;
+    }
   } catch (e) {
     if (todoEl) todoEl.innerHTML = '<div class="health-body" style="color:var(--accent);">检查失败，请刷新重试。</div>';
+  }
+}
+
+async function saveHealthFeatures() {
+  const features = {
+    maintenanceMode: !!document.getElementById('health_feature_maintenanceMode')?.checked,
+    contactForm: !!document.getElementById('health_feature_contactForm')?.checked,
+    announcementPopup: !!document.getElementById('health_feature_announcementPopup')?.checked
+  };
+  try {
+    const result = await adminAPI('PUT', '/api/admin/settings', { features });
+    if (result?.success) showToast('功能开关已保存', 'success');
+  } catch (e) {
+    showToast('保存失败，请重试', 'error');
   }
 }
 
@@ -5811,23 +5843,6 @@ function renderSettings() {
         </div>
       </div>
 
-      <div class="admin-card" style="margin-top:1.5rem;">
-        <h3 style="margin-bottom:1rem;">站点功能开关</h3>
-        <p style="color:var(--haze);font-size:0.8rem;margin:0 0 1rem;line-height:1.7;">关闭后立即生效。维护模式只拦截公开页面，后台仍可正常使用。</p>
-        <label class="feature-switch">
-          <input type="checkbox" id="setting_features_maintenanceMode" ${currentSettings.features?.maintenanceMode ? 'checked' : ''}>
-          <span><b>维护模式</b><small>前台显示维护页，后台和 API 保持可用</small></span>
-        </label>
-        <label class="feature-switch">
-          <input type="checkbox" id="setting_features_contactForm" ${currentSettings.features?.contactForm === false ? '' : 'checked'}>
-          <span><b>联系表单</b><small>关闭后访客无法提交新的联系消息</small></span>
-        </label>
-        <label class="feature-switch">
-          <input type="checkbox" id="setting_features_announcementPopup" ${currentSettings.features?.announcementPopup === false ? '' : 'checked'}>
-          <span><b>公告弹窗</b><small>关闭后不再自动弹出公告</small></span>
-        </label>
-      </div>
-
       <!-- Footer Settings -->
       <div class="admin-card" style="margin-top:1.5rem;">
         <h3 style="margin-bottom:1rem;">底栏设置</h3>
@@ -6034,21 +6049,14 @@ async function saveSettings() {
   };
 
   const authorRegistrationNotice = document.getElementById('setting_author_registrationNotice')?.value || '';
-  const features = {
-    ...(currentSettings.features || {}),
-    maintenanceMode: !!document.getElementById('setting_features_maintenanceMode')?.checked,
-    contactForm: !!document.getElementById('setting_features_contactForm')?.checked,
-    announcementPopup: !!document.getElementById('setting_features_announcementPopup')?.checked
-  };
 
   try {
-    const result = await adminAPI('PUT', '/api/admin/settings', { site, footer, pages, authorRegistrationNotice, features });
+    const result = await adminAPI('PUT', '/api/admin/settings', { site, footer, pages, authorRegistrationNotice });
     if (result && result.success) {
       currentSettings.site = site;
       currentSettings.footer = footer;
       currentSettings.pages = pages;
       currentSettings.authorRegistrationNotice = authorRegistrationNotice;
-      currentSettings.features = features;
       adminDirty = false;
       try {
         if ('BroadcastChannel' in window) {

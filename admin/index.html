@@ -393,6 +393,14 @@
             </div>
             <div id="healthTrash">加载中…</div>
           </div>
+          <div class="admin-card" style="margin-top:1.25rem;">
+            <div class="health-card-head">
+              <h3>站点功能开关</h3>
+              <button class="btn btn-primary" onclick="saveHealthFeatures()">保存开关</button>
+            </div>
+            <p style="color:var(--haze);font-size:0.8rem;margin:0 0 .75rem;line-height:1.7;">关闭后立即生效。维护模式只拦截公开页面，后台和 API 仍可正常使用。</p>
+            <div id="healthFeatures">加载中…</div>
+          </div>
         </div>
 
         <!-- Works Management -->
@@ -1139,6 +1147,6 @@
     </div>
   </div>
 
-  <script src="/admin/js/admin.js?v=20261020o"></script>
+  <script src="/admin/js/admin.js?v=20261020p"></script>
 </body>
 </html>
