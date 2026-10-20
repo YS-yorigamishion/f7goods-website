@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ad">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ae">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -241,7 +241,11 @@
 
       <div class="mgmt-nav-group">
         <div class="mgmt-nav-label">内容</div>
-        <button type="button" class="mgmt-nav-item active" data-tab="works" onclick="switchMgmtTab('works')">
+        <button type="button" class="mgmt-nav-item active" data-tab="todo" onclick="switchMgmtTab('todo')">
+          <svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+          工作台
+        </button>
+        <button type="button" class="mgmt-nav-item" data-tab="works" onclick="switchMgmtTab('works')">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
           我的作品
         </button>
@@ -431,8 +435,28 @@
         </div>
       </div>
 
+      <!-- Workbench Tab -->
+      <div id="tab-todo" class="mgmt-section active">
+        <div class="author-todo-head">
+          <div>
+            <h3>作者工作台</h3>
+            <p>这里汇总需要你处理的事情，点一下就能进入对应页面。</p>
+          </div>
+          <button class="btn-sm" onclick="loadAuthorWorkbench()">刷新</button>
+        </div>
+        <div id="authorTodoSummary" class="author-todo-summary"></div>
+        <div id="authorTodoList" class="author-todo-list"></div>
+        <div class="author-todo-quick">
+          <span>快捷操作</span>
+          <button type="button" onclick="openAuthorWorkForm()">+ 上传作品</button>
+          <button type="button" onclick="openMyEventForm()">+ 提交活动</button>
+          <button type="button" onclick="openMyProjectForm()">+ 提交企划</button>
+          <button type="button" onclick="openMyUpdateForm()">+ 发布动态</button>
+        </div>
+      </div>
+
       <!-- Works Tab -->
-      <div id="tab-works" class="mgmt-section active">
+      <div id="tab-works" class="mgmt-section">
         <div class="mgmt-toolbar" style="margin-bottom:1rem;">
           <div class="mgmt-toolbar-row" style="justify-content:space-between;">
             <div style="display:flex;align-items:center;gap:0.55rem;flex-wrap:wrap;min-width:0;">
@@ -759,9 +783,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020ad"></script>
-  <script src="/js/i18n.js?v=20261020ad"></script>
-  <script src="/js/main.js?v=20261020ad"></script>
+  <script src="/js/api.js?v=20261020ae"></script>
+  <script src="/js/i18n.js?v=20261020ae"></script>
+  <script src="/js/main.js?v=20261020ae"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -1250,7 +1274,7 @@
       checkAaPopup();
       // 支持前台入口深链：?tab=my-events&new=1 等
       const deep = new URLSearchParams(location.search);
-      const deepTab = deep.get('tab') || 'works';
+      const deepTab = deep.get('tab') || 'todo';
       switchMgmtTab(deepTab);
       if (deep.get('new') === '1') {
         setTimeout(() => {
@@ -4536,6 +4560,78 @@
     }
 
     // Management tab switching
+    async function loadAuthorWorkbench() {
+      const summary = document.getElementById('authorTodoSummary');
+      const list = document.getElementById('authorTodoList');
+      if (!summary || !list) return;
+      summary.innerHTML = '<div class="author-todo-card"><b>…</b><span>正在检查</span></div>';
+      list.innerHTML = '';
+      const results = await Promise.allSettled([
+        authorAPI('GET', '/api/author/works'),
+        authorAPI('GET', '/api/author/my-events'),
+        authorAPI('GET', '/api/author/my-projects'),
+        authorAPI('GET', '/api/author/my-updates'),
+        authorAPI('GET', '/api/author/only-booths'),
+        authorAPI('GET', '/api/author/notifications')
+      ]);
+      const val = (i, fallback) => results[i].status === 'fulfilled' ? (results[i].value || fallback) : fallback;
+      const works = val(0, []);
+      const events = val(1, []);
+      const projects = val(2, []);
+      const updates = val(3, []);
+      const boothPacks = val(4, []);
+      const notifications = val(5, []);
+      const pendingWorks = works.filter(w => w.approvalStatus === 'pending' || w._hasPendingRevision);
+      const pendingEvents = events.filter(e => e.approvalStatus === 'pending');
+      const pendingProjects = projects.filter(p => p.approvalStatus === 'pending');
+      const pendingUpdates = updates.filter(u => u.approvalStatus === 'pending');
+      const rejected = works.filter(w => w.approvalStatus === 'rejected');
+      const missingCovers = works.filter(w => !(Array.isArray(w.images) && w.images.length));
+      const unread = notifications.filter(n => !n.read);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const upcoming = events
+        .filter(e => e.date)
+        .map(e => ({ e, days: Math.ceil((new Date(e.date + 'T00:00:00+08:00') - today) / 86400000) }))
+        .filter(x => x.days >= 0 && x.days <= 14)
+        .sort((a, b) => a.days - b.days);
+      const boothIds = new Set((boothPacks || []).filter(p => (p.booths || []).length).map(p => p.event?.id));
+      const missingBooths = upcoming.filter(x => x.e.type === 'only' && !boothIds.has(x.e.id));
+
+      const card = (count, label, hint, tab) => `
+        <button type="button" class="author-todo-card" onclick="switchMgmtTab('${tab}')">
+          <b>${count}</b><span>${label}</span><small>${hint}</small>
+        </button>`;
+      summary.innerHTML = [
+        card(pendingWorks.length + pendingEvents.length + pendingProjects.length + pendingUpdates.length, '待审核内容', '作品 / 活动 / 企划 / 动态', 'works'),
+        card(rejected.length, '被拒绝作品', '查看原因并修改', 'works'),
+        card(missingCovers.length, '缺少封面', '补图后展示更完整', 'works'),
+        card(upcoming.length, '14 天内活动', '确认活动与摊位信息', 'my-events'),
+        card(unread.length, '未读通知', '审核结果与管理员消息', 'notifications')
+      ].join('');
+
+      const rows = [];
+      if (pendingWorks.length + pendingEvents.length + pendingProjects.length + pendingUpdates.length) {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>有 ${pendingWorks.length + pendingEvents.length + pendingProjects.length + pendingUpdates.length} 项内容等待审核</b><small>作品 ${pendingWorks.length} · 活动 ${pendingEvents.length} · 企划 ${pendingProjects.length} · 动态 ${pendingUpdates.length}</small></div><div class="actions"><button onclick="switchMgmtTab('works')">查看作品</button></div></div>`);
+      }
+      rejected.slice(0, 3).forEach(w => {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>作品被拒绝：${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(w.rejectReason || '管理员未填写原因，请修改后重新提交')}</small></div><div class="actions"><button onclick="openWorkEditModal('${w.id}')">修改</button></div></div>`);
+      });
+      missingCovers.slice(0, 3).forEach(w => {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>作品缺少封面：${escapeHtml(w.title || '未命名')}</b><small>没有图片的作品在前台会比较空</small></div><div class="actions"><button onclick="openWorkEditModal('${w.id}')">去补图</button></div></div>`);
+      });
+      upcoming.forEach(({ e, days }) => {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>${escapeHtml(e.title || '活动')}</b><small>${days === 0 ? '今天开始' : days + ' 天后开始'}${e.location ? ' · ' + escapeHtml(e.location) : ''}</small></div><div class="actions"><button onclick="switchMgmtTab('my-events')">查看活动</button></div></div>`);
+      });
+      missingBooths.slice(0, 3).forEach(({ e }) => {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>ONLY 摊位未配置：${escapeHtml(e.title || '活动')}</b><small>活动快开始了，还没有挂接你的摊位</small></div><div class="actions"><button onclick="switchMgmtTab('only-booths')">去摊位</button></div></div>`);
+      });
+      if (unread.length) {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>有 ${unread.length} 条未读审核通知</b><small>审核结果、拒绝原因和管理员消息都在这里</small></div><div class="actions"><button onclick="switchMgmtTab('notifications')">查看通知</button></div></div>`);
+      }
+      list.innerHTML = rows.length ? rows.join('') : '<div class="author-todo-row"><div class="body"><b>暂时没有待处理事项</b><small>可以安心继续创作，或者去上传新作品。</small></div></div>';
+    }
+
     function switchMgmtTab(tab) {
       document.querySelectorAll('.mgmt-nav-item').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.mgmt-section').forEach(s => s.classList.remove('active'));
@@ -4544,6 +4640,7 @@
       const section = document.getElementById('tab-' + tab);
       if (section) section.classList.add('active');
       const titles = {
+        todo: '作者工作台',
         overview: '数据概览',
         works: '我的作品',
         'my-events': '我的活动',
@@ -4562,6 +4659,7 @@
       const content = document.querySelector('.mgmt-content');
       if (content) content.scrollTop = 0;
       toggleMgmtSidebar(false);
+      if (tab === 'todo') loadAuthorWorkbench();
       if (tab === 'history') loadAuthorHistory();
       if (tab === 'notifications') loadAuthorNotifications();
       if (tab === 'author-announcements') loadAuthorAnnouncementsList();
