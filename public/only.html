@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020w">
+  <link rel="stylesheet" href="/css/style.css?v=20261020x">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -438,9 +438,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020w"></script>
-  <script src="/js/i18n.js?v=20261020w"></script>
-  <script src="/js/main.js?v=20261020w"></script>
+  <script src="/js/api.js?v=20261020x"></script>
+  <script src="/js/i18n.js?v=20261020x"></script>
+  <script src="/js/main.js?v=20261020x"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -1320,8 +1320,7 @@
         sum.innerHTML = '';
         return;
       }
-      list.innerHTML = entries.map(e => {
-        // Fallback lookup for carts saved before img was stored
+      const rowHtml = (e) => {
         let img = e.img || '';
         if (!img && !e.isGift) {
           const pack = onlyGoodsIndex()[e.id];
@@ -1333,15 +1332,27 @@
         return `
         <div class="only-ci">
           ${img ? `<img class="thumb" src="${esc(imgUrl(img, 96))}" alt="">` : '<div class="thumb"></div>'}
-          <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}${(!e.isGift && e.claim) ? '<span class="claim-tag">条件领取</span>' : ''}<small>摊位 ${esc(e.boothName)} · ${e.isGift ? '赠品' : esc(formatPriceLabel(e.priceLabel != null && e.priceLabel !== '' ? e.priceLabel : e.price))}</small></div>
+          <div class="n">${esc(e.title)}${e.isGift ? '<span class="gift-tag">赠品</span>' : ''}${(!e.isGift && e.claim) ? '<span class="claim-tag">条件领取</span>' : ''}<small>${e.isGift ? '赠品' : esc(formatPriceLabel(e.priceLabel != null && e.priceLabel !== '' ? e.priceLabel : e.price))}</small></div>
           <div class="only-qty">
             <button type="button" data-q="${esc(e.id)}" data-d="-1">−</button>
             <span>${e.qty}</span>
             <button type="button" data-q="${esc(e.id)}" data-d="1" ${e.isGift ? 'disabled' : ''}>+</button>
           </div>
           <div style="width:52px;text-align:right;font-weight:600;">${e.price === 0 ? '—' : money(e.price * e.qty)}</div>
-        </div>
-      `;
+        </div>`;
+      };
+      const groups = new Map();
+      entries.forEach(e => {
+        const key = e.boothName || '未分摊摊位';
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(e);
+      });
+      list.innerHTML = [...groups.entries()].map(([boothName, items]) => {
+        const subtotal = items.reduce((s, e) => s + (e.isGift ? 0 : (e.price || 0) * (e.qty || 0)), 0);
+        return `<div class="only-cart-group">
+          <div class="only-cart-group-head"><b>${esc(boothName)}</b><span>${items.length} 项${subtotal ? ' · ' + money(subtotal) : ''}</span></div>
+          ${items.map(rowHtml).join('')}
+        </div>`;
       }).join('');
       const { total, gifts } = onlyCartStats();
       const claims = Object.values(window._onlyCart || {}).filter(e => !e.isGift && e.claim);

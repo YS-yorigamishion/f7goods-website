@@ -4267,12 +4267,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .author-booth-sub { color: var(--haze); font-size: .72rem; margin-top: .15rem; }
 .author-booth-actions { display: flex; gap: .3rem; align-items: center; flex-wrap: wrap; }
 .author-booth-more { position: relative; }
-.author-booth-more summary { list-style: none; cursor: pointer; padding: .2rem .55rem; border: 1px solid var(--line); border-radius: 999px; font-size: .72rem; color: var(--haze); }
-.author-booth-more summary::-webkit-details-marker { display: none; }
-.author-booth-more > div { position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .25rem; min-width: 100px; box-shadow: var(--shadow-md); }
-.author-booth-more button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .35rem .5rem; font: inherit; font-size: .75rem; color: var(--ink); cursor: pointer; border-radius: 5px; }
-.author-booth-more button:hover { background: var(--paper); }
-.author-booth-more button.danger { color: var(--accent); }
+.author-booth-more > button { cursor: pointer; border: 1px solid var(--line); border-radius: 999px; padding: .2rem .55rem; font: inherit; font-size: .72rem; color: var(--haze); background: transparent; }
+.author-booth-more-menu { display: none; position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .25rem; min-width: 110px; box-shadow: var(--shadow-md); }
+.author-booth-more-menu.open { display: block; }
+.author-booth-more-menu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .35rem .5rem; font: inherit; font-size: .75rem; color: var(--ink); cursor: pointer; border-radius: 5px; }
+.author-booth-more-menu button:hover { background: var(--paper); }
+.author-booth-more-menu button.danger { color: var(--accent); }
 .author-booth-thumbs { display: flex; gap: 4px; margin-top: .4rem; }
 .author-booth-thumbs img, .author-booth-thumbs span { width: 28px; height: 28px; border-radius: 4px; object-fit: cover; background: var(--paper); color: var(--haze); font-size: .55rem; display: flex; align-items: center; justify-content: center; }
 .author-booth-goods { margin-top: .35rem; }
@@ -4280,3 +4280,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .author-booth-cover { width: 48px; height: 48px; flex-basis: 48px; }
   .author-booth-actions { width: 100%; }
 }
+
+/* Cart grouped by booth */
+.only-cart-group { margin-bottom: .8rem; }
+.only-cart-group-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: .5rem;
+  padding: .35rem 0; border-bottom: 1px solid var(--line); margin-bottom: .15rem;
+}
+.only-cart-group-head b { font-size: .82rem; color: var(--ink); }
+.only-cart-group-head span { font-size: .7rem; color: var(--haze); }
