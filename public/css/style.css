@@ -4352,3 +4352,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .author-featured-searchrow { display: flex; align-items: center; gap: .6rem; margin-bottom: .7rem; }
 .author-featured-searchrow .form-input { flex: 1; min-width: 0; padding: .4rem .6rem; font-size: .78rem; }
 .author-featured-searchrow span { color: var(--haze); font-size: .7rem; white-space: nowrap; }
+
+.author-featured-slots .author-featured-search { width: 100%; margin-top: .2rem; padding: .34rem .45rem; font-size: .74rem; }
+.author-featured-slots small { display: block; margin-top: .2rem; color: var(--haze); font-size: .66rem; }
