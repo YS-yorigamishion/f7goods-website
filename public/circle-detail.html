@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020aa">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ab">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -45,9 +45,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020aa"></script>
-  <script src="/js/i18n.js?v=20261020aa"></script>
-  <script src="/js/main.js?v=20261020aa"></script>
+  <script src="/js/api.js?v=20261020ab"></script>
+  <script src="/js/i18n.js?v=20261020ab"></script>
+  <script src="/js/main.js?v=20261020ab"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -339,13 +339,13 @@
       home.id = 'cl-panel-home';
       home.className = 'cl-tab-panel on';
       home.setAttribute('role', 'tabpanel');
-      const featuredHtml = works.slice(0, 3).map(w => `
+      const featuredHtml = works.slice().sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 3).map(w => `
         <a class="cl-home-work" href="/work-detail.html?id=${encodeURIComponent(w.id)}">
           <div class="cl-home-work-cover">${w.images && w.images.length ? `<img src="${escapeHtml(imgUrl(w.images[0], 320))}" alt="${escapeHtml(workTitle(w))}" loading="lazy">` : '<span>作品</span>'}</div>
           <div class="cl-home-work-body"><span class="cl-home-work-status">${escapeHtml(STATUS_LABELS[w.status] || '')}</span><b>${escapeHtml(workTitle(w))}</b></div>
         </a>`).join('');
       home.innerHTML = `<p style="margin:0 0 1rem;color:var(--muted);line-height:1.8;">${(works.length || events.length || projects.length) ? `这里收录了 <b>${works.length}</b> 件作品、<b>${events.length}</b> 个活动和 <b>${projects.length}</b> 个企划。` : '这个作者还没有公开内容。'}</p>
-        ${featuredHtml ? `<div class="cl-home-head"><h3>精选作品</h3><a href="#works">全部 ${works.length} 件 →</a></div><div class="cl-home-works">${featuredHtml}</div>` : ''}`;
+        ${featuredHtml ? `<div class="cl-home-head"><h3>猜你喜欢</h3><a href="#works">全部 ${works.length} 件 →</a></div><div class="cl-home-works">${featuredHtml}</div>` : ''}`;
       if (side) home.appendChild(side);
       panels.home = home;
 
