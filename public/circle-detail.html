@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020m">
+  <link rel="stylesheet" href="/css/style.css?v=20261020n">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -45,9 +45,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020m"></script>
-  <script src="/js/i18n.js?v=20261020m"></script>
-  <script src="/js/main.js?v=20261020m"></script>
+  <script src="/js/api.js?v=20261020n"></script>
+  <script src="/js/i18n.js?v=20261020n"></script>
+  <script src="/js/main.js?v=20261020n"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -297,11 +297,105 @@
           </div>
         `;
         renderCircleWorks();
+        setupCircleTabs(container, circleWorks, relatedEvents, relatedProjects);
         if (typeof applyTranslations === 'function') applyTranslations();
       } catch (e) {
         document.getElementById('circleDetail').innerHTML =
           `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;
       }
+    }
+
+    function setupCircleTabs(container, works, events, projects) {
+      const detail = container.querySelector('.detail-content');
+      if (!detail) return;
+      const main = detail.querySelector('.detail-main');
+      const side = detail.querySelector('.detail-sidebar');
+      detail.remove();
+
+      // Keep contact/updates in the home tab; events/projects get their own tab.
+      if (side) {
+        [...side.querySelectorAll('.sidebar-card')].forEach(card => {
+          const h = card.querySelector('h3')?.textContent || '';
+          if (h.includes('活动') || h.includes('企划')) card.remove();
+        });
+      }
+
+      const bar = document.createElement('div');
+      bar.className = 'cl-tabs';
+      bar.setAttribute('role', 'tablist');
+      const tabs = [
+        ['home', '主页', works.length],
+        ['works', '作品', works.length],
+        ['events', '活动', events.length],
+        ['projects', '企划', projects.length]
+      ];
+      bar.innerHTML = tabs.map(([key, label, count], i) =>
+        `<button type="button" role="tab" data-cl-tab="${key}" aria-selected="${i === 0}" aria-controls="cl-panel-${key}" class="${i === 0 ? 'on' : ''}">${label}${count ? ` <b>${count}</b>` : ''}</button>`
+      ).join('');
+
+      const panels = {};
+      const home = document.createElement('div');
+      home.id = 'cl-panel-home';
+      home.className = 'cl-tab-panel on';
+      home.setAttribute('role', 'tabpanel');
+      home.innerHTML = `<p style="margin:0 0 1rem;color:var(--muted);line-height:1.8;">${(works.length || events.length || projects.length) ? `这里收录了 <b>${works.length}</b> 件作品、<b>${events.length}</b> 个活动和 <b>${projects.length}</b> 个企划。` : '这个作者还没有公开内容。'}</p>`;
+      if (side) home.appendChild(side);
+      panels.home = home;
+
+      const worksPanel = document.createElement('div');
+      worksPanel.id = 'cl-panel-works';
+      worksPanel.className = 'cl-tab-panel';
+      worksPanel.setAttribute('role', 'tabpanel');
+      if (main) worksPanel.appendChild(main);
+      panels.works = worksPanel;
+
+      const eventsPanel = document.createElement('div');
+      eventsPanel.id = 'cl-panel-events';
+      eventsPanel.className = 'cl-tab-panel';
+      eventsPanel.setAttribute('role', 'tabpanel');
+      eventsPanel.innerHTML = events.length ? events.map(e => `
+        <a class="cl-event-row" href="/event-detail.html?id=${encodeURIComponent(e.id)}">
+          <div class="cl-event-date">${formatDate(e.date)}</div>
+          <div class="cl-event-main"><b>${escapeHtml(e.title)}</b><small>${escapeHtml(e.location || '')}</small></div>
+          <span class="status-badge is-info">${escapeHtml(EVENT_STATUS_LABELS[e.status] || '活动')}</span>
+        </a>`).join('') : '<div class="empty-state"><div class="icon">·</div><p>暂无公开活动</p></div>';
+      panels.events = eventsPanel;
+
+      const projectsPanel = document.createElement('div');
+      projectsPanel.id = 'cl-panel-projects';
+      projectsPanel.className = 'cl-tab-panel';
+      projectsPanel.setAttribute('role', 'tabpanel');
+      projectsPanel.innerHTML = projects.length ? projects.map(p => `
+        <a class="cl-project-row" href="/project-detail.html?id=${encodeURIComponent(p.id)}">
+          ${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 160))}" alt="" loading="lazy">` : '<span class="cl-project-placeholder">企划</span>'}
+          <div class="cl-project-main"><b>${escapeHtml(p.title)}</b><small>${escapeHtml(p.description || '')}</small></div>
+          <span class="status-badge is-warning">${escapeHtml(PROJECT_STATUS_LABELS[p.status] || '企划')}</span>
+        </a>`).join('') : '<div class="empty-state"><div class="icon">·</div><p>暂无公开企划</p></div>';
+      panels.projects = projectsPanel;
+
+      container.append(bar, home, worksPanel, eventsPanel, projectsPanel);
+
+      function activate(key, updateHash = true) {
+        if (!panels[key]) key = 'home';
+        bar.querySelectorAll('[data-cl-tab]').forEach(btn => {
+          const on = btn.dataset.clTab === key;
+          btn.classList.toggle('on', on);
+          btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        Object.entries(panels).forEach(([k, panel]) => {
+          panel.classList.toggle('on', k === key);
+          panel.hidden = k !== key;
+        });
+        if (updateHash && location.hash !== '#' + key) history.replaceState(null, '', '#' + key);
+      }
+
+      bar.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-cl-tab]');
+        if (!btn) return;
+        activate(btn.dataset.clTab);
+      });
+      window.addEventListener('hashchange', () => activate((location.hash || '#home').slice(1), false));
+      activate((location.hash || '#home').slice(1), false);
     }
 
     loadCircle();
