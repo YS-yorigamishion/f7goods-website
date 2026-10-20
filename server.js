@@ -1074,8 +1074,8 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
     else if (newCount < oldCount) changes.push('删除了' + (oldCount - newCount) + '张图片');
   }
   if (updates.category && updates.category !== old.category) changes.push('修改了分类');
-  if (updates.featuredWorkIds !== undefined) changes.push('更新了首页猜你喜欢');
-  if (updates.showFeaturedWorks !== undefined) changes.push(updates.showFeaturedWorks ? '开启首页猜你喜欢' : '关闭首页猜你喜欢');
+  if (updates.featuredWorkIds !== undefined) changes.push('更新了首页展示作品');
+  if (updates.showFeaturedWorks !== undefined) changes.push(updates.showFeaturedWorks ? '开启首页展示作品' : '关闭首页展示作品');
   logEdit(circles[index].name || '作者', '修改资料', '', changes.join('、') || '更新了资料');
 
   const { passwordHash, ...safe } = circles[index];

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020aj">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ak">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -785,9 +785,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020aj"></script>
-  <script src="/js/i18n.js?v=20261020aj"></script>
-  <script src="/js/main.js?v=20261020aj"></script>
+  <script src="/js/api.js?v=20261020ak"></script>
+  <script src="/js/i18n.js?v=20261020ak"></script>
+  <script src="/js/main.js?v=20261020ak"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4641,9 +4641,9 @@
       const picker = document.getElementById('authorFeaturedPicker');
       if (!picker) return;
       const publicWorks = works.filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
-      const toggleHtml = `<label class="author-featured-toggle"><input type="checkbox" id="authorFeaturedShow" ${showFeatured ? 'checked' : ''}><span>在首页显示「猜你喜欢」</span><small>关闭后作者主页不再出现这个模块，作品仍保留。</small></label>`;
+      const toggleHtml = `<label class="author-featured-toggle"><input type="checkbox" id="authorFeaturedShow" ${showFeatured ? 'checked' : ''}><span>在首页显示「展示作品」</span><small>关闭后作者主页不再出现这个模块，作品仍保留。</small></label>`;
       if (!publicWorks.length) {
-        picker.innerHTML = `<h3>首页猜你喜欢</h3>${toggleHtml}<p class="author-featured-hint">有通过审核的作品后，可以在这里选择要展示的 3 个作品。</p>`;
+        picker.innerHTML = `<h3>首页展示作品</h3>${toggleHtml}<p class="author-featured-hint">有通过审核的作品后，可以在这里选择要展示的 3 个作品。</p>`;
         return;
       }
       const ids = (Array.isArray(selectedIds) ? selectedIds : []).map(String);
@@ -4653,7 +4653,7 @@
       ).join('');
       picker.innerHTML = `
         <div class="author-featured-head">
-          <div><h3>首页猜你喜欢</h3><p class="author-featured-hint">选择最多 3 个作品，前台会按这里的顺序展示；不设置时自动按喜爱数排序。</p></div>
+          <div><h3>首页展示作品</h3><p class="author-featured-hint">选择最多 3 个作品，前台会按这里的顺序展示；不设置时自动按喜爱数排序。</p></div>
           <div class="author-featured-actions">
             ${ids.length ? '<button type="button" class="btn-sm" onclick="clearAuthorFeaturedWorks()">恢复默认</button>' : ''}
             <button type="button" class="btn-sm btn-primary" onclick="saveAuthorFeaturedWorks()">保存</button>
@@ -4697,7 +4697,7 @@
       try {
         const result = await authorAPI('PUT', '/api/author/profile', { featuredWorkIds: ids, showFeaturedWorks });
         if (result) {
-          showToast('首页猜你喜欢已保存', 'success');
+          showToast('首页展示作品已保存', 'success');
           loadAuthorWorkbench();
         }
       } catch (e) {
