@@ -1529,30 +1529,3 @@ if ('BroadcastChannel' in window) {
     if (footer && typeof buildFooter === 'function') footer.innerHTML = buildFooter();
   };
 }
-
-
-// Mobile filter bottom sheet for list pages.
-function initMobileFilterDrawers() {
-  document.querySelectorAll('.cl-toolbar-card').forEach((card) => {
-    if (card.dataset.filterDrawerReady) return;
-    card.dataset.filterDrawerReady = '1';
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'mobile-filter-toggle';
-    btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg> 筛选';
-    btn.setAttribute('aria-expanded', 'false');
-    const close = document.createElement('button');
-    close.type = 'button';
-    close.className = 'mobile-filter-close';
-    close.textContent = '完成';
-    close.onclick = () => { card.classList.remove('filters-open'); btn.setAttribute('aria-expanded', 'false'); };
-    btn.onclick = () => {
-      const open = card.classList.toggle('filters-open');
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    };
-    card.parentNode.insertBefore(btn, card);
-    card.prepend(close);
-  });
-}
-document.addEventListener('DOMContentLoaded', initMobileFilterDrawers);
-setTimeout(initMobileFilterDrawers, 1200);
