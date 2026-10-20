@@ -4348,3 +4348,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .author-featured-slots { grid-template-columns: 1fr; }
   .author-featured-actions { width: 100%; }
 }
+
+.author-featured-searchrow { display: flex; align-items: center; gap: .6rem; margin-bottom: .7rem; }
+.author-featured-searchrow .form-input { flex: 1; min-width: 0; padding: .4rem .6rem; font-size: .78rem; }
+.author-featured-searchrow span { color: var(--haze); font-size: .7rem; white-space: nowrap; }
