@@ -1375,6 +1375,7 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
 
   const work = works[index];
   const oldTitle = work.title;
+  const beforeEdit = JSON.parse(JSON.stringify(work));
   const oldImages = work.images || [];
   const oldMoreImages = work.moreImages || [];
 
@@ -1484,7 +1485,7 @@ app.put('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   if (newMoreImages.length < oldMoreImages.length) details.push('删除了' + (oldMoreImages.length - newMoreImages.length) + '张更多图片');
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
-  logEdit(circle?.name || '作者', '编辑作品', oldTitle || req.params.id, details.join('、'));
+  logEdit(circle?.name || '作者', '编辑作品', oldTitle || req.params.id, details.join('、'), '', { before: beforeEdit, after: works[index] });
 
   res.json(works[index]);
 });
