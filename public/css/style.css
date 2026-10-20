@@ -4238,9 +4238,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .only-booth-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .only-booth-thumbs { display: flex; gap: 4px; margin-top: 5px; }
 .only-booth-thumbs img, .only-booth-thumbs span { width: 28px; height: 28px; border-radius: 4px; object-fit: cover; display: block; background: var(--paper); color: var(--haze); font-size: .55rem; display: flex; align-items: center; justify-content: center; }
-.only-booth-meta { text-align: right; flex: 0 0 auto; color: var(--muted); font-size: .72rem; }
-.only-booth-meta b { display: block; color: var(--accent); font-size: 1rem; }
-.only-booth-open { display: inline-flex; margin-top: 3px; color: var(--accent); font-size: .72rem; }
+.only-booth-meta { text-align: right; flex: 0 0 auto; color: var(--muted); font-size: .72rem; line-height: 1.5; }
+.only-booth-count { display: block; white-space: nowrap; }
+.only-booth-meta b { display: inline; color: var(--accent); font-size: 1rem; }
+.only-booth-open { display: block; margin-top: 2px; color: var(--accent); font-size: .72rem; white-space: nowrap; }
 @media (max-width: 768px) {
   .only-tools { align-items: stretch; }
   .only-search { max-width: none; order: -1; width: 100%; }
