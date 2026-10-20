@@ -7864,3 +7864,25 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === 'Escape') closeAdminCommandPalette();
 });
+
+
+// Label table cells so mobile CSS can show them as cards.
+function decorateAdminTables() {
+  document.querySelectorAll('.admin-table').forEach((table) => {
+    const headers = [...table.querySelectorAll('thead th')].map(th => th.textContent.trim());
+    if (!headers.length) return;
+    table.querySelectorAll('tbody tr').forEach((tr) => {
+      [...tr.children].forEach((td, i) => {
+        if (td.tagName === 'TD') td.dataset.label = headers[i] || '';
+      });
+    });
+  });
+}
+let __tableRaf = null;
+const __tableObserver = new MutationObserver(() => {
+  if (__tableRaf) return;
+  __tableRaf = requestAnimationFrame(() => { __tableRaf = null; decorateAdminTables(); });
+});
+const __adminContent = document.getElementById('adminContent');
+if (__adminContent) __tableObserver.observe(__adminContent, { childList: true, subtree: true });
+document.addEventListener('DOMContentLoaded', decorateAdminTables);

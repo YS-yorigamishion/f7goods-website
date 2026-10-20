@@ -1084,3 +1084,27 @@
 .cmd-item:hover, .cmd-item.active { background: rgba(196,67,79,.08); }
 .cmd-item small { margin-left: auto; color: var(--haze); font-size: .72rem; }
 .cmd-empty { padding: 1rem; color: var(--haze); font-size: .85rem; text-align: center; }
+
+/* Mobile: turn admin tables into labeled cards */
+@media (max-width: 768px) {
+  .admin-table { min-width: 0 !important; display: block; }
+  .admin-table thead { display: none; }
+  .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: auto; }
+  .admin-table tbody tr {
+    border: 1px solid var(--border); border-radius: 9px;
+    margin: 0 0 .7rem; padding: .55rem .7rem; background: var(--card-bg);
+  }
+  .admin-table tbody tr:hover td { background: transparent; }
+  .admin-table tbody td {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; border: 0; padding: .32rem .15rem; text-align: right;
+  }
+  .admin-table tbody td::before {
+    content: attr(data-label); color: var(--haze); font-size: .72rem;
+    font-weight: 600; text-align: left; flex: 0 0 92px;
+  }
+  .admin-table tbody td[data-label=""]::before { content: ""; flex-basis: 0; }
+  .admin-table .table-actions { justify-content: flex-end; flex-wrap: wrap; }
+  .modal { max-width: 100%; max-height: 92vh; }
+  .modal-footer { position: sticky; bottom: 0; background: var(--card-bg); z-index: 3; }
+}
