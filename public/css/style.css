@@ -4001,3 +4001,29 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 @media (max-width: 768px) {
   .app-title { display: none; }
 }
+
+/* ===== Work / detail pages: clearer two-column reading order ===== */
+@media (min-width: 769px) {
+  .exhibit-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr);
+    gap: 2rem;
+  }
+  .exhibit-plaque {
+    position: sticky;
+    top: 80px;
+  }
+  .exhibit-art { max-width: min(520px, 100%); }
+  .detail-content { grid-template-columns: minmax(0, 1fr) 340px; gap: 2rem; }
+}
+
+@media (max-width: 768px) {
+  .exhibit-art img { max-height: 62vh; }
+  .exhibit-thumbs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .exhibit-thumbs img { flex: 0 0 56px; }
+}
