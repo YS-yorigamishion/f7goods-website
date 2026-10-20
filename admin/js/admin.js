@@ -76,7 +76,7 @@ let token = localStorage.getItem('f7admin_token');
 let currentPage = 'dashboard';
 let adminDirty = false;
 let modalDirty = false;
-const ADMIN_PAGES = new Set(['dashboard','approval','page-stats','author-stats','editlog','works','circles','events','booths','projects','updates','carousel','images','categories','settings','backup','announcements','contacts']);
+const ADMIN_PAGES = new Set(['dashboard','health','approval','page-stats','author-stats','editlog','works','circles','events','booths','projects','updates','carousel','images','categories','settings','backup','announcements','contacts']);
 
 function pageFromHash() {
   const page = (location.hash || '').replace(/^#/, '');
@@ -245,12 +245,12 @@ function navigateTo(page) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${page}`)?.classList.add('active');
 
-  const titles = { dashboard: '仪表盘', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', carousel: '首页轮播', categories: '分类管理', images: '图片管理', settings: '页面设置', backup: '数据备份', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计', approval: '审核管理', 'author-stats': '作者统计' };
+  const titles = { dashboard: '仪表盘', health: '运维中心', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', carousel: '首页轮播', categories: '分类管理', images: '图片管理', settings: '页面设置', backup: '数据备份', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计', approval: '审核管理', 'author-stats': '作者统计' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
   // 顶栏分组标签
   const groups = {
-    dashboard: '总览', approval: '总览', 'page-stats': '总览', 'author-stats': '总览', editlog: '总览',
+    dashboard: '总览', health: '总览', approval: '总览', 'page-stats': '总览', 'author-stats': '总览', editlog: '总览',
     works: '内容', circles: '内容', events: '内容', booths: '内容', projects: '内容', updates: '内容', carousel: '内容',
     images: '素材', categories: '素材',
     settings: '站点', backup: '站点', announcements: '站点', contacts: '站点'
@@ -260,6 +260,7 @@ function navigateTo(page) {
 
   // Load data for the page
   if (page === 'dashboard') loadDashboard();
+  else if (page === 'health') loadHealthPage();
   else if (page === 'works') { loadWorks(); syncWorkApprovalToggle(); }
   else if (page === 'events') { loadEvents(); syncContentApprovalToggles(); }
   else if (page === 'booths') loadBoothsPage();
@@ -3917,6 +3918,90 @@ async function resetAuthorPassword(circleId) {
   showToast('密码已重置', 'success');
 }
 
+// ===== Operations health / recycle bin =====
+async function loadHealthPage() {
+  const todoEl = document.getElementById('healthTodo');
+  const imagesEl = document.getElementById('healthImages');
+  const relationsEl = document.getElementById('healthRelations');
+  const trashEl = document.getElementById('healthTrash');
+  if (todoEl) todoEl.innerHTML = '<div class="health-body">正在检查…</div>';
+  try {
+    const [health, trash] = await Promise.all([
+      adminAPI('GET', '/api/admin/health'),
+      adminAPI('GET', '/api/admin/trash')
+    ]);
+
+    if (todoEl) {
+      todoEl.innerHTML = health.todo?.length
+        ? health.todo.map(item => `
+          <button type="button" class="health-todo-item" onclick="navigateTo('${item.page}')">
+            <b>${item.count}</b><span>${escapeHtml(item.label)}</span><small>${escapeHtml(item.hint || '')}</small>
+          </button>`).join('')
+        : '<div class="admin-card health-empty" style="grid-column:1/-1;">没有需要立即处理的事项。</div>';
+    }
+
+    if (imagesEl) {
+      const img = health.images || {};
+      const size = (img.unusedBytes || 0) > 0 ? formatBackupSize(img.unusedBytes) : '0 B';
+      imagesEl.innerHTML = `
+        <div class="health-row"><span>上传文件总数</span><b>${img.total || 0}</b></div>
+        <div class="health-row"><span>未使用图片</span><b>${img.unused || 0}</b></div>
+        <div class="health-row"><span>未使用占用</span><b>${size}</b></div>
+        <div class="health-row"><span>缺失引用</span><b style="color:${(img.missing || []).length ? 'var(--accent)' : 'var(--success)'}">${(img.missing || []).length}</b></div>
+        ${(img.missing || []).length ? `<div style="margin-top:.4rem;color:var(--accent);font-size:.72rem;">${img.missing.slice(0, 5).map(escapeHtml).join('<br>')}</div>` : ''}
+      `;
+    }
+
+    if (relationsEl) {
+      const issues = health.relations || [];
+      const countEl = document.getElementById('healthRelationCount');
+      if (countEl) countEl.textContent = issues.length ? `${issues.length} 项异常` : '正常';
+      relationsEl.innerHTML = issues.length
+        ? issues.slice(0, 12).map(issue => `<div class="health-issue"><b>${escapeHtml(issue.type)} · ${escapeHtml(issue.title || '未命名')}</b><small>${escapeHtml(issue.detail || '')}</small></div>`).join('')
+        : '<div class="health-empty">关联数据正常。</div>';
+    }
+
+    const countEl = document.getElementById('healthTrashCount');
+    if (countEl) countEl.textContent = trash?.length ? `(${trash.length})` : '';
+    if (trashEl) {
+      if (!trash || !trash.length) {
+        trashEl.innerHTML = '<div class="health-empty">回收站是空的。</div>';
+      } else {
+        trashEl.innerHTML = `<table class="admin-table"><thead><tr><th>类型</th><th>标题</th><th>删除时间</th><th>操作</th></tr></thead><tbody>
+          ${trash.map(item => `<tr>
+            <td>${escapeHtml(item.typeLabel || '')}</td>
+            <td>${escapeHtml(item.title || '')}</td>
+            <td>${item.deletedAt ? formatDateAdmin(item.deletedAt) : '-'}</td>
+            <td><div class="table-actions">
+              <button class="btn-sm btn-edit" onclick="restoreTrashItem('${item.id}')">恢复</button>
+              <button class="btn-sm btn-delete" onclick="purgeTrashItem('${item.id}')">彻底删除</button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody></table>`;
+      }
+    }
+  } catch (e) {
+    if (todoEl) todoEl.innerHTML = '<div class="health-body" style="color:var(--accent);">检查失败，请刷新重试。</div>';
+  }
+}
+
+async function restoreTrashItem(id) {
+  const result = await adminAPI('POST', `/api/admin/trash/${encodeURIComponent(id)}/restore`);
+  if (result?.success) {
+    showToast('已恢复', 'success');
+    loadHealthPage();
+  }
+}
+
+async function purgeTrashItem(id) {
+  if (!await showConfirm('彻底删除后无法恢复，确定吗？', { danger: true })) return;
+  const result = await adminAPI('DELETE', `/api/admin/trash/${encodeURIComponent(id)}`);
+  if (result?.success) {
+    showToast('已彻底删除', 'success');
+    loadHealthPage();
+  }
+}
+
 // ===== Admin backups =====
 function formatBackupSize(bytes) {
   if (!bytes && bytes !== 0) return '-';
@@ -5726,6 +5811,23 @@ function renderSettings() {
         </div>
       </div>
 
+      <div class="admin-card" style="margin-top:1.5rem;">
+        <h3 style="margin-bottom:1rem;">站点功能开关</h3>
+        <p style="color:var(--haze);font-size:0.8rem;margin:0 0 1rem;line-height:1.7;">关闭后立即生效。维护模式只拦截公开页面，后台仍可正常使用。</p>
+        <label class="feature-switch">
+          <input type="checkbox" id="setting_features_maintenanceMode" ${currentSettings.features?.maintenanceMode ? 'checked' : ''}>
+          <span><b>维护模式</b><small>前台显示维护页，后台和 API 保持可用</small></span>
+        </label>
+        <label class="feature-switch">
+          <input type="checkbox" id="setting_features_contactForm" ${currentSettings.features?.contactForm === false ? '' : 'checked'}>
+          <span><b>联系表单</b><small>关闭后访客无法提交新的联系消息</small></span>
+        </label>
+        <label class="feature-switch">
+          <input type="checkbox" id="setting_features_announcementPopup" ${currentSettings.features?.announcementPopup === false ? '' : 'checked'}>
+          <span><b>公告弹窗</b><small>关闭后不再自动弹出公告</small></span>
+        </label>
+      </div>
+
       <!-- Footer Settings -->
       <div class="admin-card" style="margin-top:1.5rem;">
         <h3 style="margin-bottom:1rem;">底栏设置</h3>
@@ -5932,14 +6034,21 @@ async function saveSettings() {
   };
 
   const authorRegistrationNotice = document.getElementById('setting_author_registrationNotice')?.value || '';
+  const features = {
+    ...(currentSettings.features || {}),
+    maintenanceMode: !!document.getElementById('setting_features_maintenanceMode')?.checked,
+    contactForm: !!document.getElementById('setting_features_contactForm')?.checked,
+    announcementPopup: !!document.getElementById('setting_features_announcementPopup')?.checked
+  };
 
   try {
-    const result = await adminAPI('PUT', '/api/admin/settings', { site, footer, pages, authorRegistrationNotice });
+    const result = await adminAPI('PUT', '/api/admin/settings', { site, footer, pages, authorRegistrationNotice, features });
     if (result && result.success) {
       currentSettings.site = site;
       currentSettings.footer = footer;
       currentSettings.pages = pages;
       currentSettings.authorRegistrationNotice = authorRegistrationNotice;
+      currentSettings.features = features;
       adminDirty = false;
       try {
         if ('BroadcastChannel' in window) {
@@ -6733,7 +6842,7 @@ async function searchEditLogByDate(page = 1) {
         <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
         <span style="color:${actionColor};font-weight:500;min-width:70px;">${escapeHtml(entry.action)}</span>
         ${imgThumb}
-        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}${entry.changes ? `<details style="margin-top:0.35rem;"><summary style="cursor:pointer;font-size:0.75rem;color:var(--accent-alt);">查看前后值</summary><pre style="max-height:180px;overflow:auto;background:var(--paper);border:1px solid var(--border);padding:0.5rem;font-size:0.7rem;white-space:pre-wrap;">${escapeHtml(JSON.stringify(entry.changes, null, 2))}</pre></details>` : ''}</span>
+        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}${entry.changes ? `<details style="margin-top:0.35rem;"><summary style="cursor:pointer;font-size:0.75rem;color:var(--accent-alt);">查看前后值</summary><pre style="max-height:180px;overflow:auto;background:var(--paper);border:1px solid var(--border);padding:0.5rem;font-size:0.7rem;white-space:pre-wrap;">${escapeHtml(JSON.stringify(entry.changes, null, 2))}</pre></details>` : ''}${entry.changes?.before && /编辑|更新/.test(entry.action || '') ? `<button type="button" class="btn-sm btn-edit" style="margin-top:0.35rem;" onclick="restoreEditLogEntry('${entry.id}')">恢复此版本</button>` : ''}</span>
       </div>`;
     }).join('');
 
@@ -6741,6 +6850,19 @@ async function searchEditLogByDate(page = 1) {
     if (paginationEl) paginationEl.innerHTML = renderPagination('editlog', 'searchEditLogByDate');
   } catch (e) {
     document.getElementById('editLogContainer').innerHTML = '<p style="color:var(--accent);text-align:center;padding:2rem;">加载失败</p>';
+  }
+}
+
+async function restoreEditLogEntry(id) {
+  if (!await showConfirm('恢复到这个历史版本？当前内容会先记录到编辑历史。', { danger: true })) return;
+  try {
+    const result = await adminAPI('POST', `/api/admin/edit-log/${encodeURIComponent(id)}/restore`);
+    if (result?.success) {
+      showToast('已恢复历史版本', 'success');
+      loadEditLog();
+    }
+  } catch (e) {
+    showToast('恢复失败，该记录可能不支持回滚', 'error');
   }
 }
 
@@ -6782,7 +6904,7 @@ async function loadEditLog(page = 1) {
         <span style="color:var(--accent-alt);font-weight:600;min-width:70px;">${escapeHtml(entry.user)}</span>
         <span style="color:${actionColor};font-weight:500;min-width:70px;">${escapeHtml(entry.action)}</span>
         ${imgThumb}
-        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}${entry.changes ? `<details style="margin-top:0.35rem;"><summary style="cursor:pointer;font-size:0.75rem;color:var(--accent-alt);">查看前后值</summary><pre style="max-height:180px;overflow:auto;background:var(--paper);border:1px solid var(--border);padding:0.5rem;font-size:0.7rem;white-space:pre-wrap;">${escapeHtml(JSON.stringify(entry.changes, null, 2))}</pre></details>` : ''}</span>
+        <span style="flex:1;color:var(--ink);min-width:0;"><a href="/search.html?q=${encodeURIComponent(entry.target)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;" title="在内容中搜索">${escapeHtml(entry.target)}</a>${entry.details ? ' <span style="color:var(--haze);">(' + escapeHtml(entry.details) + ')</span>' : ''}${entry.changes ? `<details style="margin-top:0.35rem;"><summary style="cursor:pointer;font-size:0.75rem;color:var(--accent-alt);">查看前后值</summary><pre style="max-height:180px;overflow:auto;background:var(--paper);border:1px solid var(--border);padding:0.5rem;font-size:0.7rem;white-space:pre-wrap;">${escapeHtml(JSON.stringify(entry.changes, null, 2))}</pre></details>` : ''}${entry.changes?.before && /编辑|更新/.test(entry.action || '') ? `<button type="button" class="btn-sm btn-edit" style="margin-top:0.35rem;" onclick="restoreEditLogEntry('${entry.id}')">恢复此版本</button>` : ''}</span>
       </div>`;
     }).join('');
 
@@ -7301,9 +7423,12 @@ async function loadContacts(search = '') {
       return;
     }
     tbody.innerHTML = contacts
-      .map((c, i) => `
-        <tr style="${!c.read ? 'background:rgba(52,152,219,0.05);' : ''}">
-          <td style="text-align:center;">${c.read ? '<span style="color:var(--haze);">已读</span>' : '<span style="color:#3498db;font-weight:600;">未读</span>'}</td>
+      .map((c, i) => {
+        const status = c.status || (c.read ? 'read' : 'new');
+        const statusText = status === 'replied' ? '已回复' : status === 'archived' ? '已归档' : status === 'in_progress' ? '处理中' : c.read ? '已读' : '未读';
+        return `
+        <tr style="${status === 'new' ? 'background:rgba(52,152,219,0.05);' : ''}">
+          <td style="text-align:center;"><span class="status-badge ${status === 'new' ? 'is-info' : status === 'replied' ? 'is-success' : 'is-warning'}">${statusText}</span></td>
           <td>${escapeHtml(c.name || '')}</td>
           <td>${escapeHtml(c.email || '')}</td>
           <td>${escapeHtml(c.subject || '-')}</td>
@@ -7315,8 +7440,8 @@ async function loadContacts(search = '') {
               <button class="btn-sm btn-delete" onclick="deleteContact('${c.id}')">删除</button>
             </div>
           </td>
-        </tr>
-      `).join('');
+        </tr>`;
+      }).join('');
     window._contactsData = contacts;
   } catch (e) {
     document.getElementById('contactsTableBody').innerHTML =
@@ -7363,14 +7488,42 @@ async function viewContactMessage(index) {
       <label style="font-size:0.8rem;color:var(--haze);">时间</label>
       <div style="font-size:0.95rem;margin-top:0.2rem;">${c.createdAt ? formatDateAdmin(c.createdAt) : '-'}</div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>处理状态</label>
+        <select class="form-input" id="contactStatus">
+          <option value="new" ${(c.status || 'new') === 'new' ? 'selected' : ''}>未处理</option>
+          <option value="in_progress" ${c.status === 'in_progress' ? 'selected' : ''}>处理中</option>
+          <option value="replied" ${c.status === 'replied' ? 'selected' : ''}>已回复</option>
+          <option value="archived" ${c.status === 'archived' ? 'selected' : ''}>已归档</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>内部备注</label>
+      <textarea class="form-input" id="contactNote" rows="3" placeholder="仅后台可见">${escapeHtml(c.adminNote || '')}</textarea>
+    </div>
     <div>
       <label style="font-size:0.8rem;color:var(--haze);">消息内容</label>
       <div style="font-size:0.95rem;line-height:1.8;margin-top:0.5rem;padding:1rem;background:var(--bg);border-radius:var(--radius);white-space:pre-wrap;word-break:break-all;">${escapeHtml(c.message || '')}</div>
     </div>
   `;
-  document.getElementById('modalSave').style.display = 'none';
-  openModal();
   document.getElementById('modalSave').style.display = '';
+  document.getElementById('modalSave').textContent = '保存处理状态';
+  document.getElementById('modalSave').onclick = async () => {
+    const status = document.getElementById('contactStatus').value;
+    const adminNote = document.getElementById('contactNote').value;
+    const result = await adminAPI('PUT', `/api/admin/contacts/${c.id}`, {
+      status, adminNote, read: status !== 'new'
+    });
+    if (result?.success) {
+      c.status = status; c.adminNote = adminNote; c.read = status !== 'new';
+      closeModal(true);
+      showToast('已保存', 'success');
+      loadContacts();
+    }
+  };
+  openModal();
 }
 
 // ===== Modal =====
@@ -7941,11 +8094,11 @@ function closeAdminCommandPalette() {
 function openAdminCommandPalette() {
   if (adminCmdOverlay) return;
   const nav = [
-    ['仪表盘', 'dashboard'], ['审核管理', 'approval'], ['作品管理', 'works'],
+    ['仪表盘', 'dashboard'], ['运维中心', 'health'], ['审核管理', 'approval'], ['作品管理', 'works'],
     ['活动管理', 'events'], ['作者管理', 'circles'], ['企划管理', 'projects'],
-    ['动态管理', 'updates'], ['图片管理', 'images'], ['分类管理', 'categories'],
+    ['动态管理', 'updates'], ['首页轮播', 'carousel'], ['图片管理', 'images'], ['分类管理', 'categories'],
     ['页面设置', 'settings'], ['数据备份', 'backup'], ['公告管理', 'announcements'],
-    ['联系消息', 'contacts'], ['编辑历史', 'editlog']
+    ['联系消息', 'contacts'], ['编辑历史', 'editlog'], ['浏览统计', 'page-stats'], ['作者统计', 'author-stats']
   ].map(([label, page]) => ({ label, page, type: '页面' }));
   const overlay = document.createElement('div');
   overlay.className = 'cmd-overlay';

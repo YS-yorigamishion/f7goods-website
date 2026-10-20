@@ -368,6 +368,19 @@ app.get(Object.keys(DETAIL_PAGES), (req, res, next) => {
   res.type('html').send(html);
 });
 
+// 维护模式：只拦截公开页面，不影响后台与静态资源
+app.use((req, res, next) => {
+  try {
+    const settings = readJSON('settings.json');
+    if (!settings.features?.maintenanceMode) return next();
+    if (req.path.startsWith('/admin') || req.path.startsWith('/api') ||
+        req.path.startsWith('/uploads') || req.path.startsWith('/js') || req.path.startsWith('/css') ||
+        req.path === '/maintenance.html') return next();
+    if (!/\.html?$/.test(req.path) && req.path !== '/') return next();
+    return res.status(503).sendFile(path.join(__dirname, 'public', 'maintenance.html'));
+  } catch { next(); }
+});
+
 // 静态资源：HTML 禁止缓存；带 ?v= 的资源可长缓存；未带版本的 css/js 短缓存
 app.use(express.static('public', {
   etag: true,
@@ -520,7 +533,7 @@ function withFileLock(file, fn) {
 const LIST_JSON_FILES = new Set([
   'works.json', 'circles.json', 'events.json', 'projects.json', 'updates.json',
   'announcements.json', 'contact.json', 'edit-log.json', 'author-notifications.json',
-  'author-announcements.json', 'uploads-trash.json'
+  'author-announcements.json', 'uploads-trash.json', 'trash.json'
 ]);
 
 // Helper: read/write JSON files
@@ -743,6 +756,40 @@ async function logEdit(user, action, target, details, imageUrl, changes) {
   // Keep max 500 entries
   if (log.length > 500) log = log.slice(-500);
   await writeJSON('edit-log.json', log);
+}
+
+// Recycle bin: soft-delete content instead of unlinking it immediately.
+const TRASH_TYPES = {
+  work: { file: 'works.json', label: '作品' },
+  event: { file: 'events.json', label: '活动' },
+  project: { file: 'projects.json', label: '企划' },
+  update: { file: 'updates.json', label: '动态' },
+  circle: { file: 'circles.json', label: '作者' }
+};
+
+function readTrash() {
+  try {
+    const value = readJSON('trash.json');
+    return Array.isArray(value) ? value : [];
+  } catch { return []; }
+}
+
+async function moveToTrash(type, item) {
+  const meta = TRASH_TYPES[type];
+  if (!meta) throw new Error('不支持的回收站类型');
+  const trash = readTrash();
+  const entry = {
+    id: 'trash' + Date.now() + Math.random().toString(36).slice(2, 7),
+    type,
+    typeLabel: meta.label,
+    item,
+    title: item.title || item.name || item.id || '未命名',
+    deletedAt: new Date().toISOString(),
+    deletedBy: '管理员'
+  };
+  trash.push(entry);
+  await writeJSON('trash.json', trash);
+  return entry;
 }
 
 async function clearEditLogImageUrl(imageUrl) {
@@ -3269,6 +3316,10 @@ function contactRateLimit(req, res, next) {
 }
 
 app.post('/api/contact', contactRateLimit, async (req, res) => {
+  const siteSettings = readJSON('settings.json');
+  if (siteSettings.features?.contactForm === false) {
+    return res.status(403).json({ error: '联系表单暂时关闭' });
+  }
   const { name, email, subject, message } = req.body;
   if (!message || String(message).trim().length < 2 || String(message).length > 5000) {
     return res.status(400).json({ error: '请填写消息内容（2-5000 字）' });
@@ -3286,6 +3337,8 @@ app.post('/api/contact', contactRateLimit, async (req, res) => {
     email: email ? String(email).slice(0, 200) : '',
     subject: subject ? String(subject).slice(0, 200) : '',
     message: String(message).slice(0, 5000),
+    read: false,
+    status: 'new',
     createdAt: new Date().toISOString()
   });
   await writeJSON('contact.json', contacts);
@@ -3589,6 +3642,194 @@ app.get('/api/admin/stats', authMiddleware, (req, res) => {
   }
 });
 
+// ===== Recycle bin =====
+app.get('/api/admin/trash', authMiddleware, (req, res) => {
+  const trash = readTrash()
+    .sort((a, b) => String(b.deletedAt).localeCompare(String(a.deletedAt)))
+    .map(entry => ({
+      id: entry.id,
+      type: entry.type,
+      typeLabel: entry.typeLabel,
+      title: entry.title,
+      deletedAt: entry.deletedAt,
+      deletedBy: entry.deletedBy || '管理员',
+      idValue: entry.item?.id || ''
+    }));
+  res.json(trash);
+});
+
+app.post('/api/admin/trash/:id/restore', authMiddleware, async (req, res) => {
+  const trash = readTrash();
+  const index = trash.findIndex(entry => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '回收站记录未找到' });
+  const entry = trash[index];
+  const meta = TRASH_TYPES[entry.type];
+  if (!meta) return res.status(400).json({ error: '不支持的回收站类型' });
+  const items = readJSON(meta.file);
+  if (!Array.isArray(items)) return res.status(500).json({ error: '数据文件异常' });
+  if (entry.item?.id && items.some(item => item.id === entry.item.id)) {
+    return res.status(409).json({ error: '同 ID 的内容已存在，无法恢复' });
+  }
+  items.push(entry.item);
+  await writeJSON(meta.file, items);
+  trash.splice(index, 1);
+  await writeJSON('trash.json', trash);
+  await logEdit('管理员', '恢复回收站内容', entry.title || entry.id, meta.label);
+  res.json({ success: true, restored: entry.item });
+});
+
+app.delete('/api/admin/trash/:id', authMiddleware, async (req, res) => {
+  const trash = readTrash();
+  const index = trash.findIndex(entry => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '回收站记录未找到' });
+  const [entry] = trash.splice(index, 1);
+  await writeJSON('trash.json', trash);
+  await logEdit('管理员', '彻底删除', entry.title || entry.id, entry.typeLabel || '');
+  res.json({ success: true });
+});
+
+// ===== Edit history rollback =====
+app.post('/api/admin/edit-log/:id/restore', authMiddleware, async (req, res) => {
+  let log = [];
+  try { log = readJSON('edit-log.json'); } catch {}
+  const entry = (Array.isArray(log) ? log : []).find(item => item.id === req.params.id);
+  if (!entry || !entry.changes?.before) return res.status(400).json({ error: '该记录没有可恢复的版本' });
+  const action = String(entry.action || '');
+  const map = [
+    { key: '作品', file: 'works.json', label: '作品' },
+    { key: '活动', file: 'events.json', label: '活动' },
+    { key: '企划', file: 'projects.json', label: '企划' },
+    { key: '动态', file: 'updates.json', label: '动态' },
+    { key: '作者', file: 'circles.json', label: '作者' },
+    { key: '公告', file: 'announcements.json', label: '公告' }
+  ];
+  const type = map.find(item => action.includes(item.key));
+  if (!type) return res.status(400).json({ error: '该记录暂不支持回滚' });
+  const before = entry.changes.before;
+  if (!before || !before.id) return res.status(400).json({ error: '旧版本缺少 ID，无法回滚' });
+  const items = readJSON(type.file);
+  if (!Array.isArray(items)) return res.status(500).json({ error: '数据文件异常' });
+  const index = items.findIndex(item => item.id === before.id);
+  if (index === -1) return res.status(404).json({ error: '当前内容已不存在，无法回滚' });
+  const current = items[index];
+  items[index] = { ...before };
+  await writeJSON(type.file, items);
+  await logEdit('管理员', '回滚' + type.label, before.title || before.name || before.id, '来自编辑历史 ' + entry.id, '', { before: current, after: before });
+  res.json({ success: true, item: before, type: type.label });
+});
+
+// ===== Admin health / todo center =====
+app.get('/api/admin/health', authMiddleware, (req, res) => {
+  try {
+    const works = readJSON('works.json');
+    const events = readJSON('events.json');
+    const projects = readJSON('projects.json');
+    const updates = readJSON('updates.json');
+    const circles = readJSON('circles.json');
+    const contacts = readJSON('contact.json');
+    const today = getChinaDate();
+    const pending = [
+      ['作品', works.filter(w => w.approvalStatus === 'pending').length],
+      ['活动', events.filter(e => e.approvalStatus === 'pending').length],
+      ['企划', projects.filter(p => p.approvalStatus === 'pending').length],
+      ['动态', updates.filter(u => u.approvalStatus === 'pending').length]
+    ].reduce((sum, [, n]) => sum + n, 0);
+    const unreadContacts = contacts.filter(c => !c.read).length;
+    const soonEvents = events.filter(e => {
+      const date = e.date || e.startDate;
+      if (!date || String(e.status) === 'yijiesu') return false;
+      const days = Math.ceil((new Date(date + 'T00:00:00+08:00') - new Date(today + 'T00:00:00+08:00')) / 86400000);
+      return days >= 0 && days <= 14;
+    });
+    const onlyMissingBooths = events.filter(e => e.type === 'only' && !(Array.isArray(e.booths) && e.booths.length));
+    const missingCovers = works.filter(w => !(Array.isArray(w.images) && w.images.length)).length;
+
+    let imageHealth = { total: 0, unused: 0, unusedBytes: 0, missing: [] };
+    try {
+      const refs = collectAllUploadRefs();
+      const files = listUploadFiles();
+      const fileSet = new Set(files);
+      const unusedFiles = files.filter(f => !refs.has(f) && !isUploadVariantUsed(f, refs));
+      const uploadsMeta = readJSON('uploads-meta.json');
+      imageHealth = {
+        total: files.length,
+        unused: unusedFiles.length,
+        unusedBytes: unusedFiles.reduce((sum, f) => {
+          try { return sum + fs.statSync(path.join(UPLOADS_DIR, f)).size; } catch { return sum; }
+        }, 0),
+        missing: [...refs].filter(f => f && !fileSet.has(f)).slice(0, 50)
+      };
+    } catch (e) {
+      console.error('[health] image scan failed:', e.message);
+    }
+
+    const relationIssues = [];
+    const workIds = new Set(works.map(w => w.id));
+    const eventIds = new Set(events.map(e => e.id));
+    const projectIds = new Set(projects.map(p => p.id));
+    const circleIds = new Set(circles.map(c => c.id));
+    const pushIssue = (type, title, detail) => {
+      if (relationIssues.length < 100) relationIssues.push({ type, title, detail });
+    };
+    works.forEach(w => (w.circles || []).forEach(id => {
+      if (!circleIds.has(id)) pushIssue('作品', w.title, '关联作者不存在: ' + id);
+    }));
+    events.forEach(e => {
+      (e.relatedWorks || []).forEach(id => { if (!workIds.has(id)) pushIssue('活动', e.title, '关联作品不存在: ' + id); });
+      (e.relatedCircles || []).forEach(id => { if (!circleIds.has(id)) pushIssue('活动', e.title, '关联作者不存在: ' + id); });
+      (e.relatedProjects || []).forEach(id => { if (!projectIds.has(id)) pushIssue('活动', e.title, '关联企划不存在: ' + id); });
+      (e.booths || []).forEach(b => {
+        (b.circleIds || []).forEach(id => { if (!circleIds.has(id)) pushIssue('摊位', (b.code || '') + ' ' + (b.title || ''), '摊主不存在: ' + id); });
+        (b.workIds || []).forEach(id => { if (!workIds.has(id)) pushIssue('摊位', (b.code || '') + ' ' + (b.title || ''), '作品不存在: ' + id); });
+      });
+    });
+    projects.forEach(p => {
+      (p.circles || []).forEach(id => { if (!circleIds.has(id)) pushIssue('企划', p.title, '关联作者不存在: ' + id); });
+      (p.events || []).forEach(id => { if (!eventIds.has(id)) pushIssue('企划', p.title, '关联活动不存在: ' + id); });
+      (p.works || []).forEach(id => { if (!workIds.has(id)) pushIssue('企划', p.title, '关联作品不存在: ' + id); });
+    });
+    updates.forEach(u => {
+      (u.relatedCircles || []).forEach(id => { if (!circleIds.has(id)) pushIssue('动态', u.title, '关联作者不存在: ' + id); });
+      (u.relatedEvents || []).forEach(id => { if (!eventIds.has(id)) pushIssue('动态', u.title, '关联活动不存在: ' + id); });
+      (u.relatedProjects || []).forEach(id => { if (!projectIds.has(id)) pushIssue('动态', u.title, '关联企划不存在: ' + id); });
+    });
+
+    let lastBackup = null;
+    try {
+      const backups = listBackupDirs();
+      lastBackup = backups[0] || null;
+    } catch {}
+
+    const todo = [
+      pending ? { key: 'approval', label: '待审核内容', count: pending, page: 'approval', hint: '作品 / 活动 / 企划 / 动态' } : null,
+      unreadContacts ? { key: 'contacts', label: '未读联系消息', count: unreadContacts, page: 'contacts', hint: '需要回复或归档' } : null,
+      soonEvents.length ? { key: 'events', label: '14 天内活动', count: soonEvents.length, page: 'events', hint: '检查活动与摊位信息' } : null,
+      onlyMissingBooths.length ? { key: 'booths', label: 'ONLY 未配置摊位', count: onlyMissingBooths.length, page: 'booths', hint: '活动尚未挂接摊位' } : null,
+      missingCovers ? { key: 'works', label: '缺少封面的作品', count: missingCovers, page: 'works', hint: '补图后展示更完整' } : null,
+      relationIssues.length ? { key: 'health', label: '关联数据异常', count: relationIssues.length, page: 'health', hint: '存在失效的活动/企划/作者关联' } : null,
+      imageHealth.missing.length ? { key: 'health', label: '缺失图片引用', count: imageHealth.missing.length, page: 'health', hint: '数据引用了不存在的上传文件' } : null
+    ].filter(Boolean);
+
+    res.json({
+      generatedAt: new Date().toISOString(),
+      counts: { works: works.length, events: events.length, projects: projects.length, updates: updates.length, circles: circles.length },
+      todo,
+      pending,
+      unreadContacts,
+      soonEvents: soonEvents.map(e => ({ id: e.id, title: e.title, date: e.date || e.startDate })),
+      onlyMissingBooths: onlyMissingBooths.map(e => ({ id: e.id, title: e.title })),
+      missingCovers,
+      images: imageHealth,
+      relations: relationIssues,
+      backup: lastBackup,
+      trashCount: readTrash().length
+    });
+  } catch (e) {
+    console.error('[health]', e.message);
+    res.status(500).json({ error: '健康检查失败' });
+  }
+});
+
 // Edit log
 app.get('/api/admin/edit-log', authMiddleware, (req, res) => {
   let log = [];
@@ -3760,7 +4001,7 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
     }
   }
   await writeJSON('settings.json', merged);
-  const changedKeys = ['site', 'footer', 'pages', 'authorRegistrationNotice'].filter(k => JSON.stringify(existing[k]) !== JSON.stringify(merged[k]));
+  const changedKeys = ['site', 'footer', 'pages', 'authorRegistrationNotice', 'features'].filter(k => JSON.stringify(existing[k]) !== JSON.stringify(merged[k]));
   if (changedKeys.length) {
     const before = {}; const after = {};
     for (const k of changedKeys) { before[k] = existing[k]; after[k] = merged[k]; }
@@ -3790,6 +4031,8 @@ app.get('/api/announcements', (req, res) => {
 // Public: get popup announcements
 app.get('/api/announcements/popup', (req, res) => {
   try {
+    const settings = readJSON('settings.json');
+    if (settings.features?.announcementPopup === false) return res.json([]);
     let announcements = readJSON('announcements.json');
     const today = getChinaDate();
     announcements = announcements.filter(a => a.popup && a.publishDate <= today);
@@ -4044,6 +4287,22 @@ app.get('/api/admin/contacts', authMiddleware, (req, res) => {
   res.json(contacts);
 });
 
+app.put('/api/admin/contacts/:id', authMiddleware, async (req, res) => {
+  let contacts = [];
+  try { contacts = readJSON('contact.json'); } catch {}
+  if (!Array.isArray(contacts)) contacts = [];
+  const index = contacts.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '消息未找到' });
+  const allowed = ['read', 'status', 'adminNote'];
+  for (const field of allowed) {
+    if (req.body[field] !== undefined) contacts[index][field] = req.body[field];
+  }
+  if (contacts[index].read === undefined) contacts[index].read = false;
+  if (!contacts[index].status) contacts[index].status = contacts[index].read ? 'read' : 'new';
+  await writeJSON('contact.json', contacts);
+  res.json({ success: true, contact: contacts[index] });
+});
+
 app.put('/api/admin/contacts/:id/read', authMiddleware, async (req, res) => {
   let contacts = [];
   try { contacts = readJSON('contact.json'); } catch {}
@@ -4051,6 +4310,7 @@ app.put('/api/admin/contacts/:id/read', authMiddleware, async (req, res) => {
   const index = contacts.findIndex(c => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '消息未找到' });
   contacts[index].read = true;
+  if (!contacts[index].status || contacts[index].status === 'new') contacts[index].status = 'read';
   await writeJSON('contact.json', contacts);
   res.json({ success: true });
 });
@@ -4253,28 +4513,13 @@ app.put('/api/admin/works/:id', authMiddleware, async (req, res) => {
 
 app.delete('/api/admin/works/:id', authMiddleware, async (req, res) => {
   const workId = req.params.id;
-  let works = readJSON('works.json');
-  works = works.filter(w => w.id !== workId);
-  await writeJSON('works.json', works);
-  // Cascade: remove from events.relatedWorks
-  let events = readJSON('events.json');
-  events.forEach(e => { e.relatedWorks = (e.relatedWorks || []).filter(id => id !== workId); });
-  await writeJSON('events.json', events);
-  // Cascade: remove from projects.works
-  let projects = readJSON('projects.json');
-  projects.forEach(p => { p.works = (p.works || []).filter(id => id !== workId); });
-  await writeJSON('projects.json', projects);
-  // Cascade: remove from likes.json
-  let likesData = {};
-  try { likesData = readJSON('likes.json'); } catch {}
-  delete likesData[workId];
-  await writeJSON('likes.json', likesData);
-  // Cascade: remove from wants.json
-  let wantsData = {};
-  try { wantsData = readJSON('wants.json'); } catch {}
-  delete wantsData[workId];
-  await writeJSON('wants.json', wantsData);
-  res.json({ success: true });
+  const works = readJSON('works.json');
+  const work = works.find(w => w.id === workId);
+  if (!work) return res.status(404).json({ error: '作品未找到' });
+  await moveToTrash('work', work);
+  await writeJSON('works.json', works.filter(w => w.id !== workId));
+  await logEdit('管理员', '移入回收站', work.title || workId, '作品');
+  res.json({ success: true, trash: true });
 });
 
 // --- Events ---
@@ -4375,14 +4620,13 @@ app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
 
 app.delete('/api/admin/events/:id', authMiddleware, async (req, res) => {
   const eventId = req.params.id;
-  let events = readJSON('events.json');
-  events = events.filter(e => e.id !== eventId);
-  await writeJSON('events.json', events);
-  // Cascade: remove from projects.events
-  let projects = readJSON('projects.json');
-  projects.forEach(p => { p.events = (p.events || []).filter(id => id !== eventId); });
-  await writeJSON('projects.json', projects);
-  res.json({ success: true });
+  const events = readJSON('events.json');
+  const event = events.find(e => e.id === eventId);
+  if (!event) return res.status(404).json({ error: '活动未找到' });
+  await moveToTrash('event', event);
+  await writeJSON('events.json', events.filter(e => e.id !== eventId));
+  await logEdit('管理员', '移入回收站', event.title || eventId, '活动');
+  res.json({ success: true, trash: true });
 });
 
 // Admin: approve event
@@ -4546,21 +4790,13 @@ app.put('/api/admin/circles/:id', authMiddleware, async (req, res) => {
 
 app.delete('/api/admin/circles/:id', authMiddleware, async (req, res) => {
   const circleId = req.params.id;
-  let circles = readJSON('circles.json');
-  circles = circles.filter(c => c.id !== circleId);
-  await writeJSON('circles.json', circles);
-  // Cascade: remove circle from work.circles references
-  let works = readJSON('works.json');
-  works.forEach(w => { w.circles = (w.circles || []).filter(id => id !== circleId); });
-  await writeJSON('works.json', works);
-  // Cascade: remove from events.relatedCircles and projects.circles
-  let events = readJSON('events.json');
-  events.forEach(e => { e.relatedCircles = (e.relatedCircles || []).filter(id => id !== circleId); });
-  await writeJSON('events.json', events);
-  let projects = readJSON('projects.json');
-  projects.forEach(p => { p.circles = (p.circles || []).filter(id => id !== circleId); });
-  await writeJSON('projects.json', projects);
-  res.json({ success: true });
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === circleId);
+  if (!circle) return res.status(404).json({ error: '作者未找到' });
+  await moveToTrash('circle', circle);
+  await writeJSON('circles.json', circles.filter(c => c.id !== circleId));
+  await logEdit('管理员', '移入回收站', circle.name || circleId, '作者');
+  res.json({ success: true, trash: true });
 });
 
 // --- Circle Excel Export/Import ---
@@ -4873,14 +5109,13 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
 
 app.delete('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   const projectId = req.params.id;
-  let projects = readJSON('projects.json');
-  projects = projects.filter(p => p.id !== projectId);
-  await writeJSON('projects.json', projects);
-  // Cascade: remove from events.relatedProjects
-  let events = readJSON('events.json');
-  events.forEach(e => { e.relatedProjects = (e.relatedProjects || []).filter(id => id !== projectId); });
-  await writeJSON('events.json', events);
-  res.json({ success: true });
+  const projects = readJSON('projects.json');
+  const project = projects.find(p => p.id === projectId);
+  if (!project) return res.status(404).json({ error: '企划未找到' });
+  await moveToTrash('project', project);
+  await writeJSON('projects.json', projects.filter(p => p.id !== projectId));
+  await logEdit('管理员', '移入回收站', project.title || projectId, '企划');
+  res.json({ success: true, trash: true });
 });
 
 // ===== Updates (同人动态) =====
@@ -5025,10 +5260,13 @@ app.put('/api/admin/updates/:id', authMiddleware, async (req, res) => {
 
 app.delete('/api/admin/updates/:id', authMiddleware, async (req, res) => {
   const updateId = req.params.id;
-  let updates = readJSON('updates.json');
-  updates = updates.filter(u => u.id !== updateId);
-  await writeJSON('updates.json', updates);
-  res.json({ success: true });
+  const updates = readJSON('updates.json');
+  const update = updates.find(u => u.id === updateId);
+  if (!update) return res.status(404).json({ error: '动态未找到' });
+  await moveToTrash('update', update);
+  await writeJSON('updates.json', updates.filter(u => u.id !== updateId));
+  await logEdit('管理员', '移入回收站', update.title || updateId, '动态');
+  res.json({ success: true, trash: true });
 });
 
 // --- Categories ---

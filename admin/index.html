@@ -48,6 +48,10 @@
             <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
             仪表盘
           </a>
+          <a href="#" class="sidebar-link" data-page="health">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18z"/><path d="M3 12h4l2-5 4 10 2-5h6"/></svg></span>
+            运维中心
+          </a>
           <a href="#" class="sidebar-link" data-page="approval">
             <span class="sidebar-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></span>
             审核管理
@@ -212,6 +216,11 @@
               <span class="qc-value" id="dashPendingTotal">0</span>
               <span class="qc-hint">待审作品/活动/企划/动态</span>
             </button>
+            <button type="button" class="dash-quick-card" onclick="navigateTo('health')">
+              <span class="qc-label">运维中心</span>
+              <span class="qc-value">健康检查</span>
+              <span class="qc-hint">待办、回收站、图片与关联异常</span>
+            </button>
             <button type="button" class="dash-quick-card" onclick="navigateTo('settings')">
               <span class="qc-label">页面设置</span>
               <span class="qc-value">品牌与底栏</span>
@@ -352,6 +361,37 @@
               <h3 style="margin-bottom:1rem;">近 30 日访客趋势</h3>
               <div style="height:220px;"><canvas id="chartVis30d"></canvas></div>
             </div>
+          </div>
+        </div>
+
+        <!-- Operations health -->
+        <div id="page-health" class="admin-page">
+          <div class="page-toolbar">
+            <h3>运维中心</h3>
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="loadHealthPage()">刷新检查</button>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="navigateTo('page-stats')">浏览统计</button>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="navigateTo('author-stats')">作者统计</button>
+              <button class="btn btn-primary" onclick="navigateTo('backup')">数据备份</button>
+            </div>
+          </div>
+          <div id="healthTodo" class="health-todo"></div>
+          <div class="health-grid">
+            <div class="admin-card">
+              <div class="health-card-head"><h3>图片资产</h3><button class="btn-sm" onclick="navigateTo('images')">图片管理</button></div>
+              <div id="healthImages" class="health-body">加载中…</div>
+            </div>
+            <div class="admin-card">
+              <div class="health-card-head"><h3>关联数据</h3><span id="healthRelationCount" class="health-count"></span></div>
+              <div id="healthRelations" class="health-body">加载中…</div>
+            </div>
+          </div>
+          <div class="admin-card" style="margin-top:1.25rem;">
+            <div class="health-card-head">
+              <h3>回收站 <span id="healthTrashCount" class="health-count"></span></h3>
+              <span style="font-size:0.75rem;color:var(--haze);">删除的内容会先进入这里，可恢复</span>
+            </div>
+            <div id="healthTrash">加载中…</div>
           </div>
         </div>
 
@@ -1099,6 +1139,6 @@
     </div>
   </div>
 
-  <script src="/admin/js/admin.js?v=20261020n"></script>
+  <script src="/admin/js/admin.js?v=20261020o"></script>
 </body>
 </html>

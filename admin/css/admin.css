@@ -1135,3 +1135,32 @@
   .carousel-admin-row .carousel-admin-edit { grid-column: 3; grid-row: 2; justify-self: end; }
   .carousel-admin-thumb { width: 42px; height: 42px; grid-row: 1 / span 2; }
 }
+
+/* Operations health */
+.health-todo { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .65rem; margin-bottom: 1.25rem; }
+.health-todo-item { text-align: left; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .8rem; cursor: pointer; font: inherit; }
+.health-todo-item:hover { border-color: var(--accent); }
+.health-todo-item b { display: block; font-size: 1.2rem; color: var(--accent); }
+.health-todo-item span { display: block; margin-top: .15rem; font-size: .8rem; color: var(--ink); }
+.health-todo-item small { display: block; margin-top: .2rem; font-size: .68rem; color: var(--haze); }
+.health-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.health-card-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .75rem; }
+.health-card-head h3 { margin: 0; }
+.health-count { color: var(--haze); font-size: .75rem; }
+.health-body { font-size: .8rem; line-height: 1.8; color: var(--muted); }
+.health-row { display: flex; justify-content: space-between; gap: .75rem; padding: .38rem 0; border-bottom: 1px dashed var(--border); }
+.health-row:last-child { border-bottom: 0; }
+.health-row b { color: var(--ink); font-weight: 600; }
+.health-issue { padding: .45rem 0; border-bottom: 1px dashed var(--border); }
+.health-issue b { color: var(--ink); }
+.health-issue small { display: block; color: var(--haze); font-size: .7rem; }
+.health-empty { color: var(--success); font-size: .8rem; }
+.feature-switch { display: flex; align-items: flex-start; gap: .6rem; padding: .65rem 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.feature-switch:last-child { border-bottom: 0; }
+.feature-switch input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); }
+.feature-switch b { display: block; font-size: .85rem; }
+.feature-switch small { display: block; color: var(--haze); font-size: .72rem; margin-top: .15rem; }
+@media (max-width: 760px) {
+  .health-grid { grid-template-columns: 1fr; }
+  .carousel-admin-row { grid-template-columns: 42px minmax(0,1fr) 100px; }
+}
