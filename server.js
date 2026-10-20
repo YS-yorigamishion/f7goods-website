@@ -1045,11 +1045,12 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   const old = { ...circles[index] };
 
   // Only allow updating specific fields
-  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'featuredWorkIds'];
+  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'featuredWorkIds', 'showFeaturedWorks'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
+  if (updates.showFeaturedWorks !== undefined) updates.showFeaturedWorks = updates.showFeaturedWorks === true;
   if (updates.featuredWorkIds !== undefined) {
     const ownWorks = readJSON('works.json').filter(w => (w.circles || []).includes(circles[index].id) && isWorkPublic(w));
     const validIds = new Set(ownWorks.map(w => w.id));
@@ -1074,6 +1075,7 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   }
   if (updates.category && updates.category !== old.category) changes.push('修改了分类');
   if (updates.featuredWorkIds !== undefined) changes.push('更新了首页猜你喜欢');
+  if (updates.showFeaturedWorks !== undefined) changes.push(updates.showFeaturedWorks ? '开启首页猜你喜欢' : '关闭首页猜你喜欢');
   logEdit(circles[index].name || '作者', '修改资料', '', changes.join('、') || '更新了资料');
 
   const { passwordHash, ...safe } = circles[index];

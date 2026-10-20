@@ -4355,3 +4355,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .author-featured-slots .author-featured-search { width: 100%; margin-top: .2rem; padding: .34rem .45rem; font-size: .74rem; }
 .author-featured-slots small { display: block; margin-top: .2rem; color: var(--haze); font-size: .66rem; }
+
+.author-featured-toggle { display: flex; align-items: flex-start; gap: .55rem; padding: .6rem 0; margin: .2rem 0 .7rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); cursor: pointer; }
+.author-featured-toggle input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--accent); }
+.author-featured-toggle span { display: block; font-size: .82rem; font-weight: 600; }
+.author-featured-toggle small { display: block; margin-top: .12rem; color: var(--haze); font-size: .7rem; }
