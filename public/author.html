@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020r">
+  <link rel="stylesheet" href="/css/style.css?v=20261020s">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -611,8 +611,11 @@
 
       <!-- My Events Tab -->
       <div id="tab-my-events" class="mgmt-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;">我的活动</h3>
+        <div class="mgmt-tab-head">
+          <div>
+            <h3>我的活动 <span class="mgmt-count" id="myEventsCount">0</span></h3>
+            <p>提交活动后需管理员审核，通过后才会在前台展示。</p>
+          </div>
           <button class="btn btn-primary" onclick="openMyEventForm()">+ 提交活动</button>
         </div>
         <div id="myEventsGrid" class="works-grid"></div>
@@ -628,8 +631,11 @@
 
       <!-- My Projects Tab -->
       <div id="tab-my-projects" class="mgmt-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;">我的企划</h3>
+        <div class="mgmt-tab-head">
+          <div>
+            <h3>我的企划 <span class="mgmt-count" id="myProjectsCount">0</span></h3>
+            <p>企划提交后需管理员审核，通过后才会在前台展示。</p>
+          </div>
           <button class="btn btn-primary" onclick="openMyProjectForm()">+ 提交企划</button>
         </div>
         <div id="myProjectsGrid" class="works-grid"></div>
@@ -637,8 +643,11 @@
 
       <!-- My Updates Tab -->
       <div id="tab-my-updates" class="mgmt-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <h3 style="margin:0;">我的动态</h3>
+        <div class="mgmt-tab-head">
+          <div>
+            <h3>我的动态 <span class="mgmt-count" id="myUpdatesCount">0</span></h3>
+            <p>动态提交后需管理员审核，通过后才会在前台展示。</p>
+          </div>
           <button class="btn btn-primary" onclick="openMyUpdateForm()">+ 发布动态</button>
         </div>
         <div id="myUpdatesGrid" class="works-grid"></div>
@@ -750,9 +759,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020r"></script>
-  <script src="/js/i18n.js?v=20261020r"></script>
-  <script src="/js/main.js?v=20261020r"></script>
+  <script src="/js/api.js?v=20261020s"></script>
+  <script src="/js/i18n.js?v=20261020s"></script>
+  <script src="/js/main.js?v=20261020s"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -3342,18 +3351,20 @@
     async function loadMyEvents() {
       const events = await authorAPI('GET', '/api/author/my-events');
       const grid = document.getElementById('myEventsGrid');
+      document.getElementById('myEventsCount').textContent = (events || []).length;
       if (!events || events.length === 0) {
         grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无活动，点击上方按钮提交</p>';
         return;
       }
       grid.innerHTML = events.map(e => {
-        const statusBadge = e.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
-          : e.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
-          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
+        const statusBadge = e.approvalStatus === 'approved' ? '<span class="status-badge is-success">已批准</span>'
+          : e.approvalStatus === 'rejected' ? '<span class="status-badge is-danger">已拒绝</span>'
+          : '<span class="status-badge is-warning">待审核</span>';
         const rejectReasonHtml = e.approvalStatus === 'rejected' && e.rejectReason
           ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(e.rejectReason)}</p>` : '';
         return `
         <div class="card" style="cursor:pointer;" onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">
+          <div class="mgmt-card-cover">${e.coverImage ? `<img src="${escapeHtml(imgUrl(e.coverImage, 320))}" alt="${escapeHtml(e.title)}" loading="lazy">` : '<span class="placeholder-icon">📅</span>'}</div>
           <div class="card-body" style="padding:0.8rem;">
             ${statusBadge}
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(e.title)}</h3>
@@ -4195,18 +4206,20 @@
     async function loadMyProjects() {
       const projects = await authorAPI('GET', '/api/author/my-projects');
       const grid = document.getElementById('myProjectsGrid');
+      document.getElementById('myProjectsCount').textContent = (projects || []).length;
       if (!projects || projects.length === 0) {
         grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无企划，点击上方按钮提交</p>';
         return;
       }
       grid.innerHTML = projects.map(p => {
-        const statusBadge = p.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
-          : p.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
-          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
+        const statusBadge = p.approvalStatus === 'approved' ? '<span class="status-badge is-success">已批准</span>'
+          : p.approvalStatus === 'rejected' ? '<span class="status-badge is-danger">已拒绝</span>'
+          : '<span class="status-badge is-warning">待审核</span>';
         const rejectReasonHtml = p.approvalStatus === 'rejected' && p.rejectReason
           ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(p.rejectReason)}</p>` : '';
         return `
         <div class="card" style="cursor:pointer;" onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">
+          <div class="mgmt-card-cover">${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 320))}" alt="${escapeHtml(p.title)}" loading="lazy">` : '<span class="placeholder-icon">📋</span>'}</div>
           <div class="card-body" style="padding:0.8rem;">
             ${statusBadge}
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(p.title)}</h3>
@@ -4384,18 +4397,20 @@
     async function loadMyUpdates() {
       const updates = await authorAPI('GET', '/api/author/my-updates');
       const grid = document.getElementById('myUpdatesGrid');
+      document.getElementById('myUpdatesCount').textContent = (updates || []).length;
       if (!updates || updates.length === 0) {
         grid.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;grid-column:1/-1;">暂无动态，点击上方按钮发布</p>';
         return;
       }
       grid.innerHTML = updates.map(u => {
-        const statusBadge = u.approvalStatus === 'approved' ? '<span style="background:#2ecc71;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已批准</span>'
-          : u.approvalStatus === 'rejected' ? '<span style="background:var(--accent);color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">已拒绝</span>'
-          : '<span style="background:#f39c12;color:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;">待审核</span>';
+        const statusBadge = u.approvalStatus === 'approved' ? '<span class="status-badge is-success">已批准</span>'
+          : u.approvalStatus === 'rejected' ? '<span class="status-badge is-danger">已拒绝</span>'
+          : '<span class="status-badge is-warning">待审核</span>';
         const rejectReasonHtml = u.approvalStatus === 'rejected' && u.rejectReason
           ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(u.rejectReason)}</p>` : '';
         return `
         <div class="card" style="cursor:pointer;" onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">
+          <div class="mgmt-card-cover">${u.coverImage ? `<img src="${escapeHtml(imgUrl(u.coverImage, 320))}" alt="${escapeHtml(u.title)}" loading="lazy">` : '<span class="placeholder-icon">📝</span>'}</div>
           <div class="card-body" style="padding:0.8rem;">
             ${statusBadge}
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(u.title)}</h3>
