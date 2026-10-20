@@ -4027,3 +4027,31 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   }
   .exhibit-thumbs img { flex: 0 0 56px; }
 }
+
+/* ===== Shared detail-page and list polish ===== */
+.detail-sidebar { position: sticky; top: 80px; align-self: start; }
+.ev-hero { aspect-ratio: 16 / 7; min-height: 220px; background-position: center 30% !important; }
+.ev-hero h1 { text-wrap: balance; }
+.cl-hero { min-height: 180px; }
+.cl-avatar { box-shadow: 0 0 0 4px var(--card), 0 10px 24px rgba(34,32,30,.12); }
+
+/* Keyboard focus for public controls */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .detail-sidebar { position: static; top: auto; }
+  .ev-hero { aspect-ratio: 16 / 9; min-height: 180px; }
+  .cl-toolbar-row [id$="Filters"] {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .cl-toolbar-row [id$="Filters"]::-webkit-scrollbar { display: none; }
+  .cl-toolbar-row .filter-btn { flex: 0 0 auto; }
+  .cl-toolbar-card { padding: .7rem .8rem; }
+}
