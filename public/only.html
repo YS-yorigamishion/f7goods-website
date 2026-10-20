@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020x">
+  <link rel="stylesheet" href="/css/style.css?v=20261020y">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -202,15 +202,20 @@
       body.app-mode.has-only-cart { padding-bottom: calc(var(--tabbar-clearance, 80px) + 8px + 56px); }
       body.has-only-cart { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
     }
-    /* 作者「我的摊位」入口：避开底部购物清单栏 */
-    #authorCreateFab.author-create-fab { bottom: 5.25rem; }
+    /* 作者「我的摊位」入口：贴近底部购物清单栏上方 */
+    #authorCreateFab.author-create-fab { bottom: 4.5rem; }
     @media (max-width: 768px) {
       #authorCreateFab.author-create-fab {
-        bottom: calc(var(--tabbar-clearance, 80px) + 5.25rem);
+        bottom: calc(var(--tabbar-clearance, 80px) + 4.5rem);
       }
     }
     body.app-mode #authorCreateFab.author-create-fab {
-      bottom: calc(var(--tabbar-clearance, 80px) + 5.25rem);
+      bottom: 4.5rem;
+    }
+    @media (max-width: 768px) {
+      body.app-mode #authorCreateFab.author-create-fab {
+        bottom: calc(var(--tabbar-clearance, 80px) + 4.5rem);
+      }
     }
     .only-cartbar .l { flex: 1; min-width: 0; font-size: 12.5px; text-align: center; }
     .only-cartbar .l b { color: var(--accent); }
@@ -438,9 +443,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020x"></script>
-  <script src="/js/i18n.js?v=20261020x"></script>
-  <script src="/js/main.js?v=20261020x"></script>
+  <script src="/js/api.js?v=20261020y"></script>
+  <script src="/js/i18n.js?v=20261020y"></script>
+  <script src="/js/main.js?v=20261020y"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -1101,8 +1106,8 @@
               <div class="only-booth-meta"><span class="only-booth-count"><b>${b.goods.length}</b> 件周边</span><span class="only-booth-open">查看摊位 ↓</span></div>
             </div>
             ${introHtml}
-            ${bannersHtml}
             <div class="only-booth-body">
+              ${bannersHtml}
               ${boothGoodsSectionsHtml(b, cart)}
               ${tiers.length ? `<div class="only-sec"><div class="only-sec-label">摊位活动</div><div class="only-promo-box">${tiers.map(t => {
                 return `满 <b>${money(t.minAmount || 0)}</b> 送「${esc(tierGiftLabel(t))}」`;
