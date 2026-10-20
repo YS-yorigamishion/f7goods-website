@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020t">
+  <link rel="stylesheet" href="/css/style.css?v=20261020u">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -438,9 +438,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020t"></script>
-  <script src="/js/i18n.js?v=20261020t"></script>
-  <script src="/js/main.js?v=20261020t"></script>
+  <script src="/js/api.js?v=20261020u"></script>
+  <script src="/js/i18n.js?v=20261020u"></script>
+  <script src="/js/main.js?v=20261020u"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -625,11 +625,14 @@
           <div class="only-stat"><b>${ownerN}</b><span>参与摊主</span></div>
           <div class="only-stat"><b>${allGoodsN}</b><span>展示周边</span></div>
         </div>
-        <div class="only-tabs" id="onlyTabs">
-          <button type="button" class="on" data-t="all">${typeof tText === 'function' ? tText('only.tabsBooths', '全部摊位') : '全部摊位'}</button>
-          <button type="button" data-t="goods">${typeof tText === 'function' ? tText('only.tabsGoods', '全部周边') : '全部周边'}</button>
-          <button type="button" data-t="owners">${typeof tText === 'function' ? tText('only.tabsOwners', '全部摊主') : '全部摊主'}</button>
-          <button type="button" data-t="ov">${typeof tText === 'function' ? tText('only.tabsOverview', '活动概况') : '活动概况'}</button>
+        <div class="only-tools">
+          <div class="only-tabs" id="onlyTabs">
+            <button type="button" class="on" data-t="all">摊位</button>
+            <button type="button" data-t="goods">周边</button>
+            <button type="button" data-t="owners">摊主</button>
+            <button type="button" data-t="ov">概况</button>
+          </div>
+          <input type="search" class="only-search" id="onlySearch" placeholder="搜索摊位号、摊主或作品…" oninput="renderOnlyBooths('all')">
         </div>
         <div id="onlyListPane"></div>
         <div id="onlyGoodsPane" style="display:none;"></div>
@@ -1046,9 +1049,18 @@
       if (goodsPane) goodsPane.style.display = 'none';
       if (ownersPane) ownersPane.style.display = 'none';
       ovPane.style.display = 'none';
-      const booths = window._only?.boothModels || [];
-      if (!booths.length) {
+      const boothsAll = window._only?.boothModels || [];
+      if (!boothsAll.length) {
         listPane.innerHTML = `<div class="only-booth" style="color:var(--muted);font-size:13px;text-align:center;">暂无摊位，请在后台「摊位管理」配置。</div>`;
+        return;
+      }
+      const q = (document.getElementById('onlySearch')?.value || '').trim().toLowerCase();
+      const booths = q ? boothsAll.filter(b => {
+        const hay = [b.code, b.title, b.description, ...(b.owners || []).map(c => c.name), ...(b.goods || []).map(g => g.title)].join(' ').toLowerCase();
+        return hay.includes(q);
+      }) : boothsAll;
+      if (!booths.length) {
+        listPane.innerHTML = '<div class="empty-state"><div class="icon">·</div><p>没有匹配的摊位</p></div>';
         return;
       }
       const cart = window._onlyCart || {};
@@ -1077,16 +1089,16 @@
           <div class="only-booth${open ? ' open' : ''}" id="only-booth-${esc(b.id)}">
             <div class="only-booth-head" data-booth-toggle="${esc(b.id)}" role="button" tabindex="0"
                  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleOnlyBooth('${esc(b.id)}')}">
-              <div class="only-avatar">${b.logo ? `<img src="${esc(imgUrl(b.logo, 96))}" alt="">` : esc((b.code || ownerNames || '?').slice(0,1))}</div>
+              <div class="only-booth-cover">${(images[0] || b.logo) ? `<img src="${esc(imgUrl(images[0] || b.logo, 160))}" alt="">` : esc((b.code || ownerNames || '?').slice(0, 1))}</div>
               <div class="info">
                 <h3>${esc(boothLabel(b))}</h3>
-                <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件关联周边${images.length ? ' · ' + images.length + ' 张宣传图' : ''}${tiers.length ? ' · 摊位活动' : ''}</div>
+                <div class="sub">${ownerNames || '未挂接作者'} · ${b.goods.length} 件周边${tiers.length ? ' · 有摊位活动' : ''}</div>
+                <div class="only-booth-thumbs">
+                  ${b.goods.slice(0, 4).map(g => g.images?.[0] ? `<img src="${esc(imgUrl(g.images[0], 96))}" alt="" loading="lazy">` : '<span>周边</span>').join('')}
+                  ${b.goods.length > 4 ? `<span>+${b.goods.length - 4}</span>` : ''}
+                </div>
               </div>
-              <div class="only-booth-bulk" title="本摊全部作品数量">
-                <button type="button" data-booth="${esc(b.id)}" data-bulk="-1" ${b.goods.length ? '' : 'disabled'}>全部 −1</button>
-                <button type="button" data-booth="${esc(b.id)}" data-bulk="1" ${b.goods.length ? '' : 'disabled'}>全部 +1</button>
-              </div>
-              <svg class="only-booth-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+              <div class="only-booth-meta"><b>${b.goods.length}</b>件周边<span class="only-booth-open">查看摊位 ↓</span></div>
             </div>
             ${bannersHtml}
             <div class="only-booth-body">
