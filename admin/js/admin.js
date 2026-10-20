@@ -511,6 +511,19 @@ async function loadDashboard() {
   document.getElementById('statPendingProjects').textContent = pendingProjects;
   document.getElementById('statPendingUpdates').textContent = pendingUpdates;
   document.getElementById('statPendingWorks').textContent = pendingWorks;
+  const dashPending = document.getElementById('dashPendingTotal');
+  if (dashPending) dashPending.textContent = pendingWorks + pendingEvents + pendingProjects + pendingUpdates;
+  try {
+    const [backupData, unusedData] = await Promise.all([
+      adminAPI('GET', '/api/admin/backups'),
+      adminAPI('GET', '/api/admin/images/unused')
+    ]);
+    const latest = backupData?.backups?.[0];
+    const bt = document.getElementById('dashBackupTime');
+    if (bt) bt.textContent = latest ? new Date(latest.mtime).toLocaleDateString('zh-CN') : '暂无备份';
+    const ui = document.getElementById('dashUnusedImages');
+    if (ui) ui.textContent = (unusedData?.count ?? 0) + ' 张';
+  } catch {}
 
   // 侧栏徽标与待办队列同步
   setSidebarBadge('approval', pendingWorks + pendingEvents + pendingProjects + pendingUpdates);

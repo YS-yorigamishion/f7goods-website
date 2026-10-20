@@ -1021,3 +1021,56 @@
 .tag-chip-hint {
   font-size: 0.72rem; color: var(--haze); margin-top: 0.3rem; line-height: 1.4;
 }
+
+/* ===== Unified status / action tokens ===== */
+:root {
+  --admin-success: #2E7D4F;
+  --admin-warning: #9A6A1F;
+  --admin-info: #3E6F99;
+  --admin-danger: #C4434F;
+}
+.status-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; line-height: 1.6;
+  white-space: nowrap;
+}
+.status-badge.is-success { color: var(--admin-success); background: rgba(46,125,79,.10); }
+.status-badge.is-warning { color: var(--admin-warning); background: rgba(154,106,31,.12); }
+.status-badge.is-info { color: var(--admin-info); background: rgba(62,111,153,.10); }
+.status-badge.is-danger { color: var(--admin-danger); background: rgba(196,67,79,.10); }
+.btn-success { background: var(--admin-success) !important; color: #fff !important; }
+.btn-warning { background: var(--admin-warning) !important; color: #fff !important; }
+.btn-info { background: var(--admin-info) !important; color: #fff !important; }
+
+/* Dashboard quick actions */
+.dash-quick {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: .8rem; margin: 0 0 1.2rem;
+}
+.dash-quick-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: .35rem;
+  padding: .85rem .95rem; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--card-bg); text-align: left; cursor: pointer;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.dash-quick-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.dash-quick-card .qc-label { font-size: .72rem; color: var(--haze); }
+.dash-quick-card .qc-value { font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+.dash-quick-card .qc-hint { font-size: .7rem; color: var(--haze); }
+
+/* Sticky, readable admin tables */
+.admin-card { overflow-x: auto; }
+.admin-table { border-collapse: separate; border-spacing: 0; }
+.admin-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--card-bg);
+  box-shadow: 0 1px 0 var(--border);
+}
+.admin-table th, .admin-table td { padding-top: .7rem; padding-bottom: .7rem; }
+@media (max-width: 768px) {
+  .admin-table { min-width: 760px; }
+  .admin-content { padding-left: .75rem; padding-right: .75rem; }
+  .dash-quick { grid-template-columns: 1fr 1fr; }
+  .page-toolbar { align-items: flex-start; }
+}

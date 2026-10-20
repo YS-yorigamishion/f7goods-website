@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="/css/style.css?v=20260910n">
-  <link rel="stylesheet" href="/admin/css/admin.css?v=20260920c">
+  <link rel="stylesheet" href="/admin/css/admin.css?v=20261020a">
 </head>
 <body class="admin-body">
   <!-- Login Screen -->
@@ -190,6 +190,29 @@
                 <span class="n" id="statPendingAuthors">0</span><span class="t">已注册作者</span>
               </button>
             </div>
+          </div>
+
+          <div class="dash-quick">
+            <button type="button" class="dash-quick-card" onclick="navigateTo('backup')">
+              <span class="qc-label">数据备份</span>
+              <span class="qc-value" id="dashBackupTime">加载中...</span>
+              <span class="qc-hint">最近一次服务器备份</span>
+            </button>
+            <button type="button" class="dash-quick-card" onclick="navigateTo('images')">
+              <span class="qc-label">图片清理</span>
+              <span class="qc-value" id="dashUnusedImages">-</span>
+              <span class="qc-hint">未使用图片数量</span>
+            </button>
+            <button type="button" class="dash-quick-card" onclick="navigateTo('approval')">
+              <span class="qc-label">审核队列</span>
+              <span class="qc-value" id="dashPendingTotal">0</span>
+              <span class="qc-hint">待审作品/活动/企划/动态</span>
+            </button>
+            <button type="button" class="dash-quick-card" onclick="navigateTo('settings')">
+              <span class="qc-label">页面设置</span>
+              <span class="qc-value">品牌与底栏</span>
+              <span class="qc-hint">多语言、Logo、社交链接</span>
+            </button>
           </div>
 
           <!-- 内容统计 -->
@@ -1046,6 +1069,6 @@
     </div>
   </div>
 
-  <script src="/admin/js/admin.js?v=20261020i"></script>
+  <script src="/admin/js/admin.js?v=20261020j"></script>
 </body>
 </html>
