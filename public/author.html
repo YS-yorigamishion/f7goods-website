@@ -415,22 +415,6 @@
           </div>
         </div>
 
-        <!-- 待处理工作台 -->
-        <div class="mgmt-card" style="padding:1rem;margin-bottom:1.2rem;">
-          <h3 style="margin:0 0 0.7rem;font-size:1rem;">待处理</h3>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.7rem;">
-            <button type="button" class="ab-pill" style="justify-content:space-between;padding:0.6rem 0.8rem;" onclick="switchMgmtTab('works')">
-              <span>审核中</span><b id="statPendingReview" style="color:var(--warning);">0</b>
-            </button>
-            <button type="button" class="ab-pill" style="justify-content:space-between;padding:0.6rem 0.8rem;" onclick="switchMgmtTab('works')">
-              <span>被拒绝待修改</span><b id="statRejectedWorks" style="color:var(--accent);">0</b>
-            </button>
-            <button type="button" class="ab-pill" style="justify-content:space-between;padding:0.6rem 0.8rem;" onclick="switchMgmtTab('works')">
-              <span>已上线</span><b id="statPublishedWorks" style="color:var(--success);">0</b>
-            </button>
-          </div>
-        </div>
-
         <!-- Statistics Section -->
         <div class="mgmt-card">
           <h3 style="margin-bottom:1rem;">数据统计</h3>
@@ -477,6 +461,26 @@
             <button id="authorBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;font-size:0.8rem;padding:0.3rem 0.8rem;" onclick="batchDeleteWorks()">批量删除</button>
             <span style="flex:1"></span>
             <button type="button" class="btn" style="background:transparent;border:none;color:var(--muted);font-size:0.8rem;" onclick="clearAuthorWorkSelection()">取消选择</button>
+          </div>
+        </div>
+        <!-- 待处理工作台 -->
+        <div class="mgmt-card" style="padding:0.9rem 1rem;margin-bottom:0.9rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.7rem;flex-wrap:wrap;">
+            <h3 style="margin:0;font-size:0.95rem;">待处理</h3>
+            <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+              <button type="button" class="ab-pill" style="padding:0.35rem 0.7rem;" onclick="filterAuthorWorksByApproval('all')">
+                全部 <b id="statAllWorks" style="color:var(--muted);">0</b>
+              </button>
+              <button type="button" class="ab-pill" style="padding:0.35rem 0.7rem;" onclick="filterAuthorWorksByApproval('pending')">
+                审核中 <b id="statPendingReview" style="color:var(--warning);">0</b>
+              </button>
+              <button type="button" class="ab-pill" style="padding:0.35rem 0.7rem;" onclick="filterAuthorWorksByApproval('rejected')">
+                被拒绝待修改 <b id="statRejectedWorks" style="color:var(--accent);">0</b>
+              </button>
+              <button type="button" class="ab-pill" style="padding:0.35rem 0.7rem;" onclick="filterAuthorWorksByApproval('approved')">
+                已上线 <b id="statPublishedWorks" style="color:var(--success);">0</b>
+              </button>
+            </div>
           </div>
         </div>
         <!-- 分类筛选 -->
@@ -1387,6 +1391,7 @@
     let authorWorksData = [];
     let currentAuthorCategory = 'all';
     let currentAuthorStatus = 'all';
+    let currentAuthorApproval = 'all';
 
     async function loadAuthorWorks() {
       const works = await authorAPI('GET', '/api/author/works');
@@ -1409,6 +1414,7 @@
       const rejected = authorWorksData.filter(w => w.approvalStatus === 'rejected').length;
       const published = authorWorksData.filter(w => !w.approvalStatus || w.approvalStatus === 'approved').length;
       if (document.getElementById('statPendingReview')) document.getElementById('statPendingReview').textContent = pendingReview;
+      if (document.getElementById('statAllWorks')) document.getElementById('statAllWorks').textContent = totalWorks;
       if (document.getElementById('statRejectedWorks')) document.getElementById('statRejectedWorks').textContent = rejected;
       if (document.getElementById('statPublishedWorks')) document.getElementById('statPublishedWorks').textContent = published;
 
@@ -1456,7 +1462,7 @@
         const rejectReasonHtml = w.approvalStatus === 'rejected' && w.rejectReason
           ? `<p style="color:var(--accent);font-size:0.7rem;margin-top:0.2rem;background:rgba(233,69,96,0.1);padding:0.2rem;border-radius:3px;">拒绝原因: ${escapeHtml(w.rejectReason)}</p>` : '';
         return `
-        <div class="card" draggable="true" data-id="${w.id}" data-category="${w.category || ''}" data-status="${w.status || ''}" data-date="${w.releaseDate || ''}" data-likes="${w.likes || 0}" data-wants="${w.wants || 0}" data-order="${w.order || i}" data-title="${escapeHtml(w.title)}" data-tags="${(w.tags||[]).join(',')}" data-desc="${escapeHtml(w.description || '')}" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
+        <div class="card" draggable="true" data-id="${w.id}" data-approval="${w.approvalStatus || 'approved'}" data-category="${w.category || ''}" data-status="${w.status || ''}" data-date="${w.releaseDate || ''}" data-likes="${w.likes || 0}" data-wants="${w.wants || 0}" data-order="${w.order || i}" data-title="${escapeHtml(w.title)}" data-tags="${(w.tags||[]).join(',')}" data-desc="${escapeHtml(w.description || '')}" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
           <div class="drag-handle" style="position:absolute;top:8px;right:8px;cursor:grab;font-size:1.2rem;color:var(--haze);z-index:2;" onclick="event.stopPropagation()">⠿</div>
           ${approvalBadge}
           <input type="checkbox" class="author-work-cb" data-id="${w.id}" onchange="updateAuthorBatchBtn()" onclick="event.stopPropagation()">
@@ -2123,18 +2129,25 @@
       cards.forEach(card => {
         const cat = card.dataset.category || '';
         const status = card.dataset.status || '';
+        const approval = card.dataset.approval || 'approved';
         const matchCat = currentAuthorCategory === 'all' || cat === currentAuthorCategory;
         const matchStatus = currentAuthorStatus === 'all' || status === currentAuthorStatus;
+        const matchApproval = currentAuthorApproval === 'all' || approval === currentAuthorApproval;
         if (!query) {
-          card.style.display = (matchCat && matchStatus) ? '' : 'none';
+          card.style.display = (matchCat && matchStatus && matchApproval) ? '' : 'none';
           return;
         }
         const title = (card.dataset.title || '').toLowerCase();
         const tags = (card.dataset.tags || '').toLowerCase();
         const desc = (card.dataset.desc || '').toLowerCase();
         const matchSearch = title.includes(query) || tags.includes(query) || desc.includes(query);
-        card.style.display = (matchCat && matchStatus && matchSearch) ? '' : 'none';
+        card.style.display = (matchCat && matchStatus && matchApproval && matchSearch) ? '' : 'none';
       });
+    }
+
+    function filterAuthorWorksByApproval(value) {
+      currentAuthorApproval = value || 'all';
+      applyAuthorWorksFilters();
     }
 
     // Search filter
