@@ -638,6 +638,10 @@ function imgUrl(url, width = 640) {
   return '/img/' + encodeURIComponent(m[1]) + '?w=' + encodeURIComponent(width);
 }
 
+function imgSrcset(url, widths = [320, 640]) {
+  return widths.map(w => `${imgUrl(url, w)} ${w}w`).join(', ');
+}
+
 // Make cards keyboard-accessible
 function initCardAccessibility() {
   document.querySelectorAll('.card[onclick]').forEach(card => {
