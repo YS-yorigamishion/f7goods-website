@@ -4334,3 +4334,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .author-todo-row { align-items: flex-start; flex-wrap: wrap; }
   .author-todo-row .actions { width: 100%; padding-left: 1.1rem; }
 }
+
+/* Author featured works picker */
+.author-featured-card { margin-top: 1.25rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; }
+.author-featured-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.author-featured-head h3 { font-family: 'Noto Serif SC', Georgia, serif; font-size: 1rem; margin: 0; }
+.author-featured-hint { color: var(--haze); font-size: .75rem; line-height: 1.6; margin: .25rem 0 0; }
+.author-featured-actions { display: flex; gap: .35rem; }
+.author-featured-slots { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .65rem; }
+.author-featured-slots label { display: block; font-size: .72rem; color: var(--haze); }
+.author-featured-slots select { width: 100%; margin-top: .25rem; padding: .4rem .45rem; font-size: .78rem; }
+@media (max-width: 600px) {
+  .author-featured-slots { grid-template-columns: 1fr; }
+  .author-featured-actions { width: 100%; }
+}

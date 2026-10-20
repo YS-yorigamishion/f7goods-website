@@ -1045,11 +1045,17 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   const old = { ...circles[index] };
 
   // Only allow updating specific fields
-  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks'];
+  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'featuredWorkIds'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
+  if (updates.featuredWorkIds !== undefined) {
+    const ownWorks = readJSON('works.json').filter(w => (w.circles || []).includes(circles[index].id) && isWorkPublic(w));
+    const validIds = new Set(ownWorks.map(w => w.id));
+    const ids = Array.isArray(updates.featuredWorkIds) ? updates.featuredWorkIds : [];
+    updates.featuredWorkIds = [...new Set(ids.map(String).filter(id => validIds.has(id)))].slice(0, 3);
+  }
 
   circles[index] = { ...circles[index], ...updates };
   await writeJSON('circles.json', circles);
@@ -1067,6 +1073,7 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
     else if (newCount < oldCount) changes.push('删除了' + (oldCount - newCount) + '张图片');
   }
   if (updates.category && updates.category !== old.category) changes.push('修改了分类');
+  if (updates.featuredWorkIds !== undefined) changes.push('更新了首页猜你喜欢');
   logEdit(circles[index].name || '作者', '修改资料', '', changes.join('、') || '更新了资料');
 
   const { passwordHash, ...safe } = circles[index];
