@@ -3996,3 +3996,8 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Keep the mobile topbar usable: page title is available in the content heading. */
+@media (max-width: 768px) {
+  .app-title { display: none; }
+}
