@@ -4649,3 +4649,14 @@ a.cl-series-card:hover { border-color: var(--accent); }
   .awp-body small { font-size: .66rem; }
   .awp-body span { font-size: .6rem; }
 }
+
+/* Work picker: give mobile cards breathing room */
+@media (max-width: 700px) {
+  .awp-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem .9rem; padding: .4rem 0 .7rem; }
+  .awp-item { border-radius: 12px; min-height: 198px; }
+  .awp-cover { height: 130px; flex-basis: 130px; }
+  .awp-body { padding: .6rem .65rem .7rem; gap: .1rem; }
+  .awp-body b { font-size: .82rem; line-height: 1.4; }
+  .awp-body small { font-size: .67rem; margin-top: .2rem; }
+  .awp-body span { font-size: .61rem; margin-top: .2rem; }
+}
