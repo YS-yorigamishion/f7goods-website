@@ -4468,3 +4468,4 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .series-contact b { font-size: .75rem; color: var(--muted); }
 .series-contact p { margin: .2rem 0 0; font-size: .8rem; line-height: 1.7; white-space: pre-wrap; }
 .project-series-dates { color: var(--haze); font-size: .68rem; margin-top: .2rem; }
+.series-in-project-label { grid-column: 1 / -1; font-size: .72rem; letter-spacing: .12em; color: var(--haze); font-weight: 700; margin: .25rem 0 -.15rem; }
