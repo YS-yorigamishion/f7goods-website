@@ -3035,13 +3035,14 @@ function openAdminSeriesModal(id) {
   const s = adminSeriesData.find(x => x.id === id);
   if (!s) return;
   const selected = new Set((s.workIds || []).map(String));
-  const statusLabels = { recruiting: '招募中', in_progress: '进行中', completed: '已完成', cancelled: '已取消' };
+  const statusLabels = Object.keys(PROJECT_STATUS_LABELS || {}).length ? PROJECT_STATUS_LABELS : { zhaomuzhong: '招募中', yiwancheng: '已完成' };
+  const defaultStatus = Object.keys(statusLabels)[0] || 'zhaomuzhong';
   document.getElementById('modalTitle').textContent = '编辑作品系列';
   document.getElementById('modalBody').innerHTML = `
     <div class="form-group"><label>系列名称</label><input class="form-input" id="adminSeriesName" value="${escAttr(s.name || '')}"></div>
     <div class="form-row">
       <div class="form-group"><label>封面图片地址</label><input class="form-input" id="adminSeriesCover" value="${escAttr(s.cover || '')}" placeholder="/uploads/..."></div>
-      <div class="form-group"><label>系列状态</label><select class="form-input" id="adminSeriesStatus">${Object.entries(statusLabels).map(([k, v]) => `<option value="${k}" ${(s.status || 'in_progress') === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div class="form-group"><label>系列状态</label><select class="form-input" id="adminSeriesStatus">${Object.entries(statusLabels).map(([k, v]) => `<option value="${k}" ${(s.status || defaultStatus) === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
     </div>
     <label class="feature-switch"><input type="checkbox" id="adminSeriesVisible" ${s.visible === false ? '' : 'checked'}><span><b>在作者主页显示</b><small>关闭后作者主页和企划系列周边不显示</small></span></label>
     <div class="form-group">

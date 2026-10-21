@@ -1093,6 +1093,23 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
 });
 
 // ===== Author: work series / collections =====
+function projectStatusValues() {
+  try {
+    const categories = readJSON('categories.json');
+    const list = Array.isArray(categories.projectStatus) ? categories.projectStatus : [];
+    if (list.length) return new Set(list.map(x => x.id));
+  } catch {}
+  return new Set(['weikaiqi', 'zhaomuzhong', 'tingzhizhaomu', 'yiwancheng']);
+}
+
+function normalizeSeriesStatus(value) {
+  const valid = projectStatusValues();
+  const legacy = { in_progress: 'zhaomuzhong', recruiting: 'zhaomuzhong', completed: 'yiwancheng', cancelled: 'tingzhizhaomu' };
+  if (valid.has(value)) return value;
+  if (legacy[value] && valid.has(legacy[value])) return legacy[value];
+  return valid.has('zhaomuzhong') ? 'zhaomuzhong' : [...valid][0] || 'zhaomuzhong';
+}
+
 function authorSeriesWorks(circleId, workIds) {
   const works = readJSON('works.json').filter(w => (w.circles || []).includes(circleId));
   if (!Array.isArray(workIds) || !workIds.length) return [];
@@ -1104,7 +1121,7 @@ app.get('/api/author/series', authorAuthMiddleware, (req, res) => {
   const circleId = req.author.circleId;
   const series = readJSON('series.json').filter(s => s.circleId === circleId);
   series.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  res.json(series.map(s => ({ ...s, works: authorSeriesWorks(circleId, s.workIds) })));
+  res.json(series.map(s => ({ ...s, status: normalizeSeriesStatus(s.status), works: authorSeriesWorks(circleId, s.workIds) })));
 });
 
 app.post('/api/author/series', authorAuthMiddleware, async (req, res) => {
@@ -1122,7 +1139,7 @@ app.post('/api/author/series', authorAuthMiddleware, async (req, res) => {
     cover: String(req.body.cover || '').slice(0, 1000),
     workIds,
     visible: req.body.visible !== false,
-    status: ['recruiting', 'in_progress', 'completed', 'cancelled'].includes(req.body.status) ? req.body.status : 'in_progress',
+    status: normalizeSeriesStatus(req.body.status),
     order: series.filter(s => s.circleId === circleId).length,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -1148,9 +1165,9 @@ app.put('/api/author/series/:id', authorAuthMiddleware, async (req, res) => {
     cover: req.body.cover !== undefined ? String(req.body.cover || '').slice(0, 1000) : series[index].cover,
     workIds,
     visible: req.body.visible !== undefined ? req.body.visible !== false : series[index].visible !== false,
-    status: req.body.status !== undefined && ['recruiting', 'in_progress', 'completed', 'cancelled'].includes(req.body.status)
-      ? req.body.status
-      : (series[index].status || 'in_progress'),
+    status: req.body.status !== undefined
+      ? normalizeSeriesStatus(req.body.status)
+      : normalizeSeriesStatus(series[index].status),
     updatedAt: new Date().toISOString()
   };
   await writeJSON('series.json', series);
@@ -1200,7 +1217,7 @@ app.get('/api/series', (req, res) => {
       const own = works.filter(w => (w.circles || []).includes(s.circleId));
       const selected = new Set((Array.isArray(s.workIds) ? s.workIds : []).map(String));
       const items = publicWorks.filter(w => selected.has(String(w.id)) && (w.circles || []).includes(s.circleId));
-      return { ...s, works: items, workCount: items.length };
+      return { ...s, status: normalizeSeriesStatus(s.status), works: items, workCount: items.length };
     }).filter(s => s.works.length > 0).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     res.json(result);
   } catch (e) {
@@ -1216,7 +1233,7 @@ app.get('/api/series/:id', (req, res) => {
   const selected = new Set((Array.isArray(series.workIds) ? series.workIds : []).map(String));
   const items = works.filter(w => selected.has(String(w.id)) && (w.circles || []).includes(series.circleId));
   const owner = readJSON('circles.json').find(c => c.id === series.circleId);
-  res.json({ ...series, works: items, workCount: items.length, owner: owner ? { id: owner.id, name: owner.name, logo: owner.logo || '' } : null });
+  res.json({ ...series, status: normalizeSeriesStatus(series.status), works: items, workCount: items.length, owner: owner ? { id: owner.id, name: owner.name, logo: owner.logo || '' } : null });
 });
 
 // Admin: manage all series
@@ -1229,6 +1246,7 @@ app.get('/api/admin/series', authMiddleware, (req, res) => {
     const selected = new Set((Array.isArray(s.workIds) ? s.workIds : []).map(String));
     return {
       ...s,
+      status: normalizeSeriesStatus(s.status),
       ownerName: owner?.name || '未知作者',
       workCount: works.filter(w => selected.has(String(w.id))).length
     };
@@ -1246,7 +1264,7 @@ app.put('/api/admin/series/:id', authMiddleware, async (req, res) => {
     ...series[index],
     name: String(req.body.name ?? series[index].name).trim().slice(0, 80) || series[index].name,
     cover: req.body.cover !== undefined ? String(req.body.cover || '').slice(0, 1000) : series[index].cover,
-    status: ['recruiting', 'in_progress', 'completed', 'cancelled'].includes(req.body.status) ? req.body.status : (series[index].status || 'in_progress'),
+    status: normalizeSeriesStatus(req.body.status),
     visible: req.body.visible !== undefined ? req.body.visible !== false : series[index].visible !== false,
     workIds,
     updatedAt: new Date().toISOString()
