@@ -4572,3 +4572,21 @@ a.cl-series-card:hover { border-color: var(--accent); }
   .awb-settings-grid > .author-featured-card,
   .awb-settings-grid > .author-series-display-setting { height: auto; }
 }
+
+/* Featured work slots */
+.awb-feature-slots { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .5rem; }
+.awb-feature-slot { border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: .45rem; display: flex; flex-direction: column; min-width: 0; }
+.awb-feature-slot.is-set { border-color: rgba(196,67,79,.35); }
+.awb-feature-slot-head { display: flex; justify-content: space-between; gap: .3rem; font-size: .66rem; color: var(--haze); margin-bottom: .3rem; }
+.awb-feature-slot-head small { color: var(--accent); }
+.awb-feature-slot-cover { height: 105px; border-radius: 6px; overflow: hidden; background: var(--paper); display: flex; align-items: center; justify-content: center; color: var(--haze); font-size: .68rem; margin-bottom: .35rem; }
+.awb-feature-slot-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.awb-feature-slot > b { font-size: .74rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.awb-feature-slot > small { color: var(--haze); font-size: .62rem; margin-top: .12rem; min-height: 1em; }
+.awb-feature-slot-actions { display: flex; gap: .25rem; margin-top: auto; padding-top: .35rem; }
+.awb-feature-slot-actions button { flex: 1; border: 1px solid var(--line); background: transparent; border-radius: 5px; padding: .2rem .25rem; font: inherit; font-size: .64rem; color: var(--accent); cursor: pointer; }
+.awb-feature-slot-actions button.ghost { color: var(--haze); }
+@media (max-width: 600px) {
+  .awb-feature-slots { grid-template-columns: 1fr; }
+  .awb-feature-slot-cover { height: 130px; }
+}

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020bf">
+  <link rel="stylesheet" href="/css/style.css?v=20261020bg">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -817,9 +817,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020bf"></script>
-  <script src="/js/i18n.js?v=20261020bf"></script>
-  <script src="/js/main.js?v=20261020bf"></script>
+  <script src="/js/api.js?v=20261020bg"></script>
+  <script src="/js/i18n.js?v=20261020bg"></script>
+  <script src="/js/main.js?v=20261020bg"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4893,11 +4893,13 @@
     let _awpChosen = new Set();
     let _awpWorks = [];
     let _awpOnConfirm = null;
+    let _awpSingle = false;
     function openAuthorWorkPicker(options = {}) {
       _awpWorks = options.works || window._authorSeriesAvailableWorks || [];
       const selected = options.selected || window._authorSeriesSelectedWorkIds || new Set();
       _awpChosen = new Set([...selected].map(String));
       _awpOnConfirm = options.onConfirm || null;
+      _awpSingle = options.multiple === false;
       const overlay = document.createElement('div');
       overlay.id = 'authorWorkPickerOverlay';
       overlay.className = 'awp-overlay';
@@ -4946,8 +4948,15 @@
 
     function toggleAuthorWorkPick(id) {
       id = String(id);
-      if (_awpChosen.has(id)) _awpChosen.delete(id);
-      else _awpChosen.add(id);
+      if (_awpSingle) {
+        const wasSelected = _awpChosen.has(id);
+        _awpChosen.clear();
+        if (!wasSelected) _awpChosen.add(id);
+      } else if (_awpChosen.has(id)) {
+        _awpChosen.delete(id);
+      } else {
+        _awpChosen.add(id);
+      }
       const count = document.getElementById('awpCount');
       if (count) count.textContent = _awpChosen.size;
       renderAuthorWorkPickerGrid();
@@ -5059,53 +5068,65 @@
         picker.innerHTML = `<h3>作者主页 · 展示作品</h3>${toggleHtml}<p class="author-featured-hint">有通过审核的作品后，可以在这里选择要展示的 3 个作品。</p>`;
         return;
       }
-      const ids = (Array.isArray(selectedIds) ? selectedIds : []).map(String);
       window._authorFeaturedWorks = publicWorks;
-      const options = (current) => publicWorks.map(w =>
-        `<option value="${w.id}" ${String(w.id) === String(current) ? 'selected' : ''}>${escapeHtml(w.title || '未命名')}</option>`
-      ).join('');
+      const slots = [0, 1, 2].map(i => String((Array.isArray(selectedIds) ? selectedIds[i] : '') || ''));
+      window._authorFeaturedSlots = slots;
+      const explicitWorks = slots.map(id => publicWorks.find(w => String(w.id) === id)).filter(Boolean);
+      const defaultLiked = publicWorks.slice().sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      const effective = [...explicitWorks];
+      defaultLiked.forEach(w => { if (effective.length < 3 && !effective.some(x => x.id === w.id)) effective.push(w); });
+      const slotHtml = [0, 1, 2].map(i => {
+        const explicit = slots[i] ? publicWorks.find(w => String(w.id) === slots[i]) : null;
+        const work = effective[i];
+        return `<div class="awb-feature-slot${explicit ? ' is-set' : ''}">
+          <div class="awb-feature-slot-head"><span>第 ${i + 1} 个</span><small>${explicit ? '已选择' : '自动'}</small></div>
+          <div class="awb-feature-slot-cover">${work?.images?.[0] ? `<img src="${escapeHtml(imgUrl(work.images[0], 240))}" alt="">` : '<span>未选择</span>'}</div>
+          <b>${work ? escapeHtml(work.title || '未命名') : '自动补位'}</b>
+          <small>${work ? `${escapeHtml(STATUS_LABELS?.[work.status] || '')}${(!work.approvalStatus || work.approvalStatus === 'approved') ? '' : ' · 待审核'}` : '按喜爱数自动补齐'}</small>
+          <div class="awb-feature-slot-actions">
+            <button type="button" onclick="openFeaturedWorkPicker(${i})">选择作品</button>
+            ${explicit ? `<button type="button" class="ghost" onclick="clearFeaturedWorkSlot(${i})">自动</button>` : ''}
+          </div>
+        </div>`;
+      }).join('');
       picker.innerHTML = `
         <div class="author-featured-head">
-          <div><h3>作者主页 · 展示作品</h3><p class="author-featured-hint">选择最多 3 个作品，前台会按这里的顺序展示；不设置时自动按喜爱数排序。</p></div>
+          <div><h3>作者主页 · 展示作品</h3><p class="author-featured-hint">最多展示 3 个作品；未手动选择的由喜爱数自动补齐。仅影响个人主页。</p></div>
           <div class="author-featured-actions">
-            ${ids.length ? '<button type="button" class="btn-sm" onclick="clearAuthorFeaturedWorks()">恢复默认</button>' : ''}
+            ${slots.some(Boolean) ? '<button type="button" class="btn-sm" onclick="clearAuthorFeaturedWorks()">恢复默认</button>' : ''}
             <button type="button" class="btn-sm btn-primary" onclick="saveAuthorFeaturedWorks()">保存</button>
           </div>
         </div>
         ${toggleHtml}
-        <div class="author-featured-slots">
-          ${[0, 1, 2].map(i => `<label>
-            <span>第 ${i + 1} 个</span>
-            <input type="search" class="form-input author-featured-search" data-featured-search="${i}" placeholder="搜索作品..." oninput="filterAuthorFeaturedSlot(${i})">
-            <select class="form-input" data-featured-slot="${i}"><option value="">自动补位</option>${options(ids[i] || '')}</select>
-            <small data-featured-count="${i}">${publicWorks.length} 个可选</small>
-          </label>`).join('')}
-        </div>`;
+        <div class="awb-feature-slots">${slotHtml}</div>`;
     }
 
-    function filterAuthorFeaturedSlot(index) {
-      const all = window._authorFeaturedWorks || [];
-      const input = document.querySelector(`[data-featured-search="${index}"]`);
-      const select = document.querySelector(`[data-featured-slot="${index}"]`);
-      const countEl = document.querySelector(`[data-featured-count="${index}"]`);
-      if (!input || !select) return;
-      const query = (input.value || '').trim().toLowerCase();
-      const match = all.filter(w => !query || String(w.title || '').toLowerCase().includes(query));
-      const current = select.value;
-      const keep = all.find(w => String(w.id) === String(current));
-      const list = query
-        ? [...(keep && !match.includes(keep) ? [keep] : []), ...match]
-        : all;
-      select.innerHTML = '<option value="">自动补位</option>' + list.map(w =>
-        `<option value="${w.id}" ${String(w.id) === String(current) ? 'selected' : ''}>${escapeHtml(w.title || '未命名')}</option>`
-      ).join('');
-      select.value = current;
-      if (countEl) countEl.textContent = query ? `${match.length} 个匹配` : `${all.length} 个可选`;
+    function openFeaturedWorkPicker(index) {
+      const current = window._authorFeaturedSlots?.[index] || '';
+      openAuthorWorkPicker({
+        works: window._authorFeaturedWorks || [],
+        selected: current ? new Set([String(current)]) : new Set(),
+        multiple: false,
+        onConfirm: function (ids) {
+          const chosen = ids[0] ? String(ids[0]) : '';
+          const slots = [...(window._authorFeaturedSlots || ['', '', ''])];
+          for (let i = 0; i < slots.length; i++) if (i !== index && String(slots[i]) === chosen) slots[i] = '';
+          slots[index] = chosen;
+          window._authorFeaturedSlots = slots;
+          renderAuthorFeaturedPicker(window._authorFeaturedWorks || [], slots, document.getElementById('authorFeaturedShow')?.checked !== false);
+        }
+      });
+    }
+
+    function clearFeaturedWorkSlot(index) {
+      const slots = [...(window._authorFeaturedSlots || ['', '', ''])];
+      slots[index] = '';
+      window._authorFeaturedSlots = slots;
+      renderAuthorFeaturedPicker(window._authorFeaturedWorks || [], slots, document.getElementById('authorFeaturedShow')?.checked !== false);
     }
 
     async function saveAuthorFeaturedWorks() {
-      const values = [...document.querySelectorAll('[data-featured-slot]')].map(el => el.value).filter(Boolean);
-      const ids = [...new Set(values)].slice(0, 3);
+      const ids = [...new Set((window._authorFeaturedSlots || []).filter(Boolean))].slice(0, 3);
       const showFeaturedWorks = document.getElementById('authorFeaturedShow')?.checked !== false;
       try {
         const result = await authorAPI('PUT', '/api/author/profile', { featuredWorkIds: ids, showFeaturedWorks });
