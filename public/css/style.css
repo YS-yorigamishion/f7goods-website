@@ -4590,3 +4590,15 @@ a.cl-series-card:hover { border-color: var(--accent); }
   .awb-feature-slots { grid-template-columns: 1fr; }
   .awb-feature-slot-cover { height: 130px; }
 }
+
+/* Series display with covers */
+.author-series-current-list .awb-series-item { display: flex; align-items: center; gap: .45rem; padding: .35rem .15rem; }
+.awb-series-cover { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 6px; overflow: hidden; background: var(--paper); display: flex; align-items: center; justify-content: center; color: var(--haze); font-size: .6rem; }
+.awb-series-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.awb-series-info { min-width: 0; flex: 1; }
+.awb-series-info b { display: block; font-size: .76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.awb-series-info small { color: var(--haze); font-size: .64rem; }
+.awb-series-pick-cover { width: 32px; height: 32px; flex: 0 0 32px; border-radius: 4px; overflow: hidden; background: var(--paper); display: flex; align-items: center; justify-content: center; color: var(--haze); font-size: .55rem; }
+.awb-series-pick-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.author-series-picker-list label { align-items: center; }
+.author-series-picker-list label span { flex: 1; min-width: 0; }
