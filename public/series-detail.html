@@ -32,7 +32,7 @@
     root.innerHTML = `
       <div class="detail-breadcrumb"><a href="/">周边概览</a><span>›</span><span>${escapeHtml(s.name)}</span></div>
       <div class="series-hero">
-        <div class="series-hero-cover">${s.cover ? `<img src="${escapeHtml(imgUrl(s.cover, 800))}" alt="${escapeHtml(s.name)}">` : '<span>作品系列</span>'}</div>
+        <div class="series-hero-cover">${s.cover ? `<img src="${escapeHtml(imgUrl(s.cover, 800))}" alt="${escapeHtml(s.name)}" onerror="this.style.display='none';this.parentElement.textContent='作品系列'">` : '<span>作品系列</span>'}</div>
         <div class="series-hero-info">
           <div class="series-status">${escapeHtml(PROJECT_STATUS_LABELS[s.status] || '进行中')}</div>
           <h1>${escapeHtml(s.name)}</h1>

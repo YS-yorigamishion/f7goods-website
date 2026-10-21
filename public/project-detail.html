@@ -126,7 +126,7 @@
                     const owner = allCircles.find(c => c.id === s.circleId);
                     const cover = s.cover || (s.works?.[0]?.images && s.works[0].images[0]) || '';
                     return `<div class="project-series-card" role="link" tabindex="0" onclick="location.href='/series-detail.html?id=${encodeURIComponent(s.id)}'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href='/series-detail.html?id=${encodeURIComponent(s.id)}'}">
-                      <div class="project-series-cover">${cover ? `<img src="${escapeHtml(imgUrl(cover, 320))}" alt="${escapeHtml(s.name)}" loading="lazy">` : '<span>系列</span>'}</div>
+                      <div class="project-series-cover">${cover ? `<img src="${escapeHtml(imgUrl(cover, 320))}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='系列'">` : '<span>系列</span>'}</div>
                       <div class="project-series-body">
                         <div class="project-series-title"><a href="/series-detail.html?id=${encodeURIComponent(s.id)}" onclick="event.stopPropagation()"><b>${escapeHtml(s.name)}</b></a><small>${escapeHtml(PROJECT_STATUS_LABELS[project.status] || '进行中')} · ${s.works.length} 件</small></div>
                         ${owner ? `<a class="project-series-author" href="/circle-detail.html?id=${encodeURIComponent(owner.id)}" onclick="event.stopPropagation()">${escapeHtml(owner.name)}</a>` : ''}

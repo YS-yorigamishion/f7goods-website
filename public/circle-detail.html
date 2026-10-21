@@ -361,7 +361,7 @@
       const seriesHtml = displayedSeries.map(s => {
         const cover = s.cover || (s.works[0]?.images && s.works[0].images[0]) || '';
         return `<a class="cl-series-card" href="/series-detail.html?id=${encodeURIComponent(s.id)}">
-          <div class="cl-series-cover">${cover ? `<img src="${escapeHtml(imgUrl(cover, 320))}" alt="${escapeHtml(s.name)}" loading="lazy">` : '<span>系列</span>'}</div>
+          <div class="cl-series-cover">${cover ? `<img src="${escapeHtml(imgUrl(cover, 320))}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='系列'">` : '<span>系列</span>'}</div>
           <div class="cl-series-body">
             <div class="cl-series-title"><b>${escapeHtml(s.name)}</b><small>${escapeHtml(PROJECT_STATUS_LABELS[s.status] || '进行中')} · ${s.works.length} 件</small></div>
             <div class="cl-series-thumbs">${s.works.slice(0, 4).map(w => `<span title="${escapeHtml(workTitle(w))}">${w.images && w.images.length ? `<img src="${escapeHtml(imgUrl(w.images[0], 96))}" alt="" loading="lazy">` : '作品'}</span>`).join('')}</div>

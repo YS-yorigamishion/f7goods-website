@@ -1165,6 +1165,15 @@ app.delete('/api/author/series/:id', authorAuthMiddleware, async (req, res) => {
   if (index === -1) return res.status(404).json({ error: '系列未找到' });
   const [removed] = series.splice(index, 1);
   await writeJSON('series.json', series);
+  const circles = readJSON('circles.json');
+  let changed = false;
+  circles.forEach(c => {
+    if (Array.isArray(c.featuredSeriesIds) && c.featuredSeriesIds.includes(req.params.id)) {
+      c.featuredSeriesIds = c.featuredSeriesIds.filter(id => id !== req.params.id);
+      changed = true;
+    }
+  });
+  if (changed) await writeJSON('circles.json', circles);
   await logEdit('作者', '删除作品系列', removed.name || removed.id, '');
   res.json({ success: true });
 });
@@ -1253,6 +1262,15 @@ app.delete('/api/admin/series/:id', authMiddleware, async (req, res) => {
   if (index === -1) return res.status(404).json({ error: '系列未找到' });
   const [removed] = series.splice(index, 1);
   await writeJSON('series.json', series);
+  const circles = readJSON('circles.json');
+  let changed = false;
+  circles.forEach(c => {
+    if (Array.isArray(c.featuredSeriesIds) && c.featuredSeriesIds.includes(req.params.id)) {
+      c.featuredSeriesIds = c.featuredSeriesIds.filter(id => id !== req.params.id);
+      changed = true;
+    }
+  });
+  if (changed) await writeJSON('circles.json', circles);
   await logEdit('管理员', '删除作品系列', removed.name || removed.id, '');
   res.json({ success: true });
 });
