@@ -4456,3 +4456,4 @@ a.cl-series-card { display: block; color: inherit; text-decoration: none; }
 a.cl-series-card:hover { border-color: var(--accent); }
 .cl-series-thumbs > span { width: 34px; height: 34px; border-radius: 4px; display: block; overflow: hidden; background: var(--paper); color: var(--haze); font-size: .55rem; line-height: 34px; text-align: center; }
 .cl-series-thumbs > span img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.project-series-card { cursor: pointer; }
