@@ -3044,6 +3044,14 @@ function openAdminSeriesModal(id) {
       <div class="form-group"><label>封面图片地址</label><input class="form-input" id="adminSeriesCover" value="${escAttr(s.cover || '')}" placeholder="/uploads/..."></div>
       <div class="form-group"><label>系列状态</label><select class="form-input" id="adminSeriesStatus">${Object.entries(statusLabels).map(([k, v]) => `<option value="${k}" ${(s.status || defaultStatus) === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
     </div>
+    <div class="form-row">
+      <div class="form-group"><label>分类</label><select class="form-input" id="adminSeriesCategory"><option value="">未分类</option>${Object.entries(PROJECT_CATEGORIES || {}).map(([k, v]) => `<option value="${k}" ${s.category === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="adminSeriesStart" value="${escAttr(s.startDate || '')}"></div>
+      <div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="adminSeriesEnd" value="${escAttr(s.endDate || '')}"></div>
+    </div>
+    <div class="form-group"><label>标签（逗号分隔）</label><input class="form-input" id="adminSeriesTags" value="${escAttr((s.tags || []).join(', '))}"></div>
+    <div class="form-group"><label>系列简介</label><textarea class="form-input" id="adminSeriesDesc" style="min-height:90px;">${escText(s.description || '')}</textarea></div>
+    <div class="form-group"><label>参与方式 / 联系方式</label><textarea class="form-input" id="adminSeriesContact" style="min-height:70px;">${escText(s.contactInfo || '')}</textarea></div>
     <label class="feature-switch"><input type="checkbox" id="adminSeriesVisible" ${s.visible === false ? '' : 'checked'}><span><b>在作者主页显示</b><small>关闭后作者主页和企划系列周边不显示</small></span></label>
     <div class="form-group">
       <label>包含作品</label>
@@ -3061,6 +3069,12 @@ function openAdminSeriesModal(id) {
       name,
       cover: document.getElementById('adminSeriesCover').value,
       status: document.getElementById('adminSeriesStatus').value,
+      category: document.getElementById('adminSeriesCategory').value,
+      startDate: document.getElementById('adminSeriesStart').value,
+      endDate: document.getElementById('adminSeriesEnd').value,
+      tags: document.getElementById('adminSeriesTags').value.split(',').map(t => t.trim()).filter(Boolean),
+      description: document.getElementById('adminSeriesDesc').value,
+      contactInfo: document.getElementById('adminSeriesContact').value,
       visible: document.getElementById('adminSeriesVisible').checked,
       workIds
     });

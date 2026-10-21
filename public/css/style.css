@@ -4457,3 +4457,14 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .cl-series-thumbs > span { width: 34px; height: 34px; border-radius: 4px; display: block; overflow: hidden; background: var(--paper); color: var(--haze); font-size: .55rem; line-height: 34px; text-align: center; }
 .cl-series-thumbs > span img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .project-series-card { cursor: pointer; }
+
+/* Series extra info */
+.series-extra { border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: .9rem 1rem; margin-bottom: 1.2rem; }
+.series-extra-meta { display: flex; gap: .7rem; flex-wrap: wrap; color: var(--haze); font-size: .75rem; margin-bottom: .45rem; }
+.series-extra-meta span { padding: .15rem .5rem; border-radius: 999px; background: var(--paper); }
+.series-desc { color: var(--ink); font-size: .85rem; line-height: 1.8; margin: 0 0 .55rem; white-space: pre-wrap; }
+.series-tags { display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: .45rem; }
+.series-tags span { color: var(--accent); font-size: .7rem; }
+.series-contact b { font-size: .75rem; color: var(--muted); }
+.series-contact p { margin: .2rem 0 0; font-size: .8rem; line-height: 1.7; white-space: pre-wrap; }
+.project-series-dates { color: var(--haze); font-size: .68rem; margin-top: .2rem; }
