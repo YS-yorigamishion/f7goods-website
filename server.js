@@ -533,7 +533,7 @@ function withFileLock(file, fn) {
 const LIST_JSON_FILES = new Set([
   'works.json', 'circles.json', 'events.json', 'projects.json', 'updates.json',
   'announcements.json', 'contact.json', 'edit-log.json', 'author-notifications.json',
-  'author-announcements.json', 'uploads-trash.json', 'trash.json'
+  'author-announcements.json', 'uploads-trash.json', 'trash.json', 'series.json'
 ]);
 
 // Helper: read/write JSON files
@@ -650,7 +650,7 @@ function collectAllUploadRefs() {
   const refs = new Set();
   const files = [
     'works.json', 'events.json', 'circles.json', 'projects.json', 'updates.json',
-    'announcements.json', 'author-announcements.json', 'settings.json'
+    'announcements.json', 'author-announcements.json', 'series.json', 'settings.json'
   ];
   for (const file of files) {
     try { collectUploadRefs(readJSON(file), refs); } catch (e) { console.error('[upload-refs]', file, e.message); }
@@ -1080,6 +1080,114 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
 
   const { passwordHash, ...safe } = circles[index];
   res.json(safe);
+});
+
+// ===== Author: work series / collections =====
+function authorSeriesWorks(circleId, workIds) {
+  const works = readJSON('works.json').filter(w => (w.circles || []).includes(circleId));
+  if (Array.isArray(workIds) && workIds.length) {
+    const wanted = new Set(workIds.map(String));
+    return works.filter(w => wanted.has(String(w.id)));
+  }
+  return works;
+}
+
+app.get('/api/author/series', authorAuthMiddleware, (req, res) => {
+  const circleId = req.author.circleId;
+  const series = readJSON('series.json').filter(s => s.circleId === circleId);
+  series.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  res.json(series.map(s => ({ ...s, works: authorSeriesWorks(circleId, s.workIds) })));
+});
+
+app.post('/api/author/series', authorAuthMiddleware, async (req, res) => {
+  const circleId = req.author.circleId;
+  const name = String(req.body.name || '').trim().slice(0, 80);
+  if (!name) return res.status(400).json({ error: '请填写系列名称' });
+  const ownWorks = readJSON('works.json').filter(w => (w.circles || []).includes(circleId));
+  const ownIds = new Set(ownWorks.map(w => String(w.id)));
+  const workIds = [...new Set((Array.isArray(req.body.workIds) ? req.body.workIds : []).map(String).filter(id => ownIds.has(id)))];
+  const series = readJSON('series.json');
+  const item = {
+    id: 'ser' + Date.now() + Math.random().toString(36).slice(2, 6),
+    circleId,
+    name,
+    cover: String(req.body.cover || '').slice(0, 1000),
+    workIds,
+    visible: req.body.visible !== false,
+    order: series.filter(s => s.circleId === circleId).length,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  series.push(item);
+  await writeJSON('series.json', series);
+  await logEdit('作者', '创建作品系列', name, `${workIds.length} 件作品`);
+  res.json({ ...item, works: authorSeriesWorks(circleId, item.workIds) });
+});
+
+app.put('/api/author/series/:id', authorAuthMiddleware, async (req, res) => {
+  const circleId = req.author.circleId;
+  const series = readJSON('series.json');
+  const index = series.findIndex(s => s.id === req.params.id && s.circleId === circleId);
+  if (index === -1) return res.status(404).json({ error: '系列未找到' });
+  const name = String(req.body.name ?? series[index].name).trim().slice(0, 80);
+  if (!name) return res.status(400).json({ error: '请填写系列名称' });
+  const ownIds = new Set(readJSON('works.json').filter(w => (w.circles || []).includes(circleId)).map(w => String(w.id)));
+  const workIds = [...new Set((Array.isArray(req.body.workIds) ? req.body.workIds : series[index].workIds || []).map(String).filter(id => ownIds.has(id)))];
+  series[index] = {
+    ...series[index],
+    name,
+    cover: req.body.cover !== undefined ? String(req.body.cover || '').slice(0, 1000) : series[index].cover,
+    workIds,
+    visible: req.body.visible !== undefined ? req.body.visible !== false : series[index].visible !== false,
+    updatedAt: new Date().toISOString()
+  };
+  await writeJSON('series.json', series);
+  await logEdit('作者', '编辑作品系列', name, `${workIds.length} 件作品`);
+  res.json({ ...series[index], works: authorSeriesWorks(circleId, workIds) });
+});
+
+app.delete('/api/author/series/:id', authorAuthMiddleware, async (req, res) => {
+  const circleId = req.author.circleId;
+  const series = readJSON('series.json');
+  const index = series.findIndex(s => s.id === req.params.id && s.circleId === circleId);
+  if (index === -1) return res.status(404).json({ error: '系列未找到' });
+  const [removed] = series.splice(index, 1);
+  await writeJSON('series.json', series);
+  await logEdit('作者', '删除作品系列', removed.name || removed.id, '');
+  res.json({ success: true });
+});
+
+// Public series for author pages and project pages.
+app.get('/api/series', (req, res) => {
+  try {
+    let series = readJSON('series.json').filter(s => s.visible !== false);
+    const works = readJSON('works.json');
+    const publicWorks = works.filter(isWorkPublic);
+    const { circleId, projectId } = req.query;
+    if (circleId) series = series.filter(s => s.circleId === circleId);
+    if (projectId) {
+      const project = readJSON('projects.json').find(p => p.id === projectId);
+      if (!project) return res.json([]);
+      const participants = new Set(project.circles || []);
+      (project.works || []).forEach(id => {
+        const work = works.find(w => w.id === id);
+        (work?.circles || []).forEach(cid => participants.add(cid));
+      });
+      series = series.filter(s => participants.has(s.circleId));
+    }
+    const result = series.map(s => {
+      const own = works.filter(w => (w.circles || []).includes(s.circleId));
+      const selected = Array.isArray(s.workIds) && s.workIds.length
+        ? new Set(s.workIds.map(String))
+        : new Set(own.map(w => String(w.id)));
+      const items = publicWorks.filter(w => selected.has(String(w.id)) && (w.circles || []).includes(s.circleId));
+      return { ...s, works: items, workCount: items.length };
+    }).filter(s => s.works.length > 0).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    res.json(result);
+  } catch (e) {
+    console.error('[series]', e.message);
+    res.json([]);
+  }
 });
 
 // Author: change password
