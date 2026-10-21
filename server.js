@@ -1045,12 +1045,16 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   const old = { ...circles[index] };
 
   // Only allow updating specific fields
-  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'featuredWorkIds', 'showFeaturedWorks'];
+  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'featuredWorkIds', 'showFeaturedWorks', 'seriesDisplayLimit'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
   if (updates.showFeaturedWorks !== undefined) updates.showFeaturedWorks = updates.showFeaturedWorks === true;
+  if (updates.seriesDisplayLimit !== undefined) {
+    const n = Number(updates.seriesDisplayLimit);
+    updates.seriesDisplayLimit = Number.isFinite(n) && n > 0 ? Math.min(n, 12) : null;
+  }
   if (updates.featuredWorkIds !== undefined) {
     const ownWorks = readJSON('works.json').filter(w => (w.circles || []).includes(circles[index].id) && isWorkPublic(w));
     const validIds = new Set(ownWorks.map(w => w.id));
@@ -1085,11 +1089,9 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
 // ===== Author: work series / collections =====
 function authorSeriesWorks(circleId, workIds) {
   const works = readJSON('works.json').filter(w => (w.circles || []).includes(circleId));
-  if (Array.isArray(workIds) && workIds.length) {
-    const wanted = new Set(workIds.map(String));
-    return works.filter(w => wanted.has(String(w.id)));
-  }
-  return works;
+  if (!Array.isArray(workIds) || !workIds.length) return [];
+  const wanted = new Set(workIds.map(String));
+  return works.filter(w => wanted.has(String(w.id)));
 }
 
 app.get('/api/author/series', authorAuthMiddleware, (req, res) => {
@@ -1177,9 +1179,7 @@ app.get('/api/series', (req, res) => {
     }
     const result = series.map(s => {
       const own = works.filter(w => (w.circles || []).includes(s.circleId));
-      const selected = Array.isArray(s.workIds) && s.workIds.length
-        ? new Set(s.workIds.map(String))
-        : new Set(own.map(w => String(w.id)));
+      const selected = new Set((Array.isArray(s.workIds) ? s.workIds : []).map(String));
       const items = publicWorks.filter(w => selected.has(String(w.id)) && (w.circles || []).includes(s.circleId));
       return { ...s, works: items, workCount: items.length };
     }).filter(s => s.works.length > 0).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));

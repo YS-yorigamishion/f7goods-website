@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020al">
+  <link rel="stylesheet" href="/css/style.css?v=20261020am">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -249,6 +249,10 @@
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
           我的作品
         </button>
+        <button type="button" class="mgmt-nav-item" data-tab="my-series" onclick="switchMgmtTab('my-series')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7M17.5 13.5v7"/></svg>
+          我的作品系列
+        </button>
         <button type="button" class="mgmt-nav-item" data-tab="my-events" onclick="switchMgmtTab('my-events')">
           <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
           我的活动
@@ -455,7 +459,7 @@
           <button type="button" onclick="switchMgmtTab('my-updates')">+ 发布动态</button>
         </div>
         <div id="authorFeaturedPicker" class="author-featured-card"></div>
-        <div id="authorSeriesManager" class="author-series-manager"></div>
+        <div id="authorSeriesDisplaySetting" class="author-series-display-setting"></div>
       </div>
 
       <!-- Works Tab -->
@@ -636,6 +640,11 @@
         </div>
       </div>
 
+      <!-- My Series Tab -->
+      <div id="tab-my-series" class="mgmt-section">
+        <div id="authorSeriesManager" class="author-series-manager"></div>
+      </div>
+
       <!-- My Events Tab -->
       <div id="tab-my-events" class="mgmt-section">
         <div class="mgmt-tab-head">
@@ -786,9 +795,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020al"></script>
-  <script src="/js/i18n.js?v=20261020al"></script>
-  <script src="/js/main.js?v=20261020al"></script>
+  <script src="/js/api.js?v=20261020am"></script>
+  <script src="/js/i18n.js?v=20261020am"></script>
+  <script src="/js/main.js?v=20261020am"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4636,7 +4645,34 @@
       }
       list.innerHTML = rows.length ? rows.join('') : '<div class="author-todo-row"><div class="body"><b>暂时没有待处理事项</b><small>可以安心继续创作，或者去上传新作品。</small></div></div>';
       renderAuthorFeaturedPicker(works, profile.featuredWorkIds || [], profile.showFeaturedWorks !== false);
-      loadAuthorSeries(works);
+      renderAuthorSeriesDisplaySetting(profile);
+    }
+
+    function renderAuthorSeriesDisplaySetting(profile) {
+      const el = document.getElementById('authorSeriesDisplaySetting');
+      if (!el) return;
+      const current = Number(profile?.seriesDisplayLimit) || 0;
+      el.innerHTML = `
+        <div class="author-series-display-head">
+          <div><h3>作品系列展示</h3><p class="author-featured-hint">设置作者主页显示几个作品系列；不设置时显示全部。</p></div>
+          <div style="display:flex;gap:.35rem;align-items:center;">
+            <select class="form-input" id="authorSeriesLimit" style="width:110px;">
+              <option value="0" ${current === 0 ? 'selected' : ''}>全部</option>
+              ${[1,2,3,4,5,6].map(n => `<option value="${n}" ${current === n ? 'selected' : ''}>${n} 个</option>`).join('')}
+            </select>
+            <button type="button" class="btn-sm btn-primary" onclick="saveAuthorSeriesDisplayLimit()">保存</button>
+          </div>
+        </div>`;
+    }
+
+    async function saveAuthorSeriesDisplayLimit() {
+      const value = Number(document.getElementById('authorSeriesLimit')?.value || 0);
+      try {
+        const result = await authorAPI('PUT', '/api/author/profile', { seriesDisplayLimit: value > 0 ? value : null });
+        if (result) showToast('作品系列展示设置已保存', 'success');
+      } catch (e) {
+        showToast('保存失败，请重试', 'error');
+      }
     }
 
     let authorSeriesCache = [];
@@ -4647,6 +4683,9 @@
       if (Array.isArray(works)) authorSeriesWorksCache = works;
       manager.innerHTML = '<p class="author-featured-hint">作品系列加载中…</p>';
       try {
+        if (!authorSeriesWorksCache.length) {
+          authorSeriesWorksCache = await authorAPI('GET', '/api/author/works') || [];
+        }
         authorSeriesCache = await authorAPI('GET', '/api/author/series') || [];
         renderAuthorSeries();
       } catch (e) {
@@ -4697,16 +4736,20 @@
             <input class="form-input" id="authorSeriesName" value="${series ? escapeHtml(series.name) : ''}" placeholder="如：2026 新春套组">
           </div>
           <div class="form-group">
-            <label>系列封面</label>
+            <label>系列封面 <span style="font-weight:400;color:var(--haze);">仅可从自己的图片库选择</span></label>
             <input type="hidden" id="authorSeriesCover" value="${series?.cover ? escapeHtml(series.cover) : ''}">
             <div id="authorSeriesCoverPreview" class="author-series-cover-preview">${series?.cover ? `<img src="${escapeHtml(imgUrl(series.cover, 240))}" alt="">` : '<span>未设置封面</span>'}</div>
-            <input type="file" id="authorSeriesCoverFile" accept="image/*" onchange="uploadAuthorSeriesCover(this)" style="font-size:.78rem;margin-top:.35rem;">
+            <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem;">
+              <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('authorSeriesCoverPreview', true)">从图片库选择</button>
+              <button type="button" class="btn-sm" style="background:var(--border);color:var(--ink);" onclick="document.getElementById('authorSeriesCover').value='';document.getElementById('authorSeriesCoverPreview').innerHTML='<span>未设置封面</span>'">清除</button>
+            </div>
           </div>
           <label class="author-series-visible"><input type="checkbox" id="authorSeriesVisible" ${series?.visible === false ? '' : 'checked'}> 在作者主页显示这个系列</label>
           <div class="form-group">
-            <label>包含作品 <span style="font-weight:400;color:var(--haze);">不勾选 = 默认全部作品</span></label>
+            <label>包含作品 <span style="font-weight:400;color:var(--haze);">不勾选 = 不显示任何作品</span></label>
+            <input type="search" class="form-input" id="authorSeriesWorkSearch" placeholder="搜索作品名称..." oninput="filterAuthorSeriesWorks()" style="margin-bottom:.35rem;font-size:.78rem;">
             <div class="author-series-works">
-              ${works.length ? works.map(w => `<label><input type="checkbox" class="author-series-work" value="${w.id}" ${selected.has(String(w.id)) ? 'checked' : ''}> <span>${escapeHtml(w.title || '未命名')}</span>${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : '<small>待审核</small>'}</label>`).join('') : '<p class="author-featured-hint">暂无可选作品</p>'}
+              ${works.length ? works.map(w => `<label data-series-work-title="${escapeHtml(w.title || '未命名').toLowerCase()}"><input type="checkbox" class="author-series-work" value="${w.id}" ${selected.has(String(w.id)) ? 'checked' : ''}> <span>${escapeHtml(w.title || '未命名')}</span>${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : '<small>待审核</small>'}</label>`).join('') : '<p class="author-featured-hint">暂无可选作品</p>'}
             </div>
           </div>
           <div class="author-series-editor-foot">
@@ -4736,10 +4779,18 @@
       }
     }
 
+    function filterAuthorSeriesWorks() {
+      const q = (document.getElementById('authorSeriesWorkSearch')?.value || '').trim().toLowerCase();
+      document.querySelectorAll('#authorSeriesEditor [data-series-work-title]').forEach(label => {
+        label.style.display = !q || label.dataset.seriesWorkTitle.includes(q) ? '' : 'none';
+      });
+    }
+
     async function saveAuthorSeries(id) {
       const name = document.getElementById('authorSeriesName')?.value.trim() || '';
       if (!name) { showToast('请填写系列名称', 'error'); return; }
-      const cover = document.getElementById('authorSeriesCover')?.value || '';
+      const previewImg = document.querySelector('#authorSeriesCoverPreview img');
+      const cover = previewImg?.getAttribute('src') || document.getElementById('authorSeriesCover')?.value || '';
       const visible = document.getElementById('authorSeriesVisible')?.checked !== false;
       const workIds = [...document.querySelectorAll('.author-series-work:checked')].map(el => el.value);
       const body = { name, cover, visible, workIds };
@@ -4854,6 +4905,7 @@
         todo: '作者工作台',
         overview: '数据概览',
         works: '我的作品',
+        'my-series': '我的作品系列',
         'my-events': '我的活动',
         'only-booths': 'ONLY 摊位',
         'my-projects': '我的企划',
@@ -4875,6 +4927,7 @@
       if (tab === 'notifications') loadAuthorNotifications();
       if (tab === 'author-announcements') loadAuthorAnnouncementsList();
       if (tab === 'my-events') loadMyEvents();
+      if (tab === 'my-series') loadAuthorSeries();
       if (tab === 'only-booths') loadAuthorOnlyBooths();
       if (tab === 'my-projects') loadMyProjects();
       if (tab === 'my-updates') loadMyUpdates();
