@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ay">
+  <link rel="stylesheet" href="/css/style.css?v=20261020az">
 <link rel="canonical" href="https://f7goods.com/projects.html">
 <meta property="og:url" content="https://f7goods.com/projects.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -70,10 +70,10 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020ay"></script>
+  <script src="/js/api.js?v=20261020az"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20261020ay"></script>
-  <script src="/js/main.js?v=20261020ay"></script>
+  <script src="/js/i18n.js?v=20261020az"></script>
+  <script src="/js/main.js?v=20261020az"></script>
   <script>
     initPage('projects');
     if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '创建企划', tab: 'my-projects' });
@@ -216,50 +216,46 @@
         return cmp(a, b);
       });
 
-      const seriesSortTime = (s) => {
-        const raw = s?.startDate || s?.endDate || s?.createdAt || 0;
-        const t = new Date(raw).getTime();
-        return Number.isFinite(t) ? t : 0;
-      };
-      filteredSeries.sort((a, b) => {
-        if (sortVal === 'name-asc') return String(a.name || '').localeCompare(String(b.name || ''));
-        if (sortVal === 'date-asc') return seriesSortTime(a) - seriesSortTime(b);
-        return seriesSortTime(b) - seriesSortTime(a);
+      const combined = [
+        ...filtered.map(p => ({ ...p, _isSeries: false })),
+        ...filteredSeries.map(s => ({ ...s, _isSeries: true, pinned: false, title: s.name }))
+      ].sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return cmp(a, b);
       });
 
       const totalEl = document.getElementById('projectTotalCount');
       if (totalEl) totalEl.textContent = allProjects.length;
       const showEl = document.getElementById('projectShowCount');
-      if (showEl) showEl.textContent = filtered.length + filteredSeries.length;
+      if (showEl) showEl.textContent = combined.length;
 
-      if (filtered.length === 0 && filteredSeries.length === 0) {
+      if (combined.length === 0) {
         grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔍</div><p>${t('common.noMatchingProjects')}</p></div>`;
         return;
       }
 
-      const seriesCards = filteredSeries.map(s => {
-        const owner = allCircles.find(c => c.id === s.circleId);
-        const cover = s.cover || s.works?.[0]?.images?.[0] || '';
-        const label = PROJECT_STATUS_LABELS[s.status] || '招募中';
-        const tags = [...new Set([...(s.tags || []), ...(s.works || []).flatMap(w => w.tags || [])])].slice(0, 3);
-        return `<a class="cl-proj-card" href="/series-detail.html?id=${encodeURIComponent(s.id)}">
-          <div class="cl-proj-cover">
-            <span class="cl-proj-status ${statusClassOf(s.status, label) === 'open' ? 'open' : statusClassOf(s.status, label)}">${escapeHtml(label)}</span>
-            ${cover ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="${escapeHtml(s.name)}" loading="lazy">` : `<span style="position:relative;z-index:1;">${escapeHtml((s.name || '?').charAt(0))}</span>`}
-          </div>
-          <div class="cl-proj-body">
-            <div class="cl-proj-title">${escapeHtml(s.name)}</div>
-            <div class="cl-proj-sub">${owner ? escapeHtml(owner.name) : '未知作者'} · ${(s.works || []).length} 件作品</div>
-            <div class="cl-proj-desc">${(s.works || []).slice(0, 3).map(w => escapeHtml(workTitle(w))).join(' · ')}</div>
-            ${tags.length ? `<div class="cl-proj-tags">${tags.map(tg => `<span class="cl-proj-tag">#${escapeHtml(tg)}</span>`).join('')}</div>` : ''}
-          </div>
-          ${s.startDate || s.endDate ? `<div class="cl-proj-timeline"><div class="cl-tl-head"><span>${s.startDate ? formatDate(s.startDate) : '待定'} → ${s.endDate ? formatDate(s.endDate) : '待定'}</span></div></div>` : ''}
-          <div class="cl-proj-foot"><span>${(s.works || []).length} 件作品</span><span class="go">查看 →</span></div>
-        </a>`;
-      }).join('');
-      const seriesBlock = seriesCards ? `<div class="series-in-project-label">作品系列</div>${seriesCards}` : '';
-
-      grid.innerHTML = seriesBlock + filtered.map(project => {
+      grid.innerHTML = combined.map(item => {
+        if (item._isSeries) {
+          const owner = allCircles.find(c => c.id === item.circleId);
+          const cover = item.cover || item.works?.[0]?.images?.[0] || '';
+          const label = PROJECT_STATUS_LABELS[item.status] || '招募中';
+          const tags = [...new Set([...(item.tags || []), ...(item.works || []).flatMap(w => w.tags || [])])].slice(0, 3);
+          return `<a class="cl-proj-card" href="/series-detail.html?id=${encodeURIComponent(item.id)}">
+            <div class="cl-proj-cover">
+              <span class="cl-proj-status ${statusClassOf(item.status, label) === 'open' ? 'open' : statusClassOf(item.status, label)}">${escapeHtml(label)}</span>
+              ${cover ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="${escapeHtml(item.name)}" loading="lazy">` : `<span style="position:relative;z-index:1;">${escapeHtml((item.name || '?').charAt(0))}</span>`}
+            </div>
+            <div class="cl-proj-body">
+              <div class="cl-proj-title">${escapeHtml(item.name)}</div>
+              <div class="cl-proj-sub">系列周边 · ${owner ? escapeHtml(owner.name) : '未知作者'} · ${(item.works || []).length} 件</div>
+              <div class="cl-proj-desc">${(item.works || []).slice(0, 3).map(w => escapeHtml(workTitle(w))).join(' · ')}</div>
+              ${tags.length ? `<div class="cl-proj-tags">${tags.map(tg => `<span class="cl-proj-tag">#${escapeHtml(tg)}</span>`).join('')}</div>` : ''}
+            </div>
+            <div class="cl-proj-foot"><span>${(item.works || []).length} 件作品</span><span class="go">查看 →</span></div>
+          </a>`;
+        }
+        const project = item;
         const cover = project.coverImage || (project.images && project.images[0]) || '';
         const statusLabel = PROJECT_STATUS_LABELS[project.status] || '';
         const catLabel = PROJECT_CATEGORIES[project.category] || '';

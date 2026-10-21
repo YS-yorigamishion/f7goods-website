@@ -1210,10 +1210,12 @@ app.delete('/api/author/series/:id', authorAuthMiddleware, async (req, res) => {
 // Public series for author pages and project pages.
 app.get('/api/series', (req, res) => {
   try {
-    let series = readJSON('series.json').filter(s => s.visible !== false);
+    let series = readJSON('series.json');
     const works = readJSON('works.json');
     const publicWorks = works.filter(isWorkPublic);
     const { circleId, projectId } = req.query;
+    if (circleId) series = series.filter(s => s.visible !== false);
+    else if (!projectId) series = series.filter(s => s.visible !== false);
     if (circleId) series = series.filter(s => s.circleId === circleId);
     if (projectId) {
       const project = readJSON('projects.json').find(p => p.id === projectId);
@@ -1239,7 +1241,7 @@ app.get('/api/series', (req, res) => {
 });
 
 app.get('/api/series/:id', (req, res) => {
-  const series = readJSON('series.json').find(s => s.id === req.params.id && s.visible !== false);
+  const series = readJSON('series.json').find(s => s.id === req.params.id);
   if (!series) return res.status(404).json({ error: '系列未找到' });
   const works = readJSON('works.json').filter(isWorkPublic);
   const selected = new Set((Array.isArray(series.workIds) ? series.workIds : []).map(String));
