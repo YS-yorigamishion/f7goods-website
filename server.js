@@ -1045,7 +1045,7 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   const old = { ...circles[index] };
 
   // Only allow updating specific fields
-  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'featuredWorkIds', 'showFeaturedWorks', 'seriesDisplayLimit'];
+  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'featuredWorkIds', 'showFeaturedWorks', 'seriesDisplayLimit', 'featuredSeriesIds'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -1054,6 +1054,11 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   if (updates.seriesDisplayLimit !== undefined) {
     const n = Number(updates.seriesDisplayLimit);
     updates.seriesDisplayLimit = Number.isFinite(n) && n > 0 ? Math.min(n, 12) : null;
+  }
+  if (updates.featuredSeriesIds !== undefined) {
+    const ownSeries = readJSON('series.json').filter(s => s.circleId === circles[index].id);
+    const validSeries = new Set(ownSeries.map(s => String(s.id)));
+    updates.featuredSeriesIds = [...new Set((Array.isArray(updates.featuredSeriesIds) ? updates.featuredSeriesIds : []).map(String).filter(id => validSeries.has(id)))].slice(0, 6);
   }
   if (updates.featuredWorkIds !== undefined) {
     const ownWorks = readJSON('works.json').filter(w => (w.circles || []).includes(circles[index].id) && isWorkPublic(w));
@@ -1080,6 +1085,7 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   if (updates.category && updates.category !== old.category) changes.push('修改了分类');
   if (updates.featuredWorkIds !== undefined) changes.push('更新了首页展示作品');
   if (updates.showFeaturedWorks !== undefined) changes.push(updates.showFeaturedWorks ? '开启首页展示作品' : '关闭首页展示作品');
+  if (updates.featuredSeriesIds !== undefined) changes.push('更新了作品系列展示');
   logEdit(circles[index].name || '作者', '修改资料', '', changes.join('、') || '更新了资料');
 
   const { passwordHash, ...safe } = circles[index];
