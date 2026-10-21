@@ -568,6 +568,7 @@
               <input type="text" class="form-input" id="projectsSearch" placeholder="搜索企划..." style="width:200px;padding:0.4rem 0.8rem;font-size:0.85rem;" oninput="filterProjects()">
               <button id="projectsBatchDeleteBtn" class="btn" style="background:var(--accent);color:white;display:none;font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="batchDeleteProjects()">批量删除</button>
               <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="exportAdminProjects()">导出</button>
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="openUnifiedProjectOrder()">统一排序</button>
               <label class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer;margin:0;">导入<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAdminProjects(this)"></label>
               <button class="btn btn-primary" onclick="openProjectModal()">+ 新增企划</button>
             </div>
@@ -603,6 +604,13 @@
               <thead><tr><th>系列</th><th>作者</th><th>状态</th><th>作品数</th><th>主页</th><th>操作</th></tr></thead>
               <tbody id="adminSeriesTableBody"></tbody>
             </table>
+          </div>
+          <div id="unifiedOrderPanel" class="admin-card" style="margin-top:1.5rem;display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.8rem;">
+              <div><h3 style="margin:0;">统一排序</h3><p style="color:var(--haze);font-size:0.78rem;margin:.25rem 0 0;">置顶企划始终在最前；其余企划和系列按这里的顺序显示。</p></div>
+              <button class="btn-sm" onclick="closeUnifiedProjectOrder()">关闭</button>
+            </div>
+            <div id="unifiedOrderList"></div>
           </div>
         </div>
 
@@ -1160,6 +1168,6 @@
     </div>
   </div>
 
-  <script src="/admin/js/admin.js?v=20261020t"></script>
+  <script src="/admin/js/admin.js?v=20261020u"></script>
 </body>
 </html>

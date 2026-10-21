@@ -5346,6 +5346,31 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   res.json(projects[index]);
 });
 
+// Admin: unified project + series ordering
+app.post('/api/admin/reorder-projects-series', authMiddleware, async (req, res) => {
+  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  if (!items.length) return res.status(400).json({ error: '排序数据为空' });
+  const projects = readJSON('projects.json');
+  const series = readJSON('series.json');
+  const projectMap = new Map(projects.map(p => [String(p.id), p]));
+  const seriesMap = new Map(series.map(s => [String(s.id), s]));
+  items.forEach(item => {
+    const order = Number(item.order);
+    if (!Number.isFinite(order)) return;
+    if (item.type === 'project') {
+      const p = projectMap.get(String(item.id));
+      if (p) p.order = order;
+    } else if (item.type === 'series') {
+      const s = seriesMap.get(String(item.id));
+      if (s) s.order = order;
+    }
+  });
+  await writeJSON('projects.json', projects);
+  await writeJSON('series.json', series);
+  await logEdit('管理员', '统一排序企划与系列', '', `${items.length} 项`);
+  res.json({ success: true });
+});
+
 app.delete('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   const projectId = req.params.id;
   const projects = readJSON('projects.json');

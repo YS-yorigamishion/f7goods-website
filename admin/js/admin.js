@@ -2986,6 +2986,77 @@ function toggleOnlyBoothsUI() {
   if (wrap) wrap.style.display = t === 'only' ? 'block' : 'none';
 }
 
+// ===== Admin: unified project + series order =====
+let unifiedOrderEntries = [];
+
+async function openUnifiedProjectOrder() {
+  const panel = document.getElementById('unifiedOrderPanel');
+  if (!panel) return;
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  try {
+    const [projects, series] = await Promise.all([
+      adminAPI('GET', '/api/admin/projects'),
+      adminAPI('GET', '/api/admin/series')
+    ]);
+    unifiedOrderEntries = [
+      ...(Array.isArray(projects) ? projects : []).map(p => ({ type: 'project', id: p.id, title: p.title, pinned: !!p.pinned, order: Number.isFinite(Number(p.order)) ? Number(p.order) : 9999 })),
+      ...(Array.isArray(series) ? series : []).map(s => ({ type: 'series', id: s.id, title: s.name, pinned: false, order: Number.isFinite(Number(s.order)) ? Number(s.order) : 9999 }))
+    ].sort((a, b) => (b.pinned - a.pinned) || (a.order - b.order) || String(a.title || '').localeCompare(String(b.title || ''), 'zh'));
+    renderUnifiedProjectOrder();
+  } catch (e) {
+    document.getElementById('unifiedOrderList').innerHTML = '<p style="color:var(--accent);">排序加载失败</p>';
+  }
+}
+
+function closeUnifiedProjectOrder() {
+  const panel = document.getElementById('unifiedOrderPanel');
+  if (panel) panel.style.display = 'none';
+}
+
+function renderUnifiedProjectOrder() {
+  const list = document.getElementById('unifiedOrderList');
+  if (!list) return;
+  list.innerHTML = unifiedOrderEntries.map((item, i) => {
+    const prev = unifiedOrderEntries[i - 1];
+    const next = unifiedOrderEntries[i + 1];
+    const canUp = i > 0 && !(item.pinned === false && prev.pinned === true);
+    const canDown = i < unifiedOrderEntries.length - 1 && !(item.pinned === true && next.pinned === false);
+    return `<div class="unified-order-row">
+      <span class="unified-order-index">${i + 1}</span>
+      <span class="status-badge ${item.type === 'series' ? 'is-info' : 'is-warning'}">${item.type === 'series' ? '系列周边' : '企划'}</span>
+      <b>${escapeHtml(item.title || '未命名')}${item.pinned ? ' <span class="status-badge is-danger">置顶</span>' : ''}</b>
+      <div class="table-actions">
+        <button class="btn-sm" onclick="moveUnifiedProjectOrder(${i}, -1)" ${canUp ? '' : 'disabled style="opacity:.3"'}>↑</button>
+        <button class="btn-sm" onclick="moveUnifiedProjectOrder(${i}, 1)" ${canDown ? '' : 'disabled style="opacity:.3"'}>↓</button>
+      </div>
+    </div>`;
+  }).join('') || '<p style="color:var(--haze);">暂无企划或系列</p>';
+}
+
+async function moveUnifiedProjectOrder(index, direction) {
+  const target = index + direction;
+  if (target < 0 || target >= unifiedOrderEntries.length) return;
+  const current = unifiedOrderEntries[index];
+  const other = unifiedOrderEntries[target];
+  if ((!current.pinned && other.pinned) || (current.pinned && !other.pinned)) return;
+  [unifiedOrderEntries[index], unifiedOrderEntries[target]] = [other, current];
+  const items = unifiedOrderEntries.map((item, i) => ({ type: item.type, id: item.id, order: i + 1 }));
+  try {
+    const result = await adminAPI('POST', '/api/admin/reorder-projects-series', { items });
+    if (result?.success) {
+      unifiedOrderEntries.forEach((item, i) => { item.order = i + 1; });
+      renderUnifiedProjectOrder();
+      loadProjects();
+      loadAdminSeries();
+      showToast('顺序已保存', 'success');
+    }
+  } catch (e) {
+    showToast('排序保存失败', 'error');
+    openUnifiedProjectOrder();
+  }
+}
+
 // ===== Admin: work series =====
 let adminSeriesData = [];
 let adminSeriesWorks = [];

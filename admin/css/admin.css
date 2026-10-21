@@ -1164,3 +1164,11 @@
   .health-grid { grid-template-columns: 1fr; }
   .carousel-admin-row { grid-template-columns: 42px minmax(0,1fr) 100px; }
 }
+
+/* Unified project + series order */
+.unified-order-row { display: flex; align-items: center; gap: .6rem; padding: .5rem .2rem; border-bottom: 1px solid var(--border); }
+.unified-order-row:last-child { border-bottom: 0; }
+.unified-order-index { width: 26px; text-align: center; color: var(--haze); font-size: .75rem; }
+.unified-order-row b { flex: 1; font-size: .85rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.unified-order-row .table-actions { flex: 0 0 auto; }
+.unified-order-row button:disabled { cursor: default; }
