@@ -76,7 +76,7 @@ let token = localStorage.getItem('f7admin_token');
 let currentPage = 'dashboard';
 let adminDirty = false;
 let modalDirty = false;
-const ADMIN_PAGES = new Set(['dashboard','health','approval','page-stats','author-stats','editlog','works','circles','events','booths','projects','updates','carousel','images','categories','settings','backup','announcements','contacts']);
+const ADMIN_PAGES = new Set(['dashboard','health','approval','page-stats','author-stats','editlog','works','series','circles','events','booths','projects','updates','carousel','images','categories','settings','backup','announcements','contacts']);
 
 function pageFromHash() {
   const page = (location.hash || '').replace(/^#/, '');
@@ -245,13 +245,13 @@ function navigateTo(page) {
   document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${page}`)?.classList.add('active');
 
-  const titles = { dashboard: '仪表盘', health: '运维中心', works: '作品管理', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', carousel: '首页轮播', categories: '分类管理', images: '图片管理', settings: '页面设置', backup: '数据备份', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计', approval: '审核管理', 'author-stats': '作者统计' };
+  const titles = { dashboard: '仪表盘', health: '运维中心', works: '作品管理', series: '作品系列', events: '活动管理', booths: '摊位管理', circles: '作者管理', projects: '企划管理', updates: '动态管理', carousel: '首页轮播', categories: '分类管理', images: '图片管理', settings: '页面设置', backup: '数据备份', announcements: '公告管理', editlog: '编辑历史', contacts: '联系消息', 'page-stats': '浏览统计', approval: '审核管理', 'author-stats': '作者统计' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
   // 顶栏分组标签
   const groups = {
     dashboard: '总览', health: '总览', approval: '总览', 'page-stats': '总览', 'author-stats': '总览', editlog: '总览',
-    works: '内容', circles: '内容', events: '内容', booths: '内容', projects: '内容', updates: '内容', carousel: '内容',
+    works: '内容', series: '内容', circles: '内容', events: '内容', booths: '内容', projects: '内容', updates: '内容', carousel: '内容',
     images: '素材', categories: '素材',
     settings: '站点', backup: '站点', announcements: '站点', contacts: '站点'
   };
@@ -262,6 +262,7 @@ function navigateTo(page) {
   if (page === 'dashboard') loadDashboard();
   else if (page === 'health') loadHealthPage();
   else if (page === 'works') { loadWorks(); syncWorkApprovalToggle(); }
+  else if (page === 'series') loadAdminSeries();
   else if (page === 'events') { loadEvents(); syncContentApprovalToggles(); }
   else if (page === 'booths') loadBoothsPage();
   else if (page === 'circles') loadCircles();
@@ -2984,6 +2985,104 @@ function toggleOnlyBoothsUI() {
   const t = document.getElementById('eType')?.value;
   const wrap = document.getElementById('eOnlyBoothsWrap');
   if (wrap) wrap.style.display = t === 'only' ? 'block' : 'none';
+}
+
+// ===== Admin: work series =====
+let adminSeriesData = [];
+let adminSeriesWorks = [];
+let adminSeriesCircles = [];
+
+async function loadAdminSeries() {
+  const tbody = document.getElementById('adminSeriesTableBody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">加载中…</td></tr>';
+  try {
+    const [series, works, circles] = await Promise.all([
+      adminAPI('GET', '/api/admin/series'),
+      adminAPI('GET', '/api/admin/works'),
+      adminAPI('GET', '/api/admin/circles')
+    ]);
+    adminSeriesData = Array.isArray(series) ? series : [];
+    adminSeriesWorks = Array.isArray(works) ? works : [];
+    adminSeriesCircles = Array.isArray(circles) ? circles : [];
+    renderAdminSeries();
+  } catch (e) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--accent);padding:2rem;">加载失败</td></tr>';
+  }
+}
+
+function renderAdminSeries() {
+  const tbody = document.getElementById('adminSeriesTableBody');
+  if (!tbody) return;
+  if (!adminSeriesData.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--haze);padding:2rem;">暂无作品系列</td></tr>';
+    return;
+  }
+  tbody.innerHTML = adminSeriesData.map(s => {
+    const owner = adminSeriesCircles.find(c => c.id === s.circleId);
+    const status = (typeof PROJECT_STATUS_LABELS !== 'undefined' && PROJECT_STATUS_LABELS[s.status]) || s.status || '进行中';
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:.5rem;">${s.cover ? `<img src="${safeImgUrl(s.cover)}" style="width:42px;height:32px;object-fit:cover;border-radius:4px;">` : ''}<b>${escapeHtml(s.name || '未命名')}</b></div></td>
+      <td>${escapeHtml(owner?.name || '未知作者')}</td>
+      <td>${escapeHtml(status)}</td>
+      <td>${s.workCount || 0}</td>
+      <td>${s.visible === false ? '<span class="status-badge is-warning">隐藏</span>' : '<span class="status-badge is-success">显示</span>'}</td>
+      <td><div class="table-actions"><button class="btn-sm btn-edit" onclick="openAdminSeriesModal('${s.id}')">编辑</button><button class="btn-sm btn-delete" onclick="deleteAdminSeries('${s.id}')">删除</button></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function openAdminSeriesModal(id) {
+  const s = adminSeriesData.find(x => x.id === id);
+  if (!s) return;
+  const selected = new Set((s.workIds || []).map(String));
+  const statusLabels = { recruiting: '招募中', in_progress: '进行中', completed: '已完成', cancelled: '已取消' };
+  document.getElementById('modalTitle').textContent = '编辑作品系列';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-group"><label>系列名称</label><input class="form-input" id="adminSeriesName" value="${escAttr(s.name || '')}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>封面图片地址</label><input class="form-input" id="adminSeriesCover" value="${escAttr(s.cover || '')}" placeholder="/uploads/..."></div>
+      <div class="form-group"><label>系列状态</label><select class="form-input" id="adminSeriesStatus">${Object.entries(statusLabels).map(([k, v]) => `<option value="${k}" ${(s.status || 'in_progress') === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+    </div>
+    <label class="feature-switch"><input type="checkbox" id="adminSeriesVisible" ${s.visible === false ? '' : 'checked'}><span><b>在作者主页显示</b><small>关闭后作者主页和企划系列周边不显示</small></span></label>
+    <div class="form-group">
+      <label>包含作品</label>
+      <input type="search" class="form-input" id="adminSeriesWorkSearch" placeholder="搜索作品..." oninput="filterAdminSeriesWorks()" style="margin-bottom:.4rem;font-size:.8rem;">
+      <div class="author-series-works" style="max-height:220px;">
+        ${adminSeriesWorks.map(w => `<label data-admin-series-title="${escAttr(String(w.title || '').toLowerCase())}"><input type="checkbox" class="admin-series-work" value="${w.id}" ${selected.has(String(w.id)) ? 'checked' : ''}> <span>${escapeHtml(w.title || '未命名')}</span>${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : '<small>待审核</small>'}</label>`).join('')}
+      </div>
+    </div>`;
+  document.getElementById('modalSave').textContent = '保存系列';
+  document.getElementById('modalSave').onclick = async () => {
+    const name = document.getElementById('adminSeriesName').value.trim();
+    if (!name) { showToast('请填写系列名称', 'error'); return; }
+    const workIds = [...document.querySelectorAll('.admin-series-work:checked')].map(el => el.value);
+    const result = await adminAPI('PUT', `/api/admin/series/${id}`, {
+      name,
+      cover: document.getElementById('adminSeriesCover').value,
+      status: document.getElementById('adminSeriesStatus').value,
+      visible: document.getElementById('adminSeriesVisible').checked,
+      workIds
+    });
+    if (result) {
+      closeModal(true);
+      showToast('系列已保存', 'success');
+      loadAdminSeries();
+    }
+  };
+  openModal();
+}
+
+function filterAdminSeriesWorks() {
+  const q = (document.getElementById('adminSeriesWorkSearch')?.value || '').trim().toLowerCase();
+  document.querySelectorAll('#modalBody [data-admin-series-title]').forEach(label => {
+    label.style.display = !q || label.dataset.adminSeriesTitle.includes(q) ? '' : 'none';
+  });
+}
+
+async function deleteAdminSeries(id) {
+  if (!await showConfirm('删除这个作品系列？作品本身不会被删除。', { danger: true })) return;
+  const result = await adminAPI('DELETE', `/api/admin/series/${encodeURIComponent(id)}`);
+  if (result?.success) { showToast('已删除', 'success'); loadAdminSeries(); }
 }
 
 // ===== Homepage carousel manager =====

@@ -78,6 +78,10 @@
             作品管理
             <span class="sidebar-badge quiet" data-badge="works">0</span>
           </a>
+          <a href="#" class="sidebar-link" data-page="series">
+            <span class="sidebar-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7M17.5 13.5v7"/></svg></span>
+            作品系列
+          </a>
           <a href="#" class="sidebar-link" data-page="circles">
             <span class="sidebar-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg></span>
             作者管理
@@ -505,6 +509,23 @@
               <span id="carouselAdminCount" class="carousel-admin-count"></span>
             </div>
             <div id="carouselAdminList"></div>
+          </div>
+        </div>
+
+        <!-- Series Management -->
+        <div id="page-series" class="admin-page">
+          <div class="page-toolbar">
+            <h3>作品系列</h3>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <button class="btn" style="background:var(--border);color:var(--ink);font-size:0.85rem;padding:0.4rem 0.8rem;" onclick="loadAdminSeries()">刷新</button>
+            </div>
+          </div>
+          <div class="admin-card">
+            <p style="color:var(--haze);font-size:0.8rem;margin:0 0 1rem;">这里可以编辑所有作者创建的作品系列，包括名称、封面、状态、显示开关和包含作品。</p>
+            <table class="admin-table">
+              <thead><tr><th>系列</th><th>作者</th><th>状态</th><th>作品数</th><th>主页</th><th>操作</th></tr></thead>
+              <tbody id="adminSeriesTableBody"></tbody>
+            </table>
           </div>
         </div>
 
@@ -1147,6 +1168,6 @@
     </div>
   </div>
 
-  <script src="/admin/js/admin.js?v=20261020p"></script>
+  <script src="/admin/js/admin.js?v=20261020q"></script>
 </body>
 </html>

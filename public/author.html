@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020an">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ao">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -795,9 +795,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020an"></script>
-  <script src="/js/i18n.js?v=20261020an"></script>
-  <script src="/js/main.js?v=20261020an"></script>
+  <script src="/js/api.js?v=20261020ao"></script>
+  <script src="/js/i18n.js?v=20261020ao"></script>
+  <script src="/js/main.js?v=20261020ao"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4655,15 +4655,20 @@
       const el = document.getElementById('authorSeriesDisplaySetting');
       if (!el) return;
       const selected = (Array.isArray(profile?.featuredSeriesIds) ? profile.featuredSeriesIds : []).map(String);
+      const displayed = selected.length
+        ? selected.map(id => seriesList.find(s => String(s.id) === id)).filter(Boolean)
+        : seriesList;
       el.innerHTML = `
         <div class="author-series-display-head">
           <div>
             <h3>作品系列展示</h3>
-            <p class="author-featured-hint">选择要在作者主页显示的系列，最多 6 个；不选时默认显示全部。</p>
-            <span class="author-series-selected-count">${selected.length ? `已选 ${selected.length} 个` : '当前显示全部'}</span>
+            <p class="author-featured-hint">这里显示当前在作者主页的系列，可以单独关闭；点「+」可选择要展示的系列。</p>
+            <span class="author-series-selected-count">${displayed.length ? `当前 ${displayed.filter(s => s.visible !== false).length} 个显示` : '暂无系列'}</span>
           </div>
           <button type="button" class="author-series-plus" onclick="toggleAuthorSeriesPicker()" title="选择要展示的作品系列">+</button>
         </div>
+        ${displayed.length ? `<div class="author-series-current-list">${displayed.map(s => `
+          <label><input type="checkbox" ${s.visible !== false ? 'checked' : ''} onchange="toggleAuthorSeriesVisible('${s.id}',this.checked)"> <span>${escapeHtml(s.name)}</span><small>${escapeHtml(PROJECT_STATUS_LABELS[s.status] || '进行中')} · ${(s.works || []).length} 件</small></label>`).join('')}</div>` : '<p class="author-featured-hint">还没有作品系列，请先在「我的作品系列」中创建。</p>'}
         <div id="authorSeriesPickerPanel" class="author-series-picker" hidden>
           ${seriesList.length ? `
             <div class="author-series-picker-list">
@@ -4679,6 +4684,19 @@
     function toggleAuthorSeriesPicker() {
       const panel = document.getElementById('authorSeriesPickerPanel');
       if (panel) panel.hidden = !panel.hidden;
+    }
+
+    async function toggleAuthorSeriesVisible(id, visible) {
+      try {
+        const result = await authorAPI('PUT', `/api/author/series/${id}`, { visible });
+        if (result) {
+          const item = authorSeriesCache.find(s => s.id === id);
+          if (item) item.visible = visible;
+          showToast(visible ? '已在主页显示' : '已从主页隐藏', 'success');
+        }
+      } catch (e) {
+        showToast('设置失败，请重试', 'error');
+      }
     }
 
     function limitAuthorSeriesPicks(changed) {
@@ -4777,6 +4795,12 @@
             <input class="form-input" id="authorSeriesName" value="${series ? escapeHtml(series.name) : ''}" placeholder="如：2026 新春套组">
           </div>
           <div class="form-group">
+            <label>系列状态</label>
+            <select class="form-input" id="authorSeriesStatus">
+              ${Object.entries(PROJECT_STATUS_LABELS).map(([k, v]) => `<option value="${k}" ${(series?.status || 'in_progress') === k ? 'selected' : ''}>${v}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
             <label>系列封面 <span style="font-weight:400;color:var(--haze);">仅可从自己的图片库选择</span></label>
             <input type="hidden" id="authorSeriesCover" value="${series?.cover ? escapeHtml(series.cover) : ''}">
             <div id="authorSeriesCoverPreview" class="author-series-cover-preview">${series?.cover ? `<img src="${escapeHtml(imgUrl(series.cover, 240))}" alt="">` : '<span>未设置封面</span>'}</div>
@@ -4833,8 +4857,9 @@
       const previewImg = document.querySelector('#authorSeriesCoverPreview img');
       const cover = previewImg?.getAttribute('src') || document.getElementById('authorSeriesCover')?.value || '';
       const visible = document.getElementById('authorSeriesVisible')?.checked !== false;
+      const status = document.getElementById('authorSeriesStatus')?.value || 'in_progress';
       const workIds = [...document.querySelectorAll('.author-series-work:checked')].map(el => el.value);
-      const body = { name, cover, visible, workIds };
+      const body = { name, cover, visible, status, workIds };
       try {
         const result = id
           ? await authorAPI('PUT', `/api/author/series/${id}`, body)

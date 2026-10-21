@@ -1122,6 +1122,7 @@ app.post('/api/author/series', authorAuthMiddleware, async (req, res) => {
     cover: String(req.body.cover || '').slice(0, 1000),
     workIds,
     visible: req.body.visible !== false,
+    status: ['recruiting', 'in_progress', 'completed', 'cancelled'].includes(req.body.status) ? req.body.status : 'in_progress',
     order: series.filter(s => s.circleId === circleId).length,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -1147,6 +1148,9 @@ app.put('/api/author/series/:id', authorAuthMiddleware, async (req, res) => {
     cover: req.body.cover !== undefined ? String(req.body.cover || '').slice(0, 1000) : series[index].cover,
     workIds,
     visible: req.body.visible !== undefined ? req.body.visible !== false : series[index].visible !== false,
+    status: req.body.status !== undefined && ['recruiting', 'in_progress', 'completed', 'cancelled'].includes(req.body.status)
+      ? req.body.status
+      : (series[index].status || 'in_progress'),
     updatedAt: new Date().toISOString()
   };
   await writeJSON('series.json', series);
@@ -1194,6 +1198,63 @@ app.get('/api/series', (req, res) => {
     console.error('[series]', e.message);
     res.json([]);
   }
+});
+
+app.get('/api/series/:id', (req, res) => {
+  const series = readJSON('series.json').find(s => s.id === req.params.id && s.visible !== false);
+  if (!series) return res.status(404).json({ error: '系列未找到' });
+  const works = readJSON('works.json').filter(isWorkPublic);
+  const selected = new Set((Array.isArray(series.workIds) ? series.workIds : []).map(String));
+  const items = works.filter(w => selected.has(String(w.id)) && (w.circles || []).includes(series.circleId));
+  const owner = readJSON('circles.json').find(c => c.id === series.circleId);
+  res.json({ ...series, works: items, workCount: items.length, owner: owner ? { id: owner.id, name: owner.name, logo: owner.logo || '' } : null });
+});
+
+// Admin: manage all series
+app.get('/api/admin/series', authMiddleware, (req, res) => {
+  const series = readJSON('series.json');
+  const circles = readJSON('circles.json');
+  const works = readJSON('works.json');
+  res.json(series.map(s => {
+    const owner = circles.find(c => c.id === s.circleId);
+    const selected = new Set((Array.isArray(s.workIds) ? s.workIds : []).map(String));
+    return {
+      ...s,
+      ownerName: owner?.name || '未知作者',
+      workCount: works.filter(w => selected.has(String(w.id))).length
+    };
+  }));
+});
+
+app.put('/api/admin/series/:id', authMiddleware, async (req, res) => {
+  const series = readJSON('series.json');
+  const index = series.findIndex(s => s.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '系列未找到' });
+  const works = readJSON('works.json');
+  const validIds = new Set(works.map(w => String(w.id)));
+  const workIds = [...new Set((Array.isArray(req.body.workIds) ? req.body.workIds : series[index].workIds || []).map(String).filter(id => validIds.has(id)))];
+  series[index] = {
+    ...series[index],
+    name: String(req.body.name ?? series[index].name).trim().slice(0, 80) || series[index].name,
+    cover: req.body.cover !== undefined ? String(req.body.cover || '').slice(0, 1000) : series[index].cover,
+    status: ['recruiting', 'in_progress', 'completed', 'cancelled'].includes(req.body.status) ? req.body.status : (series[index].status || 'in_progress'),
+    visible: req.body.visible !== undefined ? req.body.visible !== false : series[index].visible !== false,
+    workIds,
+    updatedAt: new Date().toISOString()
+  };
+  await writeJSON('series.json', series);
+  await logEdit('管理员', '编辑作品系列', series[index].name, `${workIds.length} 件作品`);
+  res.json(series[index]);
+});
+
+app.delete('/api/admin/series/:id', authMiddleware, async (req, res) => {
+  let series = readJSON('series.json');
+  const index = series.findIndex(s => s.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: '系列未找到' });
+  const [removed] = series.splice(index, 1);
+  await writeJSON('series.json', series);
+  await logEdit('管理员', '删除作品系列', removed.name || removed.id, '');
+  res.json({ success: true });
 });
 
 // Author: change password
