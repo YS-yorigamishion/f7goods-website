@@ -1215,7 +1215,6 @@ app.get('/api/series', (req, res) => {
     const publicWorks = works.filter(isWorkPublic);
     const { circleId, projectId } = req.query;
     if (circleId) series = series.filter(s => s.visible !== false);
-    else if (!projectId) series = series.filter(s => s.visible !== false);
     if (circleId) series = series.filter(s => s.circleId === circleId);
     if (projectId) {
       const project = readJSON('projects.json').find(p => p.id === projectId);
