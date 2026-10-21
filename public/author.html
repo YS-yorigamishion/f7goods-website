@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020bd">
+  <link rel="stylesheet" href="/css/style.css?v=20261020be">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -441,25 +441,46 @@
 
       <!-- Workbench Tab -->
       <div id="tab-todo" class="mgmt-section active">
-        <div class="author-todo-head">
-          <div>
-            <h3>作者工作台</h3>
-            <p>这里汇总需要你处理的事情，点一下就能进入对应页面。</p>
+        <div class="awb-hero">
+          <div class="awb-hero-copy">
+            <div class="awb-kicker">AUTHOR WORKSPACE</div>
+            <h2>你好，<span id="awbAuthorName">作者</span></h2>
+            <p>查看待办、管理主页展示，或直接开始上传新内容。</p>
           </div>
-          <button class="btn-sm" onclick="loadAuthorWorkbench()">刷新</button>
+          <div class="awb-hero-stats">
+            <div><b id="awbStatWorks">0</b><span>作品</span></div>
+            <div><b id="awbStatLikes">0</b><span>喜爱</span></div>
+            <div><b id="awbStatWants">0</b><span>想要</span></div>
+          </div>
+          <button type="button" class="awb-refresh" onclick="loadAuthorWorkbench()">刷新</button>
         </div>
+
         <div id="authorTodoSummary" class="author-todo-summary"></div>
-        <div id="authorTodoList" class="author-todo-list"></div>
-        <div class="author-todo-quick">
-          <span>快捷操作</span>
-          <button type="button" onclick="switchMgmtTab('images')">+ 上传图片</button>
-          <button type="button" onclick="switchMgmtTab('works')">+ 上传作品</button>
-          <button type="button" onclick="switchMgmtTab('my-events')">+ 提交活动</button>
-          <button type="button" onclick="switchMgmtTab('my-projects')">+ 提交企划</button>
-          <button type="button" onclick="switchMgmtTab('my-updates')">+ 发布动态</button>
+
+        <div class="awb-layout">
+          <section class="awb-panel awb-tasks">
+            <div class="awb-panel-head"><div><h3>待办事项</h3><p>需要你处理的内容会出现在这里</p></div></div>
+            <div id="authorTodoList" class="author-todo-list"></div>
+          </section>
+          <aside class="awb-panel awb-quick">
+            <div class="awb-panel-head"><div><h3>快捷创建</h3><p>直接进入对应管理页面</p></div></div>
+            <div class="awb-quick-grid">
+              <button type="button" onclick="switchMgmtTab('images')"><span>🖼️</span><b>上传图片</b><small>图片管理</small></button>
+              <button type="button" onclick="switchMgmtTab('works')"><span>🎨</span><b>上传作品</b><small>我的作品</small></button>
+              <button type="button" onclick="switchMgmtTab('my-events')"><span>📅</span><b>提交活动</b><small>我的活动</small></button>
+              <button type="button" onclick="switchMgmtTab('my-projects')"><span>📋</span><b>提交企划</b><small>我的企划</small></button>
+              <button type="button" onclick="switchMgmtTab('my-updates')"><span>📰</span><b>发布动态</b><small>我的动态</small></button>
+            </div>
+          </aside>
         </div>
-        <div id="authorFeaturedPicker" class="author-featured-card"></div>
-        <div id="authorSeriesDisplaySetting" class="author-series-display-setting"></div>
+
+        <div class="awb-settings">
+          <div class="awb-panel-head"><div><h3>主页展示设置</h3><p>决定作者主页展示哪些作品和系列；不影响企划页的系列周边</p></div></div>
+          <div class="awb-settings-grid">
+            <div id="authorFeaturedPicker" class="author-featured-card"></div>
+            <div id="authorSeriesDisplaySetting" class="author-series-display-setting"></div>
+          </div>
+        </div>
       </div>
 
       <!-- Works Tab -->
@@ -795,9 +816,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020bd"></script>
-  <script src="/js/i18n.js?v=20261020bd"></script>
-  <script src="/js/main.js?v=20261020bd"></script>
+  <script src="/js/api.js?v=20261020be"></script>
+  <script src="/js/i18n.js?v=20261020be"></script>
+  <script src="/js/main.js?v=20261020be"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4565,6 +4586,11 @@
       const profile = val(6, {});
       const seriesList = val(7, []);
       authorSeriesCache = seriesList;
+      const nameEl = document.getElementById('awbAuthorName');
+      if (nameEl) nameEl.textContent = profile?.name || authorProfile?.name || '作者';
+      if (document.getElementById('awbStatWorks')) document.getElementById('awbStatWorks').textContent = works.length;
+      if (document.getElementById('awbStatLikes')) document.getElementById('awbStatLikes').textContent = works.reduce((sum, w) => sum + (w.likes || 0), 0);
+      if (document.getElementById('awbStatWants')) document.getElementById('awbStatWants').textContent = works.reduce((sum, w) => sum + (w.wants || 0), 0);
       const pendingWorks = works.filter(w => w.approvalStatus === 'pending' || w._hasPendingRevision);
       const pendingEvents = events.filter(e => e.approvalStatus === 'pending');
       const pendingProjects = projects.filter(p => p.approvalStatus === 'pending');

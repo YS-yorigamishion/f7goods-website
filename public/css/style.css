@@ -4502,3 +4502,49 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .awp-foot { display: flex; justify-content: space-between; align-items: center; gap: .7rem; padding-top: .7rem; margin-top: .6rem; border-top: 1px solid var(--line); font-size: .78rem; color: var(--muted); }
 .awp-foot > div { display: flex; gap: .35rem; }
 @media (max-width: 600px) { .awp-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .awp-cover { height: 90px; } }
+
+/* Author workbench redesign */
+.awb-hero { position: relative; overflow: hidden; display: flex; align-items: flex-end; gap: 1.2rem; flex-wrap: wrap; padding: 1.35rem 1.4rem; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(135deg, #FFFCF7 0%, #F1E9DD 100%); margin-bottom: 1rem; }
+.awb-hero::after { content: ""; position: absolute; right: -40px; top: -70px; width: 220px; height: 220px; border: 1px solid rgba(196,67,79,.16); border-radius: 50%; pointer-events: none; }
+.awb-hero-copy { flex: 1; min-width: 220px; position: relative; z-index: 1; }
+.awb-kicker { font-size: .62rem; letter-spacing: .18em; color: var(--accent); font-weight: 700; margin-bottom: .4rem; }
+.awb-hero h2 { font-family: 'Noto Serif SC', Georgia, serif; font-size: clamp(1.3rem, 2.4vw, 1.8rem); margin: 0 0 .3rem; }
+.awb-hero p { margin: 0; color: var(--haze); font-size: .78rem; line-height: 1.7; }
+.awb-hero-stats { display: flex; gap: 1.1rem; position: relative; z-index: 1; }
+.awb-hero-stats div { text-align: center; }
+.awb-hero-stats b { display: block; font-family: 'Noto Serif SC', Georgia, serif; font-size: 1.35rem; color: var(--ink); line-height: 1.1; }
+.awb-hero-stats span { display: block; margin-top: .15rem; color: var(--haze); font-size: .66rem; }
+.awb-refresh { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 999px; padding: .35rem .7rem; font: inherit; font-size: .72rem; cursor: pointer; position: relative; z-index: 1; }
+.author-todo-summary { grid-template-columns: repeat(5, minmax(0,1fr)); gap: .55rem; }
+.author-todo-card { position: relative; border-radius: 11px; padding: .65rem .7rem .65rem 2.1rem; background: var(--card); border: 1px solid var(--line); }
+.author-todo-card::before { content: "•"; position: absolute; left: .75rem; top: .55rem; color: var(--accent); font-size: 1.1rem; }
+.author-todo-card b { font-size: 1.15rem; }
+.author-todo-card span { font-size: .76rem; }
+.author-todo-card small { font-size: .64rem; }
+.awb-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, .8fr); gap: .8rem; margin-bottom: .9rem; }
+.awb-panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .9rem 1rem; min-width: 0; }
+.awb-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .7rem; margin-bottom: .55rem; }
+.awb-panel-head h3 { font-family: 'Noto Serif SC', Georgia, serif; font-size: .95rem; margin: 0; }
+.awb-panel-head p { color: var(--haze); font-size: .7rem; margin: .15rem 0 0; }
+.awb-tasks .author-todo-list { background: transparent; border: 0; padding: 0; margin: 0; }
+.awb-tasks .author-todo-row { padding: .65rem 0; }
+.awb-quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .4rem; }
+.awb-quick-grid button { display: flex; flex-direction: column; align-items: flex-start; gap: .1rem; text-align: left; padding: .55rem .6rem; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font: inherit; cursor: pointer; }
+.awb-quick-grid button:hover { border-color: var(--accent); }
+.awb-quick-grid button span { font-size: .95rem; line-height: 1.2; }
+.awb-quick-grid button b { font-size: .76rem; margin-top: .1rem; }
+.awb-quick-grid button small { font-size: .62rem; color: var(--haze); }
+.awb-settings { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .9rem 1rem; }
+.awb-settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .8rem; }
+.awb-settings-grid > .author-featured-card, .awb-settings-grid > .author-series-display-setting { margin: 0; background: var(--paper); }
+@media (max-width: 900px) {
+  .awb-layout { grid-template-columns: 1fr; }
+  .author-todo-summary { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .awb-settings-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .awb-hero { align-items: flex-start; padding: 1rem; }
+  .awb-hero-stats { width: 100%; justify-content: flex-start; gap: 1.4rem; }
+  .author-todo-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .awb-quick-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
