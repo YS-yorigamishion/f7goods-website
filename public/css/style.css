@@ -4548,3 +4548,27 @@ a.cl-series-card:hover { border-color: var(--accent); }
   .author-todo-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .awb-quick-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
+
+/* Workbench display settings refinement */
+.awb-settings { margin-top: .15rem; }
+.awb-settings-grid > .author-featured-card,
+.awb-settings-grid > .author-series-display-setting {
+  height: 100%; display: flex; flex-direction: column; margin: 0; padding: .85rem;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--paper);
+}
+.awb-settings-grid .author-featured-head,
+.awb-settings-grid .author-series-display-head {
+  align-items: flex-start; padding-bottom: .6rem; margin-bottom: .65rem;
+  border-bottom: 1px dashed var(--line);
+}
+.awb-settings-grid .author-featured-head h3,
+.awb-settings-grid .author-series-display-head h3 { font-size: .9rem; }
+.awb-settings-grid .author-featured-hint { margin-top: .2rem; font-size: .7rem; }
+.awb-settings-grid .author-featured-actions { flex: 0 0 auto; }
+.awb-settings-grid .author-featured-slots { margin-top: auto; }
+.awb-settings-grid .author-series-current-list { margin-top: .2rem; }
+.awb-settings-grid .author-series-plus { flex: 0 0 28px; width: 28px; height: 28px; }
+@media (max-width: 900px) {
+  .awb-settings-grid > .author-featured-card,
+  .awb-settings-grid > .author-series-display-setting { height: auto; }
+}

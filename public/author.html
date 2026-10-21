@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020be">
+  <link rel="stylesheet" href="/css/style.css?v=20261020bf">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -251,7 +251,7 @@
         </button>
         <button type="button" class="mgmt-nav-item" data-tab="my-series" onclick="switchMgmtTab('my-series')">
           <svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7M17.5 13.5v7"/></svg>
-          我的作品系列
+          系列周边
         </button>
         <button type="button" class="mgmt-nav-item" data-tab="my-events" onclick="switchMgmtTab('my-events')">
           <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
@@ -467,6 +467,7 @@
             <div class="awb-quick-grid">
               <button type="button" onclick="switchMgmtTab('images')"><span>🖼️</span><b>上传图片</b><small>图片管理</small></button>
               <button type="button" onclick="switchMgmtTab('works')"><span>🎨</span><b>上传作品</b><small>我的作品</small></button>
+              <button type="button" onclick="switchMgmtTab('my-series')"><span>📚</span><b>系列周边</b><small>管理作品系列</small></button>
               <button type="button" onclick="switchMgmtTab('my-events')"><span>📅</span><b>提交活动</b><small>我的活动</small></button>
               <button type="button" onclick="switchMgmtTab('my-projects')"><span>📋</span><b>提交企划</b><small>我的企划</small></button>
               <button type="button" onclick="switchMgmtTab('my-updates')"><span>📰</span><b>发布动态</b><small>我的动态</small></button>
@@ -816,9 +817,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020be"></script>
-  <script src="/js/i18n.js?v=20261020be"></script>
-  <script src="/js/main.js?v=20261020be"></script>
+  <script src="/js/api.js?v=20261020bf"></script>
+  <script src="/js/i18n.js?v=20261020bf"></script>
+  <script src="/js/main.js?v=20261020bf"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4654,14 +4655,14 @@
       el.innerHTML = `
         <div class="author-series-display-head">
           <div>
-            <h3>作品系列展示</h3>
+            <h3>作者主页 · 系列周边</h3>
             <p class="author-featured-hint">这里显示当前在作者主页的系列，可以单独关闭；点「+」可选择要展示的系列。</p>
             <span class="author-series-selected-count">${displayed.length ? `当前 ${displayed.filter(s => s.visible !== false).length} 个显示` : '暂无系列'}</span>
           </div>
           <button type="button" class="author-series-plus" onclick="toggleAuthorSeriesPicker()" title="选择要展示的作品系列">+</button>
         </div>
         ${displayed.length ? `<div class="author-series-current-list">${displayed.map(s => `
-          <label><input type="checkbox" ${s.visible !== false ? 'checked' : ''} onchange="toggleAuthorSeriesVisible('${s.id}',this.checked)"> <span>${escapeHtml(s.name)}</span><small>${escapeHtml(PROJECT_STATUS_LABELS[s.status] || '进行中')} · ${(s.works || []).length} 件</small></label>`).join('')}</div>` : '<p class="author-featured-hint">还没有作品系列，请先在「我的作品系列」中创建。</p>'}
+          <label><input type="checkbox" ${s.visible !== false ? 'checked' : ''} onchange="toggleAuthorSeriesVisible('${s.id}',this.checked)"> <span>${escapeHtml(s.name)}</span><small>${escapeHtml(PROJECT_STATUS_LABELS[s.status] || '进行中')} · ${(s.works || []).length} 件</small></label>`).join('')}</div>` : '<p class="author-featured-hint">还没有作品系列，请先在左侧「系列周边」中创建。</p>'}
         <div id="authorSeriesPickerPanel" class="author-series-picker" hidden>
           ${seriesList.length ? `
             <div class="author-series-picker-list">
@@ -4670,7 +4671,7 @@
             <div class="author-series-picker-foot">
               <button type="button" class="btn-sm" onclick="clearAuthorSeriesPicks()">恢复全部</button>
               <button type="button" class="btn-sm btn-primary" onclick="saveAuthorSeriesPicks()">保存选择</button>
-            </div>` : '<p class="author-featured-hint">还没有作品系列，请先在「我的作品系列」中创建。</p>'}
+            </div>` : '<p class="author-featured-hint">还没有作品系列，请先在「系列周边」中创建。</p>'}
         </div>`;
     }
 
@@ -5055,7 +5056,7 @@
       const publicWorks = works.filter(w => !w.approvalStatus || w.approvalStatus === 'approved');
       const toggleHtml = `<label class="author-featured-toggle"><input type="checkbox" id="authorFeaturedShow" ${showFeatured ? 'checked' : ''}><span>在首页显示「展示作品」</span><small>关闭后作者主页不再出现这个模块，作品仍保留。</small></label>`;
       if (!publicWorks.length) {
-        picker.innerHTML = `<h3>首页展示作品</h3>${toggleHtml}<p class="author-featured-hint">有通过审核的作品后，可以在这里选择要展示的 3 个作品。</p>`;
+        picker.innerHTML = `<h3>作者主页 · 展示作品</h3>${toggleHtml}<p class="author-featured-hint">有通过审核的作品后，可以在这里选择要展示的 3 个作品。</p>`;
         return;
       }
       const ids = (Array.isArray(selectedIds) ? selectedIds : []).map(String);
@@ -5065,7 +5066,7 @@
       ).join('');
       picker.innerHTML = `
         <div class="author-featured-head">
-          <div><h3>首页展示作品</h3><p class="author-featured-hint">选择最多 3 个作品，前台会按这里的顺序展示；不设置时自动按喜爱数排序。</p></div>
+          <div><h3>作者主页 · 展示作品</h3><p class="author-featured-hint">选择最多 3 个作品，前台会按这里的顺序展示；不设置时自动按喜爱数排序。</p></div>
           <div class="author-featured-actions">
             ${ids.length ? '<button type="button" class="btn-sm" onclick="clearAuthorFeaturedWorks()">恢复默认</button>' : ''}
             <button type="button" class="btn-sm btn-primary" onclick="saveAuthorFeaturedWorks()">保存</button>
@@ -5140,7 +5141,7 @@
         todo: '作者工作台',
         overview: '数据概览',
         works: '我的作品',
-        'my-series': '我的作品系列',
+        'my-series': '系列周边',
         'my-events': '我的活动',
         'only-booths': 'ONLY 摊位',
         'my-projects': '我的企划',
