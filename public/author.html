@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020bc">
+  <link rel="stylesheet" href="/css/style.css?v=20261020bd">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -795,9 +795,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020bc"></script>
-  <script src="/js/i18n.js?v=20261020bc"></script>
-  <script src="/js/main.js?v=20261020bc"></script>
+  <script src="/js/api.js?v=20261020bd"></script>
+  <script src="/js/i18n.js?v=20261020bd"></script>
+  <script src="/js/main.js?v=20261020bd"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -3502,9 +3502,7 @@
     function assignUncategorizedToGroup(btn) {
       const row = btn.closest('.ab-group-row');
       if (!row) return;
-      const selectedWorks = new Set(
-        [...document.querySelectorAll('.ab-work:checked')].map(i => i.value)
-      );
+      const selectedWorks = new Set([...(window._abSelectedWorkIds || [])].map(String));
       const groupedElsewhere = new Set();
       document.querySelectorAll('#abGroupList .ab-group-row').forEach(r => {
         if (r === row) return;
@@ -3555,7 +3553,7 @@
     function updateAbWorkGroupHint() {
       const hint = document.getElementById('abWorkGroupHint');
       if (!hint) return;
-      const selected = new Set([...document.querySelectorAll('.ab-work:checked')].map(i => i.value));
+      const selected = new Set([...(window._abSelectedWorkIds || [])].map(String));
       const grouped = new Set();
       document.querySelectorAll('#abGroupList .ab-group-work:checked').forEach(cb => grouped.add(cb.value));
       const ungrouped = [...selected].filter(id => !grouped.has(id));
@@ -3862,47 +3860,17 @@
         ` : ''}
 
         <section class="ab-sec">
-          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '3' : '2'}</span>展示作品<span class="tip">勾选后专页只显示这些；不勾选 = 摊主全部关联作品</span></h4>
+          <h4 class="ab-sec-h"><span class="n">${canFullEdit ? '3' : '2'}</span>展示作品<span class="tip">未选择 = 不显示任何周边</span></h4>
           ${(() => {
             const pool = manageWorks;
             const selected = new Set(Array.isArray(booth?.workIds) && booth.workIds.length ? booth.workIds : []);
+            window._abSelectedWorkIds = selected;
             if (!pool.length) {
               return '<div style="font-size:0.75rem;color:var(--haze);">暂无可选作品（需先挂接摊主并将作品关联到本活动）</div>';
             }
-            const catMap = {};
-            pool.forEach(w => {
-              const c = w.category || '';
-              if (!catMap[c]) catMap[c] = [];
-              catMap[c].push(w);
-            });
-            const catLabel = (c) => {
-              if (!c) return '未分类';
-              const hit = (typeof CATEGORIES_ORDERED !== 'undefined' ? CATEGORIES_ORDERED : []).find(x => x.id === c);
-              return hit ? (hit.name || c) : c;
-            };
-            return `
-              <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;margin-bottom:0.45rem;">
-                <input type="search" id="abWorkSearch" class="form-input" style="flex:1;min-width:120px;font-size:0.78rem;padding:0.3rem 0.55rem;" placeholder="搜索作品名称…" oninput="filterAbWorkPicks(this.value)">
-                <button type="button" class="ab-pill" onclick="abWorkBulk('all')">全选</button>
-                <button type="button" class="ab-pill" onclick="abWorkBulk('invert')">反选</button>
-                <button type="button" class="ab-pill ghost" onclick="abWorkBulk('none')">清空</button>
-              </div>
-              <div id="abWorkCats" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.45rem;align-items:center;">
-                <span style="font-size:0.72rem;color:var(--haze);">按分类：</span>
-                ${Object.keys(catMap).filter(c => c).sort((a, z) => catLabel(a).localeCompare(catLabel(z), 'zh')).map(c => `
-                  <button type="button" class="ab-pill" style="font-size:0.7rem;padding:0.15rem 0.55rem;" onclick="abWorkBulkCat('${escapeHtml(c)}')" title="勾选/取消本分类作品">${escapeHtml(catLabel(c))}（${catMap[c].length}）</button>
-                `).join('')}
-              </div>
-              <div id="abWorkPickList" style="display:flex;flex-wrap:wrap;gap:0.35rem;max-height:170px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">
-                ${pool.map(w => `
-                  <label class="ab-work-pick" data-title="${escapeHtml(String(w.title || '').toLowerCase())}" data-cat="${escapeHtml(w.category || '')}" style="font-size:0.75rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.2rem 0.5rem;cursor:pointer;">
-                    <input type="checkbox" class="ab-work" value="${w.id}" ${selected.has(w.id) ? 'checked' : ''} onchange="updateAbWorkGroupHint()">
-                    ${escapeHtml(w.title || '')}
-                  </label>
-                `).join('')}
-              </div>
-              <div id="abWorkGroupHint" style="font-size:0.72rem;color:var(--warning);margin-top:0.3rem;"></div>
-            `;
+            return `<div id="abSelectedWorks" class="author-series-selected-works"></div>
+              <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openBoothWorkPicker()">选择作品</button>
+              <div id="abWorkGroupHint" style="font-size:0.72rem;color:var(--warning);margin-top:0.3rem;"></div>`;
           })()}
         </section>
 
@@ -3956,6 +3924,7 @@
       // Use class open (not inline display) so closeWorkModal can hide it
       overlay.style.display = '';
       overlay.classList.add('open');
+      renderAbSelectedWorks();
       // Booth form is not draft-tracked; stop any leftover tracking so close works
       if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
       setTimeout(() => { try { updateAbWorkGroupHint(); } catch {} }, 0);
@@ -4048,7 +4017,7 @@
         description: document.getElementById('abDescription')?.value || '',
         images: [...document.querySelectorAll('#abImagesPreview img')].map(img => img.src),
         promoTiers,
-        workIds: [...document.querySelectorAll('.ab-work:checked')].map(i => i.value),
+        workIds: [...(window._abSelectedWorkIds || [])].map(String),
         goodsGroups: [...document.querySelectorAll('#abGroupList .ab-group-row')].map(row => {
           const name = row.querySelector('.ab-group-name')?.value.trim() || '';
           const workIds = [...row.querySelectorAll('.ab-group-work:checked')].map(i => i.value);
@@ -4136,9 +4105,7 @@
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑活动' : '提交活动';
-      const worksCheckboxes = authorWorksData.map(w =>
-        `<label data-title="${escapeHtml(String(w.title || '').toLowerCase())}" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-event-work-cb" value="${w.id}" ${isEdit && (eventData.relatedWorks || []).includes(w.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
-      ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
+      window._myEventSelectedWorkIds = new Set((isEdit ? (eventData.relatedWorks || []) : []).map(String));
       const allCircles = await loadCirclesForPick();
       const selectedCircles = new Set(isEdit ? (eventData.relatedCircles || []) : []);
       const eventStatusOptions = (typeof EVENT_STATUS_ORDERED !== 'undefined' && EVENT_STATUS_ORDERED.length > 0)
@@ -4182,9 +4149,9 @@
           <div id="myEventCirclePick" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${renderCirclePickList(allCircles, selectedCircles, 'my-event-circle-cb', 'myEventCirclePick')}</div>
         </div>
         <div class="form-group">
-          <label>关联作品（可搜索 · 仅自己的作品）</label>
-          <input type="search" class="form-input" placeholder="搜索我的作品…" style="margin-bottom:0.4rem;font-size:0.85rem;" oninput="filterAuthorPickList(this,'myEventWorksPick')">
-          <div id="myEventWorksPick" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
+          <label>关联作品（仅自己的作品）</label>
+          <div id="myEventWorksSelected" class="author-series-selected-works"></div>
+          <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myEventSelectedWorkIds,onConfirm:function(ids){window._myEventSelectedWorkIds=new Set(ids);renderMyEventSelectedWorks();}})">选择作品</button>
         </div>
         ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
@@ -4192,6 +4159,7 @@
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>`;
       overlay.classList.add('open');
+      renderMyEventSelectedWorks();
 
       // Draft support for new events
       if (!isEdit) {
@@ -4212,7 +4180,7 @@
       const title = document.getElementById('myEventTitle').value;
       if (!title) { showToast('请填写活动名称', 'error'); return; }
       const coverImg = document.querySelector('#myEventCoverPreview img');
-      const relatedWorks = [...document.querySelectorAll('.my-event-work-cb:checked')].map(cb => cb.value);
+      const relatedWorks = [...(window._myEventSelectedWorkIds || [])].map(String);
       const relatedCircles = [...document.querySelectorAll('.my-event-circle-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myEventImagesPreview img')].map(img => img.src);
       const contactType = document.getElementById('myEventContactType').value;
@@ -4327,9 +4295,7 @@
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑企划' : '提交企划';
-      const worksCheckboxes = authorWorksData.map(w =>
-        `<label data-title="${escapeHtml(String(w.title || '').toLowerCase())}" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" class="my-project-work-cb" value="${w.id}" ${isEdit && (projectData.works || []).includes(w.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent);">${escapeHtml(w.title)}</label>`
-      ).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作品</p>';
+      window._myProjectSelectedWorkIds = new Set((isEdit ? (projectData.works || []) : []).map(String));
       const allCircles = await loadCirclesForPick();
       const selectedCircles = new Set(isEdit ? (projectData.circles || []) : []);
       const existingImages = isEdit ? (projectData.images || []) : [];
@@ -4366,9 +4332,9 @@
           <div id="myProjectCirclePick" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${renderCirclePickList(allCircles, selectedCircles, 'my-project-circle-cb', 'myProjectCirclePick')}</div>
         </div>
         <div class="form-group">
-          <label>关联作品（可搜索 · 仅自己的作品）</label>
-          <input type="search" class="form-input" placeholder="搜索我的作品…" style="margin-bottom:0.4rem;font-size:0.85rem;" oninput="filterAuthorPickList(this,'myProjectWorksPick')">
-          <div id="myProjectWorksPick" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${worksCheckboxes}</div>
+          <label>关联作品（仅自己的作品）</label>
+          <div id="myProjectWorksSelected" class="author-series-selected-works"></div>
+          <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myProjectSelectedWorkIds,onConfirm:function(ids){window._myProjectSelectedWorkIds=new Set(ids);renderMyProjectSelectedWorks();}})">选择作品</button>
         </div>
         <div class="form-group">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
@@ -4395,6 +4361,7 @@
           <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
         </div>`;
       overlay.classList.add('open');
+      renderMyProjectSelectedWorks();
       initTagChipBoxes(body);
     }
 
@@ -4402,7 +4369,7 @@
       const title = document.getElementById('myProjectTitle').value;
       if (!title) { showToast('请填写企划名称', 'error'); return; }
       const coverImg = document.querySelector('#myProjectCoverPreview img');
-      const relatedWorks = [...document.querySelectorAll('.my-project-work-cb:checked')].map(cb => cb.value);
+      const relatedWorks = [...(window._myProjectSelectedWorkIds || [])].map(String);
       const circles = [...document.querySelectorAll('.my-project-circle-cb:checked')].map(cb => cb.value);
       const images = [...document.querySelectorAll('#myProjectImagesPreview img')].map(img => img.src);
       const contactType = document.getElementById('myProjectContactType').value;
@@ -4971,6 +4938,54 @@
         renderAuthorSeriesSelectedWorks();
       }
       closeAuthorWorkPicker();
+    }
+
+    function renderSelectedWorkChips(containerId, ids, removeFnName, works = authorWorksData) {
+      const box = document.getElementById(containerId);
+      if (!box) return;
+      const set = new Set([...(ids || [])].map(String));
+      const chosen = (works || []).filter(w => set.has(String(w.id)));
+      box.innerHTML = chosen.length
+        ? chosen.map(w => `<div class="author-work-chip">
+            <div class="author-work-chip-img">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 120))}" alt="">` : '<span>作品</span>'}</div>
+            <div class="author-work-chip-info"><b>${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(STATUS_LABELS?.[w.status] || '')}${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : ' · 待审核'}</small></div>
+            <button type="button" onclick="${removeFnName}('${w.id}')" aria-label="移除">×</button>
+          </div>`).join('')
+        : '<p class="author-featured-hint">未选择作品</p>';
+    }
+
+    function renderMyEventSelectedWorks() {
+      renderSelectedWorkChips('myEventWorksSelected', window._myEventSelectedWorkIds, 'removeMyEventWork');
+    }
+    function removeMyEventWork(id) {
+      window._myEventSelectedWorkIds?.delete(String(id));
+      renderMyEventSelectedWorks();
+    }
+    function renderMyProjectSelectedWorks() {
+      renderSelectedWorkChips('myProjectWorksSelected', window._myProjectSelectedWorkIds, 'removeMyProjectWork');
+    }
+    function removeMyProjectWork(id) {
+      window._myProjectSelectedWorkIds?.delete(String(id));
+      renderMyProjectSelectedWorks();
+    }
+
+    function renderAbSelectedWorks() {
+      renderSelectedWorkChips('abSelectedWorks', window._abSelectedWorkIds, 'removeAbWork', _abManageWorks || []);
+      updateAbWorkGroupHint();
+    }
+    function removeAbWork(id) {
+      window._abSelectedWorkIds?.delete(String(id));
+      renderAbSelectedWorks();
+    }
+    function openBoothWorkPicker() {
+      openAuthorWorkPicker({
+        works: _abManageWorks || [],
+        selected: window._abSelectedWorkIds || new Set(),
+        onConfirm: function (ids) {
+          window._abSelectedWorkIds = new Set(ids);
+          renderAbSelectedWorks();
+        }
+      });
     }
 
     async function saveAuthorSeries(id) {
