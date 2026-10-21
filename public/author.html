@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020bb">
+  <link rel="stylesheet" href="/css/style.css?v=20261020bc">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -795,9 +795,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020bb"></script>
-  <script src="/js/i18n.js?v=20261020bb"></script>
-  <script src="/js/main.js?v=20261020bb"></script>
+  <script src="/js/api.js?v=20261020bc"></script>
+  <script src="/js/i18n.js?v=20261020bc"></script>
+  <script src="/js/main.js?v=20261020bc"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4785,6 +4785,8 @@
       const series = id ? authorSeriesCache.find(s => s.id === id) : null;
       const selected = new Set((series?.workIds || []).map(String));
       const works = authorSeriesWorksCache;
+      window._authorSeriesSelectedWorkIds = selected;
+      window._authorSeriesAvailableWorks = works;
       const defaultSeriesStatus = (typeof PROJECT_STATUS_ORDERED !== 'undefined' && PROJECT_STATUS_ORDERED[0]?.id) || 'zhaomuzhong';
       editor.innerHTML = `
         <div class="author-series-editor">
@@ -4842,17 +4844,16 @@
           </div>
           <label class="author-series-visible"><input type="checkbox" id="authorSeriesVisible" ${series?.visible === false ? '' : 'checked'}> 在作者主页显示这个系列</label>
           <div class="form-group">
-            <label>包含作品 <span style="font-weight:400;color:var(--haze);">不勾选 = 不显示任何作品</span></label>
-            <input type="search" class="form-input" id="authorSeriesWorkSearch" placeholder="搜索作品名称..." oninput="filterAuthorSeriesWorks()" style="margin-bottom:.35rem;font-size:.78rem;">
-            <div class="author-series-works">
-              ${works.length ? works.map(w => `<label data-series-work-title="${escapeHtml(w.title || '未命名').toLowerCase()}"><input type="checkbox" class="author-series-work" value="${w.id}" ${selected.has(String(w.id)) ? 'checked' : ''}> <span>${escapeHtml(w.title || '未命名')}</span>${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : '<small>待审核</small>'}</label>`).join('') : '<p class="author-featured-hint">暂无可选作品</p>'}
-            </div>
+            <label>包含作品 <span style="font-weight:400;color:var(--haze);">未选择 = 不显示任何作品</span></label>
+            <div id="authorSeriesSelectedWorks" class="author-series-selected-works"></div>
+            <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker()">选择作品</button>
           </div>
           <div class="author-series-editor-foot">
             <button type="button" class="btn btn-primary" onclick="saveAuthorSeries('${series?.id || ''}')">保存系列</button>
           </div>
         </div>`;
       editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      renderAuthorSeriesSelectedWorks();
     }
 
     async function uploadAuthorSeriesCover(input) {
@@ -4875,11 +4876,101 @@
       }
     }
 
-    function filterAuthorSeriesWorks() {
-      const q = (document.getElementById('authorSeriesWorkSearch')?.value || '').trim().toLowerCase();
-      document.querySelectorAll('#authorSeriesEditor [data-series-work-title]').forEach(label => {
-        label.style.display = !q || label.dataset.seriesWorkTitle.includes(q) ? '' : 'none';
+    function renderAuthorSeriesSelectedWorks() {
+      const box = document.getElementById('authorSeriesSelectedWorks');
+      if (!box) return;
+      const all = window._authorSeriesAvailableWorks || [];
+      const ids = window._authorSeriesSelectedWorkIds || new Set();
+      const chosen = all.filter(w => ids.has(String(w.id)));
+      box.innerHTML = chosen.length
+        ? chosen.map(w => `<div class="author-work-chip">
+            <div class="author-work-chip-img">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 120))}" alt="">` : '<span>作品</span>'}</div>
+            <div class="author-work-chip-info"><b>${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(STATUS_LABELS?.[w.status] || '')}${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : ' · 待审核'}</small></div>
+            <button type="button" onclick="removeAuthorSeriesWork('${w.id}')" aria-label="移除">×</button>
+          </div>`).join('')
+        : '<p class="author-featured-hint">未选择作品，前台不会显示这个系列的作品。</p>';
+    }
+
+    function removeAuthorSeriesWork(id) {
+      if (window._authorSeriesSelectedWorkIds) window._authorSeriesSelectedWorkIds.delete(String(id));
+      renderAuthorSeriesSelectedWorks();
+    }
+
+    let _awpChosen = new Set();
+    let _awpWorks = [];
+    let _awpOnConfirm = null;
+    function openAuthorWorkPicker(options = {}) {
+      _awpWorks = options.works || window._authorSeriesAvailableWorks || [];
+      const selected = options.selected || window._authorSeriesSelectedWorkIds || new Set();
+      _awpChosen = new Set([...selected].map(String));
+      _awpOnConfirm = options.onConfirm || null;
+      const overlay = document.createElement('div');
+      overlay.id = 'authorWorkPickerOverlay';
+      overlay.className = 'awp-overlay';
+      overlay.innerHTML = `
+        <div class="awp-card" role="dialog" aria-modal="true" aria-label="选择作品">
+          <div class="awp-head">
+            <div><h3>选择作品</h3><p>搜索或点击作品卡片进行选择；同名作品可看状态和编号区分。</p></div>
+            <button type="button" class="awp-close" onclick="closeAuthorWorkPicker()">×</button>
+          </div>
+          <input type="search" class="form-input awp-search" id="awpSearch" placeholder="搜索作品名称、标签、分类或编号..." oninput="filterAuthorWorkPicker()">
+          <div class="awp-grid" id="awpGrid"></div>
+          <div class="awp-foot">
+            <span>已选 <b id="awpCount">${_awpChosen.size}</b> 件</span>
+            <div><button type="button" class="btn-sm" onclick="closeAuthorWorkPicker()">取消</button><button type="button" class="btn-sm btn-primary" onclick="confirmAuthorWorkPicker()">确定选择</button></div>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      renderAuthorWorkPickerGrid();
+      setTimeout(() => document.getElementById('awpSearch')?.focus(), 50);
+    }
+
+    function renderAuthorWorkPickerGrid() {
+      const grid = document.getElementById('awpGrid');
+      if (!grid) return;
+      const q = (document.getElementById('awpSearch')?.value || '').trim().toLowerCase();
+      const works = _awpWorks.filter(w => {
+        if (!q) return true;
+        const cat = (typeof CATEGORIES !== 'undefined' && CATEGORIES[w.category]) || w.category || '';
+        return [w.title, ...(w.tags || []), cat, w.id].join(' ').toLowerCase().includes(q);
       });
+      if (!works.length) {
+        grid.innerHTML = '<div class="awp-empty">没有匹配的作品</div>';
+        return;
+      }
+      grid.innerHTML = works.map(w => {
+        const chosen = _awpChosen.has(String(w.id));
+        const cat = (typeof CATEGORIES !== 'undefined' && CATEGORIES[w.category]) || w.category || '';
+        return `<button type="button" class="awp-item${chosen ? ' selected' : ''}" data-work-id="${w.id}" onclick="toggleAuthorWorkPick('${w.id}')">
+          <div class="awp-cover">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 240))}" alt="">` : '<span>作品</span>'}<i>✓</i></div>
+          <div class="awp-body"><b>${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(STATUS_LABELS?.[w.status] || '')}${cat ? ' · ' + escapeHtml(cat) : ''}${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : ' · 待审核'}</small><span>#${escapeHtml(String(w.id).slice(-8))}</span></div>
+        </button>`;
+      }).join('');
+    }
+
+    function filterAuthorWorkPicker() { renderAuthorWorkPickerGrid(); }
+
+    function toggleAuthorWorkPick(id) {
+      id = String(id);
+      if (_awpChosen.has(id)) _awpChosen.delete(id);
+      else _awpChosen.add(id);
+      const count = document.getElementById('awpCount');
+      if (count) count.textContent = _awpChosen.size;
+      renderAuthorWorkPickerGrid();
+    }
+
+    function closeAuthorWorkPicker() {
+      document.getElementById('authorWorkPickerOverlay')?.remove();
+    }
+
+    function confirmAuthorWorkPicker() {
+      if (_awpOnConfirm) {
+        _awpOnConfirm([..._awpChosen]);
+      } else {
+        window._authorSeriesSelectedWorkIds = new Set(_awpChosen);
+        renderAuthorSeriesSelectedWorks();
+      }
+      closeAuthorWorkPicker();
     }
 
     async function saveAuthorSeries(id) {
@@ -4895,7 +4986,7 @@
       const tags = (document.getElementById('authorSeriesTags')?.value || '').split(',').map(t => t.trim()).filter(Boolean);
       const description = document.getElementById('authorSeriesDesc')?.value || '';
       const contactInfo = document.getElementById('authorSeriesContact')?.value || '';
-      const workIds = [...document.querySelectorAll('.author-series-work:checked')].map(el => el.value);
+      const workIds = [...(window._authorSeriesSelectedWorkIds || [])].map(String);
       const body = { name, cover, visible, status, category, startDate, endDate, tags, description, contactInfo, workIds };
       try {
         const result = id
