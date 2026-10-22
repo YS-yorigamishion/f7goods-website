@@ -5210,3 +5210,9 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .board-feat-nav{background:rgba(20,16,12,.5)!important;border:1px solid rgba(217,180,124,.4);color:#d9b47c!important}
 .board-feat-nav:hover{background:rgba(217,180,124,.15)!important;color:#f0d2a0!important}
 .board-feat-count{position:absolute;right:15px;top:13px;z-index:3;font-size:9px;letter-spacing:.08em;color:rgba(255,255,255,.55);pointer-events:none}
+
+/* List page headings: hide subtitle */
+.ev-head p,
+.cir-head p,
+.prj-head p,
+.upd-head p{display:none!important}
