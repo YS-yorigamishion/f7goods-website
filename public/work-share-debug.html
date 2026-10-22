@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>f7goods — 作品详情</title>
+  <meta name="description" content="查看同人作品详情，包括图片、价格、作者信息等。">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="f7goods">
+  <meta property="og:title" content="">
+  <meta property="og:description" content="">
+  <meta property="og:image" content="/uploads/og-image.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="/css/style.css?v=20261020by">
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+
+  <main class="main-content detail-page">
+    <div id="workDetail">
+      <div id="detailSkeleton">
+        <div class="detail-breadcrumb"><div class="skeleton skeleton-text" style="width:120px;height:12px;display:inline-block;vertical-align:middle;"></div></div>
+        <div class="detail-header" style="margin-bottom:1.5rem;">
+          <div class="skeleton skeleton-text" style="width:50%;height:28px;margin-bottom:0.8rem;"></div>
+          <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;"><div class="skeleton skeleton-pill"></div><div class="skeleton skeleton-pill" style="width:80px;"></div></div>
+        </div>
+        <div class="detail-content">
+          <div class="detail-main">
+            <div class="skeleton skeleton-text" style="width:30%;height:18px;margin-bottom:1rem;"></div>
+            <div class="skeleton skeleton-text" style="width:100%;margin-bottom:0.6rem;"></div>
+            <div class="skeleton skeleton-text" style="width:90%;margin-bottom:0.6rem;"></div>
+            <div class="skeleton skeleton-text" style="width:70%;margin-bottom:1.5rem;"></div>
+            <div class="skeleton skeleton-text" style="width:30%;height:18px;margin-bottom:1rem;"></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.8rem;"><div class="skeleton skeleton-img" style="height:120px;"></div><div class="skeleton skeleton-img" style="height:120px;"></div><div class="skeleton skeleton-img" style="height:120px;"></div></div>
+          </div>
+          <div class="detail-sidebar">
+            <div class="skeleton-sidebar-card"><div class="skeleton skeleton-text" style="width:40%;height:14px;margin-bottom:0.8rem;"></div><div class="skeleton skeleton-text" style="width:80%;"></div><div class="skeleton skeleton-text short"></div></div>
+            <div class="skeleton-sidebar-card"><div class="skeleton skeleton-text" style="width:30%;height:14px;margin-bottom:0.8rem;"></div><div style="display:flex;align-items:center;gap:0.5rem;"><div class="skeleton skeleton-avatar" style="width:36px;height:36px;"></div><div class="skeleton skeleton-text" style="width:60%;margin:0;"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="/js/api.js?v=20261020by"></script>
+  <script src="/js/i18n.js?v=20261020by"></script>
+  <script src="/js/main.js?v=20261020by"></script>
+  <script>
+    async function loadWork() {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      if (!id) { location.href = '/'; return; }
+      initPage('works', id);
+      // Detail pages are rendered once; reload keeps labels and meta in the selected language.
+      if (typeof onLangChange === 'function') onLangChange(() => location.reload());
+
+      try {
+        await loadCategoriesFromAPI();
+        const [work, circles, allEvents, allProjects] = await Promise.all([
+          F7API.getWork(id),
+          F7API.getCircles(),
+          F7API.getEvents(),
+          F7API.getProjects()
+        ]);
+        const workCircles = (work.circles || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
+        const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(work.id));
+        const relatedProjects = allProjects.filter(p => (p.works || []).includes(work.id));
+        let authorWorks = [];
+        if (workCircles[0]) {
+          try { authorWorks = await F7API.getWorks({ circleId: workCircles[0].id }); } catch (e) { authorWorks = []; }
+        }
+        const otherWorks = authorWorks.filter(w => w.id !== work.id).slice(0, 8);
+        const primaryEvent = relatedEvents[0] || null;
+        const socialEntries = Object.entries(work.socialLinks || {}).filter(([k, v]) => v && !['contactLabel', 'websiteLabel'].includes(k));
+        const firstSocial = socialEntries[0] || null;
+        const contactEntry = firstSocial ? {
+          value: firstSocial[1],
+          isUrl: String(firstSocial[1]).startsWith('http'),
+          label: firstSocial[0] === 'website' ? (work.socialLinks.websiteLabel || '官网') : (work.socialLinks.contactLabel || (firstSocial[0] === 'qq' ? 'QQ' : firstSocial[0]))
+        } : null;
+        document.title = `${workTitle(work)} — f7goods`;
+        document.querySelector('meta[property="og:title"]').content = workTitle(work);
+        document.querySelector('meta[property="og:description"]').content = (work.description || '').substring(0, 160);
+        if (work.images && work.images[0]) document.querySelector('meta[property="og:image"]').content = new URL(work.images[0], location.origin).href;
+
+        // JSON-LD structured data (reuse the server-rendered block when present)
+        const authorNames = workCircles.map(c => c.name).join(', ');
+        const priceNum = parseFloat(String(work.price || '').replace(/[^\d.]/g, ''));
+        const jsonLd = {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          'name': workTitle(work),
+          'description': work.description || workTitle(work),
+          'image': (work.images || []).map(u => new URL(u, location.origin).href),
+          'url': window.location.href,
+          'brand': { '@type': 'Organization', 'name': 'f7goods' },
+          ...(Number.isFinite(priceNum) && priceNum > 0 ? { 'offers': { '@type': 'Offer', 'price': priceNum, 'priceCurrency': 'CNY' } } : {})
+        };
+        let ldScript = document.querySelector('script[type="application/ld+json"]');
+        if (!ldScript) { ldScript = document.createElement('script'); ldScript.type = 'application/ld+json'; document.head.appendChild(ldScript); }
+        ldScript.textContent = JSON.stringify(jsonLd);
+
+        document.getElementById('detailSkeleton')?.remove();
+        const container = document.getElementById('workDetail');
+        const mainImg = (work.images && work.images[0]) || '';
+        window.fitWorkStage = function (img) {
+          const stage = document.getElementById('detailMainImg');
+          if (!stage || !img || !img.naturalWidth || !img.naturalHeight) return;
+          window._wdStageImg = img;
+          const width = stage.clientWidth || stage.getBoundingClientRect().width;
+          if (!width) return;
+          const isMobile = window.innerWidth <= 600;
+          const isTablet = window.innerWidth <= 900;
+          const minH = isMobile ? 330 : (isTablet ? 460 : 560);
+          const maxH = isMobile ? 680 : (isTablet ? 760 : 960);
+          const target = Math.round(width * img.naturalHeight / img.naturalWidth);
+          stage.style.setProperty('height', Math.max(minH, Math.min(maxH, target)) + 'px', 'important');
+        };
+        if (!window._wdResizeBound) {
+          window._wdResizeBound = true;
+          let _wdResizeTimer = null;
+          window.addEventListener('resize', () => {
+            clearTimeout(_wdResizeTimer);
+            _wdResizeTimer = setTimeout(() => { if (window._wdStageImg) window.fitWorkStage(window._wdStageImg); }, 120);
+          });
+        }
+        const galleryImages = (work.images || []).concat(work.moreImages || []);
+        const authorLine = workCircles.map(c => escapeHtml(c.name)).filter(Boolean).join(' · ');
+        const catLabel = CATEGORIES[work.category] || '';
+        container.innerHTML = `
+          <div class="wd-page">
+            <div class="wd-crumb">
+              <a href="/">${t('nav.works')}</a><span>›</span><span>${escapeHtml(workTitle(work))}</span>
+            </div>
+
+            <div class="wd-product">
+              <div class="wd-gallery">
+                <div class="wd-stage" id="detailMainImg" ${galleryImages.length ? `tabindex="0" role="button" aria-label="${escapeHtml(t('common.openImage'))}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"` : ''} onclick="${galleryImages.length ? `openLightbox(${JSON.stringify(galleryImages).replace(/"/g, '&quot;')}, window._detailIndex || 0)` : ''}">
+                  ${mainImg
+                    ? `<img src="${escapeHtml(imgUrl(mainImg, 1200))}" alt="${escapeHtml(workTitle(work))}" id="detailMainImgEl" onload="fitWorkStage(this)">`
+                    : '<span class="placeholder-icon">🎨</span>'}
+                  ${galleryImages.length ? `<span class="wd-count" id="detailImageCount">1 / ${galleryImages.length}</span>` : ''}
+                  ${galleryImages.length ? `<button type="button" class="wd-zoom" aria-label="${escapeHtml(t('common.openImage'))}" onclick="event.stopPropagation();openLightbox(${JSON.stringify(galleryImages).replace(/"/g, '&quot;')}, window._detailIndex || 0)">⤢</button>` : ''}
+                </div>
+                ${galleryImages.length > 1 ? `
+                  <div class="wd-thumbs" id="detailThumbs">
+                    ${galleryImages.map((img, i) => `<button type="button" class="wd-thumb${i === 0 ? ' on' : ''}" data-idx="${i}" onclick="switchDetailImage(${i})"><img src="${escapeHtml(imgUrl(img, 240))}" alt="" loading="lazy"></button>`).join('')}
+                  </div>
+                ` : ''}
+                <button type="button" class="wd-shareimg" id="shareImageBtn" onclick="shareWorkImage()">生成作品分享图</button>
+              </div>
+
+              <aside class="wd-info">
+                <div class="wd-statusline"><span class="wd-dash"></span><span>${escapeHtml(STATUS_LABELS[work.status] || '')}</span></div>
+                <div class="wd-title-row">
+                  <h1>${escapeHtml(workTitle(work))}</h1>
+                  ${isDeadlineSoon(work.endDate) ? `<span class="deadline-badge" style="position:static;font-size:0.7rem;vertical-align:middle;">${t('common.deadlineSoon')}</span>` : ''}
+                </div>
+                <div class="wd-author">
+                  ${workCircles[0]?.logo ? `<img src="${escapeHtml(imgUrl(workCircles[0].logo, 80))}" alt="">` : ''}
+                  <span>${workCircles.length ? `作者 ${workCircles.map(c => `<a href="/circle-detail.html?id=${c.id}">${escapeHtml(c.name)}</a>`).join('、')}` : ''}${catLabel ? `${workCircles.length ? ' · ' : ''}${escapeHtml(catLabel)}` : ''}</span>
+                </div>
+
+                <div class="wd-price-row">
+                  <div class="wd-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料'))}<small>PRICE</small></div>
+                </div>
+
+                <div class="wd-actions">
+                  ${renderWantButton(work.id, work.wants)}
+                  ${renderLikeButton(work.id, work.likes)}
+                  ${renderShareButton(workTitle(work), location.href)}
+                </div>
+
+                <div class="wd-meta">
+                  <div class="wd-meta-row"><span>${t('works.releaseDate')}</span><b>${formatDate(work.releaseDate)}</b></div>
+                  <div class="wd-meta-row"><span>${t('common.category')}</span><b>${escapeHtml(catLabel)}</b></div>
+                  ${primaryEvent ? `<div class="wd-meta-row"><span>参与活动</span><b><a href="/event-detail.html?id=${encodeURIComponent(primaryEvent.id)}">${escapeHtml(primaryEvent.title)}</a></b></div>` : ''}
+                  ${contactEntry ? `<div class="wd-meta-row"><span>联系方式</span><b>${contactEntry.isUrl ? `<a href="${escapeHtml(contactEntry.value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(contactEntry.label)}</a>` : escapeHtml(contactEntry.value)}</b></div>` : ''}
+                  ${work.createdAt ? `<div class="wd-meta-row"><span>更新时间</span><b>${formatDate(work.createdAt)}</b></div>` : ''}
+                </div>
+
+                ${work.isCommissioned ? `<div class="wd-commission">约稿作品${work.commissionedBy ? ' ' + escapeHtml(work.commissionedBy) : ''}</div>` : ''}
+              </aside>
+            </div>
+
+            <div class="wd-content-grid">
+              <div class="wd-main">
+                ${otherWorks.length ? `
+                <section class="wd-section">
+                  <div class="wd-section-head">
+                    <div><h2>同作者作品</h2></div>
+                    ${workCircles[0] ? `<a href="/circle-detail.html?id=${encodeURIComponent(workCircles[0].id)}">查看全部 →</a>` : ''}
+                  </div>
+                  <div class="wd-related">
+                    ${otherWorks.map(w => `<a class="wd-rel" href="/work-detail.html?id=${encodeURIComponent(w.id)}">
+                      <div class="wd-rel-img">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 360))}" alt="${escapeHtml(workTitle(w))}" loading="lazy">` : '<span>作品</span>'}</div>
+                      <b>${escapeHtml(workTitle(w))}</b>
+                      <span>${escapeHtml(STATUS_LABELS[w.status] || '')}</span>
+                    </a>`).join('')}
+                  </div>
+                </section>` : ''}
+              </div>
+            </div>
+
+            <div class="wd-mobile-bar">
+              <div class="wd-mobile-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料'))}</div>
+              ${renderLikeButton(work.id, work.likes)}
+              ${renderWantButton(work.id, work.wants)}
+            </div>
+          </div>
+        `;
+        window._detailGallery = galleryImages;
+        window._workDetail = { work, workCircles, catLabel, authorLine, relatedEvents };
+        window._detailIndex = 0;
+        window.switchDetailImage = function(i) {
+          const imgs = window._detailGallery || [];
+          if (!imgs[i]) return;
+          window._detailIndex = i;
+          const el = document.getElementById('detailMainImgEl');
+          const wrap = document.getElementById('detailMainImg');
+          if (el) { el.src = imgs[i]; if (el.complete) fitWorkStage(el); }
+          else if (wrap) {
+            wrap.innerHTML = '<img src="' + imgs[i] + '" alt="" id="detailMainImgEl" onload="fitWorkStage(this)">';
+          }
+          document.querySelectorAll('#detailThumbs .wd-thumb').forEach((btn, idx) => btn.classList.toggle('on', idx === i));
+          const count = document.getElementById('detailImageCount');
+          if (count) count.textContent = (i + 1) + ' / ' + imgs.length;
+          if (wrap) wrap.onclick = function() { openLightbox(imgs, i); };
+        };
+      } catch (e) {
+        document.getElementById('workDetail').innerHTML =
+          `<div class="empty-state"><div class="icon">!</div><p>${t('common.notFound')}</p></div>`;
+      }
+    }
+
+    // ===== 分享图片：把大卡片导出为 PNG（不含路径与 想要/喜爱/分享 按钮） =====
+    const SHARE_W = 1000;
+    const SHARE_SCALE = 2;
+    const SHARE_SANS = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
+    const SHARE_SERIF = '"Noto Serif SC", Georgia, serif';
+    const TITLE_TRACK = '-0.6px';   // 对应页面 .exhibit-title 的 -0.02em（30px）
+    let shareBusy = false;
+
+    function shareRoundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    // 按宽度折行：CJK 逐字断行，拉丁词整体不拆开
+    function shareWrapText(ctx, text, maxW) {
+      const lines = [];
+      String(text == null ? '' : text).split('\n').forEach(raw => {
+        const para = raw.replace(/\s+$/, '');
+        if (!para) { lines.push(''); return; }
+        const tokens = para.match(/[A-Za-z0-9@._%+\-/:]+|\s+|[^\s]/g) || [];
+        let line = '';
+        tokens.forEach(tok => {
+          const next = line + tok;
+          if (line && ctx.measureText(next).width > maxW) {
+            lines.push(line.replace(/\s+$/, ''));
+            line = /^\s+$/.test(tok) ? '' : tok;
+          } else {
+            line = next;
+          }
+        });
+        lines.push(line.replace(/\s+$/, ''));
+      });
+      return lines;
+    }
+
+    function shareLoadImg(src) {
+      return new Promise(resolve => {
+        if (!src) { resolve(null); return; }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    async function drawWorkSharePng() {
+      const data = window._workDetail;
+      if (!data) return null;
+      const { work, workCircles, catLabel, relatedEvents = [] } = data;
+      if (document.fonts && document.fonts.ready) {
+        try { await document.fonts.ready; } catch (e) {}
+      }
+
+      const PAD = 32, GAP = 30, IMG_W = 520, IMG_H = 640;
+      const CARD_Y = 24;
+      const CARD_W = SHARE_W - PAD * 2;
+      const CARD_H = IMG_H + PAD * 2;
+      const H = CARD_Y + CARD_H + 38;
+      const infoX = PAD + IMG_W + GAP;
+      const infoW = CARD_W - IMG_W - GAP;
+      const infoTop = CARD_Y + PAD;
+
+      const statusText = (typeof STATUS_LABELS !== 'undefined' && STATUS_LABELS[work.status]) || '';
+      const priceText = typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料');
+      const title = work.title || '';
+
+      // measure title
+      const m = document.createElement('canvas').getContext('2d');
+      m.font = `600 36px ${SHARE_SERIF}`;
+      let titleLines = shareWrapText(m, title, infoW);
+      if (titleLines.length > 2) {
+        titleLines = titleLines.slice(0, 2);
+        titleLines[1] = titleLines[1].slice(0, -1) + '…';
+      }
+
+      const metaRows = [
+        [t('works.releaseDate'), formatDate(work.releaseDate)],
+        [t('common.category'), catLabel],
+        relatedEvents[0] ? ['参与活动', relatedEvents[0].title] : null,
+        work.createdAt ? ['更新时间', formatDate(work.createdAt)] : null
+      ].filter(row => row && String(row[1] || '').trim());
+
+      const canvas = document.createElement('canvas');
+      canvas.width = SHARE_W * SHARE_SCALE;
+      canvas.height = H * SHARE_SCALE;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(SHARE_SCALE, SHARE_SCALE);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.textBaseline = 'alphabetic';
+
+      // background
+      ctx.fillStyle = '#ECE4D8';
+      ctx.fillRect(0, 0, SHARE_W, H);
+
+      // soft card shadow
+      ctx.save();
+      shareRoundRect(ctx, PAD, CARD_Y + 7, CARD_W, CARD_H, 22);
+      ctx.fillStyle = 'rgba(70,50,35,0.10)';
+      ctx.fill();
+      ctx.restore();
+
+      // card
+      shareRoundRect(ctx, PAD, CARD_Y, CARD_W, CARD_H, 22);
+      ctx.fillStyle = '#FFFDF9';
+      ctx.fill();
+      ctx.strokeStyle = '#E5DBD0';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // image stage
+      const imgX = PAD + 18, imgY = CARD_Y + 18, imgW = IMG_W - 36, imgH = IMG_H - 36;
+      shareRoundRect(ctx, imgX, imgY, imgW, imgH, 13);
+      ctx.fillStyle = '#F0E9DE';
+      ctx.fill();
+      ctx.save();
+      shareRoundRect(ctx, imgX, imgY, imgW, imgH, 13);
+      ctx.clip();
+      const img = await shareLoadImg((work.images || [])[0] || '');
+      if (img && img.width) {
+        const ratio = Math.min(imgW / img.width, imgH / img.height);
+        const dw = img.width * ratio, dh = img.height * ratio;
+        ctx.drawImage(img, imgX + (imgW - dw) / 2, imgY + (imgH - dh) / 2, dw, dh);
+      } else {
+        ctx.fillStyle = '#9A8E82';
+        ctx.font = `14px ${SHARE_SANS}`;
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无图片', imgX + imgW / 2, imgY + imgH / 2);
+      }
+      ctx.restore();
+
+      // status line
+      let y = infoTop + 29;
+      if (statusText) {
+        ctx.fillStyle = '#B9444F';
+        ctx.fillRect(infoX, y - 4, 22, 1);
+        ctx.textAlign = 'left';
+        ctx.font = `600 11px ${SHARE_SANS}`;
+        ctx.save();
+        ctx.letterSpacing = '1.5px';
+        ctx.fillText(statusText, infoX + 31, y);
+        ctx.restore();
+        y += 34;
+      }
+
+      // title
+      ctx.fillStyle = '#28221D';
+      ctx.font = `600 36px ${SHARE_SERIF}`;
+      ctx.textAlign = 'left';
+      titleLines.forEach((line, i) => ctx.fillText(line, infoX, y + i * 46));
+      y += titleLines.length * 46 + 8;
+
+      // author
+      const logo = workCircles[0] && workCircles[0].logo ? await shareLoadImg(workCircles[0].logo) : null;
+      const authorY = y + 14;
+      if (logo && logo.width) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(infoX + 12, authorY - 4, 12, 0, Math.PI * 2);
+        ctx.clip();
+        const r = Math.max(24 / logo.width, 24 / logo.height);
+        ctx.drawImage(logo, infoX + 12 - logo.width * r / 2, authorY - 4 - logo.height * r / 2, logo.width * r, logo.height * r);
+        ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.arc(infoX + 12, authorY - 4, 12, 0, Math.PI * 2);
+        ctx.fillStyle = '#F0E9DE';
+        ctx.fill();
+      }
+      ctx.fillStyle = '#7D7165';
+      ctx.font = `12px ${SHARE_SANS}`;
+      const authorNames = workCircles.map(c => c.name).join('、') || '未知作者';
+      ctx.fillText(`${authorNames}${catLabel ? ' · ' + catLabel : ''}`, infoX + 34, authorY);
+      y = authorY + 30;
+
+      // price
+      ctx.fillStyle = '#B9444F';
+      ctx.font = `600 29px ${SHARE_SERIF}`;
+      const priceW = ctx.measureText(priceText).width;
+      ctx.fillText(priceText, infoX, y + 26);
+      ctx.fillStyle = '#A2968A';
+      ctx.font = `9px ${SHARE_SANS}`;
+      ctx.save();
+      ctx.letterSpacing = '1.6px';
+      ctx.fillText('PRICE', infoX + priceW + 10, y + 24);
+      ctx.restore();
+      y += 48;
+
+      // like / want counts
+      ctx.fillStyle = '#A2968A';
+      ctx.font = `11px ${SHARE_SANS}`;
+      ctx.fillText(`♡ ${work.likes || 0}   ·   想要 ${work.wants || 0}`, infoX, y + 4);
+      y += 24;
+
+      // rule
+      ctx.fillStyle = '#E5DBD0';
+      ctx.fillRect(infoX, y, infoW, 1);
+      y += 15;
+
+      // meta
+      ctx.font = `11.5px ${SHARE_SANS}`;
+      metaRows.slice(0, 4).forEach(([label, value]) => {
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#A2968A';
+        ctx.fillText(label, infoX, y + 13);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#4A453F';
+        let v = String(value);
+        while (v.length > 1 && ctx.measureText(v).width > infoW - 94) v = v.slice(0, -1);
+        ctx.fillText(v, infoX + infoW, y + 13);
+        y += 26;
+      });
+
+      // commission mark at the bottom, only when commissioned
+      if (work.isCommissioned) {
+        const lineY = CARD_Y + CARD_H - 52;
+        ctx.fillStyle = '#E5DBD0';
+        ctx.fillRect(infoX, lineY, infoW, 1);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#B78A4A';
+        ctx.font = `10.5px ${SHARE_SANS}`;
+        ctx.save();
+        ctx.letterSpacing = '1.4px';
+        ctx.fillText(`约稿作品${work.commissionedBy ? ' ' + work.commissionedBy : ''}`, infoX + infoW / 2, lineY + 25);
+        ctx.restore();
+      }
+
+      // footer
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#8A7E72';
+      ctx.font = `10.5px ${SHARE_SANS}`;
+      ctx.save();
+      ctx.letterSpacing = '0.8px';
+      ctx.fillText(`f7goods.com · ${title}`, SHARE_W / 2, H - 14);
+      ctx.restore();
+
+      return canvas;
+    }
+
+    async function shareWorkImage() {
+      if (shareBusy || !window._workDetail) return;
+      shareBusy = true;
+      const btn = document.getElementById('shareImageBtn');
+      if (btn) btn.disabled = true;
+      try {
+        const canvas = await drawWorkSharePng();
+        if (!canvas) throw new Error('draw failed');
+        canvas.toBlob(blob => {
+          if (!blob) { showToast(t('works.shareImageFailed'), 'error'); return; }
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `${String(window._workDetail.work.title || 'work').replace(/[\\/:*?"<>|]/g, '_')}-分享.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+          showToast(t('works.shareImageDone'));
+        }, 'image/png');
+      } catch (e) {
+        console.error(e);
+        showToast(t('works.shareImageFailed'), 'error');
+      } finally {
+        shareBusy = false;
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    loadWork();
+  </script>
+<script>
+setTimeout(async () => {
+  try {
+    const c = await drawWorkSharePng();
+    if (!c) { document.body.innerHTML = '<pre>no canvas</pre>'; return; }
+    c.style.width = '1000px';
+    c.style.maxWidth = '100%';
+    c.style.display = 'block';
+    c.style.margin = '20px auto';
+    document.body.innerHTML = '';
+    document.body.style.background = '#333';
+    document.body.appendChild(c);
+  } catch (e) {
+    document.body.innerHTML = '<pre style="color:red;background:#fff;padding:20px">' + (e.stack || e.message) + '</pre>';
+  }
+}, 4000);
+</script></body>
+</html>

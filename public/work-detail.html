@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020bx">
+  <link rel="stylesheet" href="/css/style.css?v=20261020by">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -46,9 +46,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020bx"></script>
-  <script src="/js/i18n.js?v=20261020bx"></script>
-  <script src="/js/main.js?v=20261020bx"></script>
+  <script src="/js/api.js?v=20261020by"></script>
+  <script src="/js/i18n.js?v=20261020by"></script>
+  <script src="/js/main.js?v=20261020by"></script>
   <script>
     async function loadWork() {
       const params = new URLSearchParams(location.search);
@@ -73,7 +73,7 @@
         if (workCircles[0]) {
           try { authorWorks = await F7API.getWorks({ circleId: workCircles[0].id }); } catch (e) { authorWorks = []; }
         }
-        const otherWorks = authorWorks.filter(w => w.id !== work.id).slice(0, 4);
+        const otherWorks = authorWorks.filter(w => w.id !== work.id).slice(0, 8);
         const primaryEvent = relatedEvents[0] || null;
         const socialEntries = Object.entries(work.socialLinks || {}).filter(([k, v]) => v && !['contactLabel', 'websiteLabel'].includes(k));
         const firstSocial = socialEntries[0] || null;
@@ -204,23 +204,6 @@
                   </div>
                 </section>` : ''}
               </div>
-
-              <aside class="wd-side">
-                ${relatedEvents.length ? `<div class="wd-aside-card">
-                  <h3>${t('works.relatedEvents')}</h3>
-                  ${relatedEvents.slice(0, 3).map(e => `<a class="wd-event" href="/event-detail.html?id=${encodeURIComponent(e.id)}">
-                    ${e.coverImage ? `<img src="${escapeHtml(imgUrl(e.coverImage, 160))}" alt="" loading="lazy">` : ''}
-                    <div><b>${escapeHtml(e.title)}</b><span>${formatDate(e.date)}${e.location ? ' · ' + escapeHtml(e.location) : ''}</span></div>
-                  </a>`).join('')}
-                </div>` : ''}
-                ${relatedProjects.length ? `<div class="wd-aside-card">
-                  <h3>${t('works.relatedProjects')}</h3>
-                  ${relatedProjects.slice(0, 3).map(p => `<a class="wd-event" href="/project-detail.html?id=${encodeURIComponent(p.id)}">
-                    ${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 160))}" alt="" loading="lazy">` : ''}
-                    <div><b>${escapeHtml(p.title)}</b><span>${escapeHtml(PROJECT_STATUS_LABELS[p.status] || '')}</span></div>
-                  </a>`).join('')}
-                </div>` : ''}
-              </aside>
             </div>
 
             <div class="wd-mobile-bar">
@@ -231,7 +214,7 @@
           </div>
         `;
         window._detailGallery = galleryImages;
-        window._workDetail = { work, workCircles, catLabel, authorLine };
+        window._workDetail = { work, workCircles, catLabel, authorLine, relatedEvents };
         window._detailIndex = 0;
         window.switchDetailImage = function(i) {
           const imgs = window._detailGallery || [];
@@ -308,56 +291,39 @@
     async function drawWorkSharePng() {
       const data = window._workDetail;
       if (!data) return null;
-      const { work, workCircles, catLabel, authorLine } = data;
+      const { work, workCircles, catLabel, relatedEvents = [] } = data;
       if (document.fonts && document.fonts.ready) {
         try { await document.fonts.ready; } catch (e) {}
       }
 
-      const PAD = 28, GAP = 28, FRAME_PAD_X = 14, FRAME_PAD_TOP = 14, FRAME_PAD_BOTTOM = 16;
-      const innerW = SHARE_W - PAD * 2;
-      const frameW = Math.round((innerW - GAP) * 1.15 / 2);
-      const plaqueW = innerW - GAP - frameW;
-      const artW = frameW - FRAME_PAD_X * 2;
-      const artH = Math.min(artW, 420);
-      const frameH = artH + FRAME_PAD_TOP + FRAME_PAD_BOTTOM + 2;
+      const PAD = 32, GAP = 30, IMG_W = 520, IMG_H = 640;
+      const CARD_Y = 24;
+      const CARD_W = SHARE_W - PAD * 2;
+      const CARD_H = IMG_H + PAD * 2;
+      const H = CARD_Y + CARD_H + 38;
+      const infoX = PAD + IMG_W + GAP;
+      const infoW = CARD_W - IMG_W - GAP;
+      const infoTop = CARD_Y + PAD;
 
-      const TITLE_LH = 38, SUB_LH = 20, META_LH = 24, DESC_LH = 26;
-
-      const m = document.createElement('canvas').getContext('2d');
       const statusText = (typeof STATUS_LABELS !== 'undefined' && STATUS_LABELS[work.status]) || '';
-      // 标题按页面 .exhibit-title 的 letter-spacing 收紧，量宽时一并计入
-      m.letterSpacing = TITLE_TRACK;
-      m.font = `600 30px ${SHARE_SERIF}`;
-      const titleLines = shareWrapText(m, work.title || '', plaqueW);
-      m.letterSpacing = '0px';
-      const subText = `${authorLine}${catLabel ? (authorLine ? ' · ' : '') + catLabel : ''}`;
-      m.font = `13px ${SHARE_SANS}`;
-      const subLines = shareWrapText(m, subText, plaqueW);
+      const priceText = typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料');
+      const title = work.title || '';
+
+      // measure title
+      const m = document.createElement('canvas').getContext('2d');
+      m.font = `600 36px ${SHARE_SERIF}`;
+      let titleLines = shareWrapText(m, title, infoW);
+      if (titleLines.length > 2) {
+        titleLines = titleLines.slice(0, 2);
+        titleLines[1] = titleLines[1].slice(0, -1) + '…';
+      }
+
       const metaRows = [
-        [t('works.price'), typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料')],
         [t('works.releaseDate'), formatDate(work.releaseDate)],
         [t('common.category'), catLabel],
-        workCircles.length ? [t('works.author'), workCircles.map(c => c.name).join('、')] : null,
-        (work.isCommissioned && work.commissionedBy) ? [t('works.commissionedBy'), work.commissionedBy] : null
-      ].filter(r => r && String(r[1] || '').trim());
-      m.font = `14px ${SHARE_SANS}`;
-      const descLines = work.description ? shareWrapText(m, work.description, plaqueW - 14) : [];
-
-      // 版面：先算坐标，绘制时复用同一套数值
-      const L = {};
-      let cy = 0;
-      if (statusText) { L.statusY = cy; cy += 22; }
-      L.titleY = cy; cy += titleLines.length * TITLE_LH + 6;
-      L.subY = cy; cy += subLines.length * SUB_LH + 4;
-      cy += 16; L.ruleY = cy; cy += 17;
-      L.metaY = cy; cy += metaRows.length * META_LH + 16;
-      if (descLines.length) { L.descY = cy; cy += descLines.length * DESC_LH; }
-      const plaqueH = cy;
-
-      const bodyH = Math.max(frameH, plaqueH);
-      const cardY = 22;
-      const cardH = PAD + bodyH + 22 + 14 + 16 + 24;
-      const H = cardY + cardH + 22;
+        relatedEvents[0] ? ['参与活动', relatedEvents[0].title] : null,
+        work.createdAt ? ['更新时间', formatDate(work.createdAt)] : null
+      ].filter(row => row && String(row[1] || '').trim());
 
       const canvas = document.createElement('canvas');
       canvas.width = SHARE_W * SHARE_SCALE;
@@ -366,115 +332,151 @@
       ctx.scale(SHARE_SCALE, SHARE_SCALE);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
+      ctx.textBaseline = 'alphabetic';
 
-      // 背景
-      ctx.fillStyle = '#E8E2D6';
+      // background
+      ctx.fillStyle = '#ECE4D8';
       ctx.fillRect(0, 0, SHARE_W, H);
 
-      // 大卡片
-      shareRoundRect(ctx, 0, cardY, SHARE_W, cardH, 18);
-      ctx.fillStyle = '#F6F2EB';
-      ctx.fill();
+      // soft card shadow
       ctx.save();
-      shareRoundRect(ctx, 0, cardY, SHARE_W, cardH, 18);
-      ctx.clip();
-      const glow = ctx.createLinearGradient(0, cardY, 0, cardY + 220);
-      glow.addColorStop(0, 'rgba(217,79,92,0.06)');
-      glow.addColorStop(1, 'rgba(217,79,92,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, cardY, SHARE_W, 220);
+      shareRoundRect(ctx, PAD, CARD_Y + 7, CARD_W, CARD_H, 22);
+      ctx.fillStyle = 'rgba(70,50,35,0.10)';
+      ctx.fill();
       ctx.restore();
-      shareRoundRect(ctx, 0.5, cardY + 0.5, SHARE_W - 1, cardH - 1, 18);
-      ctx.strokeStyle = '#E5DDD1';
+
+      // card
+      shareRoundRect(ctx, PAD, CARD_Y, CARD_W, CARD_H, 22);
+      ctx.fillStyle = '#FFFDF9';
+      ctx.fill();
+      ctx.strokeStyle = '#E5DBD0';
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      const left = PAD, top = cardY + PAD;
-
-      // 作品图
-      shareRoundRect(ctx, left, top, frameW, frameH, 4);
-      ctx.fillStyle = '#FFFCF7';
+      // image stage
+      const imgX = PAD + 18, imgY = CARD_Y + 18, imgW = IMG_W - 36, imgH = IMG_H - 36;
+      shareRoundRect(ctx, imgX, imgY, imgW, imgH, 13);
+      ctx.fillStyle = '#F0E9DE';
       ctx.fill();
-      ctx.strokeStyle = '#E5DDD1';
-      ctx.stroke();
-      const artX = left + FRAME_PAD_X, artY = top + FRAME_PAD_TOP;
       ctx.save();
-      ctx.beginPath();
-      ctx.rect(artX, artY, artW, artH);
+      shareRoundRect(ctx, imgX, imgY, imgW, imgH, 13);
       ctx.clip();
-      // 与页面 .exhibit-art img 的底色一致，避免透明图留白处颜色不同
-      ctx.fillStyle = '#1a1816';
-      ctx.fillRect(artX, artY, artW, artH);
       const img = await shareLoadImg((work.images || [])[0] || '');
       if (img && img.width) {
-        const ratio = Math.min(artW / img.width, artH / img.height);
+        const ratio = Math.min(imgW / img.width, imgH / img.height);
         const dw = img.width * ratio, dh = img.height * ratio;
-        ctx.drawImage(img, artX + (artW - dw) / 2, artY + (artH - dh) / 2, dw, dh);
+        ctx.drawImage(img, imgX + (imgW - dw) / 2, imgY + (imgH - dh) / 2, dw, dh);
       } else {
-        ctx.fillStyle = '#8A8078';
+        ctx.fillStyle = '#9A8E82';
         ctx.font = `14px ${SHARE_SANS}`;
         ctx.textAlign = 'center';
-        ctx.fillText('暂无图片', artX + artW / 2, artY + artH / 2);
+        ctx.fillText('暂无图片', imgX + imgW / 2, imgY + imgH / 2);
       }
       ctx.restore();
 
-      // 铭牌
-      const px = left + frameW + GAP;
-      ctx.textAlign = 'left';
+      // status line
+      let y = infoTop + 29;
       if (statusText) {
-        const base = top + L.statusY + 12;
-        ctx.font = `11px ${SHARE_SANS}`;
-        ctx.fillStyle = '#D94F5C';
-        ctx.fillRect(px, base - 4, 18, 1);
+        ctx.fillStyle = '#B9444F';
+        ctx.fillRect(infoX, y - 4, 22, 1);
+        ctx.textAlign = 'left';
+        ctx.font = `600 11px ${SHARE_SANS}`;
         ctx.save();
         ctx.letterSpacing = '1.5px';
-        ctx.fillText(statusText, px + 26, base);
+        ctx.fillText(statusText, infoX + 31, y);
         ctx.restore();
-      }
-      ctx.fillStyle = '#22201E';
-      ctx.font = `600 30px ${SHARE_SERIF}`;
-      ctx.save();
-      ctx.letterSpacing = TITLE_TRACK;
-      titleLines.forEach((line, i) => ctx.fillText(line, px, top + L.titleY + i * TITLE_LH + 26));
-      ctx.restore();
-      ctx.fillStyle = '#8A8078';
-      ctx.font = `13px ${SHARE_SANS}`;
-      subLines.forEach((line, i) => ctx.fillText(line, px, top + L.subY + i * SUB_LH + 15));
-      ctx.fillStyle = '#E5DDD1';
-      ctx.fillRect(px, top + L.ruleY, plaqueW, 1);
-      metaRows.forEach(([label, value], i) => {
-        const base = top + L.metaY + i * META_LH + 16;
-        ctx.textAlign = 'left';
-        ctx.fillStyle = '#8A8078';
-        ctx.font = `14px ${SHARE_SANS}`;
-        ctx.fillText(label, px, base);
-        ctx.textAlign = 'right';
-        ctx.fillStyle = '#22201E';
-        ctx.font = `500 14px ${SHARE_SANS}`;
-        let v = String(value);
-        while (v.length > 1 && ctx.measureText(v).width > plaqueW - 96) v = v.slice(0, -1);
-        ctx.fillText(v, px + plaqueW, base);
-        ctx.textAlign = 'left';
-      });
-      if (descLines.length) {
-        const dy = top + L.descY;
-        ctx.fillStyle = '#E5DDD1';
-        ctx.fillRect(px, dy + 2, 2, descLines.length * DESC_LH - 8);
-        ctx.fillStyle = '#4A453F';
-        ctx.font = `14px ${SHARE_SANS}`;
-        descLines.forEach((line, i) => ctx.fillText(line, px + 14, dy + i * DESC_LH + 19));
+        y += 34;
       }
 
-      // 底部水印
-      const capTop = cardY + PAD + bodyH + 22;
-      ctx.fillStyle = '#E5DDD1';
-      ctx.fillRect(left, capTop, innerW, 1);
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#8A8078';
-      ctx.font = `11px ${SHARE_SANS}`;
+      // title
+      ctx.fillStyle = '#28221D';
+      ctx.font = `600 36px ${SHARE_SERIF}`;
+      ctx.textAlign = 'left';
+      titleLines.forEach((line, i) => ctx.fillText(line, infoX, y + i * 46));
+      y += titleLines.length * 46 + 8;
+
+      // author
+      const logo = workCircles[0] && workCircles[0].logo ? await shareLoadImg(workCircles[0].logo) : null;
+      const authorY = y + 14;
+      if (logo && logo.width) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(infoX + 12, authorY - 4, 12, 0, Math.PI * 2);
+        ctx.clip();
+        const r = Math.max(24 / logo.width, 24 / logo.height);
+        ctx.drawImage(logo, infoX + 12 - logo.width * r / 2, authorY - 4 - logo.height * r / 2, logo.width * r, logo.height * r);
+        ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.arc(infoX + 12, authorY - 4, 12, 0, Math.PI * 2);
+        ctx.fillStyle = '#F0E9DE';
+        ctx.fill();
+      }
+      ctx.fillStyle = '#7D7165';
+      ctx.font = `12px ${SHARE_SANS}`;
+      const authorNames = workCircles.map(c => c.name).join('、') || '未知作者';
+      ctx.fillText(`${authorNames}${catLabel ? ' · ' + catLabel : ''}`, infoX + 34, authorY);
+      y = authorY + 30;
+
+      // price
+      ctx.fillStyle = '#B9444F';
+      ctx.font = `600 29px ${SHARE_SERIF}`;
+      const priceW = ctx.measureText(priceText).width;
+      ctx.fillText(priceText, infoX, y + 26);
+      ctx.fillStyle = '#A2968A';
+      ctx.font = `9px ${SHARE_SANS}`;
       ctx.save();
-      ctx.letterSpacing = '0.66px';
-      ctx.fillText(`f7goods.com · ${work.title || ''}`, SHARE_W / 2, capTop + 25);
+      ctx.letterSpacing = '1.6px';
+      ctx.fillText('PRICE', infoX + priceW + 10, y + 24);
+      ctx.restore();
+      y += 48;
+
+      // like / want counts
+      ctx.fillStyle = '#A2968A';
+      ctx.font = `11px ${SHARE_SANS}`;
+      ctx.fillText(`♡ ${work.likes || 0}   ·   想要 ${work.wants || 0}`, infoX, y + 4);
+      y += 24;
+
+      // rule
+      ctx.fillStyle = '#E5DBD0';
+      ctx.fillRect(infoX, y, infoW, 1);
+      y += 15;
+
+      // meta
+      ctx.font = `11.5px ${SHARE_SANS}`;
+      metaRows.slice(0, 4).forEach(([label, value]) => {
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#A2968A';
+        ctx.fillText(label, infoX, y + 13);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#4A453F';
+        let v = String(value);
+        while (v.length > 1 && ctx.measureText(v).width > infoW - 94) v = v.slice(0, -1);
+        ctx.fillText(v, infoX + infoW, y + 13);
+        y += 26;
+      });
+
+      // commission mark at the bottom, only when commissioned
+      if (work.isCommissioned) {
+        const lineY = CARD_Y + CARD_H - 52;
+        ctx.fillStyle = '#E5DBD0';
+        ctx.fillRect(infoX, lineY, infoW, 1);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#B78A4A';
+        ctx.font = `10.5px ${SHARE_SANS}`;
+        ctx.save();
+        ctx.letterSpacing = '1.4px';
+        ctx.fillText(`约稿作品${work.commissionedBy ? ' ' + work.commissionedBy : ''}`, infoX + infoW / 2, lineY + 25);
+        ctx.restore();
+      }
+
+      // footer
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#8A7E72';
+      ctx.font = `10.5px ${SHARE_SANS}`;
+      ctx.save();
+      ctx.letterSpacing = '0.8px';
+      ctx.fillText(`f7goods.com · ${title}`, SHARE_W / 2, H - 14);
       ctx.restore();
 
       return canvas;
