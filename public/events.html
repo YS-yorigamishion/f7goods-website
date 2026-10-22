@@ -1,392 +1,315 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>f7goods — 近期活动</title>
-  <meta name="description" content="关注最新的同人展会与活动信息，不错过每一场精彩。查看活动时间、地点和相关作品。">
-  <meta property="og:title" content="f7goods — 近期活动">
-  <meta property="og:description" content="关注最新的同人展会与活动信息，不错过每一场精彩。">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="f7goods">
-  <meta property="og:image" content="https://f7goods.com/uploads/og-image.png">
-  <link rel="alternate" type="application/rss+xml" title="f7goods RSS" href="/rss.xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ca">
-<link rel="canonical" href="https://f7goods.com/events.html">
-<meta property="og:url" content="https://f7goods.com/events.html">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="alternate" hreflang="zh-CN" href="https://f7goods.com/events.html">
-<link rel="alternate" hreflang="x-default" href="https://f7goods.com/events.html">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>近期活动 — f7goods</title>
+<meta name="description" content="查看同人展会、ONLY 专场与线下活动的时间表。">
+<link rel="stylesheet" href="/css/style.css?v=20261020cb">
+<script src="/js/api.js?v=20261020cb"></script>
+<script src="/js/i18n.js?v=20261020cb"></script>
 </head>
 <body>
-  <nav class="navbar" id="navbar"></nav>
+<nav class="navbar" id="navbar"></nav>
 
-  <section class="hero cl-list-hero">
-    <div class="cl-list-mast">
-      <div>
-        <h1 id="heroTitle" class="settings-pending" data-i18n="events.heroTitle">近期活动</h1>
-        <p id="heroSubtitle" class="settings-pending" data-i18n="events.heroSubtitle">关注最新的同人展会与活动信息，不错过每一场精彩</p>
-      </div>
-      <div class="cl-list-count">共 <b id="eventTotalCount">0</b> 场活动</div>
+<main class="main-content ev-page">
+  <header class="ev-head">
+    <div>
+      <div class="ev-kicker">EVENT CALENDAR</div>
+      <h1 id="heroTitle" data-i18n="events.heroTitle">近期活动</h1>
+      <p id="heroSubtitle" data-i18n="events.heroSubtitle">关注最新的同人展会与活动信息，不错过每一场精彩</p>
     </div>
-    <div class="cl-list-sub">
-      <strong id="pageTitle" class="settings-pending" data-i18n="events.listTitle">活动日历</strong>
-      <span id="pageSubtitle" class="settings-pending" data-i18n="events.listSubtitle">f7goods 参展及推荐的同人活动</span>
+    <div class="ev-head-stats">
+      <div><b id="eventTotalCount">0</b><span>场活动</span></div>
+      <div><b id="evUpcomingCount">0</b><span>即将开启</span></div>
+      <div><b id="evWorksCount">0</b><span>关联周边</span></div>
     </div>
-  </section>
+  </header>
+  <span id="pageTitle" style="display:none"></span>
+  <span id="pageSubtitle" style="display:none"></span>
 
-  <main class="main-content">
-    <div class="cl-toolbar-card">
-      <div class="cl-toolbar-row">
-        <div id="statusFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
-        <span class="cl-toolbar-sep" aria-hidden="true"></span>
-        <div id="typeFilters" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;"></div>
-      </div>
-      <div class="cl-toolbar-row">
-        <div class="cl-seg" id="viewSeg">
-          <button type="button" class="on" data-view="timeline" data-i18n="events.timeline">时间轴</button>
-          <button type="button" data-view="calendar" data-i18n="events.calendar">日历</button>
-          <button type="button" data-view="grid" data-i18n="events.gridView">多格</button>
-        </div>
-        <select class="form-input" id="sortSelect">
-          <option value="date-desc" selected>时间 ↓ 新→旧</option>
-          <option value="date-asc">时间 ↑ 旧→新</option>
-        </select>
-        <input type="text" class="search-input" placeholder="搜索活动名称、地点、分类..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
-        <span class="cl-show-count">显示 <b id="eventShowCount">0</b></span>
-      </div>
-    </div>
+  <div class="ev-toolbar">
+    <div class="ev-filters" id="statusFilters"></div>
+    <span class="ev-sep" aria-hidden="true"></span>
+    <div class="ev-filters" id="typeFilters"></div>
+    <div class="ev-toolbar-spacer"></div>
+    <select class="ev-select" id="sortSelect">
+      <option value="date-desc" selected>时间 ↓ 新→旧</option>
+      <option value="date-asc">时间 ↑ 旧→新</option>
+    </select>
+    <input class="ev-search" type="text" placeholder="搜索活动、地点…" id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+    <span class="ev-show-count" style="display:none;">显示 <b id="eventShowCount">0</b></span>
+  </div>
 
-    <div id="eventsContainer">
-      <div id="eventsSkeleton">
-        <div style="display:flex;flex-direction:column;gap:0.6rem;">
-          <div class="skeleton-card" style="display:flex;gap:0;padding:0;overflow:hidden;"><div class="skeleton" style="width:78px;height:104px;flex-shrink:0;"></div><div style="flex:1;padding:0.8rem;"><div class="skeleton skeleton-text" style="width:70%;"></div><div class="skeleton skeleton-text" style="width:40%;margin-top:0.5rem;"></div></div></div>
-          <div class="skeleton-card" style="display:flex;gap:0;padding:0;overflow:hidden;"><div class="skeleton" style="width:78px;height:104px;flex-shrink:0;"></div><div style="flex:1;padding:0.8rem;"><div class="skeleton skeleton-text" style="width:60%;"></div><div class="skeleton skeleton-text" style="width:50%;margin-top:0.5rem;"></div></div></div>
-          <div class="skeleton-card" style="display:flex;gap:0;padding:0;overflow:hidden;"><div class="skeleton" style="width:78px;height:104px;flex-shrink:0;"></div><div style="flex:1;padding:0.8rem;"><div class="skeleton skeleton-text" style="width:80%;"></div><div class="skeleton skeleton-text" style="width:35%;margin-top:0.5rem;"></div></div></div>
-        </div>
+  <div id="eventsContainer">
+    <div id="eventsSkeleton">
+      <div style="display:flex;flex-direction:column;gap:0.6rem;">
+        <div class="skeleton-card" style="height:340px;"></div>
+        <div class="skeleton-card" style="height:72px;"></div>
       </div>
     </div>
-  </main>
+  </div>
+</main>
 
-  <footer class="footer" id="footer"></footer>
+<footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020ca"></script>
-  <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20261020ca"></script>
-  <script src="/js/main.js?v=20261020ca"></script>
-  <script>
-    initPage('events');
-    if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '创建活动', tab: 'my-events' });
+<script src="/js/pull-to-refresh.js?v=20261020cb"></script>
+<script src="/js/main.js?v=20261020cb"></script>
+<script>
+  initPage('events');
+  if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '创建活动', tab: 'my-events' });
 
-    let allEvents = [];
-    let allWorks = [];
-    let currentView = 'timeline';
-    let calYear, calMonth;
-    let currentStatusFilter = 'all';
-    let currentTypeFilter = 'all';
+  let allEvents = [];
+  let allWorks = [];
+  let currentView = 'timeline';
+  let calYear, calMonth;
+  let currentStatusFilter = 'all';
+  let currentTypeFilter = 'all';
 
-    function buildEventFilterButtons() {
-      // Status filters
-      const st = document.getElementById('statusFilters');
-      st.innerHTML = `<button type="button" class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
-        EVENT_STATUS_ORDERED.map(s => `<button type="button" class="filter-btn" data-status="${s.id}">${escapeHtml(tCat(s))}</button>`).join('');
-      st.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          st.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          currentStatusFilter = btn.dataset.status;
-          renderEvents();
-        });
-      });
-
-      // Type filters
-      const ty = document.getElementById('typeFilters');
-      ty.innerHTML =
-        '<button type="button" class="filter-btn active" data-ty="all">全部类型</button>' +
-        '<button type="button" class="filter-btn" data-ty="only">ONLY 专场</button>' +
-        '<button type="button" class="filter-btn" data-ty="normal">综合展会</button>';
-      ty.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          ty.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          currentTypeFilter = btn.dataset.ty;
-          renderEvents();
-        });
-      });
-    }
-
-    function setEventView(btn) {
-      currentView = btn.dataset.view;
-      document.querySelectorAll('#viewSeg button').forEach(b => b.classList.remove('on'));
-      btn.classList.add('on');
-      renderEvents();
-    }
-
-    async function loadEvents() {
-      try {
-        await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
-        const [events, works] = await Promise.all([
-          F7API.getEvents(),
-          F7API.getWorks()
-        ]);
-        allEvents = events;
-        // 默认：最新在前
-        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
-        allWorks = works;
-        const now = new Date();
-        calYear = now.getFullYear();
-        calMonth = now.getMonth();
-
-        // Apply settings
-        const ps = getPageSettings('events');
-        if (ps.heroTitle) document.getElementById('heroTitle').textContent = ps.heroTitle;
-        if (ps.heroSubtitle) document.getElementById('heroSubtitle').textContent = ps.heroSubtitle;
-        if (ps.pageTitle) document.getElementById('pageTitle').textContent = ps.pageTitle;
-        if (ps.pageSubtitle) document.getElementById('pageSubtitle').textContent = ps.pageSubtitle;
-        applyHeroBg('events');
-
-        document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
-        document.querySelectorAll('.hero, .page-header').forEach(el => el.style.visibility = '');
-
-        buildEventFilterButtons();
+  function buildEventFilterButtons() {
+    const st = document.getElementById('statusFilters');
+    st.innerHTML = `<button type="button" class="filter-btn active" data-status="all">${t('common.allStatus')}</button>` +
+      EVENT_STATUS_ORDERED.map(s => `<button type="button" class="filter-btn" data-status="${s.id}">${escapeHtml(tCat(s))}</button>`).join('');
+    st.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        st.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentStatusFilter = btn.dataset.status;
         renderEvents();
-      } catch (e) {
-        document.getElementById('eventsContainer').innerHTML =
-          `<div class="empty-state"><div class="icon">!</div><p>${t('common.loadFailed')}</p></div>`;
-      }
-    }
-
-    function getFilteredEvents() {
-      let events = allEvents;
-      // Status filter
-      if (currentStatusFilter !== 'all') {
-        events = events.filter(e => e.status === currentStatusFilter);
-      }
-      // Type filter
-      if (currentTypeFilter === 'only') {
-        events = events.filter(e => e.type === 'only');
-      } else if (currentTypeFilter === 'normal') {
-        events = events.filter(e => e.type !== 'only');
-      }
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      if (search) {
-        events = events.filter(e => {
-          // Match event name, location, description
-          if (e.title.toLowerCase().includes(search)) return true;
-          if ((e.location || '').toLowerCase().includes(search)) return true;
-          if ((e.description || '').toLowerCase().includes(search)) return true;
-          // Match category from related works
-          const related = allWorks.filter(w => (e.relatedWorks || []).includes(w.id));
-          if (related.some(w => (CATEGORIES[w.category] || '').includes(search))) return true;
-          if (related.some(w => (w.tags || []).some(t => t.toLowerCase().includes(search)))) return true;
-          return false;
-        });
-      }
-      // Sort（默认：最新在前）
-      const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
-      events = events.slice().sort((a, b) =>
-        sortVal === 'date-asc'
-          ? new Date(a.date) - new Date(b.date)
-          : new Date(b.date) - new Date(a.date)
-      );
-      return events;
-    }
-
-    function eventChipHtml(event) {
-      const stLabel = EVENT_STATUS_LABELS[event.status] || '';
-      let cls = 'cl-ev-chip';
-      if (event.status === 'jinxingzhong') cls += ' now';
-      else if (event.status === 'jijiangkaiqi') cls += ' soon';
-      const isOnly = event.type === 'only';
-      return (stLabel ? `<span class="${cls}">${escapeHtml(stLabel)}</span>` : '') +
-        (isOnly ? '<span class="cl-ev-chip only">ONLY 专场</span>' : '');
-    }
-
-    function renderEvents() {
-      const container = document.getElementById('eventsContainer');
-      // Remove skeleton
-      document.getElementById('eventsSkeleton')?.remove();
-      const events = getFilteredEvents();
-
-      const totalEl = document.getElementById('eventTotalCount');
-      if (totalEl) totalEl.textContent = allEvents.length;
-      const showEl = document.getElementById('eventShowCount');
-      if (showEl) showEl.textContent = events.length;
-      const showWrap = document.querySelector('.cl-show-count');
-      if (showWrap) showWrap.style.display = currentView === 'calendar' ? 'none' : '';
-
-      if (events.length === 0) {
-        container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${t('common.noMatchingEvents')}</p></div>`;
-        return;
-      }
-      if (currentView === 'timeline') renderTimeline(container, events);
-      else if (currentView === 'calendar') renderCalendar(container, events);
-      else renderGrid(container, events);
-    }
-
-    // ===== Timeline View (month groups + ticket-stub date) =====
-    function renderTimeline(container, events) {
-      const WD = ['日', '一', '二', '三', '四', '五', '六'];
-      let html = '';
-      let lastMonth = null;
-      events.forEach(event => {
-        const d = String(event.date || '');
-        const mk = d.slice(0, 7);
-        if (mk !== lastMonth) {
-          html += `<div class="cl-ev-month">${mk ? mk.slice(0, 4) + ' 年 ' + Number(mk.slice(5, 7)) + ' 月' : '未标日期'}</div>`;
-          lastMonth = mk;
-        }
-        const endD = event.endDate || event.date;
-        const multi = endD && endD !== event.date;
-        const wd = d ? WD[new Date(d + 'T00:00:00').getDay()] : '';
-        const cover = event.coverImage || (event.images && event.images[0]) || '';
-        const workN = (event.relatedWorks || []).length;
-        html += `
-          <a class="cl-ev-row${event.status === 'jinxingzhong' ? ' ongoing' : ''}" href="/event-detail.html?id=${encodeURIComponent(event.id)}">
-            <div class="cl-ev-stub">
-              <span class="m">${d.slice(5, 7) ? Number(d.slice(5, 7)) + ' 月' : ''}</span>
-              <span class="d">${d.slice(8, 10) || '—'}</span>
-              ${multi ? `<span class="r">– ${endD.slice(8, 10)} 日</span>` : (wd ? `<span class="wd">周${wd}</span>` : '')}
-            </div>
-            <div class="cl-ev-main">
-              <div class="cl-ev-info">
-                <div class="cl-ev-meta">${eventChipHtml(event)}${workN ? `<span class="cl-ev-chip">${workN} 件周边</span>` : ''}</div>
-                <div class="cl-ev-title">${escapeHtml(event.title)}</div>
-                <div class="cl-ev-loc">${escapeHtml(event.location || '')}</div>
-                ${event.booth ? `<div class="cl-ev-booth">展位 ${escapeHtml(event.booth)}</div>` : ''}
-              </div>
-              <div class="cl-ev-thumb">
-                ${cover
-                  ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="${escapeHtml(event.title)}" loading="lazy">`
-                  : `<span>${escapeHtml((event.title || '?').charAt(0))}</span>`}
-              </div>
-            </div>
-          </a>`;
       });
-      container.innerHTML = html;
-    }
+    });
 
-    // ===== Calendar View =====
-    function renderCalendar(container, events) {
-      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-      const pad2 = n => String(n).padStart(2, '0');
-      const keyOf = dt => dt.getFullYear() + '-' + pad2(dt.getMonth() + 1) + '-' + pad2(dt.getDate());
-
-      // Build event lookup by date string
-      const eventMap = {};
-      events.forEach(e => {
-        if (!e.date) return;
-        const start = new Date(e.date + 'T00:00:00');
-        const end = e.endDate ? new Date(e.endDate + 'T00:00:00') : start;
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-          const key = keyOf(d);
-          if (!eventMap[key]) eventMap[key] = [];
-          eventMap[key].push(e);
-        }
+    const ty = document.getElementById('typeFilters');
+    ty.innerHTML = '<button type="button" class="filter-btn active" data-ty="all">全部类型</button>' +
+      '<button type="button" class="filter-btn" data-ty="only">ONLY 专场</button>' +
+      '<button type="button" class="filter-btn" data-ty="normal">综合展会</button>';
+    ty.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        ty.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTypeFilter = btn.dataset.ty;
+        renderEvents();
       });
+    });
+  }
 
-      const firstDay = new Date(calYear, calMonth, 1);
-      const lastDay = new Date(calYear, calMonth + 1, 0);
-      const startPad = firstDay.getDay();
-      const totalDays = lastDay.getDate();
-      const todayKey = keyOf(new Date());
+  function setEventView(btn) {
+    currentView = btn.dataset.view;
+    document.querySelectorAll('#viewSeg button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    renderEvents();
+  }
 
-      let daysHTML = '';
-      // Pad before
-      const prevLast = new Date(calYear, calMonth, 0).getDate();
-      for (let i = startPad - 1; i >= 0; i--) {
-        daysHTML += `<div class="cl-cal-day muted"><span class="num">${prevLast - i}</span></div>`;
-      }
-      // Current month
-      for (let d = 1; d <= totalDays; d++) {
-        const dateStr = `${calYear}-${pad2(calMonth + 1)}-${pad2(d)}`;
-        const isToday = dateStr === todayKey;
-        const dayEvents = eventMap[dateStr] || [];
-        daysHTML += `<div class="cl-cal-day${isToday ? ' today' : ''}">
-          <span class="num">${d}</span>
-          ${dayEvents.map(e => `<a class="cl-cal-ev${e.type === 'only' ? ' only' : ''}" href="/event-detail.html?id=${encodeURIComponent(e.id)}" title="${escapeHtml(e.title)}">${escapeHtml(e.title)}</a>`).join('')}
-        </div>`;
-      }
-      // Pad after
-      const endPad = 7 - ((startPad + totalDays) % 7);
-      if (endPad < 7) {
-        for (let i = 1; i <= endPad; i++) {
-          daysHTML += `<div class="cl-cal-day muted"><span class="num">${i}</span></div>`;
-        }
-      }
+  async function loadEvents() {
+    try {
+      await Promise.all([loadCategoriesFromAPI(), loadSettingsFromAPI()]);
+      const [events, works] = await Promise.all([F7API.getEvents(), F7API.getWorks()]);
+      allEvents = events || [];
+      allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+      allWorks = works || [];
+      const now = new Date();
+      calYear = now.getFullYear();
+      calMonth = now.getMonth();
 
-      container.innerHTML = `
-        <div class="cl-cal">
-          <div class="cl-cal-head">
-            <button type="button" class="cl-cal-nav" onclick="changeMonth(-1)">&#8249;</button>
-            <h3>${calYear} 年 ${calMonth + 1} 月</h3>
-            <button type="button" class="cl-cal-nav" onclick="changeMonth(1)">&#8250;</button>
-          </div>
-          <div class="cl-cal-week">${weekdays.map(w => `<div>${w}</div>`).join('')}</div>
-          <div class="cl-cal-days">${daysHTML}</div>
-        </div>
-      `;
-    }
+      const ps = getPageSettings('events');
+      const heroTitle = document.getElementById('heroTitle');
+      const heroSubtitle = document.getElementById('heroSubtitle');
+      if (ps.heroTitle && heroTitle) heroTitle.textContent = ps.heroTitle;
+      if (ps.heroSubtitle && heroSubtitle) heroSubtitle.textContent = ps.heroSubtitle;
+      const pageTitle = document.getElementById('pageTitle');
+      const pageSubtitle = document.getElementById('pageSubtitle');
+      if (ps.pageTitle && pageTitle) pageTitle.textContent = ps.pageTitle;
+      if (ps.pageSubtitle && pageSubtitle) pageSubtitle.textContent = ps.pageSubtitle;
+      applyHeroBg('events');
 
-    function changeMonth(dir) {
-      calMonth += dir;
-      if (calMonth < 0) { calMonth = 11; calYear--; }
-      if (calMonth > 11) { calMonth = 0; calYear++; }
+      document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
+      buildEventFilterButtons();
       renderEvents();
+    } catch (e) {
+      document.getElementById('eventsContainer').innerHTML =
+        `<div class="empty-state"><div class="icon">!</div><p>${t('common.loadFailed')}</p></div>`;
+    }
+  }
+
+  function getFilteredEvents() {
+    let events = allEvents;
+    if (currentStatusFilter !== 'all') events = events.filter(e => e.status === currentStatusFilter);
+    if (currentTypeFilter === 'only') events = events.filter(e => e.type === 'only');
+    else if (currentTypeFilter === 'normal') events = events.filter(e => e.type !== 'only');
+
+    const q = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+    if (q) {
+      events = events.filter(e => {
+        const related = allWorks.filter(w => (e.relatedWorks || []).includes(w.id));
+        return [e.title, e.location, e.description, ...related.map(w => w.title)].join(' ').toLowerCase().includes(q);
+      });
     }
 
-    // ===== Grid View =====
-    function renderGrid(container, events) {
-      container.innerHTML = `<div class="cl-ev-grid">${events.map(event => {
-        const cover = event.coverImage || (event.images && event.images[0]) || '';
-        const d = String(event.date || '');
-        return `
-        <a class="cl-ev-gcard" href="/event-detail.html?id=${encodeURIComponent(event.id)}">
-          <div class="cl-ev-gcover">
-            <div class="cl-ev-gstub">
-              <span class="m">${d.slice(5, 7) ? Number(d.slice(5, 7)) + ' 月' : ''}</span>
-              <span class="d">${d.slice(8, 10) || '—'}</span>
-            </div>
-            ${cover
-              ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="${escapeHtml(event.title)}" loading="lazy">`
-              : `<span style="position:relative;z-index:1">${escapeHtml((event.title || '?').charAt(0))}</span>`}
+    const sort = document.getElementById('sortSelect')?.value || 'date-desc';
+    events = events.slice().sort((a, b) => sort === 'date-asc'
+      ? new Date(a.date) - new Date(b.date)
+      : new Date(b.date) - new Date(a.date));
+    return events;
+  }
+
+  function eventChipHtml(event) {
+    const stLabel = EVENT_STATUS_LABELS[event.status] || '';
+    let cls = 'cl-ev-chip';
+    if (event.status === 'jinxingzhong') cls += ' now';
+    else if (event.status === 'jijiangkaiqi') cls += ' soon';
+    const isOnly = event.type === 'only';
+    return (stLabel ? `<span class="${cls}">${escapeHtml(stLabel)}</span>` : '') +
+      (isOnly ? '<span class="cl-ev-chip only">ONLY 专场</span>' : '');
+  }
+
+  function evDateParts(event) {
+    const d = String(event.date || '');
+    const wds = ['日', '一', '二', '三', '四', '五', '六'];
+    return {
+      year: d.slice(0, 4),
+      month: Number(d.slice(5, 7)) || '',
+      day: d.slice(8, 10) || '—',
+      weekday: d ? '周' + wds[new Date(d + 'T00:00:00').getDay()] : '',
+      monthText: d ? (Number(d.slice(5, 7)) + ' 月') : '待定'
+    };
+  }
+
+  function evWorkCount(event) {
+    return (event.relatedWorks || []).length;
+  }
+
+  function evCover(event) {
+    return event.coverImage || (event.images && event.images[0]) || '';
+  }
+
+  function evToday() {
+    return new Date().toLocaleDateString('sv-SE');
+  }
+
+  function renderEvents() {
+    const container = document.getElementById('eventsContainer');
+    document.getElementById('eventsSkeleton')?.remove();
+    const events = getFilteredEvents();
+    const totalEl = document.getElementById('eventTotalCount');
+    if (totalEl) totalEl.textContent = allEvents.length;
+    const showEl = document.getElementById('eventShowCount');
+    if (showEl) showEl.textContent = events.length;
+
+    const upcomingAll = allEvents.filter(e => e.date && e.date >= evToday() && e.status !== 'yijiesu');
+    const upcomingEl = document.getElementById('evUpcomingCount');
+    if (upcomingEl) upcomingEl.textContent = upcomingAll.length;
+    const workIds = new Set();
+    allEvents.forEach(e => (e.relatedWorks || []).forEach(id => workIds.add(id)));
+    const worksEl = document.getElementById('evWorksCount');
+    if (worksEl) worksEl.textContent = workIds.size;
+
+    if (events.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${t('common.noMatchingEvents')}</p></div>`;
+      return;
+    }
+    renderTimeline(container, events);
+  }
+
+  // ===== V4: current event + upcoming + past =====
+  function renderTimeline(container, events) {
+    const today = evToday();
+    const upcoming = events.filter(e => e.date && e.date >= today && e.status !== 'yijiesu')
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    const past = events.filter(e => !upcoming.some(u => u.id === e.id))
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    const featured = upcoming[0] || events[0];
+    if (!featured) { container.innerHTML = ''; return; }
+    const nextEvents = upcoming.filter(e => e.id !== featured.id);
+    const pastEvents = past.filter(e => e.id !== featured.id);
+
+    const fd = evDateParts(featured);
+    const featuredCover = evCover(featured);
+    const featuredWorkN = evWorkCount(featured);
+    const statusText = EVENT_STATUS_LABELS[featured.status] || '活动';
+    const featuredIsPast = featured.status === 'yijiesu' || (featured.date && featured.date < today);
+    const featuredLabel = featuredIsPast ? '最近活动' : '当前活动';
+    const typeText = featured.type === 'only' ? 'ONLY 专场' : '综合展会';
+    const desc = String(featured.description || '').replace(/\s+/g, ' ').trim();
+
+    let html = `
+      <a class="ev-featured" href="/event-detail.html?id=${encodeURIComponent(featured.id)}">
+        <div class="ev-featured-cover">
+          ${featuredCover ? `<img src="${escapeHtml(imgUrl(featuredCover, 1200))}" alt="${escapeHtml(featured.title)}" loading="eager">` : ''}
+          <span class="ev-featured-badge">${featuredLabel} · ${escapeHtml(statusText)}</span>
+        </div>
+        <div class="ev-featured-info">
+          <div class="ev-current-kicker">CURRENT EVENT</div>
+          <div class="ev-featured-date">
+            <b>${fd.month && fd.day ? String(fd.month).padStart(2, '0') + '.' + fd.day : fd.day}</b>
+            <span>${fd.year ? fd.year + ' 年 ' + fd.monthText : ''}${fd.weekday ? ' · ' + fd.weekday : ''}</span>
           </div>
-          <div class="cl-ev-gbody">
-            <div class="cl-ev-gtitle">${escapeHtml(event.title)}</div>
-            <div class="cl-ev-gloc">${escapeHtml(event.location || '')}</div>
-            <div class="cl-ev-gmeta">${eventChipHtml(event)}</div>
+          <h2>${escapeHtml(featured.title)}</h2>
+          <div class="ev-featured-loc">📍 ${escapeHtml(featured.location || '地点待公布')}</div>
+          <div class="ev-featured-type">${escapeHtml(typeText)}${featured.booth ? ' · 展位 ' + escapeHtml(featured.booth) : ''}</div>
+          ${desc ? `<p class="ev-featured-desc">${escapeHtml(desc)}</p>` : ''}
+          <div class="ev-featured-foot">
+            <div class="ev-featured-works"><b>${featuredWorkN}</b> 件关联周边</div>
+            <span class="ev-featured-cta">查看活动 →</span>
+          </div>
+        </div>
+      </a>`;
+
+    if (nextEvents.length) {
+      html += `<div class="ev-section-head"><h2>接下来</h2><span>还有 ${nextEvents.length} 场即将开启</span></div>`;
+      html += nextEvents.map(e => {
+        const d = evDateParts(e);
+        const cover = evCover(e);
+        return `<a class="ev-upcoming" href="/event-detail.html?id=${encodeURIComponent(e.id)}">
+          ${cover ? `<img src="${escapeHtml(imgUrl(cover, 320))}" alt="" loading="lazy">` : '<span class="ev-upcoming-ph">活动</span>'}
+          <div class="ev-upcoming-date"><b>${d.month && d.day ? String(d.month).padStart(2, '0') + '.' + d.day : d.day}</b><span>${d.year}</span></div>
+          <div class="ev-upcoming-main"><b>${escapeHtml(e.title)}</b><span>${formatDate(e.date)}${e.location ? ' · ' + escapeHtml(e.location) : ''} · ${escapeHtml(EVENT_STATUS_LABELS[e.status] || '')}</span></div>
+          <span class="ev-upcoming-arrow">→</span>
+        </a>`;
+      }).join('');
+    }
+
+    if (pastEvents.length) {
+      html += `<div class="ev-section-head"><h2>往期活动</h2><span>${pastEvents.length} 场已结束</span></div>`;
+      html += `<div class="ev-grid">${pastEvents.map(e => {
+        const d = evDateParts(e);
+        const cover = evCover(e);
+        return `<a class="ev-card" href="/event-detail.html?id=${encodeURIComponent(e.id)}">
+          <div class="ev-card-cover">
+            ${cover ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="${escapeHtml(e.title)}" loading="lazy">` : `<span>${escapeHtml((e.title || '?').charAt(0))}</span>`}
+            <span class="ev-card-status">${escapeHtml(EVENT_STATUS_LABELS[e.status] || '活动')}</span>
+            <span class="ev-card-date"><b>${d.month && d.day ? String(d.month).padStart(2, '0') + '.' + d.day : d.day}</b>${d.year}</span>
+          </div>
+          <div class="ev-card-body">
+            <h3>${escapeHtml(e.title)}</h3>
+            <div class="ev-card-loc">📍 ${escapeHtml(e.location || '地点待公布')}</div>
+            <div class="ev-card-foot"><span>${e.type === 'only' ? 'ONLY 专场' : '综合展会'}</span><b>${evWorkCount(e)} 件周边</b></div>
           </div>
         </a>`;
       }).join('')}</div>`;
     }
 
-    // ===== View Toggle =====
-    document.querySelectorAll('#viewSeg button').forEach(btn => {
-      btn.addEventListener('click', () => setEventView(btn));
-    });
+    container.innerHTML = html;
+  }
 
-    // ===== Sort & Search =====
-    document.getElementById('searchInput').addEventListener('input', debounce(renderEvents));
-    document.getElementById('sortSelect').addEventListener('change', renderEvents);
+  // Keep legacy calendar/grid helpers available if a view switch is re-enabled later.
+  function changeMonth(dir) { calMonth += dir; if (calMonth < 0) { calMonth = 11; calYear--; } if (calMonth > 11) { calMonth = 0; calYear++; } renderEvents(); }
 
-    loadEvents();
-    if (typeof onLangChange === 'function') onLangChange(() => { try { renderEvents(); } catch {} });
+  document.querySelectorAll('#viewSeg button').forEach(btn => btn.addEventListener('click', () => setEventView(btn)));
+  document.getElementById('searchInput').addEventListener('input', debounce(renderEvents));
+  document.getElementById('sortSelect').addEventListener('change', renderEvents);
 
-    PullToRefresh.init({
-      onRefresh: async () => {
-        const [events, works] = await Promise.all([
-          F7API.getEvents(),
-          F7API.getWorks()
-        ]);
-        allEvents = events;
-        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
-        allWorks = works;
-        renderEvents();
-      }
-    });
-  </script>
+  loadEvents();
+  if (typeof onLangChange === 'function') onLangChange(() => { try { renderEvents(); } catch {} });
+
+  PullToRefresh.init({
+    onRefresh: async () => {
+      const [events, works] = await Promise.all([F7API.getEvents(), F7API.getWorks()]);
+      allEvents = events || [];
+      allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+      allWorks = works || [];
+      renderEvents();
+    }
+  });
+</script>
 </body>
 </html>
