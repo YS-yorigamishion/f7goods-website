@@ -5083,22 +5083,22 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .prj-toolbar-spacer{flex:1;min-width:8px}
 .prj-select{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 11px;font:inherit;font-size:10.5px;color:var(--muted)}
 .prj-search{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 13px;font:inherit;font-size:10.5px;color:var(--muted);min-width:180px}
-.prj-hero{display:grid;grid-template-columns:1.15fr .85fr;height:360px;border-radius:17px;overflow:hidden;background:#343a2f;color:#f8f1e5;margin-bottom:17px;box-shadow:0 24px 60px rgba(45,38,25,.18);text-decoration:none}
+.prj-hero{display:grid;grid-template-columns:1.15fr .85fr;height:360px;border-radius:17px;overflow:hidden;background:#211b16;border:1px solid #3a3027;color:#faf2e6;margin-bottom:17px;box-shadow:0 26px 65px rgba(30,22,16,.24);text-decoration:none}
 .prj-hero-cover{position:relative;overflow:hidden;min-height:0;background:#4c473c}
 .prj-hero-cover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
 .prj-hero:hover .prj-hero-cover img{transform:scale(1.03)}
-.prj-hero-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(40,37,29,.04) 35%,rgba(40,37,29,.42) 100%)}
-.prj-hero-badge{position:absolute;left:16px;top:15px;background:#d8b47c;color:#2f3028;border-radius:999px;padding:4px 10px;font-size:9px;font-weight:700;letter-spacing:.05em}
+.prj-hero-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(33,27,22,.02) 30%,rgba(33,27,22,.35) 76%,rgba(33,27,22,.7) 100%)}
+.prj-hero-badge{position:absolute;left:16px;top:15px;background:#d9b47c;color:#211b16;border-radius:999px;padding:4px 10px;font-size:9px;font-weight:700;letter-spacing:.05em}
 .prj-hero-body{padding:26px 29px 22px;display:flex;flex-direction:column;position:relative}
 .prj-hero-body::before{content:'';position:absolute;left:29px;top:23px;width:28px;height:1px;background:#d8b47c}
-.prj-hero-kicker{font-size:8.5px;letter-spacing:.24em;color:#d8b47c;font-weight:700;margin-bottom:13px}
+.prj-hero-kicker{font-size:8.5px;letter-spacing:.24em;color:#d9b47c;font-weight:700;margin-bottom:13px}
 .prj-hero h2{font-family:'Noto Serif SC',Georgia,serif;font-size:25px;line-height:1.4;margin:0 0 8px;color:#fffaf0}
 .prj-hero-meta{display:flex;gap:9px;flex-wrap:wrap;align-items:center;font-size:10px;color:rgba(255,255,255,.5)}
 .prj-hero-desc{font-size:10.5px;line-height:1.8;color:rgba(255,255,255,.5);margin:10px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .prj-hero-progress{margin-top:auto;padding-top:13px;border-top:1px solid rgba(255,255,255,.12)}
 .prj-hero-progress-head{display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.5);margin-bottom:6px}
 .prj-hero-bar{height:3px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden}
-.prj-hero-bar i{display:block;height:100%;background:#d8b47c;border-radius:999px}
+.prj-hero-bar i{display:block;height:100%;background:#d9b47c;border-radius:999px}
 .prj-hero-foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;gap:10px}
 .prj-hero-foot > span:first-child{font-size:9px;color:rgba(255,255,255,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prj-hero-cta{font-size:10px;color:#e7c99b;white-space:nowrap}
