@@ -5192,3 +5192,20 @@ a.cl-series-card:hover { border-color: var(--accent); }
   .upd-card{grid-template-columns:1fr;height:auto}.upd-cover{height:170px}
   .upd-card-body{padding:13px 14px}.upd-card h2{font-size:16px}
 }
+
+/* Home carousel: black & gold */
+.board-feature{background:#211b16!important;border:1px solid #3a3027!important;border-top:2px solid #d9b47c!important;color:#faf2e6!important;box-shadow:0 26px 65px rgba(30,22,16,.22)}
+.board-feature::after{background:radial-gradient(circle,rgba(217,180,124,.12),transparent 70%)!important}
+.board-feature-slide,.board-feature-slide.has-cover{background-color:#211b16;color:#faf2e6!important}
+.board-feature-slide::after{background:radial-gradient(circle,rgba(217,180,124,.2),transparent 70%)!important}
+.board-feature-shade{background:linear-gradient(90deg,rgba(20,16,12,.92),rgba(20,16,12,.68) 44%,rgba(20,16,12,.06))!important}
+.board-feature-tag,.board-feature-tag.recruiting,.board-feature-tag.only,.board-feature-tag.in_progress,.board-feature-tag.completed,.board-feature-tag.cancelled{background:rgba(217,180,124,.16)!important;border:1px solid rgba(217,180,124,.42)!important;color:#e8c799!important;font-weight:600!important}
+.board-feature-slide h2{color:#fffaf0!important;text-shadow:0 2px 18px rgba(0,0,0,.3)}
+.board-feature-meta .pill{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.16)!important;color:rgba(255,255,255,.78)!important}
+.board-feature-meta .pill.price{background:#d9b47c!important;border-color:#d9b47c!important;color:#211b16!important}
+.board-feat-dots{background:rgba(20,16,12,.5)!important;border:1px solid rgba(217,180,124,.24)}
+.board-feat-dots i{background:rgba(255,255,255,.3)!important}
+.board-feat-dots i.on{background:#d9b47c!important}
+.board-feat-nav{background:rgba(20,16,12,.5)!important;border:1px solid rgba(217,180,124,.4);color:#d9b47c!important}
+.board-feat-nav:hover{background:rgba(217,180,124,.15)!important;color:#f0d2a0!important}
+.board-feat-count{position:absolute;right:15px;top:13px;z-index:3;font-size:9px;letter-spacing:.08em;color:rgba(255,255,255,.55);pointer-events:none}
