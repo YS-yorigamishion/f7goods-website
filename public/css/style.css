@@ -5219,3 +5219,22 @@ a.cl-series-card:hover { border-color: var(--accent); }
 
 /* Contact hero: hide subtitle */
 .contact-hero #aboutDisplaySubtitle{display:none!important}
+
+/* Home: open-group series */
+.board-open-panel{background:linear-gradient(180deg,#fffaf1,#fffdf8);border-color:#eadcc6}
+.board-open-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.board-open-card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:11px;overflow:hidden;text-decoration:none;color:inherit;min-width:0;transition:transform .2s,box-shadow .2s}
+.board-open-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(65,48,32,.08)}
+.board-open-cover{position:relative;aspect-ratio:16/10;overflow:hidden;background:#eae2d6;display:flex;align-items:center;justify-content:center}
+.board-open-cover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.board-open-card:hover .board-open-cover img{transform:scale(1.03)}
+.board-open-status{position:absolute;left:8px;top:8px;z-index:2;background:var(--accent);color:#fff;font-size:8px;padding:2px 8px;border-radius:999px;font-weight:600;letter-spacing:.03em}
+.board-open-deadline{position:absolute;right:8px;top:8px;z-index:2;background:var(--accent);color:#fff;font-size:7.5px;padding:2px 7px;border-radius:999px;font-weight:600}
+.board-open-body{padding:9px 10px 0;min-width:0}
+.board-open-body h3{font-family:'Noto Serif SC',Georgia,serif;font-size:13px;line-height:1.45;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board-open-body p{font-size:8.5px;color:var(--haze);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board-open-foot{margin-top:auto;padding:8px 10px 9px;display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:8px;color:var(--haze);border-top:1px dashed var(--line);margin-top:8px}
+.board-open-foot .go{color:var(--accent);white-space:nowrap}
+.board-open-card.wait .board-open-foot .go{color:var(--accent)}
+@media(max-width:900px){.board-open-strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.board-open-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.board-open-body{padding:8px 8px 0}.board-open-foot{padding:7px 8px;font-size:7.5px}.board-open-body h3{font-size:12px}}

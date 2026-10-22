@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020cn">
+  <link rel="stylesheet" href="/css/style.css?v=20261020co">
   <style>
     /* ===== 心愿单：卡片价格旁的加减控件 ===== */
     .cl-w-foot-l { display:inline-flex; align-items:center; gap:0.5rem; min-width:0; flex:1; }
@@ -268,6 +268,15 @@
         </div>
       </div>
 
+      <div class="board-panel board-open-panel" id="boardOpenSeriesPanel" style="display:none;margin-top:0.35rem;">
+        <div class="board-section-head" style="margin-bottom:8px;">
+          <h2>开团周边</h2>
+          <span>正在开团 · 待开团</span>
+          <a href="/projects.html?category=zhoubian">查看全部 →</a>
+        </div>
+        <div class="board-open-strip" id="boardOpenSeriesStrip"></div>
+      </div>
+
       <div class="board-panel" style="margin-top:0.35rem;">
         <div class="board-section-head" style="margin-bottom:8px;">
           <h2>系列周边</h2>
@@ -359,10 +368,10 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020cn"></script>
+  <script src="/js/api.js?v=20261020co"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20261020cn"></script>
-  <script src="/js/main.js?v=20261020cn"></script>
+  <script src="/js/i18n.js?v=20261020co"></script>
+  <script src="/js/main.js?v=20261020co"></script>
   <script>
     // 全局骨架屏安全网：8秒后无论如何移除骨架屏和隐藏类
     setTimeout(() => {
@@ -371,7 +380,7 @@
       document.querySelectorAll('.settings-pending').forEach(el => el.classList.remove('settings-pending'));
     }, 8000);
 
-    // fetchWithTimeout is provided by /js/api.js?v=20261020cn
+    // fetchWithTimeout is provided by /js/api.js?v=20261020co
 
     initPage('works');
     if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '发布周边', tab: 'works' });
@@ -871,6 +880,49 @@
                 <p style="font-size:12px;color:var(--haze);margin-top:.3rem;">${owner ? escapeHtml(owner.name) : '未知作者'} · ${(s.works || []).length} 件作品</p>
               </div>
               <div class="card-footer"><span class="card-date">${(s.works || []).length} 件</span><span class="card-price">查看 →</span></div>
+            </a>`;
+          }).join('');
+        }
+      }
+
+      const openPanel = document.getElementById('boardOpenSeriesPanel');
+      const openStrip = document.getElementById('boardOpenSeriesStrip');
+      if (openPanel && openStrip) {
+        const activeOpenSeries = [...(allSeries || [])]
+          .filter(s => s.status === 'weikaiqi' || s.status === 'zhaomuzhong')
+          .sort((a, b) => {
+            const rank = s => s.status === 'zhaomuzhong' ? 0 : 1;
+            const byStatus = rank(a) - rank(b);
+            if (byStatus) return byStatus;
+            return String(b.createdAt || b.startDate || '').localeCompare(String(a.createdAt || a.startDate || ''));
+          })
+          .slice(0, 4);
+        if (!activeOpenSeries.length) {
+          openPanel.style.display = 'none';
+        } else {
+          openPanel.style.display = '';
+          openStrip.innerHTML = activeOpenSeries.map(s => {
+            const owner = allCirclesList.find(c => c.id === s.circleId);
+            const cover = s.cover || s.works?.[0]?.images?.[0] || '';
+            const isOpen = s.status === 'zhaomuzhong';
+            const statusLabel = isOpen ? '正在开团' : '待开团';
+            const ending = typeof isDeadlineSoon === 'function' && isDeadlineSoon(s.endDate);
+            let footerText = isOpen ? '已开团' : (s.startDate ? '预计 ' + formatDate(s.startDate) : '待公布');
+            if (isOpen && ending && s.endDate) {
+              const days = Math.max(0, Math.ceil((new Date(s.endDate + 'T23:59:59') - new Date()) / 86400000));
+              footerText = '剩余 ' + days + ' 天';
+            }
+            return `<a class="board-open-card${isOpen ? '' : ' wait'}" href="/series-detail.html?id=${encodeURIComponent(s.id)}">
+              <div class="board-open-cover">
+                ${cover ? `<img src="${escapeHtml(imgUrl(cover, 320))}" srcset="${escapeHtml(imgSrcset(cover))}" sizes="(max-width:768px) 50vw, 280px" alt="${escapeHtml(s.name)}" loading="lazy">` : '<span class="placeholder-icon">系列</span>'}
+                <span class="board-open-status">${statusLabel}</span>
+                ${ending ? '<span class="board-open-deadline">即将截止</span>' : ''}
+              </div>
+              <div class="board-open-body">
+                <h3>${escapeHtml(s.name)}</h3>
+                <p>${owner ? escapeHtml(owner.name) : '未知作者'} · ${(s.works || []).length} 件周边</p>
+              </div>
+              <div class="board-open-foot"><span>${footerText}</span><span class="go">${isOpen ? '进入开团 →' : '查看预告 →'}</span></div>
             </a>`;
           }).join('');
         }
