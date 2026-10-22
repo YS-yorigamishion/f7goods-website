@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020cb">
+  <link rel="stylesheet" href="/css/style.css?v=20261020cc">
 <link rel="canonical" href="https://f7goods.com/circles.html">
 <meta property="og:url" content="https://f7goods.com/circles.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -24,57 +24,72 @@
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <section class="hero cl-list-hero">
-    <div class="cl-list-mast">
+  <main class="main-content cir-page">
+    <header class="cir-head">
       <div>
+        <div class="cir-kicker">AUTHOR DIRECTORY</div>
         <h1 id="heroTitle" class="settings-pending" data-i18n="circles.heroTitle">同人作者</h1>
-        <p id="heroSubtitle" class="settings-pending" data-i18n="circles.heroSubtitle">发现优秀的同人创作者与作者，支持独立创作</p>
+        <p id="heroSubtitle" class="settings-pending" data-i18n="circles.heroSubtitle">最新更新的作者，以及全部同人创作者</p>
       </div>
-      <div class="cl-list-count">共 <b id="circleTotalCount">0</b> 位入驻作者</div>
-    </div>
-    <div class="cl-list-sub">
-      <strong id="pageTitle" class="settings-pending" data-i18n="circles.listTitle">入驻作者</strong>
-      <span id="pageSubtitle" class="settings-pending" data-i18n="circles.subtitle">在 f7goods 展示作品的同人作者</span>
-    </div>
-  </section>
+      <div class="cir-head-stats">
+        <div><b id="circleTotalCount">0</b><span>位作者</span></div>
+        <div><b id="circleOfficialCount">0</b><span>官方</span></div>
+        <div><b id="circleGroupCount">0</b><span>社团</span></div>
+        <div><b id="circleIndividualCount">0</b><span>个人</span></div>
+      </div>
+    </header>
+    <span id="pageTitle" style="display:none"></span>
+    <span id="pageSubtitle" style="display:none"></span>
 
-  <main class="main-content">
-    <div class="cl-toolbar-card">
-      <div class="cl-toolbar-row" id="categoryFiltersRow" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;">
+    <div class="cir-toolbar">
+      <div class="cir-filters" id="categoryFiltersRow">
         <div id="categoryFilters" style="display:contents;"></div>
         <a class="cl-handbook-btn" href="/author-handbook/" title="进入作者手册视图">作者手册</a>
       </div>
-      <div class="cl-toolbar-row">
+      <span class="cir-sep" aria-hidden="true"></span>
+      <div class="cir-filters">
         <button type="button" class="filter-btn" data-circle-filter="followed" onclick="toggleCircleFilter('followed')" data-i18n="common.follow">关注</button>
-        <select class="form-input" id="sortSelect">
-          <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
-          <option value="new">最新注册</option>
-          <option value="order" data-i18n="common.sortDefault">默认排序</option>
-          <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
-        </select>
-        <input type="text" class="search-input" placeholder="搜索作者..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
-        <span class="cl-show-count">显示 <b id="circleShowCount">0</b></span>
       </div>
+      <div class="cir-toolbar-spacer"></div>
+      <select class="cir-select" id="sortSelect">
+        <option value="random" selected data-i18n="common.sortRandom">随机排序</option>
+        <option value="new">最新注册</option>
+        <option value="order" data-i18n="common.sortDefault">默认排序</option>
+        <option value="name-asc" data-i18n="common.nameAsc">名称 A→Z</option>
+      </select>
+      <input type="text" class="cir-search" placeholder="搜索作者、简介…" id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
     </div>
 
-    <div class="cards-grid cl-author-grid" id="circlesGrid">
-      <div id="circlesSkeleton" class="skeleton-grid">
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
-        <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+    <section class="cir-section cir-latest" id="latestCirclesSection">
+      <div class="cir-section-head">
+        <h2>最新更新的作者 <small>RECENTLY UPDATED</small></h2>
+        <p>最近有新作品发布的作者</p>
       </div>
-    </div>
+      <div class="cl-author-grid" id="latestCirclesGrid"></div>
+    </section>
+
+    <section class="cir-section cir-all">
+      <div class="cir-section-head">
+        <h2>全部作者 <small>ALL AUTHORS</small></h2>
+        <p>显示 <b id="circleShowCount">0</b> 位作者</p>
+      </div>
+      <div class="cards-grid cl-author-grid" id="circlesGrid">
+        <div id="circlesSkeleton" class="skeleton-grid">
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020cb"></script>
+  <script src="/js/api.js?v=20261020cc"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20261020cb"></script>
-  <script src="/js/main.js?v=20261020cb"></script>
+  <script src="/js/i18n.js?v=20261020cc"></script>
+  <script src="/js/main.js?v=20261020cc"></script>
   <script>
     initPage('circles');
     if (typeof isAuthorLoggedIn === 'function' && isAuthorLoggedIn() && typeof mountAuthorCreateFab === 'function') {
@@ -85,6 +100,7 @@
     let allCircles = [];
     let circleTagsMap = {};
     let circleWorksCountMap = {};
+    let circleLatestWorkTimeMap = {};
     let currentCategory = 'all';
     let currentCircleFilter = 'none'; // 'none', 'followed'
 
@@ -109,11 +125,16 @@
     function buildWorksMaps(works) {
       circleTagsMap = {};
       circleWorksCountMap = {};
+      circleLatestWorkTimeMap = {};
       (works || []).forEach(w => {
         (w.circles || []).forEach(cid => {
           if (!circleTagsMap[cid]) circleTagsMap[cid] = [];
           circleTagsMap[cid].push(...(w.tags || []));
           circleWorksCountMap[cid] = (circleWorksCountMap[cid] || 0) + 1;
+          const stamp = new Date(w.createdAt || w.releaseDate || 0).getTime();
+          if (Number.isFinite(stamp) && stamp > (circleLatestWorkTimeMap[cid] || 0)) {
+            circleLatestWorkTimeMap[cid] = stamp;
+          }
         });
       });
       Object.keys(circleTagsMap).forEach(k => {
@@ -172,89 +193,104 @@
       }
     }
 
-    function renderCircles() {
-      const grid = document.getElementById('circlesGrid');
-      // Remove skeleton
-      document.getElementById('circlesSkeleton')?.remove();
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      let filtered = allCircles;
-      if (currentCategory !== 'all') {
-        filtered = filtered.filter(c => c.category === currentCategory);
-      }
+function circleTimeAgo(ts) {
+  if (!ts) return '近期活跃';
+  const diff = Date.now() - ts;
+  const days = Math.floor(diff / 86400000);
+  if (days <= 0) return '今天';
+  if (days === 1) return '昨天';
+  if (days < 30) return days + ' 天前';
+  if (days < 365) return Math.floor(days / 30) + ' 个月前';
+  return Math.floor(days / 365) + ' 年前';
+}
 
-      // User filter (followed)
-      const followedIds = getFollowedIds();
-      if (currentCircleFilter === 'followed') {
-        filtered = filtered.filter(c => followedIds.includes(c.id));
-      }
+function circleCardHtml(circle, followedSet, isLatest) {
+  const cover = circle.cardCover || circle.logo || '';
+  const workCount = circleWorksCountMap[circle.id] || 0;
+  const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || '') : '';
+  const isFollowed = followedSet.has(circle.id);
+  const footText = isLatest
+    ? '最近更新 ' + circleTimeAgo(circleLatestWorkTimeMap[circle.id])
+    : (isFollowed ? '已关注' : '作者');
+  return `
+    <a class="cl-author-card" href="/circle-detail.html?id=${encodeURIComponent(circle.id)}">
+      <div class="cl-author-cover">
+        ${cover
+          ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="" loading="lazy">`
+          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-family:'Noto Serif SC',Georgia,serif;font-size:1.4rem;">${escapeHtml((circle.name || '?').charAt(0))}</div>`}
+      </div>
+      <div class="cl-author-body">
+        <div class="cl-author-avatar">
+          ${circle.logo
+            ? `<img src="${escapeHtml(imgUrl(circle.logo, 160))}" alt="${escapeHtml(circle.name)}" loading="lazy">`
+            : escapeHtml((circle.name || '?').charAt(0))}
+        </div>
+        <div class="cl-author-name">${escapeHtml(circle.name)}</div>
+        <div class="cl-author-meta">
+          ${catLabel ? `<span class="cl-author-chip cat">${escapeHtml(catLabel)}</span>` : ''}
+          <span class="cl-author-chip">${workCount} 件作品</span>
+        </div>
+        <div class="cl-author-desc">${escapeHtml(circle.description || '')}</div>
+        <div class="cl-author-foot">
+          <span>${footText}</span>
+          <span class="go">查看 →</span>
+        </div>
+      </div>
+    </a>`;
+}
 
-      if (search) {
-        filtered = filtered.filter(c =>
-          c.name.toLowerCase().includes(search) ||
-          (c.description || '').toLowerCase().includes(search) ||
-          (circleTagsMap[c.id] || []).some(t => t.toLowerCase().includes(search))
-        );
-      }
+function renderCircles() {
+  const grid = document.getElementById('circlesGrid');
+  const latestGrid = document.getElementById('latestCirclesGrid');
+  const latestSection = document.getElementById('latestCirclesSection');
+  document.getElementById('circlesSkeleton')?.remove();
+  const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  let filtered = allCircles;
+  if (currentCategory !== 'all') filtered = filtered.filter(c => c.category === currentCategory);
 
-      // Sorting
-      filtered = filtered.slice();
-      const sortVal = document.getElementById('sortSelect')?.value || 'random';
-      if (sortVal === 'name-asc') {
-        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      } else if (sortVal === 'order') {
-        filtered.sort((a, b) => (a.order || 0) - (b.order || 0));
-      } else if (sortVal === 'new') {
-        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      } else {
-        // random
-        filtered.sort((a, b) => (a._randomRank || 0) - (b._randomRank || 0));
-      }
+  const followedIds = getFollowedIds();
+  if (currentCircleFilter === 'followed') filtered = filtered.filter(c => followedIds.includes(c.id));
 
-      const totalEl = document.getElementById('circleTotalCount');
-      if (totalEl) totalEl.textContent = allCircles.length;
-      const showEl = document.getElementById('circleShowCount');
-      if (showEl) showEl.textContent = filtered.length;
+  if (search) {
+    filtered = filtered.filter(c =>
+      c.name.toLowerCase().includes(search) ||
+      (c.description || '').toLowerCase().includes(search) ||
+      (circleTagsMap[c.id] || []).some(t => t.toLowerCase().includes(search))
+    );
+  }
 
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔍</div><p>${t('common.noMatchingAuthors')}</p></div>`;
-        return;
-      }
+  filtered = filtered.slice();
+  const sortVal = document.getElementById('sortSelect')?.value || 'random';
+  if (sortVal === 'name-asc') filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  else if (sortVal === 'order') filtered.sort((a, b) => (a.order || 0) - (b.order || 0));
+  else if (sortVal === 'new') filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  else filtered.sort((a, b) => (a._randomRank || 0) - (b._randomRank || 0));
 
-      const followedSet = new Set(followedIds);
-      grid.innerHTML = filtered.map(circle => {
-        // Card cover: author-chosen cover, else fall back to avatar (logo)
-        const cover = circle.cardCover || circle.logo || '';
-        const workCount = circleWorksCountMap[circle.id] || 0;
-        const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || '') : '';
-        const isFollowed = followedSet.has(circle.id);
-        return `
-        <a class="cl-author-card" href="/circle-detail.html?id=${encodeURIComponent(circle.id)}">
-          <div class="cl-author-cover">
-            ${cover
-              ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="" loading="lazy">`
-              : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b6560;font-family:'Noto Serif SC',Georgia,serif;font-size:1.4rem;">${escapeHtml((circle.name || '?').charAt(0))}</div>`}
-          </div>
-          <div class="cl-author-body">
-            <div class="cl-author-avatar">
-              ${circle.logo
-                ? `<img src="${escapeHtml(imgUrl(circle.logo, 160))}" alt="${escapeHtml(circle.name)}" loading="lazy">`
-                : escapeHtml((circle.name || '?').charAt(0))}
-            </div>
-            <div class="cl-author-name">${escapeHtml(circle.name)}</div>
-            <div class="cl-author-meta">
-              ${catLabel ? `<span class="cl-author-chip cat">${escapeHtml(catLabel)}</span>` : ''}
-              <span class="cl-author-chip">${workCount} 件作品</span>
-            </div>
-            <div class="cl-author-desc">${escapeHtml(circle.description || '')}</div>
-            <div class="cl-author-foot">
-              <span>${isFollowed ? '已关注' : '作者'}</span>
-              <span class="go">查看 →</span>
-            </div>
-          </div>
-        </a>
-      `;
-      }).join('');
-    }
+  const totalEl = document.getElementById('circleTotalCount');
+  if (totalEl) totalEl.textContent = allCircles.length;
+  const showEl = document.getElementById('circleShowCount');
+  if (showEl) showEl.textContent = filtered.length;
+  const official = allCircles.filter(c => c.category === 'guanfang').length;
+  const groups = allCircles.filter(c => c.category === 'shetuan').length;
+  const individuals = allCircles.filter(c => c.category === 'geren').length;
+  if (document.getElementById('circleOfficialCount')) document.getElementById('circleOfficialCount').textContent = official;
+  if (document.getElementById('circleGroupCount')) document.getElementById('circleGroupCount').textContent = groups;
+  if (document.getElementById('circleIndividualCount')) document.getElementById('circleIndividualCount').textContent = individuals;
+
+  if (filtered.length === 0) {
+    if (latestSection) latestSection.style.display = 'none';
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔍</div><p>${t('common.noMatchingAuthors')}</p></div>`;
+    return;
+  }
+
+  const followedSet = new Set(followedIds);
+  const latest = filtered.filter(c => (circleWorksCountMap[c.id] || 0) > 0).sort((a, b) =>
+    (circleLatestWorkTimeMap[b.id] || 0) - (circleLatestWorkTimeMap[a.id] || 0)
+  ).slice(0, 4);
+  if (latestSection) latestSection.style.display = latest.length ? '' : 'none';
+  if (latestGrid) latestGrid.innerHTML = latest.map(c => circleCardHtml(c, followedSet, true)).join('');
+  grid.innerHTML = filtered.map(c => circleCardHtml(c, followedSet, false)).join('');
+}
 
     document.getElementById('searchInput').addEventListener('input', debounce(renderCircles));
     document.getElementById('sortSelect').addEventListener('change', renderCircles);
