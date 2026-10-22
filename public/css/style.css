@@ -5263,3 +5263,15 @@ a.cl-series-card:hover { border-color: var(--accent); }
 /* Contact: plain contact info (no link/button behavior) */
 .contact-channel.is-static{cursor:default;user-select:text}
 .contact-channel.is-static:hover{border-color:var(--line);transform:none}
+
+/* Series detail: wishlist quick control */
+.series-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:.55rem}
+.series-card-foot .card-price{margin:0!important}
+.cl-w-wish{position:static;height:26px;padding:0 9px;border-radius:999px;flex-shrink:0;background:transparent;border:1px dashed rgba(217,79,92,.55);font-size:.7rem;font-weight:600;color:var(--accent);display:inline-flex;align-items:center;gap:.15rem;font-family:inherit;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease}
+.cl-w-wish:hover{background:rgba(217,79,92,.1);border-color:var(--accent)}
+.cl-w-wish.on{height:28px;padding:0 5px;gap:.25rem;background:rgba(217,79,92,.08);border:1px solid rgba(217,79,92,.4);color:var(--accent)}
+.cl-w-wish .wq-btn{width:21px;height:21px;padding:0;border:none;border-radius:50%;background:var(--accent);color:#fff;font-family:inherit;font-size:.85rem;font-weight:700;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:transform .12s ease,background .15s ease}
+.cl-w-wish .wq-btn:hover{background:var(--accent-dark)}
+.cl-w-wish .wq-btn:active{transform:scale(.85)}
+.cl-w-wish .wq-num{min-width:15px;text-align:center;font-size:.76rem;font-weight:700}
+@media(max-width:600px){.cl-w-wish{height:30px;padding:0 11px}.cl-w-wish.on{height:32px;padding:0 6px;gap:.3rem}.cl-w-wish .wq-btn{width:24px;height:24px}.cl-w-wish .wq-num{min-width:16px;font-size:.8rem}}
