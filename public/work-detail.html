@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020bs">
+  <link rel="stylesheet" href="/css/style.css?v=20261020bt">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -46,9 +46,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020bs"></script>
-  <script src="/js/i18n.js?v=20261020bs"></script>
-  <script src="/js/main.js?v=20261020bs"></script>
+  <script src="/js/api.js?v=20261020bt"></script>
+  <script src="/js/i18n.js?v=20261020bt"></script>
+  <script src="/js/main.js?v=20261020bt"></script>
   <script>
     async function loadWork() {
       const params = new URLSearchParams(location.search);
@@ -69,6 +69,19 @@
         const workCircles = (work.circles || []).map(cid => circles.find(c => c.id === cid)).filter(Boolean);
         const relatedEvents = allEvents.filter(e => (e.relatedWorks || []).includes(work.id));
         const relatedProjects = allProjects.filter(p => (p.works || []).includes(work.id));
+        let authorWorks = [];
+        if (workCircles[0]) {
+          try { authorWorks = await F7API.getWorks({ circleId: workCircles[0].id }); } catch (e) { authorWorks = []; }
+        }
+        const otherWorks = authorWorks.filter(w => w.id !== work.id).slice(0, 4);
+        const primaryEvent = relatedEvents[0] || null;
+        const socialEntries = Object.entries(work.socialLinks || {}).filter(([k, v]) => v && !['contactLabel', 'websiteLabel'].includes(k));
+        const firstSocial = socialEntries[0] || null;
+        const contactEntry = firstSocial ? {
+          value: firstSocial[1],
+          isUrl: String(firstSocial[1]).startsWith('http'),
+          label: firstSocial[0] === 'website' ? (work.socialLinks.websiteLabel || '官网') : (work.socialLinks.contactLabel || (firstSocial[0] === 'qq' ? 'QQ' : firstSocial[0]))
+        } : null;
         document.title = `${workTitle(work)} — f7goods`;
         document.querySelector('meta[property="og:title"]').content = workTitle(work);
         document.querySelector('meta[property="og:description"]').content = (work.description || '').substring(0, 160);
@@ -98,127 +111,102 @@
         const authorLine = workCircles.map(c => escapeHtml(c.name)).filter(Boolean).join(' · ');
         const catLabel = CATEGORIES[work.category] || '';
         container.innerHTML = `
-          <div class="exhibit-stage">
-            <div class="exhibit-crumb">
-              <a href="/">← ${t('nav.works')}</a>
-              <span> › </span>
-              <span>${escapeHtml(workTitle(work))}</span>
+          <div class="wd-page">
+            <div class="wd-crumb">
+              <a href="/">${t('nav.works')}</a><span>›</span><span>${escapeHtml(workTitle(work))}</span>
             </div>
-            <div class="exhibit-grid">
-              <div class="exhibit-frame">
-                <div class="exhibit-art" id="detailMainImg" ${galleryImages.length ? `tabindex="0" role="button" aria-label="${escapeHtml(t('common.openImage'))}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"` : ''} onclick="${galleryImages.length ? `openLightbox(${JSON.stringify(galleryImages).replace(/"/g, '&quot;')}, 0)` : ''}">
+
+            <div class="wd-product">
+              <div class="wd-gallery">
+                <div class="wd-stage" id="detailMainImg" ${galleryImages.length ? `tabindex="0" role="button" aria-label="${escapeHtml(t('common.openImage'))}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"` : ''} onclick="${galleryImages.length ? `openLightbox(${JSON.stringify(galleryImages).replace(/"/g, '&quot;')}, window._detailIndex || 0)` : ''}">
                   ${mainImg
-                    ? `<img src="${escapeHtml(imgUrl(mainImg, 800))}" alt="${escapeHtml(workTitle(work))}" id="detailMainImgEl">`
+                    ? `<img src="${escapeHtml(imgUrl(mainImg, 1200))}" alt="${escapeHtml(workTitle(work))}" id="detailMainImgEl">`
                     : '<span class="placeholder-icon">🎨</span>'}
+                  ${galleryImages.length ? `<span class="wd-count" id="detailImageCount">1 / ${galleryImages.length}</span>` : ''}
+                  ${galleryImages.length ? `<button type="button" class="wd-zoom" aria-label="${escapeHtml(t('common.openImage'))}" onclick="event.stopPropagation();openLightbox(${JSON.stringify(galleryImages).replace(/"/g, '&quot;')}, window._detailIndex || 0)">⤢</button>` : ''}
                 </div>
                 ${galleryImages.length > 1 ? `
-                  <div class="exhibit-thumbs" id="detailThumbs">
-                    ${galleryImages.map((img, i) => `<img src="${escapeHtml(imgUrl(img, 320))}" class="${i === 0 ? 'on' : ''}" alt="" data-idx="${i}" onclick="switchDetailImage(${i})">`).join('')}
+                  <div class="wd-thumbs" id="detailThumbs">
+                    ${galleryImages.map((img, i) => `<button type="button" class="wd-thumb${i === 0 ? ' on' : ''}" data-idx="${i}" onclick="switchDetailImage(${i})"><img src="${escapeHtml(imgUrl(img, 240))}" alt="" loading="lazy"></button>`).join('')}
                   </div>
                 ` : ''}
+                <button type="button" class="wd-shareimg" id="shareImageBtn" onclick="shareWorkImage()">生成作品分享图</button>
               </div>
-              <div class="exhibit-plaque">
-                <div class="exhibit-status">${STATUS_LABELS[work.status] || ''}</div>
-                <h1 class="exhibit-title">${escapeHtml(workTitle(work))}${isDeadlineSoon(work.endDate) ? ` <span class="deadline-badge" style="position:static;font-size:0.7rem;vertical-align:middle;">${t('common.deadlineSoon')}</span>` : ''}</h1>
-                <div class="exhibit-subtitle">${authorLine}${catLabel ? (authorLine ? ' · ' : '') + escapeHtml(catLabel) : ''}</div>
-                <div class="exhibit-rule"></div>
-                <div class="exhibit-meta">
-                  <div class="info-row">
-                    <span class="info-label">${t('works.price')}</span>
-                    <span class="info-value" style="color:var(--accent);font-weight:700;">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料'))}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">${t('works.releaseDate')}</span>
-                    <span class="info-value">${formatDate(work.releaseDate)}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">${t('common.category')}</span>
-                    <span class="info-value">${catLabel}</span>
-                  </div>
-                  ${workCircles.length > 0 ? `
-                  <div class="info-row">
-                    <span class="info-label">${t('works.author')}</span>
-                    <span class="info-value">${workCircles.map(c => `<a href="/circle-detail.html?id=${c.id}" class="detail-link" style="color:var(--ink);text-decoration:none;">${escapeHtml(c.name)}</a>`).join('、')}</span>
-                  </div>
-                  ` : ''}
-                  ${work.isCommissioned && work.commissionedBy ? `
-                  <div class="info-row">
-                    <span class="info-label">${t('works.commissionedBy')}</span>
-                    <span class="info-value">${escapeHtml(work.commissionedBy)}</span>
-                  </div>
-                  ` : ''}
+
+              <aside class="wd-info">
+                <div class="wd-statusline"><span class="wd-dash"></span><span>${escapeHtml(STATUS_LABELS[work.status] || '')}</span></div>
+                <div class="wd-title-row">
+                  <h1>${escapeHtml(workTitle(work))}</h1>
+                  ${isDeadlineSoon(work.endDate) ? `<span class="deadline-badge" style="position:static;font-size:0.7rem;vertical-align:middle;">${t('common.deadlineSoon')}</span>` : ''}
                 </div>
-                ${work.description ? `<div class="exhibit-desc">${nl2br(work.description)}</div>` : ''}
-                <div class="exhibit-actions">
+                <div class="wd-author">
+                  ${workCircles[0]?.logo ? `<img src="${escapeHtml(imgUrl(workCircles[0].logo, 80))}" alt="">` : ''}
+                  <span>${workCircles.length ? `作者 ${workCircles.map(c => `<a href="/circle-detail.html?id=${c.id}">${escapeHtml(c.name)}</a>`).join('、')}` : ''}${catLabel ? `${workCircles.length ? ' · ' : ''}${escapeHtml(catLabel)}` : ''}</span>
+                </div>
+
+                <div class="wd-price-row">
+                  <div class="wd-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料'))}<small>PRICE</small></div>
+                </div>
+
+                <div class="wd-actions">
                   ${renderWantButton(work.id, work.wants)}
-                  <span class="act-sep" aria-hidden="true"></span>
                   ${renderLikeButton(work.id, work.likes)}
                   ${renderShareButton(workTitle(work), location.href)}
                 </div>
-              </div>
+
+                <div class="wd-meta">
+                  <div class="wd-meta-row"><span>${t('works.releaseDate')}</span><b>${formatDate(work.releaseDate)}</b></div>
+                  <div class="wd-meta-row"><span>${t('common.category')}</span><b>${escapeHtml(catLabel)}</b></div>
+                  ${primaryEvent ? `<div class="wd-meta-row"><span>参与活动</span><b><a href="/event-detail.html?id=${encodeURIComponent(primaryEvent.id)}">${escapeHtml(primaryEvent.title)}</a></b></div>` : ''}
+                  ${contactEntry ? `<div class="wd-meta-row"><span>联系方式</span><b>${contactEntry.isUrl ? `<a href="${escapeHtml(contactEntry.value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(contactEntry.label)}</a>` : escapeHtml(contactEntry.value)}</b></div>` : ''}
+                  ${work.createdAt ? `<div class="wd-meta-row"><span>更新时间</span><b>${formatDate(work.createdAt)}</b></div>` : ''}
+                </div>
+
+                ${work.isCommissioned ? `<div class="wd-commission">约稿作品</div>` : ''}
+              </aside>
             </div>
-            <div class="exhibit-caption">f7goods · ${escapeHtml(workTitle(work))}</div>
-          </div>
-          <div class="exhibit-side">
-            ${work.socialLinks && Object.keys(work.socialLinks).filter(k => work.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
-              <div class="detail-info-card">
-                <h3 style="font-size:0.95rem;font-weight:700;margin:0 0 0.75rem;">${t('works.contactInfo')}</h3>
-                ${Object.entries(work.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
-                  const isUrl = url.startsWith('http');
-                  const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
-                  const label = key === 'website' ? (work.socialLinks.websiteLabel || defaultLabel) : (work.socialLinks.contactLabel || defaultLabel);
-                  return isUrl
-                    ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="detail-social-link" style="display:inline-block;padding:0.3rem 0.8rem;color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;">${escapeHtml(label)}</a>`
-                    : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;flex-wrap:wrap;">
-                         <span style="display:inline-block;padding:0.3rem 0.8rem;background:var(--paper);border:1px solid var(--line);color:var(--ink);border-radius:100px;font-weight:500;">${escapeHtml(label)}</span>
-                         <span style="color:var(--accent);font-weight:500;">${escapeHtml(url)}</span>
-                       </div>`;
-                }).join('')}
-              </div>
-            ` : ''}
-            ${relatedEvents.length > 0 ? `
-            <div class="detail-info-card">
-              <h3 style="font-size:0.95rem;font-weight:700;margin:0 0 0.5rem;">${t('works.relatedEvents')}</h3>
-              ${relatedEvents.map(e => `
-                <a href="/event-detail.html?id=${e.id}" class="detail-link" style="display:block;padding:0.55rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--line);">
-                  <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(e.title)}</div>
-                  <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(e.date)}${e.location ? ' · ' + escapeHtml(e.location) : ''}</div>
-                </a>
-              `).join('')}
-            </div>
-            ` : ''}
-            ${relatedProjects.length > 0 ? `
-            <div class="detail-info-card">
-              <h3 style="font-size:0.95rem;font-weight:700;margin:0 0 0.5rem;">${t('works.relatedProjects')}</h3>
-              ${relatedProjects.map(p => `
-                <a href="/project-detail.html?id=${p.id}" class="detail-link" style="display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--line);">
-                  <div>
-                    <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
-                    <span class="card-tag ${p.status}" style="font-size:0.7rem;padding:0.15rem 0.5rem;margin-top:0.2rem;display:inline-block;">${PROJECT_STATUS_LABELS[p.status] || ''}</span>
+
+            <div class="wd-content-grid">
+              <div class="wd-main">
+                ${otherWorks.length ? `
+                <section class="wd-section">
+                  <div class="wd-section-head">
+                    <div><h2>同作者作品</h2></div>
+                    ${workCircles[0] ? `<a href="/circle-detail.html?id=${encodeURIComponent(workCircles[0].id)}">查看全部 →</a>` : ''}
                   </div>
-                </a>
-              `).join('')}
-            </div>
-            ` : ''}
-            ${work.tags && work.tags.length ? `
-            <div class="detail-info-card">
-              <h3 style="font-size:0.95rem;font-weight:700;margin:0 0 0.5rem;">${t('works.tags')}</h3>
-              <div class="tag-list">
-                ${work.tags.map(tag => `<a href="/?q=${encodeURIComponent(tag)}" class="tag" style="text-decoration:none;">${escapeHtml(tag)}</a>`).join('')}
+                  <div class="wd-related">
+                    ${otherWorks.map(w => `<a class="wd-rel" href="/work-detail.html?id=${encodeURIComponent(w.id)}">
+                      <div class="wd-rel-img">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 360))}" alt="${escapeHtml(workTitle(w))}" loading="lazy">` : '<span>作品</span>'}</div>
+                      <b>${escapeHtml(workTitle(w))}</b>
+                      <span>${escapeHtml(STATUS_LABELS[w.status] || '')}</span>
+                    </a>`).join('')}
+                  </div>
+                </section>` : ''}
               </div>
+
+              <aside class="wd-side">
+                ${relatedEvents.length ? `<div class="wd-aside-card">
+                  <h3>${t('works.relatedEvents')}</h3>
+                  ${relatedEvents.slice(0, 3).map(e => `<a class="wd-event" href="/event-detail.html?id=${encodeURIComponent(e.id)}">
+                    ${e.coverImage ? `<img src="${escapeHtml(imgUrl(e.coverImage, 160))}" alt="" loading="lazy">` : ''}
+                    <div><b>${escapeHtml(e.title)}</b><span>${formatDate(e.date)}${e.location ? ' · ' + escapeHtml(e.location) : ''}</span></div>
+                  </a>`).join('')}
+                </div>` : ''}
+                ${relatedProjects.length ? `<div class="wd-aside-card">
+                  <h3>${t('works.relatedProjects')}</h3>
+                  ${relatedProjects.slice(0, 3).map(p => `<a class="wd-event" href="/project-detail.html?id=${encodeURIComponent(p.id)}">
+                    ${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 160))}" alt="" loading="lazy">` : ''}
+                    <div><b>${escapeHtml(p.title)}</b><span>${escapeHtml(PROJECT_STATUS_LABELS[p.status] || '')}</span></div>
+                  </a>`).join('')}
+                </div>` : ''}
+              </aside>
             </div>
-            ` : ''}
-          </div>
-          <div class="exhibit-sharebar" style="max-width:1000px;margin:1.75rem auto 0.5rem;display:flex;justify-content:center;">
-            <button type="button" class="exhibit-share-btn" id="shareImageBtn" onclick="shareWorkImage()"
-              style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 30px;border:1px solid #D94F5C;border-radius:999px;background:#D94F5C;color:#fff;font-family:inherit;font-size:13.5px;font-weight:600;letter-spacing:.06em;line-height:1.2;cursor:pointer;">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px;flex:0 0 auto;display:block;">
-                <rect x="3" y="4" width="18" height="16" rx="3"/>
-                <circle cx="8.5" cy="9.5" r="1.6"/>
-                <path d="M4 17.5l5-4.5 3.5 3 3-2.5 4.5 4"/>
-              </svg>
-              ${t('works.shareImage')}
-            </button>
+
+            <div class="wd-mobile-bar">
+              <div class="wd-mobile-price">${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料'))}</div>
+              ${renderLikeButton(work.id, work.likes)}
+              ${renderWantButton(work.id, work.wants)}
+            </div>
           </div>
         `;
         window._detailGallery = galleryImages;
