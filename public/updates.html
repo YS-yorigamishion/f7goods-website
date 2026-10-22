@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ch">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ci">
 <link rel="canonical" href="https://f7goods.com/updates.html">
 <meta property="og:url" content="https://f7goods.com/updates.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -24,55 +24,56 @@
 <body>
   <nav class="navbar" id="navbar"></nav>
 
-  <section class="hero cl-list-hero">
-    <div class="cl-list-mast">
+<main class="main-content updates-page">
+    <header class="upd-head">
       <div>
+        <div class="upd-kicker">COMMUNITY JOURNAL</div>
         <h1 id="heroTitle" class="settings-pending" data-i18n="updates.heroTitle">同人动态</h1>
-        <p id="heroSubtitle" class="settings-pending" data-i18n="updates.heroSubtitle">了解同人圈的最新动态和重要更新</p>
+        <p id="heroSubtitle" class="settings-pending" data-i18n="updates.heroSubtitle">按时间记录作者公告、作品更新与社区投稿</p>
       </div>
-      <div class="cl-list-count">共 <b id="updateTotalCount">0</b> 条动态</div>
-    </div>
-    <div class="cl-list-sub">
-      <strong id="pageTitle" class="settings-pending" data-i18n="updates.listTitle">动态列表</strong>
-      <span id="pageSubtitle" class="settings-pending" data-i18n="updates.listSubtitle">按发布时间倒序排列</span>
-    </div>
-  </section>
-
-  <main class="main-content updates-page">
-    <div class="cl-toolbar-card">
-      <div class="cl-toolbar-row" id="categoryFilters"></div>
-      <div class="cl-toolbar-row">
-        <button type="button" class="filter-btn" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
-        <select class="form-input" id="sortSelect">
-          <option value="date-desc" selected data-i18n="common.dateDesc">发布日期 ↓ 新→旧</option>
-          <option value="date-asc" data-i18n="common.dateAsc">发布日期 ↑ 旧→新</option>
-        </select>
-        <input type="text" class="search-input" placeholder="搜索动态..." id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
-        <span class="cl-show-count">显示 <b id="updateShowCount">0</b></span>
+      <div class="upd-head-stats">
+        <div><b id="updateTotalCount">0</b><span>条动态</span></div>
+        <div><b id="updateAuthorCount">0</b><span>位作者</span></div>
+        <div><b id="updateLatestYear">—</b><span>最新年份</span></div>
       </div>
+    </header>
+    <span id="pageTitle" style="display:none"></span>
+    <span id="pageSubtitle" style="display:none"></span>
+
+    <div class="upd-toolbar">
+      <div class="upd-filters" id="categoryFilters"></div>
+      <span class="upd-sep" aria-hidden="true"></span>
+      <button type="button" class="filter-btn" id="followFilterBtn" onclick="toggleFollowFilter()" data-i18n="common.follow">关注</button>
+      <div class="upd-toolbar-spacer"></div>
+      <select class="upd-select" id="sortSelect">
+        <option value="date-desc" selected data-i18n="common.dateDesc">发布日期 ↓ 新→旧</option>
+        <option value="date-asc" data-i18n="common.dateAsc">发布日期 ↑ 旧→新</option>
+      </select>
+      <input type="text" class="upd-search" placeholder="搜索动态、作者…" id="searchInput" data-i18n-placeholder="common.searchPlaceholder">
+      <span style="display:none;">显示 <b id="updateShowCount">0</b></span>
     </div>
 
-    <div id="updatesGrid" class="cl-feed">
+    <div id="updatesGrid" class="upd-timeline">
       <div id="updatesSkeleton">
-        <div class="skeleton-card" style="margin-bottom:0.6rem;"><div style="display:flex;gap:0;"><div class="skeleton" style="width:168px;height:104px;flex-shrink:0;"></div><div style="padding:0.8rem;flex:1;"><div class="skeleton skeleton-text" style="width:60%;"></div><div class="skeleton skeleton-text short" style="width:80%;margin-top:0.5rem;"></div></div></div></div>
-        <div class="skeleton-card" style="margin-bottom:0.6rem;"><div style="display:flex;gap:0;"><div class="skeleton" style="width:168px;height:104px;flex-shrink:0;"></div><div style="padding:0.8rem;flex:1;"><div class="skeleton skeleton-text" style="width:70%;"></div><div class="skeleton skeleton-text short" style="width:75%;margin-top:0.5rem;"></div></div></div></div>
-        <div class="skeleton-card"><div style="display:flex;gap:0;"><div class="skeleton" style="width:168px;height:104px;flex-shrink:0;"></div><div style="padding:0.8rem;flex:1;"><div class="skeleton skeleton-text" style="width:50%;"></div><div class="skeleton skeleton-text short" style="width:85%;margin-top:0.5rem;"></div></div></div></div>
+        <div class="skeleton-card" style="height:170px;margin-bottom:12px;"></div>
+        <div class="skeleton-card" style="height:170px;"></div>
       </div>
     </div>
   </main>
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020ch"></script>
+  <script src="/js/api.js?v=20261020ci"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20261020ch"></script>
-  <script src="/js/main.js?v=20261020ch"></script>
+  <script src="/js/i18n.js?v=20261020ci"></script>
+  <script src="/js/main.js?v=20261020ci"></script>
   <script>
     initPage('updates');
     if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '发布动态', tab: 'my-updates' });
 
     let allUpdates = [];
     let circlesMap = {};
+    let circleLogosMap = {};
     let circlesData = [];
     let currentUpdateCategory = 'all';
     let currentFollowFilter = false;
@@ -128,7 +129,10 @@
         ]);
         allUpdates = updates;
         circlesData = circles;
-        circles.forEach(c => circlesMap[c.id] = c.name);
+        circles.forEach(c => {
+          circlesMap[c.id] = c.name;
+          circleLogosMap[c.id] = c.logo || '';
+        });
         window._updateCategories = catsResp.updateCategories || [];
         window._updateStatus = catsResp.updateStatus || [];
         buildUpdateFilterButtons();
@@ -151,103 +155,97 @@
       return parts[0] + ' 年 ' + Number(parts[1]) + ' 月';
     }
 
-    function updateRowHtml(u, isPinned) {
-      const cover = u.coverImage || (u.images && u.images[0]) || '';
-      const authorNames = (u.relatedCircles || []).map(cid => circlesMap[cid]).filter(Boolean).join('、');
-      const catLabel = updateCatLabels[u.category] || '';
-      const stLabel = updateStLabels[u.status] || '';
-      const stDone = /结束|完成/.test(stLabel);
-      const d = String(u.publishDate || '');
-      const day = d.slice(8, 10) || '';
-      const mon = d.slice(5, 7) ? Number(d.slice(5, 7)) + '月' : '';
-      return `
-        <div class="cl-upd-row${isPinned ? ' pinned' : ''}">
-          <div class="cl-upd-date">${day ? `<b>${day}</b>${mon}` : ''}</div>
-          <a class="cl-upd-card${isPinned ? ' pinned' : ''}" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
-            <div class="cl-upd-thumb">
-              ${cover
-                ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="${escapeHtml(u.title)}" loading="lazy">`
-                : `<span style="position:relative;z-index:1;">${escapeHtml((u.title || '?').charAt(0))}</span>`}
-            </div>
-            <div class="cl-upd-main">
-              <div class="cl-upd-meta">
-                ${isPinned ? `<span class="cl-upd-chip pin">${t('updates.pinned') || '置顶'}</span>` : ''}
-                ${catLabel ? `<span class="cl-upd-chip cat">${escapeHtml(catLabel)}</span>` : ''}
-                ${stLabel ? `<span class="cl-upd-chip${stDone ? ' done' : ''}">${escapeHtml(stLabel)}</span>` : ''}
-              </div>
-              <div class="cl-upd-title">${escapeHtml(u.title)}</div>
-              ${authorNames ? `<div class="cl-upd-author">${escapeHtml(authorNames)}</div>` : ''}
-              <div class="cl-upd-excerpt">${escapeHtml(u.content || '')}</div>
-            </div>
-          </a>
-        </div>`;
+function updateDateParts(u) {
+  const d = String(u.publishDate || '');
+  const year = d.slice(0, 4);
+  const month = Number(d.slice(5, 7)) || '';
+  const day = d.slice(8, 10) || '';
+  return { year, month, day };
+}
+
+function updateRowHtml(u) {
+  const cover = u.coverImage || (u.images && u.images[0]) || '';
+  const authorCid = (u.relatedCircles || [])[0];
+  const authorName = authorCid ? (circlesMap[authorCid] || '未知作者') : 'f7goods';
+  const authorLogo = authorCid ? (circleLogosMap[authorCid] || '') : '';
+  const catLabel = updateCatLabels[u.category] || '';
+  const stLabel = updateStLabels[u.status] || '';
+  const d = updateDateParts(u);
+  const content = String(u.content || '').replace(/\s+/g, ' ').trim();
+  const readTime = content.length > 400 ? '阅读约 ' + Math.max(2, Math.round(content.length / 400)) + ' 分钟' : '短动态';
+  return `<div class="upd-row">
+    <div class="upd-row-date"><b>${d.day || '—'}</b><span>${d.month ? d.month + ' 月' : '日期待定'}</span></div>
+    <a class="upd-card${cover ? '' : ' no-image'}" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
+      <div class="upd-card-body">
+        <div class="upd-card-head">
+          ${authorLogo ? `<img src="${escapeHtml(imgUrl(authorLogo, 80))}" alt="" loading="lazy">` : `<span class="upd-avatar-fallback">${escapeHtml(authorName.charAt(0))}</span>`}
+          <b>${escapeHtml(authorName)}</b><small>${escapeHtml(u.publishDate || '')}</small>
+          <div class="upd-tags">${catLabel ? `<span class="upd-tag cat">${escapeHtml(catLabel)}</span>` : ''}${stLabel ? `<span class="upd-tag">${escapeHtml(stLabel)}</span>` : ''}</div>
+        </div>
+        <h2>${escapeHtml(u.title)}</h2>
+        ${content ? `<p class="upd-excerpt">${escapeHtml(content)}</p>` : ''}
+        <div class="upd-card-foot"><span>${readTime}</span><span class="go">阅读全文 →</span></div>
+      </div>
+      ${cover ? `<div class="upd-cover"><img src="${escapeHtml(imgUrl(cover, 480))}" alt="${escapeHtml(u.title)}" loading="lazy"></div>` : ''}
+    </a>
+  </div>`;
+}
+
+function renderUpdates() {
+  const grid = document.getElementById('updatesGrid');
+  document.getElementById('updatesSkeleton')?.remove();
+  const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
+  let filtered = [...allUpdates];
+
+  if (currentUpdateCategory !== 'all') filtered = filtered.filter(u => u.category === currentUpdateCategory);
+  if (currentFollowFilter) {
+    const followedList = getFollowedCircles();
+    filtered = filtered.filter(u => (u.relatedCircles || []).some(cid => followedList.includes(cid)));
+  }
+  if (search) {
+    filtered = filtered.filter(u =>
+      u.title.toLowerCase().includes(search) ||
+      (u.content || '').toLowerCase().includes(search)
+    );
+  }
+  if (sortVal === 'date-asc') filtered.sort((a, b) => new Date(a.publishDate) - new Date(b.publishDate));
+  else filtered.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate));
+
+  const totalEl = document.getElementById('updateTotalCount');
+  if (totalEl) totalEl.textContent = allUpdates.length;
+  const showEl = document.getElementById('updateShowCount');
+  if (showEl) showEl.textContent = filtered.length;
+  const authorIds = new Set();
+  allUpdates.forEach(u => (u.relatedCircles || []).forEach(cid => authorIds.add(cid)));
+  if (document.getElementById('updateAuthorCount')) document.getElementById('updateAuthorCount').textContent = authorIds.size;
+  const years = allUpdates.map(u => Number(String(u.publishDate || '').slice(0, 4))).filter(y => y > 1900);
+  if (document.getElementById('updateLatestYear')) document.getElementById('updateLatestYear').textContent = years.length ? Math.max(...years) : '—';
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="icon">📰</div><p>${t('common.noUpdates')}</p></div>`;
+    return;
+  }
+
+  let html = '';
+  let lastMonth = null;
+  filtered.forEach(u => {
+    const mk = monthKeyOf(u.publishDate);
+    if (mk !== lastMonth) {
+      const label = monthLabelOf(mk);
+      let en = '';
+      const parts = mk.split('-');
+      if (parts.length === 2) {
+        const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+        if (!isNaN(dt.getTime())) en = dt.toLocaleString('en', { month: 'long' }).toUpperCase() + ' ' + parts[0];
+      }
+      html += `<div class="upd-month"><b>${escapeHtml(label)}</b><span>${escapeHtml(en)}</span><div class="rule"></div></div>`;
+      lastMonth = mk;
     }
-
-    function renderUpdates() {
-      const grid = document.getElementById('updatesGrid');
-      // Remove skeleton
-      document.getElementById('updatesSkeleton')?.remove();
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const sortVal = document.getElementById('sortSelect')?.value || 'date-desc';
-      let filtered = [...allUpdates];
-
-      // Category filter
-      if (currentUpdateCategory !== 'all') {
-        filtered = filtered.filter(u => u.category === currentUpdateCategory);
-      }
-
-      // Follow filter
-      if (currentFollowFilter) {
-        const followedList = getFollowedCircles();
-        filtered = filtered.filter(u => (u.relatedCircles || []).some(cid => followedList.includes(cid)));
-      }
-
-      if (search) {
-        filtered = filtered.filter(u =>
-          u.title.toLowerCase().includes(search) ||
-          (u.content || '').toLowerCase().includes(search)
-        );
-      }
-      // Apply sorting
-      if (sortVal === 'date-asc') {
-        filtered.sort((a, b) => new Date(a.publishDate) - new Date(b.publishDate));
-      } else {
-        filtered.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate));
-      }
-
-      const totalEl = document.getElementById('updateTotalCount');
-      if (totalEl) totalEl.textContent = allUpdates.length;
-      const showEl = document.getElementById('updateShowCount');
-      if (showEl) showEl.textContent = filtered.length;
-
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="empty-state"><div class="icon">📰</div><p>${t('common.noUpdates')}</p></div>`;
-        return;
-      }
-
-      // Pinned first, then month-grouped timeline
-      const pinned = filtered.filter(u => u.pinned);
-      const rest = filtered.filter(u => !u.pinned);
-
-      let html = '';
-      if (pinned.length) {
-        html += `<div class="cl-pin-label">${t('updates.pinned') || '置顶'}动态</div>`;
-        html += pinned.map(u => updateRowHtml(u, true)).join('');
-      }
-
-      let lastMonth = null;
-      rest.forEach(u => {
-        const mk = monthKeyOf(u.publishDate);
-        if (mk !== lastMonth) {
-          html += `<div class="cl-month-sep"><span>${escapeHtml(monthLabelOf(mk))}</span></div>`;
-          lastMonth = mk;
-        }
-        html += updateRowHtml(u, false);
-      });
-
-      grid.innerHTML = html;
-    }
-
+    html += updateRowHtml(u);
+  });
+  grid.innerHTML = html;
+}
     loadUpdates();
     if (typeof onLangChange === 'function') onLangChange(() => { try { renderUpdates(); } catch {} });
 
@@ -259,7 +257,10 @@
         ]);
         allUpdates = updates;
         circlesData = circles;
-        circles.forEach(c => circlesMap[c.id] = c.name);
+        circles.forEach(c => {
+          circlesMap[c.id] = c.name;
+          circleLogosMap[c.id] = c.logo || '';
+        });
         renderUpdates();
       }
     });
