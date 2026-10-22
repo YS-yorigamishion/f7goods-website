@@ -4916,3 +4916,8 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .wd-actions .act-share{flex:0 0 auto!important;background:var(--card)!important;color:var(--muted)!important;border:1px solid var(--line)!important;box-shadow:none!important;font-size:11px!important;min-width:58px}
 .wd-actions .like-btn::after{content:"喜爱";font-size:11px;margin-left:1px}
 .wd-mobile-bar .like-btn::after{content:"";margin:0}
+
+@media(max-width:600px){
+  .wd-page{padding-bottom:138px}
+  .wd-mobile-bar{bottom:calc(62px + env(safe-area-inset-bottom,0px))}
+}
