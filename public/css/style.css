@@ -4810,3 +4810,7 @@ a.cl-series-card:hover { border-color: var(--accent); }
 
 .cp-side-inner{align-items:stretch}
 .cp-side .sidebar-card{width:100%;margin-bottom:0}
+
+/* Author profile: align follow/share buttons */
+.cp-actions{align-items:center}
+.cp-actions .follow-btn,.cp-actions .want-btn{height:34px;min-height:34px;padding:0 16px;margin:0;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;line-height:1}
