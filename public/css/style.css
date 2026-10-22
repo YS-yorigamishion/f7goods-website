@@ -1,4 +1,4 @@
-﻿/* ===== f7goods Design System 鈥?鏃ュ紡娓呴€?===== */
+/* ===== f7goods Design System 鈥?鏃ュ紡娓呴€?===== */
 :root {
   /* Canonical tokens (DESIGN.md) */
   --ink: #22201E;
@@ -4494,7 +4494,7 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .awb-refresh { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 999px; padding: .35rem .7rem; font: inherit; font-size: .72rem; cursor: pointer; position: relative; z-index: 1; }
 .author-todo-summary { grid-template-columns: repeat(5, minmax(0,1fr)); gap: .55rem; }
 .author-todo-card { position: relative; border-radius: 11px; padding: .65rem .7rem .65rem 2.1rem; background: var(--card); border: 1px solid var(--line); }
-.author-todo-card::before { content: "鈥?; position: absolute; left: .75rem; top: .55rem; color: var(--accent); font-size: 1.1rem; }
+.author-todo-card::before { content: "•"; position: absolute; left: .75rem; top: .55rem; color: var(--accent); font-size: 1.1rem; }
 .author-todo-card b { font-size: 1.15rem; }
 .author-todo-card span { font-size: .76rem; }
 .author-todo-card small { font-size: .64rem; }
