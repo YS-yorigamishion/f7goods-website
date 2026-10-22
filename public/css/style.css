@@ -5275,3 +5275,15 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .cl-w-wish .wq-btn:active{transform:scale(.85)}
 .cl-w-wish .wq-num{min-width:15px;text-align:center;font-size:.76rem;font-weight:700}
 @media(max-width:600px){.cl-w-wish{height:30px;padding:0 11px}.cl-w-wish.on{height:32px;padding:0 6px;gap:.3rem}.cl-w-wish .wq-btn{width:24px;height:24px}.cl-w-wish .wq-num{min-width:16px;font-size:.8rem}}
+
+/* Series detail: compact work cards */
+.series-works-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1rem}
+.series-works-grid .card-body{padding:.7rem .8rem .65rem}
+.series-works-grid .card-title{font-size:.88rem;line-height:1.4;margin-bottom:.2rem}
+.series-works-grid .card-tag{margin-bottom:.35rem}
+.series-works-grid .series-card-foot{margin-top:.35rem;gap:5px}
+.series-works-grid .cl-w-wish{height:24px;padding:0 7px;font-size:.66rem}
+.series-works-grid .cl-w-wish.on{height:26px;padding:0 4px}
+.series-works-grid .cl-w-wish .wq-btn{width:19px;height:19px;font-size:.78rem}
+.series-works-grid .cl-w-wish .wq-num{min-width:13px;font-size:.7rem}
+@media(max-width:600px){.series-works-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.series-works-grid .card-body{padding:.55rem .6rem .55rem}}

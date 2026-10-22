@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>系列周边 — f7goods</title>
 <meta name="description" content="查看作品系列详情、参与作者与系列作品。">
-<link rel="stylesheet" href="/css/style.css?v=20261020cu">
-<script src="/js/api.js?v=20261020cu"></script>
-<script src="/js/i18n.js?v=20261020cu"></script>
+<link rel="stylesheet" href="/css/style.css?v=20261020cv">
+<script src="/js/api.js?v=20261020cv"></script>
+<script src="/js/i18n.js?v=20261020cv"></script>
 </head>
 <body>
 <nav class="navbar" id="navbar"></nav>
@@ -15,7 +15,7 @@
   <div id="seriesDetail"><div class="empty-state"><p>加载中…</p></div></div>
 </main>
 <footer class="footer" id="footer"></footer>
-<script src="/js/main.js?v=20261020cu"></script>
+<script src="/js/main.js?v=20261020cv"></script>
 <script>
 // ===== 系列周边心愿单：与首页心愿单分开存储 =====
 const SERIES_WISHLIST_KEY = 'f7seriesWishlist';
@@ -128,7 +128,7 @@ function decWishlistItem(workId, e) {
           <p style="line-height:1.8;color:var(--ink);white-space:pre-wrap;">${escapeHtml(s.description || '暂无简介')}</p>
           ${(s.tags || []).length ? `<div class="cl-chips" style="margin-top:1rem;">${s.tags.map(tg => `<span class="cl-chip">#${escapeHtml(tg)}</span>`).join('')}</div>` : ''}
           <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">系列作品 (${s.works.length})</h3>
-          ${s.works.length ? `<div class="cards-grid">${s.works.map(w => `
+          ${s.works.length ? `<div class="cards-grid series-works-grid">${s.works.map(w => `
             <a class="card" href="/work-detail.html?id=${encodeURIComponent(w.id)}" style="text-decoration:none;color:inherit;">
               <div class="card-image">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 320))}" alt="${escapeHtml(workTitle(w))}" loading="lazy">` : '<span class="placeholder-icon">🎨</span>'}</div>
               <div class="card-body">
