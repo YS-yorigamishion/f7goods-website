@@ -5,17 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>系列周边 — f7goods</title>
 <meta name="description" content="查看作品系列详情、参与作者与系列作品。">
-<link rel="stylesheet" href="/css/style.css?v=20261020cv">
-<script src="/js/api.js?v=20261020cv"></script>
-<script src="/js/i18n.js?v=20261020cv"></script>
+<link rel="stylesheet" href="/css/style.css?v=20261020cw">
+<script src="/js/api.js?v=20261020cw"></script>
+<script src="/js/i18n.js?v=20261020cw"></script>
 </head>
 <body>
 <nav class="navbar" id="navbar"></nav>
 <main class="main-content detail-page">
   <div id="seriesDetail"><div class="empty-state"><p>加载中…</p></div></div>
 </main>
+<div id="seriesWishlistBar" class="sw-bar" style="display:none;"></div>
+<div id="seriesWishlistOverlay" class="sw-overlay" onclick="if(event.target===this)closeSeriesWishlistSheet()"></div>
 <footer class="footer" id="footer"></footer>
-<script src="/js/main.js?v=20261020cv"></script>
+<script src="/js/main.js?v=20261020cw"></script>
 <script>
 // ===== 系列周边心愿单：与首页心愿单分开存储 =====
 const SERIES_WISHLIST_KEY = 'f7seriesWishlist';
@@ -71,6 +73,7 @@ async function addToWishlist(workId, e) {
   wishlistItems[workId] = (wishlistItems[workId] || 0) + 1;
   saveWishlist();
   refreshWishlistControl(workId);
+  updateSeriesWishlistBar();
 }
 function incWishlistItem(workId, e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -78,6 +81,7 @@ function incWishlistItem(workId, e) {
   wishlistItems[workId] = (wishlistItems[workId] || 0) + 1;
   saveWishlist();
   refreshWishlistControl(workId);
+  updateSeriesWishlistBar();
 }
 function decWishlistItem(workId, e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -86,6 +90,87 @@ function decWishlistItem(workId, e) {
   if (wishlistItems[workId] <= 0) delete wishlistItems[workId];
   saveWishlist();
   refreshWishlistControl(workId);
+  updateSeriesWishlistBar();
+}
+
+let seriesWorks = [];
+function seriesWishlistStats() {
+  let count = 0, total = 0, freeCount = 0;
+  const entries = [];
+  Object.entries(wishlistItems).forEach(([wid, qty]) => {
+    if (!qty) return;
+    const work = seriesWorks.find(w => String(w.id) === String(wid));
+    if (!work) return;
+    const price = parseFloat(String(work.price || '').replace(/[^\d.]/g, '')) || 0;
+    count += qty;
+    total += price * qty;
+    if (!price) freeCount += qty;
+    entries.push({ work, qty, price });
+  });
+  return { count, total, freeCount, entries };
+}
+function updateSeriesWishlistBar() {
+  const bar = document.getElementById('seriesWishlistBar');
+  if (!bar) return;
+  const { count, total, entries } = seriesWishlistStats();
+  if (!wishlistMode || !entries.length) {
+    bar.style.display = 'none';
+    bar.innerHTML = '';
+    document.body.classList.remove('has-series-wishlist-bar');
+    closeSeriesWishlistSheet();
+    return;
+  }
+  bar.style.display = 'flex';
+  document.body.classList.add('has-series-wishlist-bar');
+  bar.innerHTML = `<div class="sw-bar-info">系列心愿单 · 已选 <b>${count}</b> 件${total > 0 ? ` · 预估 <b>¥${total.toFixed(2)}</b>` : ' · 无料不计价'}</div>` +
+    `<button type="button" class="sw-bar-open" onclick="openSeriesWishlistSheet()">查看清单</button>`;
+}
+function openSeriesWishlistSheet() {
+  const overlay = document.getElementById('seriesWishlistOverlay');
+  if (!overlay) return;
+  renderSeriesWishlistSheet();
+  overlay.classList.add('open');
+}
+function closeSeriesWishlistSheet() {
+  document.getElementById('seriesWishlistOverlay')?.classList.remove('open');
+}
+function renderSeriesWishlistSheet() {
+  const overlay = document.getElementById('seriesWishlistOverlay');
+  if (!overlay) return;
+  const { count, total, freeCount, entries } = seriesWishlistStats();
+  overlay.innerHTML = `<div class="sw-sheet" onclick="event.stopPropagation()">
+    <div class="sw-sheet-head"><h3>系列心愿单</h3><button type="button" class="sw-close" onclick="closeSeriesWishlistSheet()">×</button></div>
+    <div class="sw-sheet-list">${entries.map(({ work, qty }) => `<div class="sw-item">
+      <div class="sw-thumb">${work.images?.[0] ? `<img src="${escapeHtml(imgUrl(work.images[0], 160))}" alt="">` : '🎨'}</div>
+      <div class="sw-item-main"><b>${escapeHtml(workTitle(work))}</b><small>${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料'))}</small></div>
+      <div class="sw-qty"><button type="button" onclick="seriesWlQty('${work.id}',-1,event)">−</button><b>${qty}</b><button type="button" onclick="seriesWlQty('${work.id}',1,event)">＋</button></div>
+    </div>`).join('')}</div>
+    <div class="sw-sheet-foot"><span>共 ${count} 件${total > 0 ? ` · 预估 ¥${total.toFixed(2)}` : ''}${freeCount ? ` · 含 ${freeCount} 件无料` : ''}</span><button type="button" class="sw-clear" onclick="clearSeriesWishlist()">清空</button></div>
+  </div>`;
+}
+function seriesWlQty(workId, delta, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  const next = (wishlistItems[workId] || 0) + delta;
+  if (next <= 0) delete wishlistItems[workId];
+  else wishlistItems[workId] = next;
+  saveWishlist();
+  refreshWishlistControl(workId);
+  updateSeriesWishlistBar();
+  if (document.getElementById('seriesWishlistOverlay')?.classList.contains('open')) renderSeriesWishlistSheet();
+}
+async function clearSeriesWishlist() {
+  if (!Object.keys(wishlistItems).length) return;
+  let ok = true;
+  try {
+    ok = typeof showConfirm === 'function'
+      ? await showConfirm('确定清空本系列的心愿单？', { danger: true, confirmText: '清空' })
+      : confirm('确定清空本系列的心愿单？');
+  } catch { ok = confirm('确定清空本系列的心愿单？'); }
+  if (!ok) return;
+  wishlistItems = {};
+  saveWishlist();
+  document.querySelectorAll('.cl-w-wish').forEach(el => refreshWishlistControl(el.dataset.wid));
+  updateSeriesWishlistBar();
 }
 
 (async function () {
@@ -98,6 +183,7 @@ function decWishlistItem(workId, e) {
     const res = await fetch('/api/series/' + encodeURIComponent(id));
     if (!res.ok) throw new Error('not found');
     const s = await res.json();
+    seriesWorks = Array.isArray(s.works) ? s.works : [];
     const statusLabel = (typeof PROJECT_STATUS_LABELS !== 'undefined' && PROJECT_STATUS_LABELS[s.status]) || '招募中';
     const catLabel = s.category ? (PROJECT_CATEGORIES[s.category] || s.category) : '';
     const cover = s.cover || s.works?.[0]?.images?.[0] || '';
@@ -158,6 +244,7 @@ function decWishlistItem(workId, e) {
           ${(s.tags || []).length ? `<div class="sidebar-card"><h3>标签</h3><div class="cl-chips">${s.tags.map(tg => `<span class="cl-chip">#${escapeHtml(tg)}</span>`).join('')}</div></div>` : ''}
         </div>
       </div>`;
+    updateSeriesWishlistBar();
   } catch (e) {
     root.innerHTML = '<div class="empty-state"><div class="icon">!</div><p>系列不存在或暂未公开</p><p style="margin-top:.8rem;"><a class="detail-link" href="/projects.html">返回企划</a></p></div>';
   }
