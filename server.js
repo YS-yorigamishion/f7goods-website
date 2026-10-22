@@ -1283,7 +1283,9 @@ app.put('/api/admin/series/:id', authMiddleware, async (req, res) => {
     tags: req.body.tags !== undefined && Array.isArray(req.body.tags) ? req.body.tags.map(t => String(t).slice(0, 30)).filter(Boolean).slice(0, 12) : series[index].tags,
     description: req.body.description !== undefined ? String(req.body.description || '').slice(0, 5000) : series[index].description,
     contactInfo: req.body.contactInfo !== undefined ? String(req.body.contactInfo || '').slice(0, 2000) : series[index].contactInfo,
-    status: normalizeSeriesStatus(req.body.status),
+    status: req.body.status !== undefined
+      ? normalizeSeriesStatus(req.body.status)
+      : normalizeSeriesStatus(series[index].status),
     visible: req.body.visible !== undefined ? req.body.visible !== false : series[index].visible !== false,
     workIds,
     updatedAt: new Date().toISOString()
@@ -2169,6 +2171,28 @@ app.get('/api/author/my-events', authorAuthMiddleware, (req, res) => {
   res.json(myEvents);
 });
 
+// Keep both directions of the event <-> work relation in sync.
+// `event.relatedWorks` is the source of truth; every save path must call this.
+async function syncEventWorkRelations(event) {
+  if (!event || !event.id) return;
+  const linked = new Set((Array.isArray(event.relatedWorks) ? event.relatedWorks : []).filter(Boolean));
+  let works = readJSON('works.json');
+  let changed = false;
+  works.forEach(w => {
+    if (!Array.isArray(w.relatedEvents)) w.relatedEvents = [];
+    const i = w.relatedEvents.indexOf(event.id);
+    const shouldHave = linked.has(w.id);
+    if (shouldHave && i === -1) {
+      w.relatedEvents.push(event.id);
+      changed = true;
+    } else if (!shouldHave && i !== -1) {
+      w.relatedEvents.splice(i, 1);
+      changed = true;
+    }
+  });
+  if (changed) await writeJSON('works.json', works);
+}
+
 // Author: create event
 app.post('/api/author/my-events', authorAuthMiddleware, async (req, res) => {
   let events = readJSON('events.json');
@@ -2195,17 +2219,8 @@ app.post('/api/author/my-events', authorAuthMiddleware, async (req, res) => {
   };
   events.push(event);
   await writeJSON('events.json', events);
-  // 同步作品关联活动
-  if (relatedWorks.length) {
-    let works = readJSON('works.json');
-    const idSet = new Set(relatedWorks);
-    works.forEach(w => {
-      if (!idSet.has(w.id)) return;
-      if (!Array.isArray(w.relatedEvents)) w.relatedEvents = [];
-      if (!w.relatedEvents.includes(event.id)) w.relatedEvents.push(event.id);
-    });
-    await writeJSON('works.json', works);
-  }
+  // 同步作品关联活动（双向）
+  await syncEventWorkRelations(event);
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -2223,6 +2238,7 @@ app.put('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) => {
   const isOwner = events[index].submittedBy === circleId;
   const isEditable = (events[index].editableBy || []).includes(circleId);
   if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此活动' });
+  const beforeEdit = JSON.parse(JSON.stringify(events[index]));
 
   const allowed = ['title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images', 'booth', 'status', 'socialLinks', 'relatedWorks'];
   const updates = {};
@@ -2238,28 +2254,17 @@ app.put('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) => {
     updates.relatedWorks = updates.relatedWorks.filter(Boolean);
   }
 
-  const prevWorks = new Set(events[index].relatedWorks || []);
   events[index] = {
     ...events[index],
     ...updates,
     approvalStatus: resolveApprovalStatus('requireEventApproval')
   };
-  // 同步作品 relatedEvents
-  if (req.body.relatedWorks !== undefined) {
-    const nextList = Array.isArray(events[index].relatedWorks) ? events[index].relatedWorks : [];
-    const nextSet = new Set(nextList);
-    let works = readJSON('works.json');
-    let changed = false;
-    works.forEach(w => {
-      if (!Array.isArray(w.relatedEvents)) w.relatedEvents = [];
-      const i = w.relatedEvents.indexOf(events[index].id);
-      const shouldHave = nextSet.has(w.id);
-      if (shouldHave && i === -1) { w.relatedEvents.push(events[index].id); changed = true; }
-      if (!shouldHave && i !== -1) { w.relatedEvents.splice(i, 1); changed = true; }
-    });
-    if (changed) await writeJSON('works.json', works);
-  }
+  // 同步作品 relatedEvents（双向）
   await writeJSON('events.json', events);
+  await syncEventWorkRelations(events[index]);
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === circleId);
+  await logEdit(circle?.name || '作者', '编辑活动', events[index].title || req.params.id, '', '', { before: beforeEdit, after: events[index] });
   res.json(events[index]);
 });
 
@@ -2666,6 +2671,7 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res) =>
   const isOwner = projects[index].submittedBy === circleId;
   const isEditable = (projects[index].editableBy || []).includes(circleId);
   if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此企划' });
+  const beforeEdit = JSON.parse(JSON.stringify(projects[index]));
 
   const allowed = ['title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo', 'startDate', 'endDate', 'socialLinks', 'coverImage', 'works', 'recruiting', 'recruitNote', 'recruitJobs'];
   const updates = {};
@@ -2684,6 +2690,9 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res) =>
     approvalStatus: resolveApprovalStatus('requireProjectApproval')
   };
   await writeJSON('projects.json', projects);
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === circleId);
+  await logEdit(circle?.name || '作者', '编辑企划', projects[index].title || req.params.id, '', '', { before: beforeEdit, after: projects[index] });
   res.json(projects[index]);
 });
 
@@ -2755,6 +2764,7 @@ app.put('/api/author/my-updates/:id', authorAuthMiddleware, async (req, res) => 
   const isOwner = updates[index].submittedBy === circleId;
   const isEditable = (updates[index].editableBy || []).includes(circleId);
   if (!isOwner && !isEditable) return res.status(403).json({ error: '无权编辑此动态' });
+  const beforeEdit = JSON.parse(JSON.stringify(updates[index]));
 
   const allowed = ['title', 'content', 'publishDate', 'coverImage', 'images', 'relatedEvents', 'relatedProjects', 'category', 'status'];
   const updates2 = {};
@@ -2768,6 +2778,9 @@ app.put('/api/author/my-updates/:id', authorAuthMiddleware, async (req, res) => 
     approvalStatus: resolveApprovalStatus('requireUpdateApproval')
   };
   await writeJSON('updates.json', updates);
+  const circles = readJSON('circles.json');
+  const circle = circles.find(c => c.id === circleId);
+  await logEdit(circle?.name || '作者', '编辑动态', updates[index].title || req.params.id, '', '', { before: beforeEdit, after: updates[index] });
   res.json(updates[index]);
 });
 
@@ -4799,6 +4812,7 @@ app.post('/api/admin/events', authMiddleware, async (req, res) => {
   };
   events.push(event);
   await writeJSON('events.json', events);
+  await syncEventWorkRelations(event);
   res.json(event);
 });
 
@@ -4851,8 +4865,11 @@ app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
   if (updates.booths !== undefined) updates.booths = sanitizeBoothsClaimFields(updates.booths);
-  events[index] = { ...events[index], ...updates };
+  const nextApproval = updates.approvalStatus !== undefined ? updates.approvalStatus : 'approved';
+  events[index] = { ...events[index], ...updates, approvalStatus: nextApproval };
+  if (nextApproval === 'approved') delete events[index].rejectReason;
   await writeJSON('events.json', events);
+  await syncEventWorkRelations(events[index]);
   await logEdit('管理员', '编辑活动', events[index].title || req.params.id, '', '', { before, after: events[index] });
   res.json(events[index]);
 });
@@ -5340,7 +5357,9 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
-  projects[index] = { ...projects[index], ...updates };
+  const nextApproval = updates.approvalStatus !== undefined ? updates.approvalStatus : 'approved';
+  projects[index] = { ...projects[index], ...updates, approvalStatus: nextApproval };
+  if (nextApproval === 'approved') delete projects[index].rejectReason;
   await writeJSON('projects.json', projects);
   await logEdit('管理员', '编辑企划', projects[index].title || req.params.id, '', '', { before, after: projects[index] });
   res.json(projects[index]);
@@ -5516,7 +5535,9 @@ app.put('/api/admin/updates/:id', authMiddleware, async (req, res) => {
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates2[field] = req.body[field];
   });
-  updates[index] = { ...updates[index], ...updates2 };
+  const nextApproval = updates2.approvalStatus !== undefined ? updates2.approvalStatus : 'approved';
+  updates[index] = { ...updates[index], ...updates2, approvalStatus: nextApproval };
+  if (nextApproval === 'approved') delete updates[index].rejectReason;
   await writeJSON('updates.json', updates);
   await logEdit('管理员', '编辑动态', updates[index].title || req.params.id, '', '', { before, after: updates[index] });
   res.json(updates[index]);

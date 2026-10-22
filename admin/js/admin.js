@@ -1781,6 +1781,41 @@ function escapeHtml(str) {
 // ---- Output-encoding helpers (admin) ----
 function escText(str) { return escapeHtml(str == null ? '' : String(str)); }
 function escAttr(str) { return escapeHtml(str == null ? '' : String(str)); }
+
+const ADMIN_CONTACT_TYPES = [
+  ['qq', 'QQ'],
+  ['qqGroup', 'QQ群'],
+  ['wechat', '微信'],
+  ['weibo', '微博'],
+  ['bilibili', 'B站'],
+  ['custom', '自定义链接']
+];
+function adminContactType(sl) {
+  const found = ADMIN_CONTACT_TYPES.find(([key]) => sl && sl[key]);
+  return found ? found[0] : '';
+}
+function adminContactValue(sl) {
+  const type = adminContactType(sl);
+  return type && sl ? (sl[type] || '') : '';
+}
+function adminContactOptions(sl) {
+  const type = adminContactType(sl);
+  return `<option value="" ${!type ? 'selected' : ''}>无</option>` +
+    ADMIN_CONTACT_TYPES.map(([key, label]) => `<option value="${key}" ${type === key ? 'selected' : ''}>${label}</option>`).join('');
+}
+function adminCollectSocialLinks(prefix, existing) {
+  const type = document.getElementById(prefix + 'ContactType')?.value || '';
+  const value = document.getElementById(prefix + 'ContactValue')?.value.trim() || '';
+  const sl = { ...(existing || {}) };
+  ADMIN_CONTACT_TYPES.forEach(([key]) => { delete sl[key]; });
+  sl.contactLabel = document.getElementById(prefix + 'ContactLabel')?.value || '';
+  sl.website = document.getElementById(prefix + 'Website')?.value || '';
+  sl.websiteLabel = document.getElementById(prefix + 'WebsiteLabel')?.value || '';
+  if (type) {
+    if (value) sl[type] = value;
+  }
+  return sl;
+}
 function safeImgUrl(url) {
   const s = String(url == null ? '' : url).trim();
   if (!s) return '';
@@ -2286,8 +2321,12 @@ async function importAdminUpdates(input) {
 
 function openWorkModal(work = null, returnToCircleId = null) {
   const isEdit = !!work;
+  const hasPendingRevision = !!work?.pendingRevision;
+  // Show the author's pending revision so an admin edit does not silently discard it.
+  if (hasPendingRevision) work = { ...work, ...work.pendingRevision };
   document.getElementById('modalTitle').textContent = isEdit ? '编辑作品' : '新增作品';
   document.getElementById('modalBody').innerHTML = `
+    ${hasPendingRevision ? `<div style="margin-bottom:1rem;padding:0.65rem 0.8rem;border-radius:8px;background:rgba(142,68,173,0.09);border:1px solid rgba(142,68,173,0.25);color:#6c3483;font-size:0.8rem;line-height:1.6;">此作品有作者提交的待审核新版本。当前表单显示的是<strong>待审内容</strong>；保存后将直接发布这版内容，并清除待审状态。</div>` : ''}
     <div class="form-row">
       <div class="form-group">
         <label>标题 <span style="color:var(--accent)">*</span></label>
@@ -2360,14 +2399,12 @@ function openWorkModal(work = null, returnToCircleId = null) {
     <div class="form-group">
       <label>联系方式类型</label>
       <select class="form-input" id="wContactType">
-        <option value="" ${!work?.socialLinks?.qq && !work?.socialLinks?.qqGroup ? 'selected' : ''}>无</option>
-        <option value="qq" ${work?.socialLinks?.qq ? 'selected' : ''}>QQ</option>
-        <option value="qqGroup" ${work?.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option>
+        ${adminContactOptions(work?.socialLinks)}
       </select>
     </div>
     <div class="form-group">
       <label>联系方式</label>
-      <input class="form-input" id="wContactValue" value="${escAttr(work?.socialLinks?.qq || work?.socialLinks?.qqGroup || '')}" placeholder="QQ号或QQ群号">
+      <input class="form-input" id="wContactValue" value="${escAttr(adminContactValue(work?.socialLinks))}" placeholder="账号、群号或链接">
     </div>
     <div class="form-group">
       <label>显示名称（前台显示的中文）</label>
@@ -2440,17 +2477,7 @@ function openWorkModal(work = null, returnToCircleId = null) {
       description: document.getElementById('wDesc').value,
       images: [...document.querySelectorAll('#wImagePreview img')].map(img => img.src),
       moreImages: [...document.querySelectorAll('#wMoreImagePreview img')].map(img => img.src),
-      socialLinks: (() => {
-        const type = document.getElementById('wContactType').value;
-        const value = document.getElementById('wContactValue').value;
-        const sl = {
-          contactLabel: document.getElementById('wContactLabel').value,
-          website: document.getElementById('wWebsite').value,
-          websiteLabel: document.getElementById('wWebsiteLabel').value
-        };
-        if (type && value) sl[type] = value;
-        return sl;
-      })()
+      socialLinks: adminCollectSocialLinks('w', work?.socialLinks)
     };
     if (isEdit) {
       const likesInput = document.getElementById('wLikes');
@@ -3357,14 +3384,12 @@ function openEventModal(event = null) {
     <div class="form-group">
       <label>联系方式类型</label>
       <select class="form-input" id="eContactType">
-        <option value="" ${!event?.socialLinks?.qq && !event?.socialLinks?.qqGroup ? 'selected' : ''}>无</option>
-        <option value="qq" ${event?.socialLinks?.qq ? 'selected' : ''}>QQ</option>
-        <option value="qqGroup" ${event?.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option>
+        ${adminContactOptions(event?.socialLinks)}
       </select>
     </div>
     <div class="form-group">
       <label>联系方式</label>
-      <input class="form-input" id="eContactValue" value="${escAttr(event?.socialLinks?.qq || event?.socialLinks?.qqGroup || '')}" placeholder="QQ号或QQ群号">
+      <input class="form-input" id="eContactValue" value="${escAttr(adminContactValue(event?.socialLinks))}" placeholder="账号、群号或链接">
     </div>
     <div class="form-group">
       <label>显示名称（前台显示的中文）</label>
@@ -3420,17 +3445,7 @@ function openEventModal(event = null) {
       description: document.getElementById('eDesc').value,
       coverImage: document.querySelector('#eCoverPreview img')?.src || '',
       images: [...document.querySelectorAll('#eImagesPreview img')].map(img => img.src),
-      socialLinks: (() => {
-        const type = document.getElementById('eContactType').value;
-        const value = document.getElementById('eContactValue').value;
-        const sl = {
-          contactLabel: document.getElementById('eContactLabel').value,
-          website: document.getElementById('eWebsite').value,
-          websiteLabel: document.getElementById('eWebsiteLabel').value
-        };
-        if (type && value) sl[type] = value;
-        return sl;
-      })(),
+      socialLinks: adminCollectSocialLinks('e', event?.socialLinks),
       relatedWorks: event?.relatedWorks || [],
       relatedCircles: event?.relatedCircles || [],
       relatedProjects: event?.relatedProjects || [],
@@ -5213,14 +5228,12 @@ function openProjectModal(project = null) {
     <div class="form-group">
       <label>联系方式类型</label>
       <select class="form-input" id="pContactType">
-        <option value="" ${!project?.socialLinks?.qq && !project?.socialLinks?.qqGroup ? 'selected' : ''}>无</option>
-        <option value="qq" ${project?.socialLinks?.qq ? 'selected' : ''}>QQ</option>
-        <option value="qqGroup" ${project?.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option>
+        ${adminContactOptions(project?.socialLinks)}
       </select>
     </div>
     <div class="form-group">
       <label>联系方式</label>
-      <input class="form-input" id="pContactValue" value="${escAttr(project?.socialLinks?.qq || project?.socialLinks?.qqGroup || '')}" placeholder="QQ号或QQ群号">
+      <input class="form-input" id="pContactValue" value="${escAttr(adminContactValue(project?.socialLinks))}" placeholder="账号、群号或链接">
     </div>
     <div class="form-group">
       <label>显示名称（前台显示的中文）</label>
@@ -5300,17 +5313,7 @@ function openProjectModal(project = null) {
       tags: document.getElementById('pTags').value.split(',').map(t => t.trim()).filter(Boolean),
       description: document.getElementById('pDesc').value,
       contactInfo: document.getElementById('pContact').value,
-      socialLinks: (() => {
-        const type = document.getElementById('pContactType').value;
-        const value = document.getElementById('pContactValue').value;
-        const sl = {
-          contactLabel: document.getElementById('pContactLabel').value,
-          website: document.getElementById('pWebsite').value,
-          websiteLabel: document.getElementById('pWebsiteLabel').value
-        };
-        if (type && value) sl[type] = value;
-        return sl;
-      })(),
+      socialLinks: adminCollectSocialLinks('p', project?.socialLinks),
       coverImage: document.querySelector('#pCoverPreview img')?.src || '',
       images: [...document.querySelectorAll('#pImagesPreview img')].map(img => img.src),
       pinned: !!document.getElementById('pPinned')?.checked,
