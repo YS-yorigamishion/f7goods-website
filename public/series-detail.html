@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>系列周边 — f7goods</title>
 <meta name="description" content="查看作品系列详情、参与作者与系列作品。">
-<link rel="stylesheet" href="/css/style.css?v=20261020ct">
-<script src="/js/api.js?v=20261020ct"></script>
-<script src="/js/i18n.js?v=20261020ct"></script>
+<link rel="stylesheet" href="/css/style.css?v=20261020cu">
+<script src="/js/api.js?v=20261020cu"></script>
+<script src="/js/i18n.js?v=20261020cu"></script>
 </head>
 <body>
 <nav class="navbar" id="navbar"></nav>
@@ -15,20 +15,22 @@
   <div id="seriesDetail"><div class="empty-state"><p>加载中…</p></div></div>
 </main>
 <footer class="footer" id="footer"></footer>
-<script src="/js/main.js?v=20261020ct"></script>
+<script src="/js/main.js?v=20261020cu"></script>
 <script>
-// ===== 心愿单：与周边目录共用同一份本地清单 =====
-let wishlistMode = localStorage.getItem('f7wishlistMode') === '1';
+// ===== 系列周边心愿单：与首页心愿单分开存储 =====
+const SERIES_WISHLIST_KEY = 'f7seriesWishlist';
+const SERIES_WISHLIST_MODE_KEY = 'f7seriesWishlistMode';
+let wishlistMode = localStorage.getItem(SERIES_WISHLIST_MODE_KEY) === '1';
 let wishlistItems = (() => {
   try {
-    const saved = JSON.parse(localStorage.getItem('f7wishlist') || '{}');
+    const saved = JSON.parse(localStorage.getItem(SERIES_WISHLIST_KEY) || '{}');
     return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
   } catch { return {}; }
 })();
 function saveWishlist() {
   try {
-    localStorage.setItem('f7wishlist', JSON.stringify(wishlistItems));
-    localStorage.setItem('f7wishlistMode', wishlistMode ? '1' : '0');
+    localStorage.setItem(SERIES_WISHLIST_KEY, JSON.stringify(wishlistItems));
+    localStorage.setItem(SERIES_WISHLIST_MODE_KEY, wishlistMode ? '1' : '0');
   } catch {}
 }
 function wishlistControlHtml(workId) {
@@ -54,9 +56,9 @@ async function activateWishlist() {
   let confirmed;
   try {
     confirmed = typeof showConfirm === 'function'
-      ? await showConfirm('f7goods 不会提供任何直接交易的功能。\n本功能仅做购物模拟，以方便快速得知价格以及作者设定的购买方式。\n\n确认开启心愿单？')
-      : confirm('确认开启心愿单？');
-  } catch { confirmed = confirm('确认开启心愿单？'); }
+      ? await showConfirm('f7goods 不会提供任何直接交易的功能。\n本功能仅做购物模拟，以方便快速得知价格以及作者设定的购买方式。\n\n确认开启系列周边心愿单？')
+      : confirm('确认开启系列周边心愿单？');
+  } catch { confirmed = confirm('确认开启系列周边心愿单？'); }
   if (!confirmed) return false;
   wishlistMode = true;
   wishlistItems = {};
