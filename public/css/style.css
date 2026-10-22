@@ -5256,3 +5256,6 @@ a.cl-series-card:hover { border-color: var(--accent); }
   .board-open-strip.is-single .board-open-body h3{font-size:12px}
   .board-open-strip.is-single .board-open-foot{padding:7px 8px;font-size:7.5px;border-top:1px dashed var(--line)}
 }
+
+/* Work detail: mobile sticky action bar removed */
+@media(max-width:600px){.wd-page{padding-bottom:80px}.wd-mobile-bar{display:none!important}}
