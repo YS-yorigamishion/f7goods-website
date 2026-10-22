@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020cq">
+  <link rel="stylesheet" href="/css/style.css?v=20261020cr">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -817,9 +817,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020cq"></script>
-  <script src="/js/i18n.js?v=20261020cq"></script>
-  <script src="/js/main.js?v=20261020cq"></script>
+  <script src="/js/api.js?v=20261020cr"></script>
+  <script src="/js/i18n.js?v=20261020cr"></script>
+  <script src="/js/main.js?v=20261020cr"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4827,8 +4827,11 @@
             </div>
           </div>
           <div class="form-group">
-            <label>标签（逗号分隔）</label>
-            <input class="form-input" id="authorSeriesTags" value="${(series?.tags || []).map(t => escapeHtml(t)).join(', ')}" placeholder="立牌, 徽章">
+            <label>标签</label>
+            <div class="tag-chip-box" id="authorSeriesTagsBox" data-for="authorSeriesTags"></div>
+            <input type="hidden" id="authorSeriesTags" value="${(series?.tags || []).map(t => String(t).replace(/"/g,'&quot;')).join(', ')}">
+            <div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>
+            ${renderCommonTagsHtml(works, 'authorSeriesTagsBox')}
           </div>
           <div class="form-group">
             <label>系列简介</label>
@@ -4858,6 +4861,7 @@
           </div>
         </div>`;
       editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      initTagChipBoxes(editor);
       renderAuthorSeriesSelectedWorks();
     }
 
@@ -5053,7 +5057,7 @@
       const category = document.getElementById('authorSeriesCategory')?.value || '';
       const startDate = document.getElementById('authorSeriesStart')?.value || '';
       const endDate = document.getElementById('authorSeriesEnd')?.value || '';
-      const tags = (document.getElementById('authorSeriesTags')?.value || '').split(',').map(t => t.trim()).filter(Boolean);
+      const tags = getTagChipValues('authorSeriesTags');
       const description = document.getElementById('authorSeriesDesc')?.value || '';
       const contactInfo = document.getElementById('authorSeriesContact')?.value || '';
       const workIds = [...(window._authorSeriesSelectedWorkIds || [])].map(String);
