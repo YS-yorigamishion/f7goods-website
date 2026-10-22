@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020bn">
+  <link rel="stylesheet" href="/css/style.css?v=20261020bo">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -45,9 +45,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020bn"></script>
-  <script src="/js/i18n.js?v=20261020bn"></script>
-  <script src="/js/main.js?v=20261020bn"></script>
+  <script src="/js/api.js?v=20261020bo"></script>
+  <script src="/js/i18n.js?v=20261020bo"></script>
+  <script src="/js/main.js?v=20261020bo"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -146,49 +146,60 @@
         document.getElementById('detailSkeleton')?.remove();
         const container = document.getElementById('circleDetail');
         const gallery = Array.isArray(circle.images) ? circle.images.filter(Boolean) : [];
-        // Hero cover: author-chosen card cover, else fall back to avatar (logo)
-        const cover = circle.cardCover || circle.logo || '';
-        const coverIsAvatar = !circle.cardCover && !!circle.logo;
+        // Hero cover: author-chosen card cover, then a work image, then avatar.
+        const coverWork = circleWorks.find(w => w.images && w.images[0]);
+        const cover = circle.cardCover || (circle.images && circle.images[0]) || (coverWork && coverWork.images[0]) || circle.logo || '';
+        const coverIsAvatar = !circle.cardCover && !(circle.images && circle.images.length) && !coverWork && !!circle.logo;
         const totalLikes = circleWorks.reduce((s, w) => s + (w.likes || 0), 0);
         const totalWants = circleWorks.reduce((s, w) => s + (w.wants || 0), 0);
         const follows = circle.follows || 0;
         const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || '') : '';
         container.innerHTML = `
-          <div class="detail-breadcrumb">
+          <div class="cp-page">
+          <div class="detail-breadcrumb cp-breadcrumb">
             <a href="/circles.html">${t('nav.circles')}</a>
             <span>›</span>
             <span>${escapeHtml(circle.name)}</span>
           </div>
-          <div class="cl-hero ${cover ? 'has-cover' : ''}${coverIsAvatar ? ' is-avatar' : ''}">
-            <div class="cl-hero-line"></div>
-            ${cover ? `<img src="${escapeHtml(imgUrl(cover, 640))}" alt="${escapeHtml(circle.name)}" loading="eager">` : ''}
-          </div>
-          <section class="cl-identity">
-            <div class="cl-avatar">
-              ${circle.logo
-                ? `<img src="${escapeHtml(imgUrl(circle.logo, 160))}" alt="${escapeHtml(circle.name)}">`
-                : escapeHtml(circle.name.charAt(0))}
+          <section class="cp-profile">
+            <div class="cp-cover ${coverIsAvatar ? 'is-avatar' : ''}">
+              ${cover ? `<img src="${escapeHtml(imgUrl(cover, 1200))}" alt="${escapeHtml(circle.name)}" loading="eager">` : ''}
+              <span class="cp-cover-note">AUTHOR PROFILE · F7GOODS</span>
             </div>
-            <div>
-              <h1>${escapeHtml(circle.name)}</h1>
-              <div class="cl-chips">
-                ${catLabel ? `<span class="cl-chip cat">${escapeHtml(catLabel)}</span>` : ''}
-                <span class="cl-chip">${circleWorks.length} 件作品</span>
+            <div class="cp-body">
+              <div class="cp-identity">
+                <div class="cp-avatar">
+                  ${circle.logo
+                    ? `<img src="${escapeHtml(imgUrl(circle.logo, 200))}" alt="${escapeHtml(circle.name)}">`
+                    : escapeHtml(circle.name.charAt(0))}
+                </div>
+                <div class="cp-who">
+                  <h1>${escapeHtml(circle.name)}</h1>
+                  <div class="cp-en">AUTHOR / CIRCLE</div>
+                  <div class="cp-badges">
+                    ${catLabel ? `<span class="cp-badge cat">${escapeHtml(catLabel)}</span>` : ''}
+                    <span class="cp-badge">作品系列 ${authorSeries.length}</span>
+                    <span class="cp-badge">参与企划 ${relatedProjects.length}</span>
+                  </div>
+                </div>
+                <div class="cp-actions">
+                  ${typeof renderFollowButton === 'function' ? renderFollowButton(circle.id, follows) : ''}
+                  ${typeof renderShareButton === 'function' ? renderShareButton(circle.name, location.href) : ''}
+                </div>
               </div>
+              <div class="cp-stats">
+                <div class="cp-stat"><b>${circleWorks.length}</b><span>作品</span></div>
+                <div class="cp-stat"><b>${totalLikes}</b><span>喜爱</span></div>
+                <div class="cp-stat"><b>${authorSeries.length}</b><span>作品系列</span></div>
+                <div class="cp-stat"><b>${relatedProjects.length}</b><span>参与企划</span></div>
+                ${circle.description ? `<p class="cp-desc">${nl2br(circle.description)}</p>` : ''}
+              </div>
+              <div id="circleTabsMount" class="cp-tabs-mount"></div>
             </div>
-            <div class="cl-actions">
-              ${typeof renderFollowButton === 'function' ? renderFollowButton(circle.id, follows) : ''}
-              ${typeof renderShareButton === 'function' ? renderShareButton(circle.name, location.href) : ''}
-            </div>
-            <div class="cl-stats">
-              <div class="cl-stat"><b>${circleWorks.length}</b><span>作品</span></div>
-              <div class="cl-stat accent"><b>${totalLikes}</b><span>喜爱</span></div>
-              <div class="cl-stat"><b>${totalWants}</b><span>想要</span></div>
-              <div class="cl-stat"><b>${follows}</b><span>关注</span></div>
-            </div>
-            ${circle.description ? `<p class="cl-lede">${nl2br(circle.description)}</p>` : ''}
           </section>
-          <div class="detail-content">
+          <div id="circlePanelsMount"></div>
+          </div>
+          <div class="detail-content" style="display:none;">
             <div class="detail-main">
               ${gallery.length > 1 ? `
                 <h3 style="margin:0 0 0.75rem;font-size:1.05rem;">作者图</h3>
@@ -296,6 +307,7 @@
               ` : ''}
             </div>
           </div>
+          </div>
         `;
         renderCircleWorks();
         setupCircleTabs(container, circle, circleWorks, relatedEvents, relatedProjects, relatedUpdates, authorSeries);
@@ -322,7 +334,7 @@
       }
 
       const bar = document.createElement('div');
-      bar.className = 'cl-tabs';
+      bar.className = 'cp-tabs';
       bar.setAttribute('role', 'tablist');
       const tabs = [
         ['home', '主页', null],
@@ -334,6 +346,8 @@
       bar.innerHTML = tabs.map(([key, label, count], i) =>
         `<button type="button" role="tab" data-cl-tab="${key}" aria-selected="${i === 0}" aria-controls="cl-panel-${key}" class="${i === 0 ? 'on' : ''}">${label}${count ? ` <b>${count}</b>` : ''}</button>`
       ).join('');
+      const tabsMount = container.querySelector('#circleTabsMount');
+      if (tabsMount) tabsMount.appendChild(bar);
 
       const panels = {};
       const home = document.createElement('div');
@@ -348,10 +362,11 @@
       const featuredWorks = preferred.length
         ? [...preferred, ...defaultLiked.filter(w => !preferredSet.has(w.id))].slice(0, 3)
         : defaultLiked.slice(0, 3);
-      const featuredHtml = featuredWorks.map(w => `
-        <a class="cl-home-work" href="/work-detail.html?id=${encodeURIComponent(w.id)}">
-          <div class="cl-home-work-cover">${w.images && w.images.length ? `<img src="${escapeHtml(imgUrl(w.images[0], 320))}" alt="${escapeHtml(workTitle(w))}" loading="lazy">` : '<span>作品</span>'}</div>
-          <div class="cl-home-work-body"><span class="cl-home-work-status">${escapeHtml(STATUS_LABELS[w.status] || '')}</span><b>${escapeHtml(workTitle(w))}</b></div>
+      const featuredHtml = featuredWorks.map((w, i) => `
+        <a class="cp-work${i === 0 ? ' big' : ''}" href="/work-detail.html?id=${encodeURIComponent(w.id)}">
+          ${w.images && w.images.length ? `<img src="${escapeHtml(imgUrl(w.images[0], 640))}" alt="${escapeHtml(workTitle(w))}" loading="lazy">` : '<span class="cp-work-placeholder">作品</span>'}
+          ${i === 0 ? '<span class="cp-work-tag">作者推荐</span>' : ''}
+          <div class="cp-work-info"><b>${escapeHtml(workTitle(w))}</b><span>${escapeHtml(STATUS_LABELS[w.status] || '')}</span></div>
         </a>`).join('');
       const seriesList = (Array.isArray(series) ? series : []).filter(s => s.works && s.works.length);
       const featuredSeriesIds = Array.isArray(circle.featuredSeriesIds) ? circle.featuredSeriesIds.map(String) : [];
@@ -360,34 +375,67 @@
         : seriesList;
       const seriesHtml = displayedSeries.map(s => {
         const cover = s.cover || (s.works[0]?.images && s.works[0].images[0]) || '';
-        return `<a class="cl-series-card" href="/series-detail.html?id=${encodeURIComponent(s.id)}">
-          <div class="cl-series-cover">${cover ? `<img src="${escapeHtml(imgUrl(cover, 320))}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='系列'">` : '<span>系列</span>'}</div>
-          <div class="cl-series-body">
-            <div class="cl-series-title"><b>${escapeHtml(s.name)}</b><small>${escapeHtml(PROJECT_STATUS_LABELS[s.status] || '进行中')} · ${s.works.length} 件</small></div>
-            <div class="cl-series-thumbs">${s.works.slice(0, 4).map(w => `<span title="${escapeHtml(workTitle(w))}">${w.images && w.images.length ? `<img src="${escapeHtml(imgUrl(w.images[0], 96))}" alt="" loading="lazy">` : '作品'}</span>`).join('')}</div>
-          </div>
+        return `<a class="cp-series-card" href="/series-detail.html?id=${encodeURIComponent(s.id)}">
+          ${cover ? `<img src="${escapeHtml(imgUrl(cover, 200))}" alt="${escapeHtml(s.name)}" loading="lazy">` : '<span class="cp-series-placeholder">系列</span>'}
+          <div><b>${escapeHtml(s.name)}</b><span>${escapeHtml(PROJECT_STATUS_LABELS[s.status] || '进行中')} · ${s.works.length} 件作品</span></div>
         </a>`;
       }).join('');
+      const updateRows = updates.slice(0, 3).map(u => `
+        <a class="cp-update-row" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
+          <span class="cp-update-mark"></span>
+          <div><b>${escapeHtml(u.title)}</b><small>${formatDate(u.publishDate)}</small></div>
+          <span class="cp-update-more">→</span>
+        </a>`).join('');
       const featuredSection = featuredHtml && circle.showFeaturedWorks !== false
-        ? `<div class="cl-home-head"><h3>展示作品</h3><a href="#works">全部 ${works.length} 件 →</a></div><div class="cl-home-works">${featuredHtml}</div>`
+        ? `<section class="cp-section"><div class="cp-section-head"><div><h3>精选作品</h3><p>作者选择在主页优先展示的作品</p></div><a href="#works">全部 ${works.length} 件 →</a></div><div class="cp-feature-grid ${featuredWorks.length === 1 ? 'single' : ''}">${featuredHtml}</div></section>`
         : '';
       const seriesSection = seriesHtml
-        ? `<div class="cl-home-head"><h3>作品系列</h3><span class="cl-home-sub">${displayedSeries.length} 个系列</span></div><div class="cl-series-grid">${seriesHtml}</div>`
+        ? `<section class="cp-section"><div class="cp-section-head"><div><h3>作品系列</h3><p>同世界观或同主题的作品合集</p></div><span>${displayedSeries.length} 个系列</span></div><div class="cp-series-grid">${seriesHtml}</div></section>`
         : '';
-      home.innerHTML = featuredSection + seriesSection;
-      if (side) home.appendChild(side);
+      const updateSection = updateRows
+        ? `<section class="cp-section"><div class="cp-section-head"><div><h3>最近动态</h3><p>作者发布与参与的内容</p></div><a href="#updates">更多 →</a></div><div class="cp-recent-list">${updateRows}</div></section>`
+        : '';
+      home.className = 'cl-tab-panel on cp-panel cp-home';
+      const homeLayout = document.createElement('div');
+      homeLayout.className = 'cp-layout';
+      const homeMain = document.createElement('div');
+      homeMain.className = 'cp-main';
+      homeMain.innerHTML = featuredSection + seriesSection + updateSection;
+      const homeSide = document.createElement('aside');
+      homeSide.className = 'cp-side';
+      const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || '') : '';
+      if (circle.description) {
+        const about = document.createElement('div');
+        about.className = 'cp-aside-card cp-about';
+        about.innerHTML = `<h3>关于作者</h3><p>${nl2br(circle.description)}</p><div class="cp-tags">${catLabel ? `<span>${escapeHtml(catLabel)}</span>` : ''}<span>${works.length} 件作品</span><span>${seriesList.length} 个系列</span></div>`;
+        homeSide.appendChild(about);
+      }
+      if (side) {
+        side.classList.add('cp-side-inner');
+        homeSide.appendChild(side);
+      }
+      const info = document.createElement('div');
+      info.className = 'cp-aside-card';
+      info.innerHTML = `<h3>主页信息</h3>
+        <div class="cp-meta-row"><span>作品</span><b>${works.length} 件</b></div>
+        <div class="cp-meta-row"><span>作品系列</span><b>${seriesList.length} 个</b></div>
+        <div class="cp-meta-row"><span>参与企划</span><b>${projects.length} 个</b></div>`;
+      homeSide.appendChild(info);
+      homeLayout.appendChild(homeMain);
+      homeLayout.appendChild(homeSide);
+      home.appendChild(homeLayout);
       panels.home = home;
 
       const worksPanel = document.createElement('div');
       worksPanel.id = 'cl-panel-works';
-      worksPanel.className = 'cl-tab-panel';
+      worksPanel.className = 'cl-tab-panel cp-panel';
       worksPanel.setAttribute('role', 'tabpanel');
       if (main) worksPanel.appendChild(main);
       panels.works = worksPanel;
 
       const eventsPanel = document.createElement('div');
       eventsPanel.id = 'cl-panel-events';
-      eventsPanel.className = 'cl-tab-panel';
+      eventsPanel.className = 'cl-tab-panel cp-panel';
       eventsPanel.setAttribute('role', 'tabpanel');
       eventsPanel.innerHTML = events.length ? events.map(e => `
         <a class="cl-event-row" href="/event-detail.html?id=${encodeURIComponent(e.id)}">
@@ -401,7 +449,7 @@
 
       const projectsPanel = document.createElement('div');
       projectsPanel.id = 'cl-panel-projects';
-      projectsPanel.className = 'cl-tab-panel';
+      projectsPanel.className = 'cl-tab-panel cp-panel';
       projectsPanel.setAttribute('role', 'tabpanel');
       projectsPanel.innerHTML = projects.length ? projects.map(p => `
         <a class="cl-project-row" href="/project-detail.html?id=${encodeURIComponent(p.id)}">
@@ -415,7 +463,7 @@
 
       const updatesPanel = document.createElement('div');
       updatesPanel.id = 'cl-panel-updates';
-      updatesPanel.className = 'cl-tab-panel';
+      updatesPanel.className = 'cl-tab-panel cp-panel';
       updatesPanel.setAttribute('role', 'tabpanel');
       updatesPanel.innerHTML = updates.length ? updates.map(u => `
         <a class="cl-update-row" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
@@ -424,7 +472,8 @@
         </a>`).join('') : '<div class="empty-state"><div class="icon">·</div><p>暂无公开动态</p></div>';
       panels.updates = updatesPanel;
 
-      container.append(bar, home, worksPanel, eventsPanel, projectsPanel, updatesPanel);
+      const panelsMount = container.querySelector('#circlePanelsMount') || container;
+      panelsMount.append(home, worksPanel, eventsPanel, projectsPanel, updatesPanel);
 
       function activate(key, updateHash = true) {
         if (!panels[key]) key = 'home';
