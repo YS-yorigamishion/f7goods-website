@@ -5238,3 +5238,21 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .board-open-card.wait .board-open-foot .go{color:var(--accent)}
 @media(max-width:900px){.board-open-strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.board-open-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.board-open-body{padding:8px 8px 0}.board-open-foot{padding:7px 8px;font-size:7.5px}.board-open-body h3{font-size:12px}}
+
+/* Home open-series strip: adapt to item count */
+.board-open-strip.is-double{grid-template-columns:repeat(2,minmax(0,1fr))}
+.board-open-strip.is-triple{grid-template-columns:repeat(3,minmax(0,1fr))}
+.board-open-strip.is-single{display:block}
+.board-open-strip.is-single .board-open-card{display:grid;grid-template-columns:minmax(260px,36%) minmax(0,1fr);grid-template-rows:1fr auto;height:210px}
+.board-open-strip.is-single .board-open-cover{grid-row:1/3;height:100%;aspect-ratio:auto}
+.board-open-strip.is-single .board-open-body{grid-column:2;grid-row:1;padding:26px 26px 0;display:flex;flex-direction:column;justify-content:center}
+.board-open-strip.is-single .board-open-body h3{font-size:20px;white-space:normal}
+.board-open-strip.is-single .board-open-body p{font-size:10px}
+.board-open-strip.is-single .board-open-foot{grid-column:2;grid-row:2;margin:0;padding:0 26px 20px;border-top:0;font-size:9px}
+@media(max-width:600px){
+  .board-open-strip.is-single .board-open-card{display:flex;height:auto}
+  .board-open-strip.is-single .board-open-cover{height:auto;aspect-ratio:16/10}
+  .board-open-strip.is-single .board-open-body{padding:8px 8px 0}
+  .board-open-strip.is-single .board-open-body h3{font-size:12px}
+  .board-open-strip.is-single .board-open-foot{padding:7px 8px;font-size:7.5px;border-top:1px dashed var(--line)}
+}
