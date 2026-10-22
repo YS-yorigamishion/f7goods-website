@@ -1,4 +1,4 @@
-/* ===== f7goods Design System — 日式清透 ===== */
+﻿/* ===== f7goods Design System 鈥?鏃ュ紡娓呴€?===== */
 :root {
   /* Canonical tokens (DESIGN.md) */
   --ink: #22201E;
@@ -146,7 +146,7 @@ a { color: inherit; }
 .filter-btn:active { transform: scale(0.98); }
 .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
 
-/* 同人作者列表：筛选条最右「作者手册」入口 */
+/* 鍚屼汉浣滆€呭垪琛細绛涢€夋潯鏈€鍙炽€屼綔鑰呮墜鍐屻€嶅叆鍙?*/
 .search-input {
   padding: 0.35rem 0.9rem; border: 1px solid var(--line); border-radius: 999px;
   font-size: 0.8rem; background: var(--card); color: var(--ink); min-width: 180px;
@@ -352,7 +352,7 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   display: flex; align-items: center; gap: 0.35rem;
 }
 .event-location::before {
-  content: '·'; color: var(--accent); font-weight: 700; font-size: 1rem; line-height: 1;
+  content: '路'; color: var(--accent); font-weight: 700; font-size: 1rem; line-height: 1;
 }
 .event-desc { font-size: 0.88rem; color: #4A453F; line-height: 1.7; }
 .event-booth {
@@ -790,7 +790,7 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
   background: var(--paper); border: 1px solid var(--line);
 }
 
-/* Timeline progress from startDate → endDate */
+/* Timeline progress from startDate 鈫?endDate */
 .cl-proj-timeline { padding: 0 0.9rem 0.6rem; }
 .cl-tl-head {
   display: flex; justify-content: space-between; align-items: baseline;
@@ -1180,7 +1180,7 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 }
 .cl-w-stats { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: var(--haze); }
 .cl-w-stats > span { display: inline-flex; align-items: center; gap: 0.15rem; }
-/* 与 .like-icon / .like-count 同号，保证爱心与星星大小一致 */
+/* 涓?.like-icon / .like-count 鍚屽彿锛屼繚璇佺埍蹇冧笌鏄熸槦澶у皬涓€鑷?*/
 .cl-w-want {
   display: inline-flex; align-items: center; gap: 0.15rem;
   background: none; border: none; padding: 0; margin: 0;
@@ -1193,7 +1193,7 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 .cl-w-want-icon { font-size: 1rem; line-height: 1; }
 .cl-w-want-count { font-size: 0.75rem; font-weight: 500; color: var(--haze); }
 
-/* 心愿单控件（.cl-w-wish / .cl-w-foot-l）样式由 index.html 内联管理 */
+/* 蹇冩効鍗曟帶浠讹紙.cl-w-wish / .cl-w-foot-l锛夋牱寮忕敱 index.html 鍐呰仈绠＄悊 */
 
 .cl-w-more { grid-column: 1 / -1; text-align: center; padding: 1.2rem 0 0.4rem; }
 .cl-w-more button {
@@ -1206,7 +1206,7 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 .cl-w-more .prog { display: block; margin-top: 0.5rem; font-size: 0.72rem; color: var(--haze); }
 
 @media (max-width: 640px) {
-  /* 「我的」筛选在移动端独占一行，排在排序/搜索之前 */
+  /* 銆屾垜鐨勩€嶇瓫閫夊湪绉诲姩绔嫭鍗犱竴琛岋紝鎺掑湪鎺掑簭/鎼滅储涔嬪墠 */
   .cl-toolbar-card #userFilters { flex: 1 1 100%; }
 }
 @media (max-width: 480px) {
@@ -1280,7 +1280,7 @@ a.card, a.event-card, a.event-grid-card, a.circle-card {
 .cl-u-meta .au { color: var(--accent); font-weight: 500; text-decoration: none; }
 .cl-u-meta .au:hover { text-decoration: underline; }
 .cl-u-meta span a + a { margin-left: 0.1rem; }
-/* 侧栏「作者」行内的作者链接 */
+/* 渚ф爮銆屼綔鑰呫€嶈鍐呯殑浣滆€呴摼鎺?*/
 .sidebar-card .info-value .au { color: var(--accent); font-weight: 500; text-decoration: none; }
 .sidebar-card .info-value .au:hover { text-decoration: underline; }
 .cl-u-meta .share {
@@ -1716,7 +1716,7 @@ textarea.form-input { resize: vertical; min-height: 130px; }
   display: flex; align-items: center; justify-content: center;
   overflow: hidden; overscroll-behavior: contain;
 }
-/* 长图：整宽铺开 + 原生竖向滚动 */
+/* 闀垮浘锛氭暣瀹介摵寮€ + 鍘熺敓绔栧悜婊氬姩 */
 .lightbox-stage.is-scroll {
   overflow-y: auto; overflow-x: hidden;
   align-items: flex-start;
@@ -1799,7 +1799,7 @@ textarea.form-input { resize: vertical; min-height: 130px; }
 @media (max-width: 768px) {
   .back-to-top { bottom: 1.5rem; right: 1.5rem; width: 40px; height: 40px; font-size: 1rem; }
 }
-/* 作者已登录时：列表页右下角创建入口 */
+/* 浣滆€呭凡鐧诲綍鏃讹細鍒楄〃椤靛彸涓嬭鍒涘缓鍏ュ彛 */
 .author-create-fab {
   position: fixed; right: 1.25rem; bottom: 2rem; z-index: 100;
   display: inline-flex; align-items: center; justify-content: center;
@@ -2012,7 +2012,7 @@ html.pull-to-refresh-active { overscroll-behavior-y: contain; }
   html { scroll-behavior: auto; }
 }
 
-/* ===== App Shell (方案3) ===== */
+/* ===== App Shell (鏂规3) ===== */
 body.app-mode {
   padding-left: 72px;
   padding-top: 56px;
@@ -2364,7 +2364,7 @@ body.app-mode .back-to-top {
 .board-section-head a:hover,
 .board-section-head button.linkish:hover { text-decoration: underline; }
 
-/* Home announcement ticker — one-line marquee bar */
+/* Home announcement ticker 鈥?one-line marquee bar */
 .board-announce {
   display: flex;
   align-items: center;
@@ -2612,7 +2612,7 @@ body.app-mode .back-to-top {
   font-weight: 600;
 }
 
-/* 「照片墙」入口：贴在「全部周边」右侧，同一胶囊组内 */
+/* 銆岀収鐗囧銆嶅叆鍙ｏ細璐村湪銆屽叏閮ㄥ懆杈广€嶅彸渚э紝鍚屼竴鑳跺泭缁勫唴 */
 .home-view-toggle .home-view-link {
   display: inline-flex;
   align-items: center;
@@ -2712,7 +2712,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   line-height: 1.35;
 }
 
-/* ===== Work detail — art exhibit layout ===== */
+/* ===== Work detail 鈥?art exhibit layout ===== */
 .exhibit-stage {
   max-width: 920px;
   margin: 0 auto 1.5rem;
@@ -2760,7 +2760,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   pointer-events: none;
   border-radius: 2px;
 }
-/* 相框贴合周边图：不留黑边，高度随图 */
+/* 鐩告璐村悎鍛ㄨ竟鍥撅細涓嶇暀榛戣竟锛岄珮搴﹂殢鍥?*/
 .exhibit-art {
   width: 100%;
   max-width: min(420px, 100%);
@@ -2854,7 +2854,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   padding-left: 12px;
   margin-bottom: 1.15rem;
 }
-/* Gallery footnote actions — quiet text links */
+/* Gallery footnote actions 鈥?quiet text links */
 .exhibit-actions {
   margin-top: 1rem;
   padding-top: 0.85rem;
@@ -2961,7 +2961,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   gap: 12px;
 }
 
-/* ===== Work detail — art exhibit layout ===== */
+/* ===== Work detail 鈥?art exhibit layout ===== */
 .exhibit-stage {
   max-width: 1000px;
   margin: 0 auto;
@@ -3005,7 +3005,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   pointer-events: none;
   border-radius: 2px;
 }
-/* 相框贴合周边图：不留黑边，高度随图 */
+/* 鐩告璐村悎鍛ㄨ竟鍥撅細涓嶇暀榛戣竟锛岄珮搴﹂殢鍥?*/
 .exhibit-art {
   width: 100%;
   max-width: min(420px, 100%);
@@ -3152,7 +3152,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   display: grid;
   gap: 12px;
 }
-/* 作品详情 · 分享图片（按钮基础外观内联在页面里，避免旧 CSS 缓存导致样式丢失） */
+/* 浣滃搧璇︽儏 路 鍒嗕韩鍥剧墖锛堟寜閽熀纭€澶栬鍐呰仈鍦ㄩ〉闈㈤噷锛岄伩鍏嶆棫 CSS 缂撳瓨瀵艰嚧鏍峰紡涓㈠け锛?*/
 .exhibit-sharebar {
   max-width: 1000px;
   margin: 1.75rem auto 0.5rem;
@@ -3209,7 +3209,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 }
 
 @media (max-width: 768px) {
-  /* 浅色悬浮胶囊底栏尺寸（内容避让统一用 --tabbar-clearance） */
+  /* 娴呰壊鎮诞鑳跺泭搴曟爮灏哄锛堝唴瀹归伩璁╃粺涓€鐢?--tabbar-clearance锛?*/
   :root {
     --tabbar-h: 56px;
     --tabbar-inset-x: 12px;
@@ -3244,7 +3244,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
     font-size: 0.72rem !important;
   }
 
-  /* 浅色悬浮胶囊底栏（对照出行 App 形态，贴合纸面设计） */
+  /* 娴呰壊鎮诞鑳跺泭搴曟爮锛堝鐓у嚭琛?App 褰㈡€侊紝璐村悎绾搁潰璁捐锛?*/
   .app-tabbar {
     display: flex;
     position: fixed;
@@ -3532,7 +3532,7 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
 #boardFeatureRow { align-items: stretch; }
 
 
-/* 最新上传 / 周边截止 同行等高卡片 */
+/* 鏈€鏂颁笂浼?/ 鍛ㄨ竟鎴 鍚岃绛夐珮鍗＄墖 */
 .board-grid > .board-panel.board-span-8,
 .board-grid > .board-panel.board-span-4 {
   display: flex;
@@ -4494,7 +4494,7 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .awb-refresh { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 999px; padding: .35rem .7rem; font: inherit; font-size: .72rem; cursor: pointer; position: relative; z-index: 1; }
 .author-todo-summary { grid-template-columns: repeat(5, minmax(0,1fr)); gap: .55rem; }
 .author-todo-card { position: relative; border-radius: 11px; padding: .65rem .7rem .65rem 2.1rem; background: var(--card); border: 1px solid var(--line); }
-.author-todo-card::before { content: "•"; position: absolute; left: .75rem; top: .55rem; color: var(--accent); font-size: 1.1rem; }
+.author-todo-card::before { content: "鈥?; position: absolute; left: .75rem; top: .55rem; color: var(--accent); font-size: 1.1rem; }
 .author-todo-card b { font-size: 1.15rem; }
 .author-todo-card span { font-size: .76rem; }
 .author-todo-card small { font-size: .64rem; }
@@ -4891,7 +4891,7 @@ a.cl-series-card:hover { border-color: var(--accent); }
 /* Work detail action refinements */
 .wd-actions .want-btn:not(.act-share){flex:1}
 .wd-actions .act-share{flex:0 0 auto!important;background:var(--card)!important;color:var(--muted)!important;border:1px solid var(--line)!important;box-shadow:none!important;font-size:11px!important;min-width:58px}
-.wd-actions .like-btn::after{content:"喜爱";font-size:11px;margin-left:1px}
+.wd-actions .like-btn::after{content:"鍠滅埍";font-size:11px;margin-left:1px}
 .wd-mobile-bar .like-btn::after{content:"";margin:0}
 
 @media(max-width:600px){
@@ -5288,28 +5288,50 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .series-works-grid .cl-w-wish .wq-num{min-width:13px;font-size:.7rem}
 @media(max-width:600px){.series-works-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.series-works-grid .card-body{padding:.55rem .6rem .55rem}}
 
-/* Series detail: page-local wishlist bar + sheet */
-body.has-series-wishlist-bar{padding-bottom:82px}
-.sw-bar{position:fixed;left:0;right:0;bottom:0;z-index:1200;display:flex;align-items:center;gap:10px;padding:10px max(14px,calc((100vw - 1180px)/2));background:rgba(255,253,249,.97);border-top:2px solid var(--accent);box-shadow:0 -8px 24px rgba(60,44,30,.08);backdrop-filter:blur(12px)}
-.sw-bar-info{flex:1;min-width:0;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sw-bar-info b{color:var(--accent);font-weight:700}
-.sw-bar-open{border:0;border-radius:999px;background:var(--accent);color:#fff;font:inherit;font-size:11px;font-weight:600;padding:8px 18px;cursor:pointer;white-space:nowrap}
-.sw-overlay{position:fixed;inset:0;z-index:1300;background:rgba(30,24,18,.42);display:flex;align-items:flex-end;justify-content:center;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
-.sw-overlay.open{opacity:1;visibility:visible}
-.sw-sheet{width:100%;max-width:560px;max-height:80vh;background:var(--card);border:1px solid var(--line);border-radius:18px 18px 0 0;padding:17px 18px calc(17px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;box-shadow:0 -18px 50px rgba(30,22,16,.2)}
-.sw-sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.sw-sheet-head h3{font-family:'Noto Serif SC',Georgia,serif;font-size:19px;margin:0}
-.sw-close{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--muted);font-size:18px;line-height:1;cursor:pointer}
-.sw-sheet-list{overflow-y:auto;max-height:52vh;margin:0 -4px;padding:0 4px}
-.sw-item{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px 0;border-bottom:1px dashed var(--line)}
-.sw-thumb{width:48px;height:48px;border-radius:8px;background:var(--paper);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--haze)}
-.sw-thumb img{width:100%;height:100%;object-fit:cover}
-.sw-item-main{min-width:0}
-.sw-item-main b{display:block;font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sw-item-main small{display:block;font-size:9px;color:var(--haze);margin-top:2px}
-.sw-qty{display:flex;align-items:center;gap:6px}
-.sw-qty button{width:24px;height:24px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:15px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.sw-qty b{min-width:14px;text-align:center;font-size:11px}
-.sw-sheet-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:12px;margin-top:4px;border-top:1px solid var(--line);font-size:10px;color:var(--muted)}
-.sw-clear{border:0;background:transparent;color:var(--accent);font:inherit;font-size:10px;cursor:pointer;padding:4px}
-@media(max-width:600px){body.has-series-wishlist-bar{padding-bottom:150px}.sw-bar{bottom:calc(62px + env(safe-area-inset-bottom,0px));padding:9px 12px}.sw-bar-info{font-size:10px}.sw-bar-open{padding:7px 14px;font-size:10px}.sw-sheet{max-height:72vh;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px))}.sw-sheet-list{max-height:46vh}}
+/* Series detail: same wishlist bar/drawer as all goods */
+#wishlistBar{position:fixed;z-index:1105;left:0;right:0;bottom:0;background:var(--card-bg);border-top:2px solid var(--accent);padding:.7rem 1.2rem;box-shadow:0 -2px 12px rgba(0,0,0,.15);display:flex;align-items:center;gap:.75rem}
+#wishlistBar .wl-info{flex:1;min-width:0;font-size:.88rem}
+#wishlistBar .wl-info b{color:var(--accent)}
+#wishlistBar .wl-info small{display:block;font-size:.7rem;color:var(--haze);margin-top:2px}
+#wishlistBar .wl-open{flex-shrink:0;border:none;border-radius:999px;padding:.5rem 1.15rem;background:var(--accent);color:#fff;font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
+#wishlistBar .wl-open:hover{background:var(--accent-dark)}
+body.has-wishlist-bar{padding-bottom:calc(var(--wl-bar-h,72px) + 10px)}
+.wl-overlay{position:fixed;inset:0;z-index:1200;padding:16px;background:rgba(34,32,30,.45);display:none;align-items:center;justify-content:center}
+.wl-overlay.open{display:flex}
+.wl-drawer{position:relative;background:#FFFCF7;border:1px solid var(--line);width:min(440px,100%);max-height:84vh;overflow-y:auto;border-radius:4px 4px 10px 10px;padding:22px 18px 20px;box-shadow:0 18px 40px rgba(0,0,0,.16);font-feature-settings:'tnum'}
+.wl-drawer::before{content:'f7goods 路 WISHLIST';display:block;text-align:center;font-size:10px;letter-spacing:.18em;color:var(--accent);font-weight:600;margin-bottom:10px}
+.wl-drawer h3{font-family:'Noto Serif SC',Georgia,serif;font-size:1.05rem;margin:0 0 12px;text-align:center}
+.wl-close{position:absolute;top:10px;right:12px;background:none;border:none;font-size:18px;line-height:1;cursor:pointer;color:var(--muted)}
+.wl-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed #C9C2B6}
+.wl-item .thumb{width:46px;height:46px;border-radius:6px;flex-shrink:0;object-fit:cover;background:linear-gradient(160deg,#EDE6DA,#E2D9CB);border:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;color:#B0A89C;font-size:16px}
+.wl-item .n{flex:1;min-width:0}
+.wl-item .t{font-size:13px;font-weight:600;line-height:1.45}
+.wl-item .t a{color:inherit;text-decoration:none}
+.wl-item .t a:hover{color:var(--accent)}
+.wl-item small{display:block;color:var(--muted);font-size:11px;margin-top:2px;line-height:1.55;word-break:break-word}
+.wl-item .p{flex-shrink:0;text-align:right;font-size:13px;font-weight:600;color:var(--accent)}
+.wl-item .p.free{color:var(--muted);font-weight:500}
+.wl-qty{display:flex;align-items:center;gap:6px;margin-top:6px}
+.wl-qty button{min-width:24px;height:24px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:13px;line-height:1;font-family:inherit;display:inline-flex;align-items:center;justify-content:center}
+.wl-qty button:hover{border-color:var(--accent);color:var(--accent)}
+.wl-qty .num{min-width:16px;text-align:center;font-size:13px;font-weight:700;color:var(--accent)}
+.wl-qty .del{border-color:transparent;background:transparent;color:var(--muted);font-size:11px;padding:0 4px}
+.wl-qty .del:hover{color:var(--accent)}
+.wl-empty{color:var(--muted);font-size:12.5px;padding:24px 0;text-align:center}
+.wl-sum{display:flex;justify-content:space-between;font-size:13px;padding:6px 0}
+.wl-sum.total{font-weight:700;font-size:15px;margin-top:6px;padding-top:10px;border-top:1px dashed #C9C2B6}
+.wl-sum.total .v{color:var(--accent)}
+.wl-note{font-size:11px;color:var(--muted);text-align:right}
+.wl-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.wl-actions button{width:100%;border:none;background:var(--accent);color:#fff;border-radius:999px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.wl-actions button.alt{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:500}
+.wl-actions button.alt:hover{border-color:var(--accent);color:var(--accent)}
+.wl-actions button.danger{color:var(--accent);border-color:rgba(217,79,92,.4)}
+@media(max-width:768px){
+  #wishlistBar{left:var(--tabbar-inset-x,12px);right:var(--tabbar-inset-x,12px);bottom:calc(var(--tabbar-clearance,80px) + 8px);background:rgba(255,252,247,.94);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);border:1px solid var(--line);border-top:1px solid var(--line);border-radius:20px;padding:.45rem .45rem .45rem .75rem;gap:.55rem;box-shadow:0 6px 20px rgba(34,32,30,.1),0 1px 4px rgba(34,32,30,.05),inset 0 1px 0 rgba(255,255,255,.7)}
+  #wishlistBar .wl-info{font-size:.78rem;line-height:1.35}
+  #wishlistBar .wl-info small{font-size:.65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #wishlistBar .wl-open{padding:.48rem .95rem;font-size:.78rem;box-shadow:0 2px 8px rgba(217,79,92,.25)}
+  body.app-mode.has-wishlist-bar{padding-bottom:calc(var(--wl-bar-h,56px) + 8px + var(--tabbar-clearance,80px))}
+  body.has-wishlist-bar{padding-bottom:calc(var(--wl-bar-h,56px) + 10px + env(safe-area-inset-bottom,0px))}
+}

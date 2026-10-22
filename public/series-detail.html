@@ -5,19 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>系列周边 — f7goods</title>
 <meta name="description" content="查看作品系列详情、参与作者与系列作品。">
-<link rel="stylesheet" href="/css/style.css?v=20261020cw">
-<script src="/js/api.js?v=20261020cw"></script>
-<script src="/js/i18n.js?v=20261020cw"></script>
+<link rel="stylesheet" href="/css/style.css?v=20261020cx">
+<script src="/js/api.js?v=20261020cx"></script>
+<script src="/js/i18n.js?v=20261020cx"></script>
 </head>
 <body>
 <nav class="navbar" id="navbar"></nav>
 <main class="main-content detail-page">
   <div id="seriesDetail"><div class="empty-state"><p>加载中…</p></div></div>
 </main>
-<div id="seriesWishlistBar" class="sw-bar" style="display:none;"></div>
-<div id="seriesWishlistOverlay" class="sw-overlay" onclick="if(event.target===this)closeSeriesWishlistSheet()"></div>
+<div id="wishlistBar" style="display:none;"></div>
+<div class="wl-overlay" id="wishlistOverlay" onclick="if(event.target===this)closeSeriesWishlistSheet()">
+  <div class="wl-drawer" role="dialog" aria-modal="true" aria-labelledby="wlTitle" onclick="event.stopPropagation()">
+    <button type="button" class="wl-close" onclick="closeSeriesWishlistSheet()" aria-label="关闭">×</button>
+    <h3 id="wlTitle">系列心愿单</h3>
+    <div id="wlList"></div>
+    <div id="wlSum"></div>
+    <div class="wl-actions">
+      <button type="button" class="alt" onclick="copySeriesWishlistText()">复制文本清单</button>
+      <button type="button" class="alt danger" onclick="clearSeriesWishlist()">一键清空</button>
+    </div>
+  </div>
+</div>
 <footer class="footer" id="footer"></footer>
-<script src="/js/main.js?v=20261020cw"></script>
+<script src="/js/main.js?v=20261020cx"></script>
 <script>
 // ===== 系列周边心愿单：与首页心愿单分开存储 =====
 const SERIES_WISHLIST_KEY = 'f7seriesWishlist';
@@ -105,48 +116,71 @@ function seriesWishlistStats() {
     count += qty;
     total += price * qty;
     if (!price) freeCount += qty;
-    entries.push({ work, qty, price });
+    entries.push({ work, qty, price, subtotal: price * qty });
   });
   return { count, total, freeCount, entries };
 }
 function updateSeriesWishlistBar() {
-  const bar = document.getElementById('seriesWishlistBar');
+  const bar = document.getElementById('wishlistBar');
   if (!bar) return;
-  const { count, total, entries } = seriesWishlistStats();
+  const { count, total, freeCount, entries } = seriesWishlistStats();
   if (!wishlistMode || !entries.length) {
     bar.style.display = 'none';
     bar.innerHTML = '';
-    document.body.classList.remove('has-series-wishlist-bar');
+    document.body.classList.remove('has-wishlist-bar');
+    document.body.style.removeProperty('--wl-bar-h');
     closeSeriesWishlistSheet();
     return;
   }
   bar.style.display = 'flex';
-  document.body.classList.add('has-series-wishlist-bar');
-  bar.innerHTML = `<div class="sw-bar-info">系列心愿单 · 已选 <b>${count}</b> 件${total > 0 ? ` · 预估 <b>¥${total.toFixed(2)}</b>` : ' · 无料不计价'}</div>` +
-    `<button type="button" class="sw-bar-open" onclick="openSeriesWishlistSheet()">查看清单</button>`;
+  document.body.classList.add('has-wishlist-bar');
+  bar.innerHTML = `<div class="wl-info">已选 <b>${count}</b> 件 · 预估总价 <b>¥${total.toFixed(2)}</b><small>${freeCount ? `含 ${freeCount} 件无料周边（未计入总价）· ` : ''}仅供购物模拟，非交易订单</small></div>` +
+    `<button type="button" class="wl-open" onclick="openSeriesWishlistSheet()">清单</button>`;
+  requestAnimationFrame(() => {
+    if (bar.style.display !== 'none') document.body.style.setProperty('--wl-bar-h', Math.ceil(bar.getBoundingClientRect().height) + 'px');
+  });
 }
 function openSeriesWishlistSheet() {
-  const overlay = document.getElementById('seriesWishlistOverlay');
+  const overlay = document.getElementById('wishlistOverlay');
   if (!overlay) return;
   renderSeriesWishlistSheet();
   overlay.classList.add('open');
 }
 function closeSeriesWishlistSheet() {
-  document.getElementById('seriesWishlistOverlay')?.classList.remove('open');
+  document.getElementById('wishlistOverlay')?.classList.remove('open');
 }
 function renderSeriesWishlistSheet() {
-  const overlay = document.getElementById('seriesWishlistOverlay');
-  if (!overlay) return;
-  const { count, total, freeCount, entries } = seriesWishlistStats();
-  overlay.innerHTML = `<div class="sw-sheet" onclick="event.stopPropagation()">
-    <div class="sw-sheet-head"><h3>系列心愿单</h3><button type="button" class="sw-close" onclick="closeSeriesWishlistSheet()">×</button></div>
-    <div class="sw-sheet-list">${entries.map(({ work, qty }) => `<div class="sw-item">
-      <div class="sw-thumb">${work.images?.[0] ? `<img src="${escapeHtml(imgUrl(work.images[0], 160))}" alt="">` : '🎨'}</div>
-      <div class="sw-item-main"><b>${escapeHtml(workTitle(work))}</b><small>${escapeHtml(typeof formatPriceLabel === 'function' ? formatPriceLabel(work.price) : (work.price || '无料'))}</small></div>
-      <div class="sw-qty"><button type="button" onclick="seriesWlQty('${work.id}',-1,event)">−</button><b>${qty}</b><button type="button" onclick="seriesWlQty('${work.id}',1,event)">＋</button></div>
-    </div>`).join('')}</div>
-    <div class="sw-sheet-foot"><span>共 ${count} 件${total > 0 ? ` · 预估 ¥${total.toFixed(2)}` : ''}${freeCount ? ` · 含 ${freeCount} 件无料` : ''}</span><button type="button" class="sw-clear" onclick="clearSeriesWishlist()">清空</button></div>
-  </div>`;
+  const list = document.getElementById('wlList');
+  const sum = document.getElementById('wlSum');
+  if (!list || !sum) return;
+  const { count, total, entries } = seriesWishlistStats();
+  if (!entries.length) {
+    list.innerHTML = '<div class="wl-empty">心愿单是空的<br>点击卡片价格旁的「＋ 心愿」开始添加</div>';
+    sum.innerHTML = '';
+    return;
+  }
+  list.innerHTML = entries.map(({ work, qty, subtotal }) => {
+    const img = (work.images && work.images[0]) || '';
+    const statusLabel = (typeof STATUS_LABELS !== 'undefined' && STATUS_LABELS[work.status]) || '';
+    return `<div class="wl-item">
+      ${img ? `<img class="thumb" src="${escapeHtml(imgUrl(img, 96))}" alt="" loading="lazy">` : `<span class="thumb">${escapeHtml((workTitle(work) || '?').charAt(0))}</span>`}
+      <div class="n">
+        <div class="t"><a href="/work-detail.html?id=${encodeURIComponent(work.id)}">${escapeHtml(workTitle(work))}</a></div>
+        ${statusLabel ? `<small>${escapeHtml(statusLabel)}</small>` : ''}
+        <div class="wl-qty">
+          <button type="button" aria-label="减少" title="减少" onclick="seriesWlQty('${work.id}',-1,event)">−</button>
+          <span class="num">${qty}</span>
+          <button type="button" aria-label="增加" title="增加" onclick="seriesWlQty('${work.id}',1,event)">＋</button>
+          <button type="button" class="del" aria-label="移除" title="移除" onclick="seriesWlQty('${work.id}',0,event)">移除</button>
+        </div>
+      </div>
+      <div class="p${subtotal ? '' : ' free'}">${subtotal ? '¥' + subtotal.toFixed(2) : '无料'}</div>
+    </div>`;
+  }).join('');
+  sum.innerHTML =
+    '<div class="wl-sum"><span>件数</span><span>' + count + ' 件</span></div>' +
+    '<div class="wl-sum total"><span>预估合计</span><span class="v">¥' + total.toFixed(2) + '</span></div>' +
+    '<div class="wl-note">无料周边不计入合计</div>';
 }
 function seriesWlQty(workId, delta, e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -156,7 +190,21 @@ function seriesWlQty(workId, delta, e) {
   saveWishlist();
   refreshWishlistControl(workId);
   updateSeriesWishlistBar();
-  if (document.getElementById('seriesWishlistOverlay')?.classList.contains('open')) renderSeriesWishlistSheet();
+  if (document.getElementById('wishlistOverlay')?.classList.contains('open')) renderSeriesWishlistSheet();
+}
+function copySeriesWishlistText() {
+  const { count, total, entries } = seriesWishlistStats();
+  if (!entries.length) return;
+  const lines = ['【f7goods · 系列心愿单】'];
+  entries.forEach(({ work, qty, price, subtotal }) => {
+    lines.push(`${workTitle(work)} × ${qty}  ${price ? '¥' + subtotal.toFixed(2) : '无料'}`);
+  });
+  lines.push('', `件数：${count} 件`, `预估合计：¥${total.toFixed(2)}`, '无料周边不计入合计');
+  const text = lines.join('\n');
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => {
+    if (typeof showToast === 'function') showToast('清单已复制', 'success');
+  }).catch(() => {});
+  else if (typeof showToast === 'function') showToast('复制失败，请手动选择文本', 'error');
 }
 async function clearSeriesWishlist() {
   if (!Object.keys(wishlistItems).length) return;
