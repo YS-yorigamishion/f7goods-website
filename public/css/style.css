@@ -5259,3 +5259,7 @@ a.cl-series-card:hover { border-color: var(--accent); }
 
 /* Work detail: mobile sticky action bar removed */
 @media(max-width:600px){.wd-page{padding-bottom:80px}.wd-mobile-bar{display:none!important}}
+
+/* Contact: plain contact info (no link/button behavior) */
+.contact-channel.is-static{cursor:default;user-select:text}
+.contact-channel.is-static:hover{border-color:var(--line);transform:none}
