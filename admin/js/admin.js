@@ -6766,7 +6766,7 @@ function openUpdateModal(update = null) {
     adminAPI('GET', '/api/admin/events'),
     adminAPI('GET', '/api/admin/projects'),
     adminAPI('GET', '/api/admin/circles'),
-    adminAPI('GET', '/api/admin/categories')
+    adminAPI('GET', '/api/admin/categories').catch(() => null)
   ]).then(([allEvents, allProjects, allCircles, categories]) => {
     if (categories) currentCategories = categories;
     const eventsMap = {};
