@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020dd">
+  <link rel="stylesheet" href="/css/style.css?v=20261020de">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -45,9 +45,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020dd"></script>
-  <script src="/js/i18n.js?v=20261020dd"></script>
-  <script src="/js/main.js?v=20261020dd"></script>
+  <script src="/js/api.js?v=20261020de"></script>
+  <script src="/js/i18n.js?v=20261020de"></script>
+  <script src="/js/main.js?v=20261020de"></script>
   <script>
     let eventRelatedWorks = [];
     let eventCirclesMap = {};
@@ -177,68 +177,74 @@
         const statusLabel = event.status ? (EVENT_STATUS_LABELS[event.status] || '') : '';
         const cover = event.coverImage || '';
         const isOnly = event.type === 'only';
+        const dObj = new Date(event.date + 'T00:00:00');
+        const validDate = !isNaN(dObj.getTime());
+        const monthDay = validDate ? String(dObj.getMonth() + 1).padStart(2, '0') + '.' + String(dObj.getDate()).padStart(2, '0') : formatDate(event.date);
+        const yearLabel = validDate ? dObj.getFullYear() : '';
+        const weekday = validDate ? '周' + '日一二三四五六'[dObj.getDay()] : '';
+        const city = (event.location || '').split('·')[0].trim();
+        const daysTo = validDate ? Math.ceil((new Date(event.date + 'T23:59:59') - new Date()) / 86400000) : null;
+        const allTags = [...new Set(relatedWorks.flatMap(w => w.tags || []))];
+        const contactEntries = event.socialLinks ? Object.entries(event.socialLinks).filter(([k, v]) => v && !['contactLabel', 'websiteLabel'].includes(k)) : [];
+
         container.innerHTML = `
-          <div class="detail-breadcrumb">
-            <a href="/events.html">${t('nav.events')}</a>
-            <span>›</span>
-            <span>${escapeHtml(event.title)}</span>
+          <div class="evd-crumb">
+            <a href="/events.html">${t('nav.events')}</a><span>›</span><span>${escapeHtml(event.title)}</span>
           </div>
-          <div class="ev-hero ${cover ? 'has-cover' : ''}" ${cover ? `style="background-image:url('${escapeHtml(imgUrl(cover, 1600))}');background-size:cover;background-position:center;"` : ''}>
-            <div class="ev-hero-shade"></div>
-            <div class="ev-hero-body">
-              <div class="ev-hero-row">
-                ${statusLabel ? `<span class="ev-chip">${escapeHtml(statusLabel)}</span>` : ''}
-                ${isOnly ? `<span class="ev-chip ev-chip-only">ONLY 专场</span>` : ''}
-                <span class="ev-hero-share">${renderShareButton(event.title, location.href)}</span>
-              </div>
+
+          <section class="evd-masthead">
+            <div class="evd-poster">
+              ${cover ? `<img src="${escapeHtml(imgUrl(cover, 1600))}" alt="${escapeHtml(event.title)}">` : ''}
+              ${statusLabel ? `<span class="evd-poster-tag">当前活动 · ${escapeHtml(statusLabel)}</span>` : ''}
+            </div>
+            <div class="evd-identity">
+              <div class="evd-kicker">EVENT DOSSIER</div>
+              <div class="evd-date"><b>${escapeHtml(monthDay)}</b><div class="evd-ym"><strong>${escapeHtml(String(yearLabel))}${weekday ? ' / ' + weekday : ''}</strong><span>${escapeHtml(city || '地点待公布')}</span></div></div>
               <h1>${escapeHtml(event.title)}</h1>
-              <div class="ev-hero-meta">
-                <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> ${dateText}</span>
-                ${event.location ? `<span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg> ${escapeHtml(event.location)}</span>` : ''}
+              <div class="evd-chips">
+                ${statusLabel ? `<span class="evd-chip">${escapeHtml(statusLabel)}</span>` : ''}
+                ${isOnly ? `<span class="evd-chip pink">ONLY 专场</span>` : ''}
+                ${relatedWorks.length ? `<span class="evd-chip">${relatedWorks.length} 件关联周边</span>` : ''}
+              </div>
+              ${event.description ? `<div class="evd-desc">${nl2br(event.description)}</div>` : ''}
+              ${event.location ? `<div class="evd-loc">📍 ${escapeHtml(event.location)}</div>` : ''}
+              <div class="evd-actions">
+                ${isOnly ? `<a class="evd-btn evd-btn-pink" href="/only.html?id=${encodeURIComponent(event.id)}">进入 ONLY 专场 →</a>` : ''}
+                <span class="evd-share">${renderShareButton(event.title, location.href)}</span>
+                ${daysTo !== null && daysTo > 0 ? `<div class="evd-countdown"><b>${daysTo}</b> 天后开始</div>` : ''}
               </div>
             </div>
-          </div>
-          ${isOnly ? `
-          <div class="ev-only-banner">
-            <div>
-              <b>ONLY 专场页已开放</b>
-            </div>
-            <a href="/only.html?id=${encodeURIComponent(event.id)}">进入专场 →</a>
-          </div>
-          ` : ''}
-          <div class="detail-content">
-            <div class="detail-main">
-              ${event.description ? `<h3 style="margin-bottom:1rem;font-size:1.1rem;">${t('events.description')}</h3>
-              <p style="line-height:1.8;color:var(--ink);">${nl2br(event.description)}</p>` : ''}
+          </section>
 
-              ${event.booth ? `<div style="margin-top:1.5rem;"><span class="event-booth" style="font-size:0.9rem;">${t('events.booth')}: ${escapeHtml(event.booth)}</span></div>` : ''}
-
-              ${event.images && event.images.length > 0 ? `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('events.eventImages')}</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
-                  ${event.images.map((img, i) => `
-                    <div class="event-img-wrap collapsed" data-images='${JSON.stringify(event.images).replace(/&/g, '&amp;').replace(/'/g, '&#39;')}' data-index="${i}" onclick="toggleEventImg(this)">
-                      <img src="${escapeHtml(imgUrl(img, 800))}" alt="${escapeHtml(event.title)}" style="width:100%;border-radius:8px;display:block;">
-                      <div class="event-img-expand-hint">&#8595;</div>
-                    </div>
-                  `).join('')}
-                </div>
-              ` : ''}
+          <div class="evd-layout">
+            <main class="evd-main">
+              <section class="evd-block">
+                <div class="evd-block-head"><h2>${t('events.description')} <span>ABOUT</span></h2></div>
+                <div class="evd-body">${event.description ? nl2br(event.description) : '暂无活动简介'}</div>
+                ${event.booth ? `<div class="evd-booth">${t('events.booth')}：<b>${escapeHtml(event.booth)}</b></div>` : ''}
+                ${event.images && event.images.length > 0 ? `
+                  <div class="evd-imgs">
+                    ${event.images.map((img, i) => `
+                      <div class="event-img-wrap collapsed" data-images='${JSON.stringify(event.images).replace(/&/g, '&amp;').replace(/'/g, '&#39;')}' data-index="${i}" onclick="toggleEventImg(this)">
+                        <img src="${escapeHtml(imgUrl(img, 800))}" alt="${escapeHtml(event.title)}">
+                        <div class="event-img-expand-hint">&#8595;</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </section>
 
               ${relatedUpdates.length ? `
-              <section class="rel-upd-section">
-                <div class="rel-upd-head">
-                  <div class="rel-upd-title"><h3>活动动态 <span>UPDATES</span><b>${allRelatedUpdates.length} 条</b></h3><p>主办方与参与作者的最新消息</p></div>
-                  ${allRelatedUpdates.length ? `<a class="rel-upd-more" href="/event-updates.html?event=${encodeURIComponent(event.id)}">查看全部 →</a>` : ''}
-                </div>
+              <section class="evd-block">
+                <div class="evd-block-head"><h2>活动动态 <span>UPDATES</span></h2>${allRelatedUpdates.length ? `<a href="/event-updates.html?event=${encodeURIComponent(event.id)}">查看全部 →</a>` : ''}</div>
                 <div class="rel-upd-grid">
                   ${relatedUpdates.map(u => {
-                    const cover = u.coverImage || (u.images && u.images[0]) || '';
+                    const ucover = u.coverImage || (u.images && u.images[0]) || '';
                     const names = (u.relatedCircles || []).map(cid => allCircles.find(c => c.id === cid)?.name).filter(Boolean);
                     const catLabel = (typeof UPDATE_CATEGORIES !== 'undefined' && UPDATE_CATEGORIES[u.category]) || '动态';
                     const excerpt = String(u.content || '').replace(/\s+/g, ' ').trim();
                     return `<a class="card rel-upd-card" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
-                      <div class="card-image">${cover ? `<img src="${escapeHtml(imgUrl(cover, 360))}" alt="${escapeHtml(u.title)}" loading="lazy">` : `<span class="placeholder-icon">📰</span>`}<span class="rel-upd-tag">${escapeHtml(catLabel)}</span></div>
+                      <div class="card-image">${ucover ? `<img src="${escapeHtml(imgUrl(ucover, 360))}" alt="${escapeHtml(u.title)}" loading="lazy">` : '<span class="placeholder-icon">📰</span>'}<span class="rel-upd-tag">${escapeHtml(catLabel)}</span></div>
                       <div class="card-body">
                         <div class="rel-upd-meta">${formatDate(u.publishDate)}${names.length ? ' · ' + escapeHtml(names[0]) : ''}</div>
                         <h3 class="card-title">${escapeHtml(u.title)}</h3>
@@ -249,109 +255,57 @@
                   }).join('')}
                 </div>
                 <p class="rel-upd-note">仅展示关联到本活动的同人动态 · 按发布时间倒序</p>
-              </section>
-              ` : ''}
+              </section>` : ''}
 
-              ${relatedWorks.length > 0 ? (() => {
+              ${relatedWorks.length ? (() => {
                 const usedCats = [...new Set(relatedWorks.map(w => w.category).filter(Boolean))];
                 const catBtns = CATEGORIES_ORDERED.filter(c => usedCats.includes(c.id));
-                return `
-                <h3 style="margin:2rem 0 1rem;font-size:1.1rem;">${t('events.relatedWorks')} <span id="relatedWorksCount">(${relatedWorks.length})</span></h3>
-                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:1rem;">
-                  <button class="filter-btn active" data-rw-cat="all" onclick="rwCategory='all';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${t('common.all')}</button>
-                  ${catBtns.map(c => `<button class="filter-btn" data-rw-cat="${c.id}" onclick="rwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${tCat(c)}</button>`).join('')}
-                  <input type="text" class="search-input" placeholder="${t('common.searchWorks')}" style="margin-left:auto;max-width:200px;" oninput="rwSearchText=this.value;renderRelatedWorks();">
-                </div>
-                <div class="cards-grid related-works-grid" id="relatedWorksGrid"></div>
-                `;
+                return `<section class="evd-block">
+                  <div class="evd-block-head"><h2>${t('events.relatedWorks')} <span id="relatedWorksCount">(${relatedWorks.length})</span></h2></div>
+                  <div class="evd-filter-row">
+                    <button class="filter-btn active" data-rw-cat="all" onclick="rwCategory='all';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${t('common.all')}</button>
+                    ${catBtns.map(c => `<button class="filter-btn" data-rw-cat="${c.id}" onclick="rwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${tCat(c)}</button>`).join('')}
+                    <input type="text" class="search-input" placeholder="${t('common.searchWorks')}" oninput="rwSearchText=this.value;renderRelatedWorks();">
+                  </div>
+                  <div class="cards-grid evd-works-grid" id="relatedWorksGrid"></div>
+                </section>`;
               })() : ''}
+            </main>
 
-            </div>
-            <div class="detail-sidebar">
-              <div class="sidebar-card">
+            <aside class="evd-side">
+              <div class="evd-card">
                 <h3>${t('events.eventInfo')}</h3>
-                <div class="info-row">
-                  <span class="info-label">${t('events.startDate')}</span>
-                  <span class="info-value">${formatDate(event.date)}</span>
-                </div>
-                ${event.endDate ? `
-                  <div class="info-row">
-                    <span class="info-label">${t('events.endDate')}</span>
-                    <span class="info-value">${formatDate(event.endDate)}</span>
-                  </div>
-                ` : ''}
-                <div class="info-row">
-                  <span class="info-label">${t('events.location')}</span>
-                  <span class="info-value">${escapeHtml(event.location)}</span>
-                </div>
-                ${event.booth ? `
-                  <div class="info-row">
-                    <span class="info-label">${t('events.booth')}</span>
-                    <span class="info-value" style="color:var(--accent);font-weight:600;">${escapeHtml(event.booth)}</span>
-                  </div>
-                ` : ''}
+                <div class="evd-side-row"><span>${t('events.startDate')}</span><b>${formatDate(event.date)}</b></div>
+                ${event.endDate ? `<div class="evd-side-row"><span>${t('events.endDate')}</span><b>${formatDate(event.endDate)}</b></div>` : ''}
+                ${event.location ? `<div class="evd-side-row"><span>${t('events.location')}</span><b>${escapeHtml(event.location)}</b></div>` : ''}
+                ${event.booth ? `<div class="evd-side-row"><span>${t('events.booth')}</span><b style="color:var(--accent)">${escapeHtml(event.booth)}</b></div>` : ''}
               </div>
-              ${event.socialLinks && Object.keys(event.socialLinks).filter(k => event.socialLinks[k] && !['contactLabel','websiteLabel'].includes(k)).length > 0 ? `
-              <div class="sidebar-card">
-                <h3>${t('events.contactInfo')}</h3>
-                ${Object.entries(event.socialLinks).filter(([k, url]) => url && !['contactLabel','websiteLabel'].includes(k)).map(([key, url]) => {
-                  const isUrl = url.startsWith('http');
+
+              ${contactEntries.length ? `<div class="evd-card"><h3>${t('events.contactInfo')}</h3>
+                ${contactEntries.map(([key, url]) => {
+                  const isUrl = String(url).startsWith('http');
                   const defaultLabel = key === 'qq' ? t('common.qqContact') : key === 'qqGroup' ? t('common.qqGroup') : key === 'website' ? t('common.visitWebsite') : key;
                   const label = key === 'website' ? (event.socialLinks.websiteLabel || defaultLabel) : (event.socialLinks.contactLabel || defaultLabel);
-                  return isUrl
-                    ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(233,69,96,0.06);color:var(--accent);border-radius:100px;font-size:0.85rem;text-decoration:none;margin:0.2rem 0;transition:var(--transition);"
-                         onmouseover="this.style.background='rgba(233,69,96,0.12)'" onmouseout="this.style.background='rgba(233,69,96,0.06)'">${escapeHtml(label)}</a>`
-                    : `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.85rem;">
-                         <span style="display:inline-block;padding:0.3rem 0.8rem;background:rgba(15,52,96,0.06);color:var(--accent-alt);border-radius:100px;font-weight:500;">${escapeHtml(label)}</span>
-                         <span style="color:var(--accent);font-weight:500;">${escapeHtml(url)}</span>
-                       </div>`;
+                  return `<div class="evd-contact-item"><span>${escapeHtml(label)}</span>${isUrl ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">访问 →</a>` : `<b>${escapeHtml(url)}</b>`}</div>`;
                 }).join('')}
-              </div>
-              ` : ''}
-              ${relatedProjects.length > 0 ? `
-              <div class="sidebar-card">
-                <h3>${t('events.relatedProjects')}</h3>
-                ${relatedProjects.map(p => `
-                  <a href="/project-detail.html?id=${p.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
-                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    ${p.coverImage
-                      ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;"><img src="${escapeHtml(imgUrl(p.coverImage, 96))}" alt="${escapeHtml(p.title)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent-alt),var(--ink));display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">📋</div>`}
-                    <div>
-                      <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(p.title)}</div>
-                      <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${PROJECT_STATUS_LABELS[p.status] || ''}</div>
-                    </div>
-                  </a>
-                `).join('')}
-              </div>
-              ` : ''}
-              ${relatedCircles.length > 0 ? `
-              <div class="sidebar-card">
-                <h3>${t('events.relatedAuthors')}</h3>
-                ${relatedCircles.map(c => `
-                  <a href="/circle-detail.html?id=${c.id}" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
-                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    ${c.logo
-                      ? `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;"><img src="${escapeHtml(imgUrl(c.logo, 96))}" alt="${escapeHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;"></div>`
-                      : `<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-size:0.9rem;font-weight:700;flex-shrink:0;">${escapeHtml(c.name.charAt(0))}</div>`}
-                    <div>
-                      <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(c.name)}</div>
-                    </div>
-                  </a>
-                `).join('')}
-              </div>
-              ` : ''}
-              ${(() => {
-                const allTags = [...new Set(relatedWorks.flatMap(w => w.tags || []))];
-                return allTags.length > 0 ? `
-              <div class="sidebar-card">
-                <h3>${t('works.tags')}</h3>
-                <div class="tag-list">
-                  ${allTags.map(t => `<a href="/?tag=${encodeURIComponent(t)}" class="tag" style="text-decoration:none;">${escapeHtml(t)}</a>`).join('')}
-                </div>
-              </div>` : '';
-              })()}
-            </div>
+              </div>` : ''}
+
+              ${relatedProjects.length ? `<div class="evd-card"><h3>${t('events.relatedProjects')}</h3>
+                ${relatedProjects.map(p => `<a class="evd-mini-link" href="/project-detail.html?id=${encodeURIComponent(p.id)}">
+                  ${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 96))}" alt="">` : '<span class="evd-ph">企</span>'}
+                  <div><b>${escapeHtml(p.title)}</b><small>${escapeHtml(PROJECT_STATUS_LABELS[p.status] || '')}</small></div>
+                </a>`).join('')}
+              </div>` : ''}
+
+              ${relatedCircles.length ? `<div class="evd-card"><h3>${t('events.relatedAuthors')}</h3>
+                ${relatedCircles.map(c => `<a class="evd-mini-link" href="/circle-detail.html?id=${encodeURIComponent(c.id)}">
+                  ${c.logo ? `<img class="round" src="${escapeHtml(imgUrl(c.logo, 96))}" alt="">` : `<span class="evd-ph round">${escapeHtml(c.name.charAt(0))}</span>`}
+                  <div><b>${escapeHtml(c.name)}</b><small>作者</small></div>
+                </a>`).join('')}
+              </div>` : ''}
+
+              ${allTags.length ? `<div class="evd-card"><h3>${t('works.tags')}</h3><div class="tag-list">${allTags.map(tg => `<a class="tag" href="/?tag=${encodeURIComponent(tg)}">${escapeHtml(tg)}</a>`).join('')}</div></div>` : ''}
+            </aside>
           </div>
         `;
         renderRelatedWorks();
