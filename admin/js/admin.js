@@ -6792,9 +6792,9 @@ function openUpdateModal(update = null) {
           </select>
         </div>
         <div class="form-group">
-          <label>状态 <span style="color:var(--accent)">*</span></label>
+          <label>状态</label>
           <select class="form-input" id="updStatus">
-            <option value="">请选择</option>
+            <option value="">不填</option>
             ${(currentCategories?.updateStatus || []).map(c => `<option value="${c.id}" ${update?.status === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
           </select>
         </div>
@@ -6893,7 +6893,6 @@ function openUpdateModal(update = null) {
       };
       if (!data.title) { showToast('请填写标题', 'error'); return; }
       if (!data.category) { showToast('请选择分类', 'error'); return; }
-      if (!data.status) { showToast('请选择状态', 'error'); return; }
       if (!data.content) { showToast('请填写内容', 'error'); return; }
 
       if (isEdit) {
