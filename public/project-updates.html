@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企划动态 — f7goods</title>
+<meta name="description" content="查看企划关联的全部同人动态。">
+<link rel="stylesheet" href="/css/style.css?v=20261020dc">
+<script src="/js/api.js?v=20261020dc"></script>
+<script src="/js/i18n.js?v=20261020dc"></script>
+</head>
+<body>
+<nav class="navbar" id="navbar"></nav>
+<main class="main-content">
+  <div class="evu-shell" id="projectUpdatesPage">
+    <div class="empty-state"><p>加载中…</p></div>
+  </div>
+</main>
+<footer class="footer" id="footer"></footer>
+<script src="/js/main.js?v=20261020dc"></script>
+<script>
+(async function () {
+  const id = new URLSearchParams(location.search).get('project');
+  const root = document.getElementById('projectUpdatesPage');
+  if (!id) { location.href = '/projects.html'; return; }
+
+  try {
+    if (typeof initPage === 'function') await initPage('projects', id);
+    await loadCategoriesFromAPI();
+    if (typeof onLangChange === 'function') onLangChange(() => location.reload());
+
+    const [project, updates, circles] = await Promise.all([
+      F7API.getProject(id),
+      fetch('/api/updates').then(r => r.json()),
+      F7API.getCircles()
+    ]);
+
+    const circlesMap = {};
+    (circles || []).forEach(c => { circlesMap[c.id] = c.name; });
+    const all = (updates || [])
+      .filter(u => (u.relatedProjects || []).includes(project.id))
+      .sort((a, b) => String(b.publishDate || '').localeCompare(String(a.publishDate || '')));
+
+    const statusLabel = project.status ? (PROJECT_STATUS_LABELS[project.status] || '') : '';
+    const catLabel = PROJECT_CATEGORIES[project.category] || '';
+    const cover = project.coverImage || (project.images && project.images[0]) || '';
+    const endDate = project.endDate && project.endDate !== project.startDate ? ' ~ ' + formatDate(project.endDate) : '';
+    const dateText = formatDate(project.startDate) + endDate;
+
+    document.title = `${project.title} · 企划动态 — f7goods`;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', `${project.title} 的企划动态。`);
+
+    const catCounts = {};
+    all.forEach(u => { if (u.category) catCounts[u.category] = (catCounts[u.category] || 0) + 1; });
+    const usedCats = [...new Set(all.map(u => u.category).filter(Boolean))];
+
+    root.innerHTML = `
+      <div class="evu-crumb"><a href="/projects.html">同人企划</a><span>›</span><a href="/project-detail.html?id=${encodeURIComponent(project.id)}">${escapeHtml(project.title)}</a><span>›</span><span>企划动态</span></div>
+      <section class="evu-hero">
+        ${cover ? `<img class="evu-hero-img" src="${escapeHtml(imgUrl(cover, 1600))}" alt="${escapeHtml(project.title)}">` : ''}
+        <div class="evu-hero-shade"></div>
+        <div class="evu-hero-body">
+          <div class="evu-hero-left">
+            <div class="evu-kicker">PROJECT UPDATES</div>
+            <div class="evu-chips">
+              ${statusLabel ? `<span class="evu-chip">${escapeHtml(statusLabel)}</span>` : ''}
+              ${catLabel ? `<span class="evu-chip evu-chip-pink">${escapeHtml(catLabel)}</span>` : ""}
+            </div>
+            <h1>${escapeHtml(project.title)}</h1>
+            <div class="evu-hero-meta">
+              <span>${escapeHtml(dateText)}</span>
+              
+              <span>企划动态 ${all.length} 条</span>
+            </div>
+          </div>
+          <a class="evu-back" href="/project-detail.html?id=${encodeURIComponent(project.id)}">← 返回企划详情</a>
+        </div>
+      </section>
+
+      <div class="evu-layout">
+        <div class="evu-main">
+          <div class="evu-toolbar">
+            <div class="evu-chips">
+              <button type="button" class="evu-chipbtn on" data-cat="all">全部动态</button>
+              ${usedCats.map(cid => `<button type="button" class="evu-chipbtn" data-cat="${escapeHtml(cid)}">${escapeHtml(UPDATE_CATEGORIES[cid] || cid)}</button>`).join('')}
+            </div>
+            <span class="evu-sep"></span>
+            <select class="evu-select" id="evuSort"><option value="desc">日期 ↓ 新→旧</option><option value="asc">日期 ↑ 旧→新</option></select>
+            <input class="evu-search" id="evuSearch" placeholder="搜索动态、作者…">
+          </div>
+          <div class="evu-result"><span id="evuResult">共 ${all.length} 条企划动态</span></div>
+          <div id="evuTimeline" class="evu-timeline"></div>
+        </div>
+        <aside class="evu-side">
+          <div class="evu-side-card">
+            <h3>企划信息</h3>
+            <a class="evu-side-event" href="/project-detail.html?id=${encodeURIComponent(project.id)}">
+              ${cover ? `<img src="${escapeHtml(imgUrl(cover, 160))}" alt="">` : '<span class="evu-side-ph">企划</span>'}
+              <div><b>${escapeHtml(project.title)}</b><small>${escapeHtml(dateText)}</small></div>
+            </a>
+            ${statusLabel ? `<div class="evu-side-row"><span>状态</span><b>${escapeHtml(statusLabel)}</b></div>` : ''}
+            <div class="evu-side-row"><span>动态</span><b>${all.length} 条</b></div>
+            <a class="evu-side-link" href="/project-detail.html?id=${encodeURIComponent(project.id)}">← 返回企划详情</a>
+          </div>
+          <div class="evu-side-card">
+            <h3>动态分类</h3>
+            ${usedCats.length ? usedCats.map(cid => `<div class="evu-side-row"><span>${escapeHtml(UPDATE_CATEGORIES[cid] || cid)}</span><b>${catCounts[cid]} 条</b></div>`).join('') : '<div class="evu-side-row"><span>暂无分类</span><b>0 条</b></div>'}
+          </div>
+        </aside>
+      </div>`;
+
+    const state = { cat: 'all', q: '', sort: 'desc' };
+    const timeline = document.getElementById('evuTimeline');
+
+    function render() {
+      let list = all.slice();
+      if (state.cat !== 'all') list = list.filter(u => u.category === state.cat);
+      if (state.q) {
+        const q = state.q.toLowerCase();
+        list = list.filter(u => {
+          const names = (u.relatedCircles || []).map(cid => circlesMap[cid] || '').join(' ');
+          return [u.title, u.content, names].join(' ').toLowerCase().includes(q);
+        });
+      }
+      list.sort((a, b) => state.sort === 'asc'
+        ? String(a.publishDate || '').localeCompare(String(b.publishDate || ''))
+        : String(b.publishDate || '').localeCompare(String(a.publishDate || '')));
+
+      document.getElementById('evuResult').textContent = state.cat === 'all'
+        ? `共 ${list.length} 条企划动态`
+        : `${UPDATE_CATEGORIES[state.cat] || state.cat} · ${list.length} 条动态`;
+
+      if (!list.length) {
+        timeline.innerHTML = '<div class="evu-empty">该企划暂时没有符合条件的动态<br><a href="/project-detail.html?id=' + encodeURIComponent(project.id) + '">返回企划详情</a></div>';
+        return;
+      }
+
+      let html = '';
+      let lastMonth = '';
+      list.forEach(u => {
+        const d = String(u.publishDate || '');
+        const mk = d.slice(0, 7);
+        if (mk !== lastMonth) {
+          const parts = mk.split('-');
+          let en = '';
+          if (parts.length === 2) {
+            const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+            if (!isNaN(dt.getTime())) en = dt.toLocaleString('en', { month: 'long' }).toUpperCase() + ' ' + parts[0];
+          }
+          html += `<div class="evu-month"><b>${parts[0] || '未标日期'}${parts[1] ? ' 年 ' + Number(parts[1]) + ' 月' : ''}</b><span>${escapeHtml(en)}</span><div class="evu-rule"></div></div>`;
+          lastMonth = mk;
+        }
+        const day = d.slice(8, 10);
+        const month = d.slice(5, 7);
+        const author = (u.relatedCircles || []).map(cid => circlesMap[cid]).filter(Boolean)[0] || '同人动态';
+        const catLabel = UPDATE_CATEGORIES[u.category] || '动态';
+        const img = u.coverImage || (u.images && u.images[0]) || '';
+        const excerpt = String(u.content || '').replace(/\s+/g, ' ').trim();
+        html += `<div class="evu-row">
+          <div class="evu-date"><b>${day || '—'}</b><span>${month ? Number(month) + ' 月' : '日期待定'}</span></div>
+          <a class="evu-card" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
+            <div class="evu-cover">${img ? `<img src="${escapeHtml(imgUrl(img, 360))}" alt="${escapeHtml(u.title)}" loading="lazy">` : `<span>${escapeHtml((u.title || '?').charAt(0))}</span>`}<span class="evu-cat">${escapeHtml(catLabel)}</span></div>
+            <div class="evu-card-body">
+              <div class="evu-meta">${escapeHtml(u.publishDate || '')} · ${escapeHtml(author)}</div>
+              <h2>${escapeHtml(u.title)}</h2>
+              <p class="evu-excerpt">${escapeHtml(excerpt)}</p>
+              <div class="evu-foot"><span>${escapeHtml(catLabel)}</span><span class="evu-go">阅读全文 →</span></div>
+            </div>
+          </a>
+        </div>`;
+      });
+      timeline.innerHTML = html;
+    }
+
+    root.querySelectorAll('.evu-chipbtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.cat = btn.dataset.cat;
+        root.querySelectorAll('.evu-chipbtn').forEach(b => b.classList.toggle('on', b === btn));
+        render();
+      });
+    });
+    document.getElementById('evuSort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+    document.getElementById('evuSearch').addEventListener('input', e => { state.q = e.target.value.trim(); render(); });
+    render();
+  } catch (e) {
+    root.innerHTML = '<div class="empty-state"><div class="icon">!</div><p>企划不存在或暂未公开</p><p style="margin-top:.8rem;"><a class="detail-link" href="/projects.html">返回同人企划</a></p></div>';
+  }
+})();
+</script>
+</body>
+</html>
