@@ -5501,3 +5501,42 @@ body.has-wishlist-bar{padding-bottom:calc(var(--wl-bar-h,72px) + 10px)}
   .evd-layout{gap:10px}.evd-side{grid-template-columns:1fr}.evd-block{padding:14px}.evd-block-head h2{font-size:17px}
   .evd-imgs{grid-template-columns:1fr 1fr}.evd-works-grid{grid-template-columns:1fr 1fr}.evd-filter-row .search-input{margin-left:0;max-width:none;width:100%}
 }
+
+/* Event detail: larger text to match site pages */
+.evd-crumb{font-size:12px}
+.evd-kicker{font-size:10px}
+.evd-ym{font-size:12px}
+.evd-ym strong{font-size:13px}
+.evd-identity h1{font-size:30px}
+.evd-chip{font-size:10px;padding:3px 9px}
+.evd-desc{font-size:13px;line-height:1.95}
+.evd-loc{font-size:11.5px}
+.evd-btn{font-size:12px;padding:9px 18px}
+.evd-share .want-btn{height:34px;font-size:11.5px;padding:0 16px}
+.evd-countdown{font-size:11px}
+.evd-countdown b{font-size:20px}
+.evd-block-head h2{font-size:20px}
+.evd-block-head h2 span{font-size:10px}
+.evd-block-head a{font-size:11px}
+.evd-body{font-size:13.5px;line-height:1.95}
+.evd-booth{font-size:12px}
+.evd-card h3{font-size:15px}
+.evd-side-row{font-size:11.5px}
+.evd-contact-item{font-size:11.5px}
+.evd-mini-link b{font-size:11px}
+.evd-mini-link small{font-size:9px}
+.evd-block .rel-upd-meta{font-size:9px}
+.evd-block .rel-upd-tag{font-size:9px;padding:3px 9px}
+.evd-block .rel-upd-grid .card-title{font-size:1rem}
+.evd-block .rel-upd-excerpt{font-size:11px;line-height:1.75;min-height:3.5em}
+.evd-block .rel-upd-foot{font-size:9px}
+.evd-works-grid .card-title{font-size:1rem!important}
+.evd-works-grid .card-body p{font-size:.85rem!important}
+.evd-works-grid .card-price{font-size:1rem!important}
+.evd-works-grid .card-tag{font-size:.75rem!important}
+.evd-expand{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:4px 12px;font:inherit;font-size:10.5px;cursor:pointer}
+.evd-expand:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:900px){.evd-masthead{height:auto}.evd-identity h1{font-size:26px}}
+@media(max-width:600px){.evd-crumb{font-size:11px}.evd-desc{font-size:12px}.evd-body{font-size:12.5px}.evd-identity h1{font-size:22px}.evd-block .rel-upd-excerpt{font-size:10.5px}}
+
+@media(min-width:901px){.evd-masthead{height:468px}}

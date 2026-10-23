@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020de">
+  <link rel="stylesheet" href="/css/style.css?v=20261020df">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -45,14 +45,15 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020de"></script>
-  <script src="/js/i18n.js?v=20261020de"></script>
-  <script src="/js/main.js?v=20261020de"></script>
+  <script src="/js/api.js?v=20261020df"></script>
+  <script src="/js/i18n.js?v=20261020df"></script>
+  <script src="/js/main.js?v=20261020df"></script>
   <script>
     let eventRelatedWorks = [];
     let eventCirclesMap = {};
     let rwCategory = 'all';
     let rwSearchText = '';
+    let rwExpanded = false;
 
     function renderRelatedWorks() {
       let filtered = eventRelatedWorks;
@@ -72,13 +73,19 @@
       }
       const grid = document.getElementById('relatedWorksGrid');
       const count = document.getElementById('relatedWorksCount');
+      const toggle = document.getElementById('relatedWorksToggle');
       if (count) count.textContent = `(${filtered.length})`;
+      if (toggle) {
+        toggle.style.display = filtered.length > 8 ? '' : 'none';
+        toggle.textContent = rwExpanded ? '收起 ↑' : '展开 ↓';
+      }
       if (!grid) return;
       if (filtered.length === 0) {
         grid.innerHTML = `<div class="empty-state" style="padding:2rem 0;"><p>${t('common.noResults')}</p></div>`;
         return;
       }
-      grid.innerHTML = filtered.map(work => {
+      const visible = rwExpanded ? filtered : filtered.slice(0, 8);
+      grid.innerHTML = visible.map(work => {
         const authorNames = (work.circles || []).map(cid => eventCirclesMap[cid]).filter(Boolean).join('、');
         return `
         <a class="card" href="/work-detail.html?id=${work.id}" style="text-decoration:none;color:inherit;">
@@ -98,6 +105,11 @@
           </div>
         </a>`;
       }).join('');
+    }
+
+    function toggleRelatedWorks() {
+      rwExpanded = !rwExpanded;
+      renderRelatedWorks();
     }
 
     function toggleEventImg(el) {
@@ -261,7 +273,7 @@
                 const usedCats = [...new Set(relatedWorks.map(w => w.category).filter(Boolean))];
                 const catBtns = CATEGORIES_ORDERED.filter(c => usedCats.includes(c.id));
                 return `<section class="evd-block">
-                  <div class="evd-block-head"><h2>${t('events.relatedWorks')} <span id="relatedWorksCount">(${relatedWorks.length})</span></h2></div>
+                  <div class="evd-block-head"><h2>${t('events.relatedWorks')} <span id="relatedWorksCount">(${relatedWorks.length})</span></h2><button type="button" class="evd-expand" id="relatedWorksToggle" onclick="toggleRelatedWorks()" style="display:none;">展开 ↓</button></div>
                   <div class="evd-filter-row">
                     <button class="filter-btn active" data-rw-cat="all" onclick="rwCategory='all';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${t('common.all')}</button>
                     ${catBtns.map(c => `<button class="filter-btn" data-rw-cat="${c.id}" onclick="rwCategory='${c.id}';this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');renderRelatedWorks();">${tCat(c)}</button>`).join('')}
