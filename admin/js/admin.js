@@ -6765,8 +6765,10 @@ function openUpdateModal(update = null) {
   Promise.all([
     adminAPI('GET', '/api/admin/events'),
     adminAPI('GET', '/api/admin/projects'),
-    adminAPI('GET', '/api/admin/circles')
-  ]).then(([allEvents, allProjects, allCircles]) => {
+    adminAPI('GET', '/api/admin/circles'),
+    adminAPI('GET', '/api/admin/categories')
+  ]).then(([allEvents, allProjects, allCircles, categories]) => {
+    if (categories) currentCategories = categories;
     const eventsMap = {};
     (allEvents || []).forEach(e => eventsMap[e.id] = e.title);
     const projectsMap = {};
