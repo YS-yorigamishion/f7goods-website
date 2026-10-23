@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020cz">
+  <link rel="stylesheet" href="/css/style.css?v=20261020da">
 <link rel="canonical" href="https://f7goods.com/updates.html">
 <meta property="og:url" content="https://f7goods.com/updates.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -53,6 +53,8 @@
       <span style="display:none;">显示 <b id="updateShowCount">0</b></span>
     </div>
 
+    <div id="relationFilterBar" class="upd-rel-filter" style="display:none;"></div>
+
     <div id="updatesGrid" class="upd-timeline">
       <div id="updatesSkeleton">
         <div class="skeleton-card" style="height:170px;margin-bottom:12px;"></div>
@@ -63,10 +65,10 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020cz"></script>
+  <script src="/js/api.js?v=20261020da"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20261020cz"></script>
-  <script src="/js/main.js?v=20261020cz"></script>
+  <script src="/js/i18n.js?v=20261020da"></script>
+  <script src="/js/main.js?v=20261020da"></script>
   <script>
     initPage('updates');
     if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '发布动态', tab: 'my-updates' });
@@ -77,6 +79,10 @@
     let circlesData = [];
     let currentUpdateCategory = 'all';
     let currentFollowFilter = false;
+    const relationParams = new URLSearchParams(location.search);
+    const relatedEventId = relationParams.get('event') || '';
+    const relatedProjectId = relationParams.get('project') || '';
+    const relatedName = relationParams.get('name') || '';
 
     function toggleFollowFilter() {
       currentFollowFilter = !currentFollowFilter;
@@ -203,6 +209,12 @@ function renderUpdates() {
     const followedList = getFollowedCircles();
     filtered = filtered.filter(u => (u.relatedCircles || []).some(cid => followedList.includes(cid)));
   }
+  if (relatedEventId) {
+    filtered = filtered.filter(u => (u.relatedEvents || []).includes(relatedEventId));
+  }
+  if (relatedProjectId) {
+    filtered = filtered.filter(u => (u.relatedProjects || []).includes(relatedProjectId));
+  }
   if (search) {
     filtered = filtered.filter(u =>
       u.title.toLowerCase().includes(search) ||
@@ -221,6 +233,12 @@ function renderUpdates() {
   if (document.getElementById('updateAuthorCount')) document.getElementById('updateAuthorCount').textContent = authorIds.size;
   const years = allUpdates.map(u => Number(String(u.publishDate || '').slice(0, 4))).filter(y => y > 1900);
   if (document.getElementById('updateLatestYear')) document.getElementById('updateLatestYear').textContent = years.length ? Math.max(...years) : '—';
+  const relationBar = document.getElementById('relationFilterBar');
+  if (relationBar && (relatedEventId || relatedProjectId)) {
+    const label = relatedName ? escapeHtml(relatedName) : (relatedEventId ? '活动动态' : '企划动态');
+    relationBar.style.display = 'flex';
+    relationBar.innerHTML = `<span>仅显示：<b>${label}</b></span><a href="/updates.html">清除筛选</a>`;
+  }
 
   if (filtered.length === 0) {
     grid.innerHTML = `<div class="empty-state"><div class="icon">📰</div><p>${t('common.noUpdates')}</p></div>`;

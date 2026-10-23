@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020cz">
+  <link rel="stylesheet" href="/css/style.css?v=20261020da">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -45,9 +45,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020cz"></script>
-  <script src="/js/i18n.js?v=20261020cz"></script>
-  <script src="/js/main.js?v=20261020cz"></script>
+  <script src="/js/api.js?v=20261020da"></script>
+  <script src="/js/i18n.js?v=20261020da"></script>
+  <script src="/js/main.js?v=20261020da"></script>
   <script>
     let eventRelatedWorks = [];
     let eventCirclesMap = {};
@@ -140,7 +140,10 @@
         eventRelatedWorks = relatedWorks;
         eventCirclesMap = Object.fromEntries(allCircles.map(c => [c.id, c.name]));
         const relatedProjects = allProjects.filter(p => (event.relatedProjects || []).includes(p.id));
-        const relatedUpdates = (allUpdates || []).filter(u => (u.relatedEvents || []).includes(event.id));
+        const allRelatedUpdates = (allUpdates || [])
+          .filter(u => (u.relatedEvents || []).includes(event.id))
+          .sort((a, b) => String(b.publishDate || '').localeCompare(String(a.publishDate || '')));
+        const relatedUpdates = allRelatedUpdates.slice(0, 3);
         const relatedCircleIds = [...new Set([
           ...relatedWorks.flatMap(w => w.circles || []),
           ...(event.relatedCircles || [])
@@ -220,6 +223,33 @@
                     </div>
                   `).join('')}
                 </div>
+              ` : ''}
+
+              ${relatedUpdates.length ? `
+              <section class="rel-upd-section">
+                <div class="rel-upd-head">
+                  <div class="rel-upd-title"><h3>活动动态 <span>UPDATES</span><b>${allRelatedUpdates.length} 条</b></h3><p>主办方与参与作者的最新消息</p></div>
+                  ${allRelatedUpdates.length > 3 ? `<a class="rel-upd-more" href="/updates.html?event=${encodeURIComponent(event.id)}&name=${encodeURIComponent(event.title)}">查看全部 →</a>` : ''}
+                </div>
+                <div class="rel-upd-grid">
+                  ${relatedUpdates.map(u => {
+                    const cover = u.coverImage || (u.images && u.images[0]) || '';
+                    const names = (u.relatedCircles || []).map(cid => allCircles.find(c => c.id === cid)?.name).filter(Boolean);
+                    const catLabel = (typeof UPDATE_CATEGORIES !== 'undefined' && UPDATE_CATEGORIES[u.category]) || '动态';
+                    const excerpt = String(u.content || '').replace(/\s+/g, ' ').trim();
+                    return `<a class="rel-upd-card" href="/update-detail.html?id=${encodeURIComponent(u.id)}">
+                      <div class="rel-upd-cover">${cover ? `<img src="${escapeHtml(imgUrl(cover, 360))}" alt="${escapeHtml(u.title)}" loading="lazy">` : `<span>${escapeHtml((u.title || '?').charAt(0))}</span>`}<span class="rel-upd-tag">${escapeHtml(catLabel)}</span></div>
+                      <div class="rel-upd-body">
+                        <div class="rel-upd-meta">${formatDate(u.publishDate)}${names.length ? ' · ' + escapeHtml(names[0]) : ''}</div>
+                        <h4>${escapeHtml(u.title)}</h4>
+                        <p>${escapeHtml(excerpt)}</p>
+                        <div class="rel-upd-foot"><span>${names.length ? '参与作者动态' : '动态'}</span><span class="go">阅读 →</span></div>
+                      </div>
+                    </a>`;
+                  }).join('')}
+                </div>
+                <p class="rel-upd-note">仅展示关联到本活动的同人动态 · 按发布时间倒序</p>
+              </section>
               ` : ''}
 
               ${relatedWorks.length > 0 ? (() => {
@@ -307,18 +337,6 @@
                     <div>
                       <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(c.name)}</div>
                     </div>
-                  </a>
-                `).join('')}
-              </div>
-              ` : ''}
-              ${relatedUpdates.length > 0 ? `
-              <div class="sidebar-card">
-                <h3>${t('events.relatedUpdates')}</h3>
-                ${relatedUpdates.map(u => `
-                  <a href="/update-detail.html?id=${u.id}" style="display:block;padding:0.5rem 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--border);transition:var(--transition);"
-                     onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
-                    <div style="font-weight:600;font-size:0.9rem;">📰 ${escapeHtml(u.title)}</div>
-                    <div style="font-size:0.75rem;color:var(--haze);margin-top:0.15rem;">${formatDate(u.publishDate)}</div>
                   </a>
                 `).join('')}
               </div>
