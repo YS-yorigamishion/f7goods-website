@@ -5540,3 +5540,74 @@ body.has-wishlist-bar{padding-bottom:calc(var(--wl-bar-h,72px) + 10px)}
 @media(max-width:600px){.evd-crumb{font-size:11px}.evd-desc{font-size:12px}.evd-body{font-size:12.5px}.evd-identity h1{font-size:22px}.evd-block .rel-upd-excerpt{font-size:10.5px}}
 
 @media(min-width:901px){.evd-masthead{height:468px}}
+
+/* Typography consistency pass */
+html{font-size:17px}
+body{font-size:16px}
+
+/* Shared small metadata */
+.card-tag{font-size:.76rem}
+.card-date{font-size:.8rem}
+.card-subtitle{font-size:.84rem}
+.cl-w-meta,.cl-w-tag,.cl-w-status,.cl-w-deadline,.cl-w-want{font-size:11px}
+.sidebar-card .info-row{font-size:.88rem}
+.sidebar-card .info-label,.sidebar-card .info-value{font-size:.88rem}
+
+/* Projects */
+.prj-kicker{font-size:11px}
+.prj-head-stats span{font-size:11px}
+.prj-toolbar .filter-btn,.prj-select,.prj-search{font-size:12px}
+.prj-hero-meta{font-size:12px}
+.prj-hero-desc{font-size:12.5px}
+.prj-hero-foot > span:first-child,.prj-hero-cta{font-size:10.5px}
+.prj-status{font-size:10px}
+.prj-meta{font-size:11.5px}
+.prj-desc{font-size:12px;line-height:1.75}
+.prj-tag{font-size:10px;padding:2px 7px}
+.prj-foot{font-size:10.5px}
+.prj-section-head span{font-size:11.5px}
+
+/* Updates timeline */
+.upd-kicker{font-size:11px}
+.upd-head-stats span{font-size:11px}
+.upd-toolbar .filter-btn,.upd-select,.upd-search{font-size:12px}
+.upd-month span{font-size:10.5px}
+.upd-row-date span{font-size:10.5px}
+.upd-card-head b{font-size:12px}
+.upd-card-head small{font-size:10.5px}
+.upd-tag{font-size:10px;padding:2px 8px}
+.upd-card h2{font-size:20px}
+.upd-excerpt{font-size:12px;line-height:1.8}
+.upd-card-foot{font-size:10.5px}
+
+/* Events list */
+.ev-head-stats span{font-size:11px}
+.ev-toolbar .filter-btn{font-size:12px}
+.ev-featured-tag{font-size:10px}
+.ev-featured-kicker{font-size:9.5px}
+.ev-featured-meta{font-size:11.5px}
+
+/* Author directory */
+.cir-head-stats span{font-size:11px}
+.cir-toolbar .filter-btn,.cir-select,.cir-search{font-size:12px}
+.cir-filters .filter-btn{font-size:12px}
+
+/* Event detail related updates */
+.evd-block .rel-upd-meta{font-size:10px}
+.evd-block .rel-upd-tag{font-size:10px;padding:3px 9px}
+.evd-block .rel-upd-excerpt{font-size:12px}
+.evd-block .rel-upd-foot{font-size:10px}
+
+/* Footer / nav */
+.footer{font-size:14px}
+.topbar,.app-shell{font-size:13px}
+
+@media(max-width:600px){
+  html{font-size:17px}
+  body{font-size:16px}
+  .upd-card h2{font-size:18px}
+  .prj-desc,.upd-excerpt{font-size:12px}
+}
+
+.card-date{white-space:nowrap}
+.card-footer .card-date{font-size:.8rem}
