@@ -5612,5 +5612,7 @@ body{font-size:16px}
 .card-date{white-space:nowrap}
 .card-footer .card-date{font-size:.8rem}
 
-.evd-tags-card{border:0;background:transparent;padding:14px 15px 0;margin-top:2px}
-.evd-tags-card h3{margin-bottom:9px}
+.evd-tags-card{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:14px 15px;margin-top:2px}
+.evd-tags-card h3{border-bottom:0;padding-bottom:0;margin-bottom:9px}
+
+.sidebar-tags-card h3{border-bottom:0;padding-bottom:0}
