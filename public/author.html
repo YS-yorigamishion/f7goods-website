@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ec">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ed">
   <link rel="stylesheet" href="/css/author.css?v=20261024c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -344,7 +344,7 @@
           </div>
         </div>
         <nav class="aps-anchors">
-          <a href="#profile-basic">基本资料</a><a href="#profile-card">作者名片</a><a href="#profile-display">主页展示</a><a href="#profile-images">图片素材</a>
+          <a href="#profile-basic">基本资料</a><a href="#profile-card">作者名片</a><a href="#profile-display">主页展示</a>
         </nav>
 
         <div class="aps-layout">
@@ -405,12 +405,6 @@
               <div class="aps-card-head"><h4>主页展示 <span>HOMEPAGE DISPLAY</span></h4><p>决定作者主页展示哪些作品和系列；不影响企划页的系列周边</p></div>
               <div id="authorFeaturedPicker" class="author-featured-card"></div>
               <div id="authorSeriesDisplaySetting" class="author-series-display-setting"></div>
-            </section>
-
-            <section class="aps-card" id="profile-images">
-              <div class="aps-card-head"><h4>图片素材 <span>IMAGES</span></h4><p>作者图片会展示在主页图片区域</p></div>
-              <div id="pImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;"></div>
-              <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('pImagesPreview')">从图片库选择</button>
             </section>
 
             <div class="aps-save-row"><button class="btn btn-primary" onclick="saveProfile()">保存设置</button><span>保存后立即更新作者主页</span></div>
@@ -855,9 +849,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020ec"></script>
-  <script src="/js/i18n.js?v=20261020ec"></script>
-  <script src="/js/main.js?v=20261020ec"></script>
+  <script src="/js/api.js?v=20261020ed"></script>
+  <script src="/js/i18n.js?v=20261020ed"></script>
+  <script src="/js/main.js?v=20261020ed"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -1437,12 +1431,6 @@
         ? '<div style="position:relative;display:inline-block;"><img src="' + authorProfile.logo + '" style="width:80px;height:80px;object-fit:cover;border-radius:50%;"><button onclick="this.parentElement.remove();authorProfile.logo=\'\';" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>'
         : '';
 
-      // Images preview
-      const imagesPreview = document.getElementById('pImagesPreview');
-      imagesPreview.innerHTML = (authorProfile.images || []).map(img =>
-        '<div style="position:relative;"><img src="' + img + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>'
-      ).join('');
-
       // Card cover preview (single image; empty = fall back to avatar)
       const coverPreview = document.getElementById('pCardCoverPreview');
       coverPreview.innerHTML = authorProfile.cardCover
@@ -1529,8 +1517,7 @@
         commissionStatus: document.getElementById('pCommissionStatus').value === 'open' ? 'open' : 'closed',
         commissionNote: document.getElementById('pCommissionNote').value,
         logo: document.querySelector('#pLogoPreview img')?.src || '',
-        cardCover: document.querySelector('#pCardCoverPreview img')?.src || '',
-        images: [...document.querySelectorAll('#pImagesPreview img')].map(img => img.src)
+        cardCover: document.querySelector('#pCardCoverPreview img')?.src || ''
       };
 
       const result = await authorAPI('PUT', '/api/author/profile', data);
