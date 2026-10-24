@@ -1575,8 +1575,9 @@ textarea.form-input { resize: vertical; min-height: 130px; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .tag {
   padding: 0.18rem 0.6rem; background: rgba(196,67,79,0.06); color: var(--accent);
-  border-radius: 999px; font-size: 0.72rem; font-weight: 500;
+  border-radius: 999px; font-size: 0.72rem; font-weight: 500; text-decoration: none;
 }
+.tag:hover { text-decoration: none; }
 
 /* Footer */
 .footer {
