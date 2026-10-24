@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020dt">
+  <link rel="stylesheet" href="/css/style.css?v=20261020du">
   <link rel="stylesheet" href="/css/author.css?v=20261024a">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -460,7 +460,14 @@
         <div class="awb-layout">
           <section class="awb-panel awb-tasks">
             <div class="awb-panel-head"><div><h3>待办事项</h3><p>需要你处理的内容会出现在这里</p></div></div>
-            <div id="authorTodoList" class="author-todo-list"></div>
+            <div class="author-todo-group">
+              <div class="author-todo-group-head"><h4>必须处理</h4><span id="authorTodoMustCount" class="author-todo-group-count"></span></div>
+              <div id="authorTodoList" class="author-todo-list"></div>
+            </div>
+            <div class="author-todo-group suggest">
+              <div class="author-todo-group-head"><h4>建议完善</h4><span id="authorTodoSuggestCount" class="author-todo-group-count"></span></div>
+              <div id="authorTodoSuggest" class="author-todo-list"></div>
+            </div>
           </section>
           <aside class="awb-panel awb-quick">
             <div class="awb-panel-head"><div><h3>快捷创建</h3><p>直接进入对应管理页面</p></div></div>
@@ -817,9 +824,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020dt"></script>
-  <script src="/js/i18n.js?v=20261020dt"></script>
-  <script src="/js/main.js?v=20261020dt"></script>
+  <script src="/js/api.js?v=20261020du"></script>
+  <script src="/js/i18n.js?v=20261020du"></script>
+  <script src="/js/main.js?v=20261020du"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4612,9 +4619,11 @@
     async function loadAuthorWorkbench() {
       const summary = document.getElementById('authorTodoSummary');
       const list = document.getElementById('authorTodoList');
-      if (!summary || !list) return;
+      const suggest = document.getElementById('authorTodoSuggest');
+      if (!summary || !list || !suggest) return;
       summary.innerHTML = '<div class="author-todo-card"><b>…</b><span>正在检查</span></div>';
       list.innerHTML = '';
+      suggest.innerHTML = '';
       const results = await Promise.allSettled([
         authorAPI('GET', '/api/author/works'),
         authorAPI('GET', '/api/author/my-events'),
@@ -4645,13 +4654,39 @@
       const pendingEvents = events.filter(e => e.approvalStatus === 'pending');
       const pendingProjects = projects.filter(p => p.approvalStatus === 'pending');
       const pendingUpdates = updates.filter(u => u.approvalStatus === 'pending');
-      const rejected = works.filter(w => w.approvalStatus === 'rejected');
+      const rejectedWorks = works.filter(w => w.approvalStatus === 'rejected');
+      const rejectedEvents = events.filter(e => e.approvalStatus === 'rejected');
+      const rejectedProjects = projects.filter(p => p.approvalStatus === 'rejected');
+      const rejectedUpdates = updates.filter(u => u.approvalStatus === 'rejected');
+      const rejectedTotal = rejectedWorks.length + rejectedEvents.length + rejectedProjects.length + rejectedUpdates.length;
       const missingWorkCovers = works.filter(w => !(Array.isArray(w.images) && w.images.length));
       const missingEventCovers = events.filter(e => !e.coverImage);
       const missingProjectCovers = projects.filter(p => !p.coverImage);
       const missingUpdateCovers = updates.filter(u => !u.coverImage && !(Array.isArray(u.images) && u.images.length));
       const missingSeriesCovers = seriesList.filter(s => !s.cover);
       const missingCoverTotal = missingWorkCovers.length + missingEventCovers.length + missingProjectCovers.length + missingUpdateCovers.length + missingSeriesCovers.length;
+      const incompleteEvents = events.map(e => {
+        const missing = [];
+        if (!e.date) missing.push('日期');
+        if (!e.location) missing.push('地点');
+        if (!e.description) missing.push('简介');
+        return { e, missing };
+      }).filter(x => x.missing.length);
+      const incompleteProjects = projects.map(p => {
+        const sl = p.socialLinks || {};
+        const hasContact = Object.entries(sl).some(([k, v]) => v && !['contactLabel', 'websiteLabel'].includes(k));
+        const missing = [];
+        if (!p.description) missing.push('简介');
+        if (!hasContact) missing.push('联系方式');
+        return { p, missing };
+      }).filter(x => x.missing.length);
+      const unlinkedUpdates = updates.filter(u => !(u.relatedEvents || []).length && !(u.relatedProjects || []).length);
+      const emptySeries = seriesList.filter(s => !(s.works || []).length);
+      const staleEvents = events.filter(e => {
+        if (!e.date) return false;
+        const end = new Date((e.endDate || e.date) + 'T23:59:59+08:00');
+        return !isNaN(end.getTime()) && end < new Date() && e.status !== 'yijiesu';
+      });
       const unread = notifications.filter(n => !n.read);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -4669,48 +4704,79 @@
         </button>`;
       summary.innerHTML = [
         card(pendingWorks.length + pendingEvents.length + pendingProjects.length + pendingUpdates.length, '待审核内容', '作品 / 活动 / 企划 / 动态', 'works'),
-        card(rejected.length, '被拒绝作品', '查看原因并修改', 'works'),
+        card(rejectedTotal, '被拒绝内容', '作品 / 活动 / 企划 / 动态', 'works'),
         ...(missingCoverTotal ? [card(missingCoverTotal, '缺少封面', '作品 / 活动 / 企划 / 动态 / 系列', 'works')] : []),
-        ...(!hasAvatar ? [card(1, '缺少头像', '完善作者资料', 'profile')] : []),
         card(upcoming.length, '14 天内活动', '确认活动与摊位信息', 'my-events'),
         card(unread.length, '未读通知', '审核结果与管理员消息', 'notifications')
       ].join('');
 
-      const rows = [];
+      const mustRows = [];
       if (pendingWorks.length + pendingEvents.length + pendingProjects.length + pendingUpdates.length) {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>有 ${pendingWorks.length + pendingEvents.length + pendingProjects.length + pendingUpdates.length} 项内容等待审核</b><small>作品 ${pendingWorks.length} · 活动 ${pendingEvents.length} · 企划 ${pendingProjects.length} · 动态 ${pendingUpdates.length}</small></div><div class="actions"><button onclick="switchMgmtTab('works')">查看作品</button></div></div>`);
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>有 ${pendingWorks.length + pendingEvents.length + pendingProjects.length + pendingUpdates.length} 项内容等待审核</b><small>作品 ${pendingWorks.length} · 活动 ${pendingEvents.length} · 企划 ${pendingProjects.length} · 动态 ${pendingUpdates.length}</small></div><div class="actions"><button onclick="switchMgmtTab('works')">查看作品</button></div></div>`);
       }
-      rejected.slice(0, 3).forEach(w => {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>作品被拒绝：${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(w.rejectReason || '管理员未填写原因，请修改后重新提交')}</small></div><div class="actions"><button onclick="openWorkEditModal('${w.id}')">修改</button></div></div>`);
+      rejectedWorks.slice(0, 3).forEach(w => {
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>作品被拒绝：${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(w.rejectReason || '管理员未填写原因，请修改后重新提交')}</small></div><div class="actions"><button onclick="openWorkEditModal('${w.id}')">修改</button></div></div>`);
+      });
+      rejectedEvents.slice(0, 3).forEach(e => {
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>活动被拒绝：${escapeHtml(e.title || '未命名活动')}</b><small>${escapeHtml(e.rejectReason || '管理员未填写原因，请修改后重新提交')}</small></div><div class="actions"><button onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">修改</button></div></div>`);
+      });
+      rejectedProjects.slice(0, 3).forEach(p => {
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>企划被拒绝：${escapeHtml(p.title || '未命名企划')}</b><small>${escapeHtml(p.rejectReason || '管理员未填写原因，请修改后重新提交')}</small></div><div class="actions"><button onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">修改</button></div></div>`);
+      });
+      rejectedUpdates.slice(0, 3).forEach(u => {
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>动态被拒绝：${escapeHtml(u.title || '未命名动态')}</b><small>${escapeHtml(u.rejectReason || '管理员未填写原因，请修改后重新提交')}</small></div><div class="actions"><button onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">修改</button></div></div>`);
       });
       missingWorkCovers.slice(0, 3).forEach(w => {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>作品缺少封面：${escapeHtml(w.title || '未命名')}</b><small>没有图片的作品在前台会比较空</small></div><div class="actions"><button onclick="openWorkEditModal('${w.id}')">去补图</button></div></div>`);
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>作品缺少封面：${escapeHtml(w.title || '未命名')}</b><small>没有图片的作品在前台会比较空</small></div><div class="actions"><button onclick="openWorkEditModal('${w.id}')">去补图</button></div></div>`);
       });
       missingEventCovers.forEach(e => {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>活动缺少封面：${escapeHtml(e.title || '未命名活动')}</b><small>${escapeHtml(e.date || '')}${e.location ? ' · ' + escapeHtml(e.location) : ''}</small></div><div class="actions"><button onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">去补图</button></div></div>`);
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>活动缺少封面：${escapeHtml(e.title || '未命名活动')}</b><small>${escapeHtml(e.date || '')}${e.location ? ' · ' + escapeHtml(e.location) : ''}</small></div><div class="actions"><button onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">去补图</button></div></div>`);
       });
       missingProjectCovers.forEach(p => {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>企划缺少封面：${escapeHtml(p.title || '未命名企划')}</b><small>${escapeHtml(PROJECT_STATUS_LABELS[p.status] || p.status || '')}</small></div><div class="actions"><button onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">去补图</button></div></div>`);
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>企划缺少封面：${escapeHtml(p.title || '未命名企划')}</b><small>${escapeHtml(PROJECT_STATUS_LABELS[p.status] || p.status || '')}</small></div><div class="actions"><button onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">去补图</button></div></div>`);
       });
       missingUpdateCovers.forEach(u => {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>动态缺少封面：${escapeHtml(u.title || '未命名动态')}</b><small>${escapeHtml(u.publishDate || '')}</small></div><div class="actions"><button onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">去补图</button></div></div>`);
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>动态缺少封面：${escapeHtml(u.title || '未命名动态')}</b><small>${escapeHtml(u.publishDate || '')}</small></div><div class="actions"><button onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">去补图</button></div></div>`);
       });
       missingSeriesCovers.forEach(s => {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>系列缺少封面：${escapeHtml(s.name || '未命名系列')}</b><small>${(s.works || []).length} 件系列作品</small></div><div class="actions"><button onclick="switchMgmtTab('my-series')">去补图</button></div></div>`);
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>系列缺少封面：${escapeHtml(s.name || '未命名系列')}</b><small>${(s.works || []).length} 件系列作品</small></div><div class="actions"><button onclick="switchMgmtTab('my-series')">去补图</button></div></div>`);
       });
-      if (!hasAvatar) {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>还没有设置头像</b><small>设置头像后，作者卡片和个人主页会更完整</small></div><div class="actions"><button onclick="switchMgmtTab('profile')">去设置</button></div></div>`);
-      }
       upcoming.forEach(({ e, days }) => {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>${escapeHtml(e.title || '活动')}</b><small>${days === 0 ? '今天开始' : days + ' 天后开始'}${e.location ? ' · ' + escapeHtml(e.location) : ''}</small></div><div class="actions"><button onclick="switchMgmtTab('my-events')">查看活动</button></div></div>`);
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>${escapeHtml(e.title || '活动')}</b><small>${days === 0 ? '今天开始' : days + ' 天后开始'}${e.location ? ' · ' + escapeHtml(e.location) : ''}</small></div><div class="actions"><button onclick="switchMgmtTab('my-events')">查看活动</button></div></div>`);
       });
       missingBooths.slice(0, 3).forEach(({ e }) => {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>ONLY 摊位未配置：${escapeHtml(e.title || '活动')}</b><small>活动快开始了，还没有挂接你的摊位</small></div><div class="actions"><button onclick="switchMgmtTab('only-booths')">去摊位</button></div></div>`);
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>ONLY 摊位未配置：${escapeHtml(e.title || '活动')}</b><small>活动快开始了，还没有挂接你的摊位</small></div><div class="actions"><button onclick="switchMgmtTab('only-booths')">去摊位</button></div></div>`);
       });
       if (unread.length) {
-        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>有 ${unread.length} 条未读审核通知</b><small>审核结果、拒绝原因和管理员消息都在这里</small></div><div class="actions"><button onclick="switchMgmtTab('notifications')">查看通知</button></div></div>`);
+        mustRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>有 ${unread.length} 条未读审核通知</b><small>审核结果、拒绝原因和管理员消息都在这里</small></div><div class="actions"><button onclick="switchMgmtTab('notifications')">查看通知</button></div></div>`);
       }
-      list.innerHTML = rows.length ? rows.join('') : '<div class="author-todo-row"><div class="body"><b>暂时没有待处理事项</b><small>可以安心继续创作，或者去上传新作品。</small></div></div>';
+
+      const suggestRows = [];
+      if (!hasAvatar) {
+        suggestRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>还没有设置头像</b><small>设置头像后，作者卡片和个人主页会更完整</small></div><div class="actions"><button onclick="switchMgmtTab('profile')">去设置</button></div></div>`);
+      }
+      incompleteEvents.forEach(({ e, missing }) => {
+        suggestRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>活动资料不完整：${escapeHtml(e.title || '未命名活动')}</b><small>缺少：${missing.join(' / ')}</small></div><div class="actions"><button onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">去完善</button></div></div>`);
+      });
+      incompleteProjects.forEach(({ p, missing }) => {
+        suggestRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>企划资料不完整：${escapeHtml(p.title || '未命名企划')}</b><small>缺少：${missing.join(' / ')}</small></div><div class="actions"><button onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">去完善</button></div></div>`);
+      });
+      staleEvents.forEach(e => {
+        suggestRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>活动状态可能过期：${escapeHtml(e.title || '未命名活动')}</b><small>活动日期已过，建议把状态更新为已结束</small></div><div class="actions"><button onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">更新状态</button></div></div>`);
+      });
+      unlinkedUpdates.slice(0, 5).forEach(u => {
+        suggestRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>动态未关联活动或企划：${escapeHtml(u.title || '未命名动态')}</b><small>关联后才会显示在对应活动 / 企划页面</small></div><div class="actions"><button onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">去关联</button></div></div>`);
+      });
+      emptySeries.forEach(s => {
+        suggestRows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>系列还没有作品：${escapeHtml(s.name || '未命名系列')}</b><small>添加作品后系列周边才会完整展示</small></div><div class="actions"><button onclick="switchMgmtTab('my-series')">去添加</button></div></div>`);
+      });
+
+      list.innerHTML = mustRows.length ? mustRows.join('') : '<div class="author-todo-row"><div class="body"><b>暂时没有必须处理的事项</b><small>新的审核、拒绝或临期活动会出现在这里。</small></div></div>';
+      suggest.innerHTML = suggestRows.length ? suggestRows.join('') : '<div class="author-todo-row"><div class="body"><b>资料已经很完整</b><small>暂时没有需要补充的内容。</small></div></div>';
+      const mustCountEl = document.getElementById('authorTodoMustCount');
+      const suggestCountEl = document.getElementById('authorTodoSuggestCount');
+      if (mustCountEl) mustCountEl.textContent = mustRows.length + ' 项';
+      if (suggestCountEl) suggestCountEl.textContent = suggestRows.length + ' 项';
       renderAuthorFeaturedPicker(works, profile.featuredWorkIds || [], profile.showFeaturedWorks !== false);
       renderAuthorSeriesDisplaySetting(profile, seriesList);
     }

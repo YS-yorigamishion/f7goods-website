@@ -5617,3 +5617,13 @@ body{font-size:16px}
 .evd-tags-card h3{border-bottom:0;padding-bottom:0;margin-bottom:9px}
 
 .sidebar-tags-card h3{border-bottom:0;padding-bottom:0}
+
+/* Author workbench: two-level reminders */
+.author-todo-group{margin-top:14px}
+.author-todo-group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px;padding:0 2px}
+.author-todo-group-head h4{font-family:'Noto Serif SC',Georgia,serif;font-size:14px;margin:0;display:flex;align-items:center;gap:6px}
+.author-todo-group-head h4::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.author-todo-group.suggest .author-todo-group-head h4::before{background:var(--gold)}
+.author-todo-group-count{font-size:10px;color:var(--haze);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.author-todo-group.suggest .author-todo-row .dot{background:var(--gold)}
+.author-todo-group.suggest .author-todo-list{border-style:dashed;background:rgba(255,253,248,.55)}
