@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020dk">
+  <link rel="stylesheet" href="/css/style.css?v=20261020dl">
   <link rel="stylesheet" href="/css/author.css?v=20260911c">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -817,9 +817,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020dk"></script>
-  <script src="/js/i18n.js?v=20261020dk"></script>
-  <script src="/js/main.js?v=20261020dk"></script>
+  <script src="/js/api.js?v=20261020dl"></script>
+  <script src="/js/i18n.js?v=20261020dl"></script>
+  <script src="/js/main.js?v=20261020dl"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4275,7 +4275,8 @@
             <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(p.title)}</h3>
             <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${PROJECT_STATUS_LABELS[p.status] || p.status || ''}</p>
             ${rejectReasonHtml}
-            <div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
+            <div style="display:flex;gap:0.3rem;margin-top:0.5rem;flex-wrap:wrap;">
+              <button class="btn-sm" onclick="event.stopPropagation();openMyUpdateForm(null,{relatedProjects:['${p.id}']})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">发布动态</button>
               <button class="btn-sm" onclick="event.stopPropagation();openMyProjectForm(${escapeHtml(JSON.stringify(p))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
               <button class="btn-sm" onclick="event.stopPropagation();deleteMyProject('${p.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
             </div>
