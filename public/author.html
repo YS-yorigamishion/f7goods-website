@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020dw">
+  <link rel="stylesheet" href="/css/style.css?v=20261020dx">
   <link rel="stylesheet" href="/css/author.css?v=20261024b">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -827,9 +827,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020dw"></script>
-  <script src="/js/i18n.js?v=20261020dw"></script>
-  <script src="/js/main.js?v=20261020dw"></script>
+  <script src="/js/api.js?v=20261020dx"></script>
+  <script src="/js/i18n.js?v=20261020dx"></script>
+  <script src="/js/main.js?v=20261020dx"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4516,7 +4516,7 @@
         empty.innerHTML = '<b>没有找到对应内容</b><span>换一个关键词试试</span>';
         grid.appendChild(empty);
       }
-      empty.style.display = (rows.length && visible === 0) ? '' : 'none';
+      empty.style.display = (rows.length && visible === 0) ? 'block' : 'none';
     }
 
     function openMyUpdateForm(updateData = null, preset = null) {
