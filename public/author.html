@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020dv">
-  <link rel="stylesheet" href="/css/author.css?v=20261024a">
+  <link rel="stylesheet" href="/css/style.css?v=20261020dw">
+  <link rel="stylesheet" href="/css/author.css?v=20261024b">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
     .ab-sec {
@@ -683,6 +683,7 @@
           </div>
           <button class="btn btn-primary" onclick="openMyEventForm()">+ 提交活动</button>
         </div>
+        <div class="author-manage-search-row"><input type="search" class="author-manage-search" id="myEventsSearch" placeholder="搜索活动名称、地点、日期…" oninput="filterManageList('myEventsGrid', this.value)"></div>
         <div id="myEventsGrid" class="author-manage-list"></div>
       </div>
 
@@ -703,6 +704,7 @@
           </div>
           <button class="btn btn-primary" onclick="openMyProjectForm()">+ 提交企划</button>
         </div>
+        <div class="author-manage-search-row"><input type="search" class="author-manage-search" id="myProjectsSearch" placeholder="搜索企划名称、简介、状态…" oninput="filterManageList('myProjectsGrid', this.value)"></div>
         <div id="myProjectsGrid" class="author-manage-list"></div>
       </div>
 
@@ -715,6 +717,7 @@
           </div>
           <button class="btn btn-primary" onclick="openMyUpdateForm()">+ 发布动态</button>
         </div>
+        <div class="author-manage-search-row"><input type="search" class="author-manage-search" id="myUpdatesSearch" placeholder="搜索动态标题、正文、日期…" oninput="filterManageList('myUpdatesGrid', this.value)"></div>
         <div id="myUpdatesGrid" class="author-manage-list"></div>
       </div>
 
@@ -824,9 +827,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020dv"></script>
-  <script src="/js/i18n.js?v=20261020dv"></script>
-  <script src="/js/main.js?v=20261020dv"></script>
+  <script src="/js/api.js?v=20261020dw"></script>
+  <script src="/js/i18n.js?v=20261020dw"></script>
+  <script src="/js/main.js?v=20261020dw"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -3430,7 +3433,7 @@
         const eventStatus = EVENT_STATUS_LABELS[e.status] || '';
         const eventType = e.type === 'only' ? 'ONLY 专场' : '综合展会';
         return `
-        <div class="author-manage-row" onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">
+        <div class="author-manage-row" data-search="${escapeHtml([e.title, e.date, e.location, e.booth, eventStatus, eventType, e.description].filter(Boolean).join(' '))}" onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">
           <div class="amr-cover">${e.coverImage ? `<img src="${escapeHtml(imgUrl(e.coverImage, 320))}" alt="${escapeHtml(e.title)}" loading="lazy">` : '<span class="placeholder-icon">📅</span>'}</div>
           <div class="amr-info">
             <div class="amr-top">${statusBadge}<span class="amr-cat">${escapeHtml(eventType)}${eventStatus ? ' · ' + escapeHtml(eventStatus) : ''}</span></div>
@@ -3446,8 +3449,8 @@
           </div>
         </div>`;
       }).join('');
+      filterManageList('myEventsGrid', document.getElementById('myEventsSearch')?.value || '');
     }
-
     // ===== Author ONLY Booths =====
     let _onlyBoothData = [];
     let _abGiftWorks = [];
@@ -4280,7 +4283,7 @@
         const projectStatus = PROJECT_STATUS_LABELS[p.status] || p.status || '';
         const workCount = (p.relatedWorks || []).length;
         return `
-        <div class="author-manage-row" onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">
+        <div class="author-manage-row" data-search="${escapeHtml([p.title, projectStatus, p.description].filter(Boolean).join(' '))}" onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">
           <div class="amr-cover">${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 320))}" alt="${escapeHtml(p.title)}" loading="lazy">` : '<span class="placeholder-icon">📋</span>'}</div>
           <div class="amr-info">
             <div class="amr-top">${statusBadge}<span class="amr-cat">${escapeHtml(projectStatus)}</span></div>
@@ -4296,6 +4299,7 @@
           </div>
         </div>`;
       }).join('');
+      filterManageList('myProjectsGrid', document.getElementById('myProjectsSearch')?.value || '');
     }
 
     function toggleMyProjectRecruit(on) {
@@ -4475,7 +4479,7 @@
         const excerpt = String(u.content || '').replace(/\s+/g, ' ').trim();
         const relCount = (u.relatedEvents || []).length + (u.relatedProjects || []).length;
         return `
-        <div class="author-manage-row" onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">
+        <div class="author-manage-row" data-search="${escapeHtml([u.title, u.publishDate, category, excerpt].filter(Boolean).join(' '))}" onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">
           <div class="amr-cover">${u.coverImage ? `<img src="${escapeHtml(imgUrl(u.coverImage, 320))}" alt="${escapeHtml(u.title)}" loading="lazy">` : '<span class="placeholder-icon">📰</span>'}</div>
           <div class="amr-info">
             <div class="amr-top">${statusBadge}<span class="amr-cat">${escapeHtml(category)}${relCount ? ' · 已关联 ' + relCount + ' 个活动/企划' : ''}</span></div>
@@ -4490,6 +4494,29 @@
           </div>
         </div>`;
       }).join('');
+      filterManageList('myUpdatesGrid', document.getElementById('myUpdatesSearch')?.value || '');
+    }
+
+    function filterManageList(gridId, query) {
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+      const q = String(query || '').trim().toLowerCase();
+      const rows = [...grid.querySelectorAll('.author-manage-row')];
+      let visible = 0;
+      rows.forEach(row => {
+        const haystack = (row.dataset.search || row.textContent || '').toLowerCase();
+        const match = !q || haystack.includes(q);
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      let empty = grid.querySelector('.author-manage-search-empty');
+      if (!empty) {
+        empty = document.createElement('div');
+        empty.className = 'author-manage-search-empty';
+        empty.innerHTML = '<b>没有找到对应内容</b><span>换一个关键词试试</span>';
+        grid.appendChild(empty);
+      }
+      empty.style.display = (rows.length && visible === 0) ? '' : 'none';
     }
 
     function openMyUpdateForm(updateData = null, preset = null) {
