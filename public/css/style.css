@@ -5667,3 +5667,94 @@ body{font-size:16px}
   .cp-bio{font-size:10.5px;line-height:1.7}
   .cp-quick{gap:4px}
 }
+
+/* Typography readability pass 2 */
+html{font-size:18px}
+body{font-size:17px}
+
+/* Author homepage */
+.cp-bio{font-size:13.5px;line-height:1.85;-webkit-line-clamp:3;max-width:680px}
+.cp-quick-item,.cp-commission{font-size:11px;padding:3px 9px}
+.cp-stats{gap:32px}
+.cp-stat b{font-size:21px}
+.cp-stat span{font-size:11.5px}
+.cp-badge{font-size:11.5px}
+.cp-tabs button{font-size:14px}
+.cp-section-head h3{font-size:18px}
+.cp-section-head p{font-size:11.5px}
+.cp-section-head a,.cp-section-head>span{font-size:12px}
+.cp-work-info b{font-size:14px}
+.cp-work-info span{font-size:11px}
+.cp-series-card b{font-size:13px}
+.cp-series-card span{font-size:11px}
+.cp-update-row b{font-size:13px}
+.cp-update-row small{font-size:10.5px}
+.cp-aside-card h3,.cp-side .sidebar-card h3{font-size:15px}
+.cp-meta-row{font-size:11.5px}
+.cp-author-bio{font-size:12.5px;line-height:1.95}
+.cp-author-row{font-size:11.5px}
+.cp-author-row>span{width:56px}
+.cp-author-platforms span{font-size:10.5px;padding:2px 8px}
+.cp-author-contact-row{font-size:11px}
+.cp-author-empty{font-size:10.5px}
+.cp-commission-status{font-size:11px}
+.cp-commission-box p{font-size:10.5px;line-height:1.75}
+
+/* Event detail */
+.evd-crumb{font-size:13px}
+.evd-kicker{font-size:11px}
+.evd-ym{font-size:13px}.evd-ym strong{font-size:14px}
+.evd-chip{font-size:11px}
+.evd-desc{font-size:14px}
+.evd-loc{font-size:12.5px}
+.evd-btn{font-size:13px;padding:10px 19px}
+.evd-share .want-btn{font-size:12.5px}
+.evd-countdown{font-size:12px}
+.evd-block-head h2{font-size:21px}
+.evd-block-head h2 span{font-size:11px}
+.evd-block-head a{font-size:12px}
+.evd-body{font-size:14px}
+.evd-booth{font-size:13px}
+.evd-card h3{font-size:16px}
+.evd-side-row,.evd-contact-item{font-size:12.5px}
+.evd-mini-link b{font-size:12px}.evd-mini-link small{font-size:10px}
+.evd-block .rel-upd-meta,.evd-block .rel-upd-tag,.evd-block .rel-upd-foot{font-size:11px}
+.evd-block .rel-upd-excerpt{font-size:12.5px}
+
+/* Projects / updates / circles lists */
+.prj-meta{font-size:12.5px}
+.prj-desc{font-size:13px}
+.prj-tag{font-size:11px}
+.prj-foot{font-size:11.5px}
+.prj-status{font-size:11px}
+.prj-section-head span{font-size:12px}
+.upd-card-head b{font-size:13px}
+.upd-card-head small{font-size:11px}
+.upd-tag{font-size:11px}
+.upd-card h2{font-size:21px}
+.upd-excerpt{font-size:13px}
+.upd-card-foot{font-size:11.5px}
+.cir-head-stats span{font-size:12px}
+.cir-toolbar .filter-btn,.cir-select,.cir-search{font-size:12.5px}
+
+/* Author management lists */
+.amr-title{font-size:17px}
+.amr-cat{font-size:11px}
+.amr-meta{font-size:12px}
+.amr-foot{font-size:11px}
+.author-manage-btn{font-size:11px;padding:8px 13px}
+.author-manage-search{font-size:12.5px;padding:9px 15px}
+.author-todo-row .body b{font-size:0.92rem}
+.author-todo-row .body small{font-size:0.8rem}
+.author-todo-card small{font-size:0.76rem}
+
+@media(max-width:600px){
+  html{font-size:17px}
+  body{font-size:16px}
+  .cp-bio{font-size:12px}
+  .cp-author-bio{font-size:11.5px}
+  .cp-author-row{font-size:11px}
+  .cp-section-head p{font-size:11px}
+  .amr-title{font-size:14px}
+  .evd-body{font-size:13px}
+}
