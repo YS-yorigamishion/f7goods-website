@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020dl">
-  <link rel="stylesheet" href="/css/author.css?v=20260911c">
+  <link rel="stylesheet" href="/css/style.css?v=20261020dm">
+  <link rel="stylesheet" href="/css/author.css?v=20261024a">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
     .ab-sec {
@@ -676,7 +676,7 @@
           </div>
           <button class="btn btn-primary" onclick="openMyEventForm()">+ 提交活动</button>
         </div>
-        <div id="myEventsGrid" class="works-grid"></div>
+        <div id="myEventsGrid" class="author-manage-list"></div>
       </div>
 
       <!-- ONLY Booths Tab -->
@@ -696,7 +696,7 @@
           </div>
           <button class="btn btn-primary" onclick="openMyProjectForm()">+ 提交企划</button>
         </div>
-        <div id="myProjectsGrid" class="works-grid"></div>
+        <div id="myProjectsGrid" class="author-manage-list"></div>
       </div>
 
       <!-- My Updates Tab -->
@@ -708,7 +708,7 @@
           </div>
           <button class="btn btn-primary" onclick="openMyUpdateForm()">+ 发布动态</button>
         </div>
-        <div id="myUpdatesGrid" class="works-grid"></div>
+        <div id="myUpdatesGrid" class="author-manage-list"></div>
       </div>
 
       <!-- Images Tab -->
@@ -817,9 +817,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020dl"></script>
-  <script src="/js/i18n.js?v=20261020dl"></script>
-  <script src="/js/main.js?v=20261020dl"></script>
+  <script src="/js/api.js?v=20261020dm"></script>
+  <script src="/js/i18n.js?v=20261020dm"></script>
+  <script src="/js/main.js?v=20261020dm"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -3419,20 +3419,23 @@
           : e.approvalStatus === 'rejected' ? '<span class="status-badge is-danger">已拒绝</span>'
           : '<span class="status-badge is-warning">待审核</span>';
         const rejectReasonHtml = e.approvalStatus === 'rejected' && e.rejectReason
-          ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(e.rejectReason)}</p>` : '';
+          ? `<div class="author-manage-reject">拒绝原因：${escapeHtml(e.rejectReason)}</div>` : '';
+        const eventStatus = EVENT_STATUS_LABELS[e.status] || '';
+        const eventType = e.type === 'only' ? 'ONLY 专场' : '综合展会';
         return `
-        <div class="card" style="cursor:pointer;" onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">
-          <div class="mgmt-card-cover">${e.coverImage ? `<img src="${escapeHtml(imgUrl(e.coverImage, 320))}" alt="${escapeHtml(e.title)}" loading="lazy">` : '<span class="placeholder-icon">📅</span>'}</div>
-          <div class="card-body" style="padding:0.8rem;">
-            ${statusBadge}
-            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(e.title)}</h3>
-            <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${e.date || ''} ${e.location ? '· ' + escapeHtml(e.location) : ''}</p>
+        <div class="author-manage-row" onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">
+          <div class="amr-cover">${e.coverImage ? `<img src="${escapeHtml(imgUrl(e.coverImage, 320))}" alt="${escapeHtml(e.title)}" loading="lazy">` : '<span class="placeholder-icon">📅</span>'}</div>
+          <div class="amr-info">
+            <div class="amr-top">${statusBadge}<span class="amr-cat">${escapeHtml(eventType)}${eventStatus ? ' · ' + escapeHtml(eventStatus) : ''}</span></div>
+            <h3 class="amr-title">${escapeHtml(e.title)}</h3>
+            <div class="amr-meta">${escapeHtml(e.date || '')}${e.location ? ' · ' + escapeHtml(e.location) : ''}</div>
             ${rejectReasonHtml}
-            <div style="display:flex;gap:0.3rem;margin-top:0.5rem;flex-wrap:wrap;">
-              <button class="btn-sm" onclick="event.stopPropagation();openMyUpdateForm(null,{relatedEvents:['${e.id}']})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">发布动态</button>
-              <button class="btn-sm" onclick="event.stopPropagation();openMyEventForm(${escapeHtml(JSON.stringify(e))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
-              <button class="btn-sm" onclick="event.stopPropagation();deleteMyEvent('${e.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
-            </div>
+            <div class="amr-foot">${e.booth ? '摊位：' + escapeHtml(e.booth) : '点击编辑活动信息'}</div>
+          </div>
+          <div class="amr-actions">
+            <button class="author-manage-btn publish" onclick="event.stopPropagation();openMyUpdateForm(null,{relatedEvents:['${e.id}']})">发布动态</button>
+            <button class="author-manage-btn edit" onclick="event.stopPropagation();openMyEventForm(${escapeHtml(JSON.stringify(e))})">编辑</button>
+            <button class="author-manage-btn del" onclick="event.stopPropagation();deleteMyEvent('${e.id}')">删除</button>
           </div>
         </div>`;
       }).join('');
@@ -4266,20 +4269,23 @@
           : p.approvalStatus === 'rejected' ? '<span class="status-badge is-danger">已拒绝</span>'
           : '<span class="status-badge is-warning">待审核</span>';
         const rejectReasonHtml = p.approvalStatus === 'rejected' && p.rejectReason
-          ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(p.rejectReason)}</p>` : '';
+          ? `<div class="author-manage-reject">拒绝原因：${escapeHtml(p.rejectReason)}</div>` : '';
+        const projectStatus = PROJECT_STATUS_LABELS[p.status] || p.status || '';
+        const workCount = (p.relatedWorks || []).length;
         return `
-        <div class="card" style="cursor:pointer;" onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">
-          <div class="mgmt-card-cover">${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 320))}" alt="${escapeHtml(p.title)}" loading="lazy">` : '<span class="placeholder-icon">📋</span>'}</div>
-          <div class="card-body" style="padding:0.8rem;">
-            ${statusBadge}
-            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(p.title)}</h3>
-            <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${PROJECT_STATUS_LABELS[p.status] || p.status || ''}</p>
+        <div class="author-manage-row" onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">
+          <div class="amr-cover">${p.coverImage ? `<img src="${escapeHtml(imgUrl(p.coverImage, 320))}" alt="${escapeHtml(p.title)}" loading="lazy">` : '<span class="placeholder-icon">📋</span>'}</div>
+          <div class="amr-info">
+            <div class="amr-top">${statusBadge}<span class="amr-cat">${escapeHtml(projectStatus)}</span></div>
+            <h3 class="amr-title">${escapeHtml(p.title)}</h3>
+            <div class="amr-meta">${workCount ? `共 ${workCount} 件关联作品` : '暂无关联作品'} · 点击编辑企划信息</div>
             ${rejectReasonHtml}
-            <div style="display:flex;gap:0.3rem;margin-top:0.5rem;flex-wrap:wrap;">
-              <button class="btn-sm" onclick="event.stopPropagation();openMyUpdateForm(null,{relatedProjects:['${p.id}']})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">发布动态</button>
-              <button class="btn-sm" onclick="event.stopPropagation();openMyProjectForm(${escapeHtml(JSON.stringify(p))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
-              <button class="btn-sm" onclick="event.stopPropagation();deleteMyProject('${p.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
-            </div>
+            <div class="amr-foot">企划提交后需管理员审核，通过后在前台展示</div>
+          </div>
+          <div class="amr-actions">
+            <button class="author-manage-btn publish" onclick="event.stopPropagation();openMyUpdateForm(null,{relatedProjects:['${p.id}']})">发布动态</button>
+            <button class="author-manage-btn edit" onclick="event.stopPropagation();openMyProjectForm(${escapeHtml(JSON.stringify(p))})">编辑</button>
+            <button class="author-manage-btn del" onclick="event.stopPropagation();deleteMyProject('${p.id}')">删除</button>
           </div>
         </div>`;
       }).join('');
@@ -4457,19 +4463,23 @@
           : u.approvalStatus === 'rejected' ? '<span class="status-badge is-danger">已拒绝</span>'
           : '<span class="status-badge is-warning">待审核</span>';
         const rejectReasonHtml = u.approvalStatus === 'rejected' && u.rejectReason
-          ? `<p style="color:var(--accent);font-size:0.75rem;margin-top:0.3rem;background:rgba(233,69,96,0.1);padding:0.3rem;border-radius:4px;">拒绝原因: ${escapeHtml(u.rejectReason)}</p>` : '';
+          ? `<div class="author-manage-reject">拒绝原因：${escapeHtml(u.rejectReason)}</div>` : '';
+        const category = (typeof UPDATE_CATEGORIES !== 'undefined' && UPDATE_CATEGORIES[u.category]) || '动态';
+        const excerpt = String(u.content || '').replace(/\s+/g, ' ').trim();
+        const relCount = (u.relatedEvents || []).length + (u.relatedProjects || []).length;
         return `
-        <div class="card" style="cursor:pointer;" onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">
-          <div class="mgmt-card-cover">${u.coverImage ? `<img src="${escapeHtml(imgUrl(u.coverImage, 320))}" alt="${escapeHtml(u.title)}" loading="lazy">` : '<span class="placeholder-icon">📝</span>'}</div>
-          <div class="card-body" style="padding:0.8rem;">
-            ${statusBadge}
-            <h3 class="card-title" style="font-size:0.9rem;margin-top:0.3rem;">${escapeHtml(u.title)}</h3>
-            <p style="font-size:0.75rem;color:var(--haze);margin-top:0.2rem;">${u.publishDate || ''}</p>
+        <div class="author-manage-row" onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">
+          <div class="amr-cover">${u.coverImage ? `<img src="${escapeHtml(imgUrl(u.coverImage, 320))}" alt="${escapeHtml(u.title)}" loading="lazy">` : '<span class="placeholder-icon">📰</span>'}</div>
+          <div class="amr-info">
+            <div class="amr-top">${statusBadge}<span class="amr-cat">${escapeHtml(category)}${relCount ? ' · 已关联 ' + relCount + ' 个活动/企划' : ''}</span></div>
+            <h3 class="amr-title">${escapeHtml(u.title)}</h3>
+            <div class="amr-meta">${escapeHtml(u.publishDate || '')}${u.authorName ? ' · ' + escapeHtml(u.authorName) : ''}</div>
             ${rejectReasonHtml}
-            <div style="display:flex;gap:0.3rem;margin-top:0.5rem;">
-              <button class="btn-sm" onclick="event.stopPropagation();openMyUpdateForm(${escapeHtml(JSON.stringify(u))})" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent-alt);color:white;">编辑</button>
-              <button class="btn-sm" onclick="event.stopPropagation();deleteMyUpdate('${u.id}')" style="font-size:0.7rem;padding:0.15rem 0.4rem;background:var(--accent);color:white;">删除</button>
-            </div>
+            <div class="amr-foot">${excerpt ? escapeHtml(excerpt.slice(0, 80)) + (excerpt.length > 80 ? '…' : '') : '暂无正文'}</div>
+          </div>
+          <div class="amr-actions">
+            <button class="author-manage-btn edit" onclick="event.stopPropagation();openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">编辑</button>
+            <button class="author-manage-btn del" onclick="event.stopPropagation();deleteMyUpdate('${u.id}')">删除</button>
           </div>
         </div>`;
       }).join('');
