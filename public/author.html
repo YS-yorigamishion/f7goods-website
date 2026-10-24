@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020dq">
+  <link rel="stylesheet" href="/css/style.css?v=20261020dr">
   <link rel="stylesheet" href="/css/author.css?v=20261024a">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -817,9 +817,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020dq"></script>
-  <script src="/js/i18n.js?v=20261020dq"></script>
-  <script src="/js/main.js?v=20261020dq"></script>
+  <script src="/js/api.js?v=20261020dr"></script>
+  <script src="/js/i18n.js?v=20261020dr"></script>
+  <script src="/js/main.js?v=20261020dr"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4646,7 +4646,12 @@
       const pendingProjects = projects.filter(p => p.approvalStatus === 'pending');
       const pendingUpdates = updates.filter(u => u.approvalStatus === 'pending');
       const rejected = works.filter(w => w.approvalStatus === 'rejected');
-      const missingCovers = works.filter(w => !(Array.isArray(w.images) && w.images.length));
+      const missingWorkCovers = works.filter(w => !(Array.isArray(w.images) && w.images.length));
+      const missingEventCovers = events.filter(e => !e.coverImage);
+      const missingProjectCovers = projects.filter(p => !p.coverImage);
+      const missingUpdateCovers = updates.filter(u => !u.coverImage && !(Array.isArray(u.images) && u.images.length));
+      const missingSeriesCovers = seriesList.filter(s => !s.cover);
+      const missingCoverTotal = missingWorkCovers.length + missingEventCovers.length + missingProjectCovers.length + missingUpdateCovers.length + missingSeriesCovers.length;
       const unread = notifications.filter(n => !n.read);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -4665,7 +4670,7 @@
       summary.innerHTML = [
         card(pendingWorks.length + pendingEvents.length + pendingProjects.length + pendingUpdates.length, '待审核内容', '作品 / 活动 / 企划 / 动态', 'works'),
         card(rejected.length, '被拒绝作品', '查看原因并修改', 'works'),
-        card(missingCovers.length, '缺少封面', '补图后展示更完整', 'works'),
+        ...(missingCoverTotal ? [card(missingCoverTotal, '缺少封面', '作品 / 活动 / 企划 / 动态 / 系列', 'works')] : []),
         ...(!hasAvatar ? [card(1, '缺少头像', '完善作者资料', 'profile')] : []),
         card(upcoming.length, '14 天内活动', '确认活动与摊位信息', 'my-events'),
         card(unread.length, '未读通知', '审核结果与管理员消息', 'notifications')
@@ -4678,8 +4683,20 @@
       rejected.slice(0, 3).forEach(w => {
         rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>作品被拒绝：${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(w.rejectReason || '管理员未填写原因，请修改后重新提交')}</small></div><div class="actions"><button onclick="openWorkEditModal('${w.id}')">修改</button></div></div>`);
       });
-      missingCovers.slice(0, 3).forEach(w => {
+      missingWorkCovers.slice(0, 3).forEach(w => {
         rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>作品缺少封面：${escapeHtml(w.title || '未命名')}</b><small>没有图片的作品在前台会比较空</small></div><div class="actions"><button onclick="openWorkEditModal('${w.id}')">去补图</button></div></div>`);
+      });
+      missingEventCovers.slice(0, 3).forEach(e => {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>活动缺少封面：${escapeHtml(e.title || '未命名活动')}</b><small>${escapeHtml(e.date || '')}${e.location ? ' · ' + escapeHtml(e.location) : ''}</small></div><div class="actions"><button onclick="openMyEventForm(${escapeHtml(JSON.stringify(e))})">去补图</button></div></div>`);
+      });
+      missingProjectCovers.slice(0, 3).forEach(p => {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>企划缺少封面：${escapeHtml(p.title || '未命名企划')}</b><small>${escapeHtml(PROJECT_STATUS_LABELS[p.status] || p.status || '')}</small></div><div class="actions"><button onclick="openMyProjectForm(${escapeHtml(JSON.stringify(p))})">去补图</button></div></div>`);
+      });
+      missingUpdateCovers.slice(0, 3).forEach(u => {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>动态缺少封面：${escapeHtml(u.title || '未命名动态')}</b><small>${escapeHtml(u.publishDate || '')}</small></div><div class="actions"><button onclick="openMyUpdateForm(${escapeHtml(JSON.stringify(u))})">去补图</button></div></div>`);
+      });
+      missingSeriesCovers.slice(0, 3).forEach(s => {
+        rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>系列缺少封面：${escapeHtml(s.name || '未命名系列')}</b><small>${(s.works || []).length} 件系列作品</small></div><div class="actions"><button onclick="switchMgmtTab('my-series')">去补图</button></div></div>`);
       });
       if (!hasAvatar) {
         rows.push(`<div class="author-todo-row"><i class="dot"></i><div class="body"><b>还没有设置头像</b><small>设置头像后，作者卡片和个人主页会更完整</small></div><div class="actions"><button onclick="switchMgmtTab('profile')">去设置</button></div></div>`);
