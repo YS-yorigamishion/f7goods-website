@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ed">
-  <link rel="stylesheet" href="/css/author.css?v=20261024c">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ee">
+  <link rel="stylesheet" href="/css/author.css?v=20261024d">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
     .ab-sec {
@@ -339,7 +339,6 @@
             <p>管理主页资料、作者名片和对外展示的内容模块。</p>
           </div>
           <div class="aps-head-actions">
-            <button class="btn-sm" onclick="window.open('/circle-detail.html?id='+(localStorage.getItem('f7author_actAs')||authorCircleId),'_blank')">预览主页 ↗</button>
             <button class="btn btn-primary" onclick="saveProfile()">保存设置</button>
           </div>
         </div>
@@ -365,7 +364,7 @@
                 <div id="pCardCoverPreview" class="aps-cover-preview"></div>
                 <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:6px;">
                   <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('pCardCoverPreview', true)">更换顶图</button>
-                  <button type="button" class="btn-sm" style="background:var(--border);color:var(--ink);" onclick="document.getElementById('pCardCoverPreview').innerHTML='';updateProfilePreview();">清除（自动回退）</button>
+                  <button type="button" class="btn-sm" onclick="document.getElementById('pCardCoverPreview').innerHTML='';updateProfilePreview();">清除（自动回退）</button>
                 </div>
                 <div class="tag-chip-hint">未设置时按作者图、第一件作品图、头像依次回退。</div>
               </div>
@@ -849,9 +848,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020ed"></script>
-  <script src="/js/i18n.js?v=20261020ed"></script>
-  <script src="/js/main.js?v=20261020ed"></script>
+  <script src="/js/api.js?v=20261020ee"></script>
+  <script src="/js/i18n.js?v=20261020ee"></script>
+  <script src="/js/main.js?v=20261020ee"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();

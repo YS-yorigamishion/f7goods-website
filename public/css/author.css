@@ -691,3 +691,12 @@
   .aps-card{padding:14px}.aps-card-head h4{font-size:15px}.aps-card-head p{font-size:9.5px}
   .aps-preview{max-width:none}.aps-preview-cover{height:92px}
 }
+
+/* Personal profile settings: consistent actions */
+.aps-head-actions{padding-top:6px}
+.aps-head-actions .btn,.aps-save-row .btn{height:34px;padding:0 17px;font-size:11.5px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center}
+#tab-profile .btn-sm{height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);box-shadow:none;font-size:10.5px;display:inline-flex;align-items:center;justify-content:center}
+#tab-profile .btn-sm:hover{border-color:var(--accent);color:var(--accent)}
+#tab-profile .btn-sm.btn-edit{background:var(--card);color:var(--ink);border-color:var(--line)}
+#tab-profile .btn-sm.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+#tab-profile .btn-sm.btn-primary:hover{background:#a43742;color:#fff}
