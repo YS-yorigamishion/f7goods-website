@@ -1045,12 +1045,18 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   const old = { ...circles[index] };
 
   // Only allow updating specific fields
-  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'featuredWorkIds', 'showFeaturedWorks', 'seriesDisplayLimit', 'featuredSeriesIds'];
+  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'platforms', 'commissionStatus', 'commissionNote', 'featuredWorkIds', 'showFeaturedWorks', 'seriesDisplayLimit', 'featuredSeriesIds'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
   if (updates.showFeaturedWorks !== undefined) updates.showFeaturedWorks = updates.showFeaturedWorks === true;
+  if (updates.platforms !== undefined) {
+    const raw = Array.isArray(updates.platforms) ? updates.platforms : String(updates.platforms || '').split(/[,，、;；]+/);
+    updates.platforms = [...new Set(raw.map(p => String(p || '').trim()).filter(Boolean))].slice(0, 8);
+  }
+  if (updates.commissionStatus !== undefined) updates.commissionStatus = updates.commissionStatus === 'open' ? 'open' : 'closed';
+  if (updates.commissionNote !== undefined) updates.commissionNote = String(updates.commissionNote || '').slice(0, 500);
   if (updates.seriesDisplayLimit !== undefined) {
     const n = Number(updates.seriesDisplayLimit);
     updates.seriesDisplayLimit = Number.isFinite(n) && n > 0 ? Math.min(n, 12) : null;
@@ -1086,6 +1092,9 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   if (updates.featuredWorkIds !== undefined) changes.push('更新了首页展示作品');
   if (updates.showFeaturedWorks !== undefined) changes.push(updates.showFeaturedWorks ? '开启首页展示作品' : '关闭首页展示作品');
   if (updates.featuredSeriesIds !== undefined) changes.push('更新了作品系列展示');
+  if (updates.platforms !== undefined) changes.push('更新了活跃平台');
+  if (updates.commissionStatus !== undefined) changes.push(updates.commissionStatus === 'open' ? '开启了接稿' : '关闭了接稿');
+  if (updates.commissionNote !== undefined) changes.push('更新了约稿说明');
   logEdit(circles[index].name || '作者', '修改资料', '', changes.join('、') || '更新了资料');
 
   const { passwordHash, ...safe } = circles[index];

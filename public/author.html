@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020dx">
+  <link rel="stylesheet" href="/css/style.css?v=20261020dy">
   <link rel="stylesheet" href="/css/author.css?v=20261024b">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -347,6 +347,23 @@
           <div class="form-group">
             <label>简介</label>
             <textarea class="form-input" id="pDesc" style="min-height:100px;"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>活跃平台</label>
+              <input class="form-input" id="pPlatforms" placeholder="微博、B站、小红书（用逗号分隔）">
+            </div>
+            <div class="form-group">
+              <label>接稿状态</label>
+              <select class="form-input" id="pCommissionStatus">
+                <option value="closed">暂不接稿</option>
+                <option value="open">接稿中</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>约稿说明（可选）</label>
+            <textarea class="form-input" id="pCommissionNote" style="min-height:70px;" placeholder="例如：接头像、半身；约稿请优先微博私信。"></textarea>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -827,9 +844,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020dx"></script>
-  <script src="/js/i18n.js?v=20261020dx"></script>
-  <script src="/js/main.js?v=20261020dx"></script>
+  <script src="/js/api.js?v=20261020dy"></script>
+  <script src="/js/i18n.js?v=20261020dy"></script>
+  <script src="/js/main.js?v=20261020dy"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -1381,6 +1398,9 @@
 
       document.getElementById('pName').value = authorProfile.name || '';
       document.getElementById('pDesc').value = authorProfile.description || '';
+      document.getElementById('pPlatforms').value = Array.isArray(authorProfile.platforms) ? authorProfile.platforms.join('、') : '';
+      document.getElementById('pCommissionStatus').value = authorProfile.commissionStatus === 'open' ? 'open' : 'closed';
+      document.getElementById('pCommissionNote').value = authorProfile.commissionNote || '';
 
       // Load categories
       await loadCategoriesFromAPI();
@@ -1432,6 +1452,9 @@
         category: document.getElementById('pCategory').value,
         description: document.getElementById('pDesc').value,
         socialLinks,
+        platforms: document.getElementById('pPlatforms').value.split(/[,，、;；]+/).map(p => p.trim()).filter(Boolean),
+        commissionStatus: document.getElementById('pCommissionStatus').value === 'open' ? 'open' : 'closed',
+        commissionNote: document.getElementById('pCommissionNote').value,
         logo: document.querySelector('#pLogoPreview img')?.src || '',
         cardCover: document.querySelector('#pCardCoverPreview img')?.src || '',
         images: [...document.querySelectorAll('#pImagesPreview img')].map(img => img.src)

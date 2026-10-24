@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020dx">
+  <link rel="stylesheet" href="/css/style.css?v=20261020dy">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -45,9 +45,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261020dx"></script>
-  <script src="/js/i18n.js?v=20261020dx"></script>
-  <script src="/js/main.js?v=20261020dx"></script>
+  <script src="/js/api.js?v=20261020dy"></script>
+  <script src="/js/i18n.js?v=20261020dy"></script>
+  <script src="/js/main.js?v=20261020dy"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -154,6 +154,8 @@
         const totalWants = circleWorks.reduce((s, w) => s + (w.wants || 0), 0);
         const follows = circle.follows || 0;
         const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || '') : '';
+        const platforms = (Array.isArray(circle.platforms) ? circle.platforms : []).filter(Boolean).slice(0, 6);
+        const commissionOpen = circle.commissionStatus === 'open';
         container.innerHTML = `
           <div class="cp-page">
           <div class="detail-breadcrumb cp-breadcrumb">
@@ -177,6 +179,11 @@
                   <div class="cp-badges">
                     ${catLabel ? `<span class="cp-badge cat">${escapeHtml(catLabel)}</span>` : ''}
                   </div>
+                  ${circle.description ? `<p class="cp-bio">${nl2br(circle.description)}</p>` : ''}
+                  <div class="cp-quick">
+                    ${platforms.map(p => `<span class="cp-quick-item">${escapeHtml(p)}</span>`).join('')}
+                    <span class="cp-commission ${commissionOpen ? 'is-open' : 'is-closed'}">${commissionOpen ? '接稿中' : '暂不接稿'}</span>
+                  </div>
                 </div>
                 <div class="cp-actions">
                   ${typeof renderFollowButton === 'function' ? renderFollowButton(circle.id, follows) : ''}
@@ -186,6 +193,7 @@
               <div class="cp-stats">
                 <div class="cp-stat"><b>${circleWorks.length}</b><span>作品</span></div>
                 <div class="cp-stat"><b>${totalLikes}</b><span>喜爱</span></div>
+                <div class="cp-stat"><b>${follows}</b><span>关注</span></div>
                 <div class="cp-stat"><b>${authorSeries.length}</b><span>作品系列</span></div>
                 <div class="cp-stat"><b>${relatedProjects.length}</b><span>参与企划</span></div>
               </div>
@@ -398,21 +406,46 @@
       homeMain.innerHTML = featuredSection + seriesSection + updateSection;
       const homeSide = document.createElement('aside');
       homeSide.className = 'cp-side';
-      const catLabel = circle.category ? (CIRCLE_CATEGORIES[circle.category] || '') : '';
-      if (circle.description) {
-        const about = document.createElement('div');
-        about.className = 'cp-aside-card cp-about';
-        about.innerHTML = `<h3>关于作者</h3><p>${nl2br(circle.description)}</p>`;
-        homeSide.appendChild(about);
-      }
-      if (side) {
-        side.classList.add('cp-side-inner');
-        homeSide.appendChild(side);
-      }
+      const platformList = (Array.isArray(circle.platforms) ? circle.platforms : []).filter(Boolean).slice(0, 8);
+      const commissionOpen = circle.commissionStatus === 'open';
+      const contactEntries = circle.socialLinks
+        ? Object.entries(circle.socialLinks).filter(([k, v]) => v && !['contactLabel', 'websiteLabel'].includes(k))
+        : [];
+      const socialNameMap = { qq: 'QQ', qqGroup: 'QQ 群', wechat: '微信', weibo: '微博', bilibili: 'B站', website: '网站', custom: '链接' };
+      const contactHtml = contactEntries.length
+        ? contactEntries.map(([key, value]) => {
+            const label = key === 'website'
+              ? (circle.socialLinks.websiteLabel || socialNameMap[key] || key)
+              : (circle.socialLinks.contactLabel || socialNameMap[key] || key);
+            return `<div class="cp-author-contact-row"><span>${escapeHtml(label)}</span>${String(value).startsWith('http')
+              ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener noreferrer">访问 →</a>`
+              : `<b>${escapeHtml(value)}</b>`}</div>`;
+          }).join('')
+        : '<div class="cp-author-empty">暂未公开联系方式</div>';
+      const authorCard = document.createElement('div');
+      authorCard.className = 'cp-aside-card cp-author-card';
+      authorCard.innerHTML = `
+        <div class="cp-author-head">
+          <h3>作者名片 <span>AUTHOR CARD</span></h3>
+          <span class="cp-commission ${commissionOpen ? 'is-open' : 'is-closed'}">${commissionOpen ? '接稿中' : '暂不接稿'}</span>
+        </div>
+        <p class="cp-author-bio">${circle.description ? nl2br(circle.description) : '这位作者还没有填写简介。'}</p>
+        <div class="cp-author-meta">
+          <div class="cp-author-row"><span>活跃平台</span><div class="cp-author-platforms">${platformList.length ? platformList.map(p => `<span>${escapeHtml(p)}</span>`).join('') : '<small>暂未填写</small>'}</div></div>
+          <div class="cp-author-row"><span>联系方式</span><div class="cp-author-contact">${contactHtml}</div></div>
+        </div>
+        <div class="cp-commission-box ${commissionOpen ? 'is-open' : ''}">
+          <div class="cp-commission-status"><i></i>${commissionOpen ? '接稿中' : '暂不接稿'}</div>
+          <p>${commissionOpen
+            ? escapeHtml(circle.commissionNote || '作者目前接受约稿，请联系作者沟通细节。')
+            : escapeHtml(circle.commissionNote || '作者目前暂不接受新的约稿。')}</p>
+        </div>`;
+      homeSide.appendChild(authorCard);
       const info = document.createElement('div');
       info.className = 'cp-aside-card';
       info.innerHTML = `<h3>主页信息</h3>
         <div class="cp-meta-row"><span>作品</span><b>${works.length} 件</b></div>
+        <div class="cp-meta-row"><span>关注</span><b>${circle.follows || 0}</b></div>
         <div class="cp-meta-row"><span>作品系列</span><b>${seriesList.length} 个</b></div>
         <div class="cp-meta-row"><span>参与活动</span><b>${events.length} 个</b></div>
         <div class="cp-meta-row"><span>参与企划</span><b>${projects.length} 个</b></div>
