@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020eo">
-  <link rel="stylesheet" href="/css/author.css?v=20261025m">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ep">
+  <link rel="stylesheet" href="/css/author.css?v=20261025n">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
     .ab-sec {
@@ -848,9 +848,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020eo"></script>
-  <script src="/js/i18n.js?v=20261020eo"></script>
-  <script src="/js/main.js?v=20261020eo"></script>
+  <script src="/js/api.js?v=20261020ep"></script>
+  <script src="/js/i18n.js?v=20261020ep"></script>
+  <script src="/js/main.js?v=20261020ep"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4528,6 +4528,16 @@
         ? (eventData.relatedWorks || []).map(String).filter(id => !(authorWorksData || []).some(w => String(w.id) === id))
         : []);
       const allCircles = await loadCirclesForPick();
+      let myEvents = [];
+      try { myEvents = await authorAPI('GET', '/api/author/my-events') || []; } catch (e) {}
+      const usedByOtherEvents = {};
+      (Array.isArray(myEvents) ? myEvents : []).forEach(ev => {
+        if (isEdit && String(ev.id) === String(eventData.id)) return;
+        (ev.relatedWorks || []).forEach(wid => {
+          if (!usedByOtherEvents[String(wid)]) usedByOtherEvents[String(wid)] = '已被其他活动使用';
+        });
+      });
+      window._myEventUsedWorks = usedByOtherEvents;
       const selectedCircles = new Set(isEdit ? (eventData.relatedCircles || []) : []);
       const eventStatusOptions = (typeof EVENT_STATUS_ORDERED !== 'undefined' && EVENT_STATUS_ORDERED.length > 0)
         ? EVENT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && eventData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')
@@ -4563,7 +4573,7 @@
             <div class="form-group"><label>网站显示名</label><input class="form-input" id="myEventWebsiteLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.websiteLabel || '') : ''}"></div>` },
           { key: 'links', html: `<div class="ab-panel-head"><div><h4>关联内容 <span>LINKS</span></h4><p>选择活动相关的作者和作品</p></div></div>
             <div class="form-group"><label>关联作者（可搜索 · 默认包含自己）</label><input type="search" class="form-input" placeholder="搜索作者…" style="margin-bottom:0.4rem;" oninput="filterAuthorPickList(this,'myEventCirclePick')"><div id="myEventCirclePick" class="ae-pick-box">${renderCirclePickList(allCircles, selectedCircles, 'my-event-circle-cb', 'myEventCirclePick')}</div></div>
-            <div class="form-group"><label>关联作品（仅自己的作品）</label><div id="myEventWorksSelected" class="author-series-selected-works"></div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myEventSelectedWorkIds,onConfirm:function(ids){window._myEventSelectedWorkIds=new Set([...ids,...(window._myEventLockedWorkIds||[])]);renderMyEventSelectedWorks();}})">+ 选择作品</button></div></div>` },
+            <div class="form-group"><label>关联作品（仅自己的作品）</label><div id="myEventWorksSelected" class="author-series-selected-works"></div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myEventSelectedWorkIds,markedWorks:window._myEventUsedWorks,hideMarkedLabel:'隐藏已被其他活动使用的作品',onConfirm:function(ids){window._myEventSelectedWorkIds=new Set([...ids,...(window._myEventLockedWorkIds||[])]);renderMyEventSelectedWorks();}})">+ 选择作品</button></div></div>` },
           { key: 'media', html: `<div class="ab-panel-head"><div><h4>图片资料 <span>MEDIA</span></h4><p>活动封面和现场宣传图</p></div></div>
             <div class="form-group"><label>封面图片</label><div id="myEventCoverPreview" class="ae-cover-preview">${isEdit && eventData.coverImage ? `<div class="ae-img-wrap"><img src="${escapeHtml(imgUrl(eventData.coverImage, 400))}" alt=""><button type="button" onclick="this.parentElement.remove()">&times;</button></div>` : ''}</div><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('myEventCoverPreview', true)">从图片库选择</button><div class="tag-chip-hint">建议 16:9，会显示在活动列表和详情页。</div></div>
             <div class="form-group"><label>更多图片</label><div id="myEventImagesPreview" class="ae-image-list">${existingImages.map(img => `<div class="ae-img-wrap"><img src="${escapeHtml(imgUrl(img, 240))}" alt=""><button type="button" onclick="this.parentElement.remove()">&times;</button></div>`).join('')}</div><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('myEventImagesPreview')">+ 添加图片</button></div>` }
@@ -4730,6 +4740,16 @@
         ? (projectData.works || []).map(String).filter(id => !(authorWorksData || []).some(w => String(w.id) === id))
         : []);
       const allCircles = await loadCirclesForPick();
+      let myProjects = [];
+      try { myProjects = await authorAPI('GET', '/api/author/my-projects') || []; } catch (e) {}
+      const usedByOtherProjects = {};
+      (Array.isArray(myProjects) ? myProjects : []).forEach(pr => {
+        if (isEdit && String(pr.id) === String(projectData.id)) return;
+        (pr.works || []).forEach(wid => {
+          if (!usedByOtherProjects[String(wid)]) usedByOtherProjects[String(wid)] = '已被其他企划使用';
+        });
+      });
+      window._myProjectUsedWorks = usedByOtherProjects;
       const selectedCircles = new Set(isEdit ? (projectData.circles || []) : []);
       const existingImages = isEdit ? (projectData.images || []) : [];
       const projectCover = isEdit ? (projectData.coverImage || '') : '';
@@ -4756,7 +4776,7 @@
             <div class="form-group"><label>标签</label><div class="tag-chip-box" id="myProjectTagsBox" data-for="myProjectTags"></div><input type="hidden" id="myProjectTags" value="${isEdit ? (projectData.tags || []).map(t => String(t).replace(/"/g,'&quot;')).join(', ') : ''}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>${renderCommonTagsHtml(authorWorksData, 'myProjectTagsBox')}</div>` },
           { key: 'works', html: `<div class="ab-panel-head"><div><h4>关联作品 <span>WORKS</span></h4><p>本企划下的周边和参与作者</p></div></div>
             <div class="form-group"><label>参与作者（可搜索 · 默认包含自己）</label><input type="search" class="form-input" placeholder="搜索作者…" style="margin-bottom:0.4rem;" oninput="filterAuthorPickList(this,'myProjectCirclePick')"><div id="myProjectCirclePick" class="ae-pick-box">${renderCirclePickList(allCircles, selectedCircles, 'my-project-circle-cb', 'myProjectCirclePick')}</div></div>
-            <div class="form-group"><label>关联作品（仅自己的作品）</label><div id="myProjectWorksSelected" class="author-series-selected-works"></div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myProjectSelectedWorkIds,onConfirm:function(ids){window._myProjectSelectedWorkIds=new Set([...ids,...(window._myProjectLockedWorkIds||[])]);renderMyProjectSelectedWorks();}})">+ 选择作品</button></div></div>` },
+            <div class="form-group"><label>关联作品（仅自己的作品）</label><div id="myProjectWorksSelected" class="author-series-selected-works"></div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myProjectSelectedWorkIds,markedWorks:window._myProjectUsedWorks,hideMarkedLabel:'隐藏已被其他企划使用的作品',onConfirm:function(ids){window._myProjectSelectedWorkIds=new Set([...ids,...(window._myProjectLockedWorkIds||[])]);renderMyProjectSelectedWorks();}})">+ 选择作品</button></div></div>` },
           { key: 'recruit', html: `<div class="ab-panel-head"><div><h4>招募信息 <span>RECRUIT</span></h4><p>需要新成员时可以在这里开启招募</p></div></div>
             <div class="ae-switchline"><label><input type="checkbox" id="myProjectRecruitOn" ${isEdit && projectData.recruiting ? 'checked' : ''} onchange="toggleMyProjectRecruit(this.checked)"> <span>本企划正在招人</span></label><small>开启后前台会显示招募标记</small></div>
             <div id="myProjectRecruitFields" style="display:${isEdit && projectData.recruiting ? 'block' : 'none'};margin-top:10px;">
@@ -5339,6 +5359,22 @@
         <div id="authorSeriesEditor"></div>`;
     }
 
+    function openAuthorSeriesWorkPicker(currentSeriesId = '') {
+      const marked = {};
+      (authorSeriesCache || []).filter(s => String(s.id) !== String(currentSeriesId)).forEach(s => {
+        (s.workIds || []).forEach(id => {
+          const key = String(id);
+          if (!marked[key]) marked[key] = `已在「${s.name || '其他系列'}」`;
+        });
+      });
+      openAuthorWorkPicker({
+        works: window._authorSeriesAvailableWorks || [],
+        selected: window._authorSeriesSelectedWorkIds,
+        markedWorks: marked,
+        hideMarkedLabel: '隐藏已加入其他系列的作品'
+      });
+    }
+
     function openAuthorSeriesEditor(id) {
       const series = id ? authorSeriesCache.find(s => s.id === id) : null;
       const selected = new Set((series?.workIds || []).map(String));
@@ -5352,7 +5388,9 @@
       const chosenWorks = works.filter(w => selected.has(String(w.id)));
       const seriesCover = series?.cover || '';
       const seriesStatus = series?.status || defaultSeriesStatus;
-      const seriesPics = chosenWorks.map(w => w.images?.[0]).filter(Boolean);
+      const coverKey = String(seriesCover).split('?')[0];
+      const seriesPics = chosenWorks.map(w => w.images?.[0]).filter(Boolean)
+        .filter(img => !coverKey || String(img).split('?')[0] !== coverKey);
       body.innerHTML = authorEditorShell({
         kicker: 'AUTHOR EDITOR · 系列周边',
         title: series ? '编辑系列' : '新建系列',
@@ -5369,7 +5407,7 @@
             <div class="form-row"><div class="form-group"><label>系列状态</label><select class="form-input" id="authorSeriesStatus">${Object.entries(PROJECT_STATUS_LABELS).map(([k, v]) => `<option value="${k}" ${seriesStatus === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div><div class="form-group"><label>分类</label><select class="form-input" id="authorSeriesCategory"><option value="">未分类</option>${Object.entries(PROJECT_CATEGORIES || {}).map(([k, v]) => `<option value="${k}" ${series?.category === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div></div>
             <div class="form-row"><div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="authorSeriesStart" value="${series?.startDate || ''}"></div><div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="authorSeriesEnd" value="${series?.endDate || ''}"></div></div>
             <div class="form-group"><label>系列简介</label><textarea class="form-input" id="authorSeriesDesc" style="min-height:120px;">${escapeHtml(series?.description || '')}</textarea></div>` },
-          { key: 'works', html: `<div class="ab-panel-head"><div><h4>系列作品 <span>WORKS</span></h4><p>选择要归入这个系列的周边</p></div><button type="button" class="btn-sm btn-primary" onclick="openAuthorWorkPicker()">+ 选择作品</button></div>
+          { key: 'works', html: `<div class="ab-panel-head"><div><h4>系列作品 <span>WORKS</span></h4><p>选择要归入这个系列的周边</p></div><button type="button" class="btn-sm btn-primary" onclick="openAuthorSeriesWorkPicker('${series?.id || ''}')">+ 选择作品</button></div>
             <div id="authorSeriesSelectedWorks" class="author-series-selected-works"></div>
             <div class="tag-chip-hint">未选择作品时，前台不会显示这个系列的作品。</div>` },
           { key: 'display', html: `<div class="ab-panel-head"><div><h4>展示设置 <span>DISPLAY</span></h4><p>控制系列在作者主页的呈现方式</p></div></div>
@@ -5444,11 +5482,17 @@
     let _awpSingle = false;
     let _awpKeyHandler = null;
     let _awpBlocked = new Map();
+    let _awpMarked = new Map();
+    let _awpHideMarked = false;
+    let _awpHideMarkedLabel = '隐藏已被其他内容使用的作品';
     function openAuthorWorkPicker(options = {}) {
       _awpWorks = options.works || window._authorSeriesAvailableWorks || [];
       const selected = options.selected || window._authorSeriesSelectedWorkIds || new Set();
       _awpChosen = new Set([...selected].map(String));
       _awpBlocked = new Map(Object.entries(options.blockedWorks || {}).map(([k, v]) => [String(k), v]));
+      _awpMarked = new Map(Object.entries(options.markedWorks || {}).map(([k, v]) => [String(k), v]));
+      _awpHideMarked = false;
+      _awpHideMarkedLabel = options.hideMarkedLabel || '隐藏已被其他内容使用的作品';
       _awpOnConfirm = options.onConfirm || null;
       _awpSingle = options.multiple === false;
       const overlay = document.createElement('div');
@@ -5457,10 +5501,11 @@
       overlay.innerHTML = `
         <div class="awp-card" role="dialog" aria-modal="true" aria-label="选择作品">
           <div class="awp-head">
-            <div><h3>选择作品</h3><p>搜索或点击作品卡片进行选择；同名作品可看状态区分。</p></div>
+            <div><h3>选择作品</h3><p>${_awpMarked.size ? '带标记的作品已被其他内容使用，仍可选择。' : '搜索或点击作品卡片进行选择；同名作品可看状态区分。'}</p></div>
             <button type="button" class="awp-close" onclick="closeAuthorWorkPicker()">×</button>
           </div>
           <input type="search" class="form-input awp-search" id="awpSearch" placeholder="搜索作品名称、标签、分类..." oninput="filterAuthorWorkPicker()">
+          ${_awpMarked.size ? `<div class="awp-tools"><button type="button" class="awp-filter" id="awpHideMarkedBtn" onclick="toggleAwpHideMarked()">${escapeHtml(_awpHideMarkedLabel)} (${_awpMarked.size})</button><span>被标记的作品仍可选择</span></div>` : ''}
           <div class="awp-grid" id="awpGrid"></div>
           <div class="awp-foot">
             <span>已选 <b id="awpCount">${_awpChosen.size}</b> 件</span>
@@ -5481,6 +5526,9 @@
       if (!grid) return;
       const q = (document.getElementById('awpSearch')?.value || '').trim().toLowerCase();
       const works = _awpWorks.filter(w => {
+        const markedLabel = _awpMarked.get(String(w.id));
+        const chosen = _awpChosen.has(String(w.id));
+        if (_awpHideMarked && markedLabel && !chosen) return false;
         if (!q) return true;
         const cat = (typeof CATEGORIES !== 'undefined' && CATEGORIES[w.category]) || w.category || '';
         return [w.title, ...(w.tags || []), cat, w.id].join(' ').toLowerCase().includes(q);
@@ -5493,12 +5541,23 @@
         const chosen = _awpChosen.has(String(w.id));
         const blockedLabel = _awpBlocked.get(String(w.id));
         const blocked = !!blockedLabel && !chosen;
+        const markedLabel = _awpMarked.get(String(w.id));
         const cat = (typeof CATEGORIES !== 'undefined' && CATEGORIES[w.category]) || w.category || '';
-        return `<button type="button" class="awp-item${chosen ? ' selected' : ''}${blocked ? ' blocked' : ''}" data-work-id="${w.id}" onclick="toggleAuthorWorkPick('${w.id}')">
-          <div class="awp-cover">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 240))}" alt="">` : '<span>作品</span>'}<i>✓</i>${blocked ? `<em class="awp-blocked">已在「${escapeHtml(blockedLabel)}」</em>` : ''}</div>
+        return `<button type="button" class="awp-item${chosen ? ' selected' : ''}${blocked ? ' blocked' : ''}${markedLabel ? ' marked' : ''}" data-work-id="${w.id}" onclick="toggleAuthorWorkPick('${w.id}')">
+          <div class="awp-cover">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 240))}" alt="">` : '<span>作品</span>'}<i>✓</i>${blocked ? `<em class="awp-blocked">已在「${escapeHtml(blockedLabel)}」</em>` : (markedLabel ? `<em class="awp-marked">${escapeHtml(markedLabel)}</em>` : '')}</div>
           <div class="awp-body"><b>${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(STATUS_LABELS?.[w.status] || '')}${cat ? ' · ' + escapeHtml(cat) : ''}${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : ' · 待审核'}</small></div>
         </button>`;
       }).join('');
+    }
+
+    function toggleAwpHideMarked() {
+      _awpHideMarked = !_awpHideMarked;
+      const btn = document.getElementById('awpHideMarkedBtn');
+      if (btn) {
+        btn.classList.toggle('on', _awpHideMarked);
+        btn.textContent = _awpHideMarked ? '显示全部作品' : `${_awpHideMarkedLabel} (${_awpMarked.size})`;
+      }
+      renderAuthorWorkPickerGrid();
     }
 
     function filterAuthorWorkPicker() { renderAuthorWorkPickerGrid(); }

@@ -897,3 +897,51 @@
   .author-form-mode .ab-steps-label,.author-form-mode .ab-tip{display:none}.author-form-mode .ab-step{width:auto;white-space:nowrap;margin:0;padding:5px 8px}.author-form-mode .ab-step .n{width:17px;height:17px;flex-basis:17px}.author-form-mode .ab-step small,.author-form-mode .ab-step i{display:none}
   .author-form-mode .ab-main{padding:13px 14px}.author-form-mode .ab-editor-foot{padding:9px 14px}.author-form-mode .ab-save-status{display:none}.author-form-mode .ab-editor-foot>div:last-child{width:100%}.author-form-mode .ab-editor-foot .btn{flex:1}
 }
+
+/* work picker used-elsewhere markers */
+.awp-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:7px 0 2px}
+.awp-filter{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 11px;font-size:10px;color:var(--muted);cursor:pointer}
+.awp-filter.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.awp-tools>span{font-size:9px;color:var(--haze)}
+.awp-marked{position:absolute;left:5px;right:5px;bottom:5px;background:rgba(180,63,75,.9);color:#fff;border-radius:4px;padding:2px 4px;font-size:8px;line-height:1.4;text-align:center;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.awp-item.marked{opacity:.88}
+.awp-item.marked.selected{opacity:1}
+@media(max-width:600px){
+  .awp-tools{gap:5px}.awp-filter{font-size:10px;padding:6px 10px}.awp-tools>span{width:100%;font-size:9px}
+  .awp-marked,.awp-blocked{font-size:8.5px;padding:3px 5px}
+}
+
+/* Author form mobile polish */
+.ab-editor .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ab-editor .form-group{min-width:0}
+.ab-editor .form-row>.form-group{min-width:0;margin-bottom:0}
+.ab-editor .form-input,.ab-editor select,.ab-editor textarea{max-width:100%;min-width:0}
+.ab-editor input[type="date"]{min-width:0}
+@media(max-width:760px){
+  .ab-editor .form-row{grid-template-columns:1fr;gap:0}
+  .ab-editor .form-row>.form-group{margin-bottom:11px}
+  .ab-editor .form-input,.ab-editor select,.ab-editor textarea{font-size:16px!important;padding:10px 11px!important;min-height:44px!important;border-radius:9px}
+  .ab-editor textarea.form-input{min-height:88px!important;line-height:1.65}
+  .ab-editor .form-group label{font-size:12px}
+  .ab-editor .tag-chip-box{min-height:44px;padding:5px 7px}
+  .ab-editor .tag-chip-box input{font-size:16px!important;min-height:32px!important}
+  .ab-editor .ae-pick-box{max-height:200px}
+  .ab-editor .ae-pick-box label{font-size:12px;padding:7px 5px}
+  .ab-editor .ae-img-wrap img{width:calc(50vw - 58px);height:72px;max-width:150px}
+  .ab-editor .author-series-cover-preview{width:100%;max-width:220px;height:120px}
+  .ab-editor .author-series-selected-works{max-height:220px}
+  .ab-editor .ab-editor-foot .btn{height:42px}
+  .awp-card{width:calc(100vw - 20px);max-height:calc(100vh - 20px);padding:16px}
+  .awp-head h3{font-size:19px}.awp-head p{font-size:11px;line-height:1.6}
+  .awp-search{font-size:16px!important;min-height:42px}
+  .awp-grid{gap:8px}.awp-item .awp-body b{font-size:11px}.awp-item .awp-body small{font-size:9px}
+  .awp-foot{flex-wrap:wrap;gap:6px}.awp-foot span{font-size:11px}
+  .awp-foot button{min-height:36px;padding:0 13px;font-size:11px}
+  .awp-tools{gap:6px}.awp-filter{font-size:10.5px;padding:7px 11px;min-height:34px}
+}
+@media(max-width:520px){
+  .ab-editor-head h3{font-size:18px}.ab-editor-head .ab-code{font-size:8px}
+  .ab-editor .ab-panel-head h4{font-size:17px}.ab-editor .ab-panel-head p{font-size:10px}
+  .ab-editor .ab-editor-foot{padding:9px 12px}.ab-editor .ab-editor-foot .btn{font-size:11px}
+  .awp-card{padding:14px;border-radius:12px}
+}
