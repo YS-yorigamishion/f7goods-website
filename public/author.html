@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020eh">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ei">
   <link rel="stylesheet" href="/css/author.css?v=20261024d">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -848,9 +848,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020eh"></script>
-  <script src="/js/i18n.js?v=20261020eh"></script>
-  <script src="/js/main.js?v=20261020eh"></script>
+  <script src="/js/api.js?v=20261020ei"></script>
+  <script src="/js/i18n.js?v=20261020ei"></script>
+  <script src="/js/main.js?v=20261020ei"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -5168,10 +5168,10 @@
       overlay.innerHTML = `
         <div class="awp-card" role="dialog" aria-modal="true" aria-label="选择作品">
           <div class="awp-head">
-            <div><h3>选择作品</h3><p>搜索或点击作品卡片进行选择；同名作品可看状态和编号区分。</p></div>
+            <div><h3>选择作品</h3><p>搜索或点击作品卡片进行选择；同名作品可看状态区分。</p></div>
             <button type="button" class="awp-close" onclick="closeAuthorWorkPicker()">×</button>
           </div>
-          <input type="search" class="form-input awp-search" id="awpSearch" placeholder="搜索作品名称、标签、分类或编号..." oninput="filterAuthorWorkPicker()">
+          <input type="search" class="form-input awp-search" id="awpSearch" placeholder="搜索作品名称、标签、分类..." oninput="filterAuthorWorkPicker()">
           <div class="awp-grid" id="awpGrid"></div>
           <div class="awp-foot">
             <span>已选 <b id="awpCount">${_awpChosen.size}</b> 件</span>
@@ -5205,7 +5205,7 @@
         const cat = (typeof CATEGORIES !== 'undefined' && CATEGORIES[w.category]) || w.category || '';
         return `<button type="button" class="awp-item${chosen ? ' selected' : ''}" data-work-id="${w.id}" onclick="toggleAuthorWorkPick('${w.id}')">
           <div class="awp-cover">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 240))}" alt="">` : '<span>作品</span>'}<i>✓</i></div>
-          <div class="awp-body"><b>${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(STATUS_LABELS?.[w.status] || '')}${cat ? ' · ' + escapeHtml(cat) : ''}${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : ' · 待审核'}</small><span>#${escapeHtml(String(w.id).slice(-8))}</span></div>
+          <div class="awp-body"><b>${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(STATUS_LABELS?.[w.status] || '')}${cat ? ' · ' + escapeHtml(cat) : ''}${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : ' · 待审核'}</small></div>
         </button>`;
       }).join('');
     }
