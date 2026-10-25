@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ej">
-  <link rel="stylesheet" href="/css/author.css?v=20261025f">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ek">
+  <link rel="stylesheet" href="/css/author.css?v=20261025i">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
     .ab-sec {
@@ -848,9 +848,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020ej"></script>
-  <script src="/js/i18n.js?v=20261020ej"></script>
-  <script src="/js/main.js?v=20261020ej"></script>
+  <script src="/js/api.js?v=20261020ek"></script>
+  <script src="/js/i18n.js?v=20261020ek"></script>
+  <script src="/js/main.js?v=20261020ek"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -3577,64 +3577,133 @@
       if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
     }
 
+    function groupWorkItemHtml(w) {
+      const cover = w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 96))}" alt="">` : '<span class="ab-group-noimg">作品</span>';
+      return `<span class="ab-group-work-item" data-work-id="${escapeHtml(String(w.id))}">
+        ${cover}
+        <b>${escapeHtml(w.title || '未命名')}</b>
+        <button type="button" onclick="removeAuthorGroupWork(this)" aria-label="移除作品">×</button>
+      </span>`;
+    }
+
+    function groupWorksHtml(works) {
+      return (works || []).length
+        ? works.map(groupWorkItemHtml).join('')
+        : '<span class="ab-group-empty">还没有选择作品</span>';
+    }
+
+    function groupPickButtonHtml() {
+      return '<button type="button" class="btn-sm ab-group-pick" onclick="openAuthorGroupWorkPicker(this)">+ 选择作品</button>';
+    }
+
+    function updateAuthorGroupCount(row) {
+      if (!row) return;
+      const count = row.querySelectorAll('.ab-group-work-item').length;
+      const el = row.querySelector('.ab-group-count');
+      if (el) el.textContent = count + ' 件';
+    }
+
     function renderAuthorGroupRow(group, works) {
       const selected = new Set(Array.isArray(group?.workIds) ? group.workIds.map(String) : []);
       const boothSelected = new Set([...(window._abSelectedWorkIds || [])].map(String));
-      const allowedWorks = (works || []).filter(w => boothSelected.has(String(w.id)));
+      const allowedWorks = (works || []).filter(w => boothSelected.has(String(w.id)) && selected.has(String(w.id)));
       const name = escapeHtml(group?.name || '');
       const id = escapeHtml(group?.id || '');
-      return `<div class="ab-group-row" data-id="${id}" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.55rem;display:flex;flex-direction:column;gap:0.35rem;">
-        <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
-          <input class="form-input ab-group-name" style="flex:1;min-width:100px;" placeholder="分类名称，如：新品" value="${name}">
-          <button type="button" class="ab-pill" title="上移" onclick="moveAuthorGroupRow(this,-1)">↑</button>
-          <button type="button" class="ab-pill" title="下移" onclick="moveAuthorGroupRow(this,1)">↓</button>
-          <button type="button" class="ab-pill" title="把尚未归类的展示作品加入本类" onclick="assignUncategorizedToGroup(this)">收未归类</button>
-          <button type="button" class="ab-pill danger" onclick="this.closest('.ab-group-row').remove();updateAbWorkGroupHint();">删</button>
+      return `<div class="ab-group-row" data-id="${id}">
+        <div class="ab-group-head">
+          <input class="form-input ab-group-name" style="flex:1;min-width:130px;" placeholder="分类名称，如：新品" value="${name}">
+          <span class="ab-group-count">${allowedWorks.length} 件</span>
+          <button type="button" class="ab-group-icon" title="上移" onclick="moveAuthorGroupRow(this,-1)">↑</button>
+          <button type="button" class="ab-group-icon" title="下移" onclick="moveAuthorGroupRow(this,1)">↓</button>
+          <button type="button" class="ab-group-delete" onclick="this.closest('.ab-group-row').remove();updateAbWorkGroupHint()">删</button>
         </div>
-        <div class="ab-group-works" style="display:flex;flex-wrap:wrap;gap:0.25rem;max-height:100px;overflow:auto;">
-          ${allowedWorks.length ? allowedWorks.map(w => `
-            <label style="font-size:0.72rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.45rem;cursor:pointer;">
-              <input type="checkbox" class="ab-group-work" value="${w.id}" ${selected.has(String(w.id)) ? 'checked' : ''} onchange="onAbGroupWorkChange(this)">
-              ${escapeHtml(w.title || '')}
-            </label>
-          `).join('') : '<span style="font-size:0.72rem;color:var(--haze);">请先在本摊选择展示作品</span>'}
-        </div>
+        <div class="ab-group-works">${groupWorksHtml(allowedWorks)}${groupPickButtonHtml()}</div>
+        <div class="ab-group-tip">点击作品卡片选择；同一作品只能归入一个分类。</div>
       </div>`;
     }
 
-    function refreshAuthorGroupWorkOptions() {
-      const box = document.getElementById('abGroupList');
-      if (!box) return;
+    function refreshAuthorGroupSelectedWorks() {
       const boothSelected = new Set([...(window._abSelectedWorkIds || [])].map(String));
       const pool = (_abManageWorks || []).filter(w => boothSelected.has(String(w.id)));
-      box.querySelectorAll('.ab-group-row').forEach(row => {
+      const map = Object.fromEntries(pool.map(w => [String(w.id), w]));
+      document.querySelectorAll('#abGroupList .ab-group-row').forEach(row => {
+        const ids = [...row.querySelectorAll('.ab-group-work-item')].map(el => el.dataset.workId);
+        const works = ids.map(id => map[id]).filter(Boolean);
         const wrap = row.querySelector('.ab-group-works');
-        if (!wrap) return;
-        const checked = new Set([...wrap.querySelectorAll('.ab-group-work:checked')].map(cb => cb.value));
-        wrap.innerHTML = pool.length ? pool.map(w => `
-          <label style="font-size:0.72rem;display:inline-flex;align-items:center;gap:0.2rem;border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.45rem;cursor:pointer;">
-            <input type="checkbox" class="ab-group-work" value="${w.id}" ${checked.has(String(w.id)) ? 'checked' : ''} onchange="onAbGroupWorkChange(this)">
-            ${escapeHtml(w.title || '')}
-          </label>`).join('') : '<span style="font-size:0.72rem;color:var(--haze);">请先在本摊选择展示作品</span>';
+        if (wrap) wrap.innerHTML = groupWorksHtml(works) + groupPickButtonHtml();
+        updateAuthorGroupCount(row);
       });
       updateAbWorkGroupHint();
     }
 
-    function onAbGroupWorkChange(cb) {
-      if (!cb.checked) { updateAbWorkGroupHint(); return; }
-      const row = cb.closest('.ab-group-row');
-      const other = [...document.querySelectorAll('#abGroupList .ab-group-row')].find(r => {
-        if (r === row) return false;
-        return [...r.querySelectorAll('.ab-group-work:checked')].some(c => c.value === cb.value);
-      });
-      if (other) {
-        cb.checked = false;
-        const name = other.querySelector('.ab-group-name')?.value.trim() || '未命名分类';
-        if (typeof showToast === 'function') showToast(`该作品已在「${name}」分类中`, 'error');
-        updateAbWorkGroupHint();
+    function removeAuthorGroupWork(btn) {
+      const item = btn.closest('.ab-group-work-item');
+      const row = btn.closest('.ab-group-row');
+      if (!item || !row) return;
+      item.remove();
+      updateAuthorGroupCount(row);
+      updateAbWorkGroupHint();
+    }
+
+    function openAuthorGroupWorkPicker(btn) {
+      const row = btn.closest('.ab-group-row');
+      if (!row) return;
+      const boothSelected = new Set([...(window._abSelectedWorkIds || [])].map(String));
+      const pool = (_abManageWorks || []).filter(w => boothSelected.has(String(w.id)));
+      if (!pool.length) {
+        showToast('请先在「摊位作品」中选择要展示的作品', 'info');
         return;
       }
-      updateAbWorkGroupHint();
+      const current = new Set([...row.querySelectorAll('.ab-group-work-item')].map(el => el.dataset.workId));
+      const blocked = {};
+      document.querySelectorAll('#abGroupList .ab-group-row').forEach(other => {
+        if (other === row) return;
+        const label = other.querySelector('.ab-group-name')?.value.trim() || '未命名分类';
+        other.querySelectorAll('.ab-group-work-item').forEach(el => {
+          if (!current.has(el.dataset.workId)) blocked[el.dataset.workId] = label;
+        });
+      });
+      openAuthorWorkPicker({
+        works: pool,
+        selected: current,
+        blockedWorks: blocked,
+        onConfirm: (ids) => {
+          const allowed = new Set(pool.map(w => String(w.id)));
+          const picked = [...new Set(ids.map(String))].filter(id => allowed.has(id));
+          const works = picked.map(id => pool.find(w => String(w.id) === id)).filter(Boolean);
+          const wrap = row.querySelector('.ab-group-works');
+          if (wrap) wrap.innerHTML = groupWorksHtml(works) + groupPickButtonHtml();
+          updateAuthorGroupCount(row);
+          updateAbWorkGroupHint();
+          if (typeof showToast === 'function') showToast(works.length ? `已选择 ${works.length} 件作品` : '已清空本分类作品', 'success');
+        }
+      });
+    }
+
+    function updateAbWorkGroupHint() {
+      const hint = document.getElementById('abWorkGroupHint');
+      if (!hint) return;
+      const selected = new Set([...(window._abSelectedWorkIds || [])].map(String));
+      const grouped = new Set();
+      const counts = new Map();
+      document.querySelectorAll('#abGroupList .ab-group-work-item').forEach(el => {
+        const id = el.dataset.workId;
+        grouped.add(id);
+        counts.set(id, (counts.get(id) || 0) + 1);
+      });
+      const duplicate = [...counts.values()].filter(n => n > 1).length;
+      if (duplicate) {
+        hint.textContent = `有 ${duplicate} 件作品同时出现在多个分类，保存时会只保留第一个分类`;
+        return;
+      }
+      const ungrouped = [...selected].filter(id => !grouped.has(id));
+      if (!selected.size) {
+        hint.textContent = '';
+        return;
+      }
+      hint.textContent = ungrouped.length
+        ? `有 ${ungrouped.length} 件展示作品未归入任何分类，前台将显示在「其他」`
+        : '';
     }
 
     function updateAbEditorPreview() {
@@ -3696,26 +3765,6 @@
       else list.insertBefore(rows[j], row);
     }
 
-    function assignUncategorizedToGroup(btn) {
-      const row = btn.closest('.ab-group-row');
-      if (!row) return;
-      const selectedWorks = new Set([...(window._abSelectedWorkIds || [])].map(String));
-      const groupedElsewhere = new Set();
-      document.querySelectorAll('#abGroupList .ab-group-row').forEach(r => {
-        if (r === row) return;
-        r.querySelectorAll('.ab-group-work:checked').forEach(cb => groupedElsewhere.add(cb.value));
-      });
-      let n = 0;
-      row.querySelectorAll('.ab-group-work').forEach(cb => {
-        if (selectedWorks.has(cb.value) && !groupedElsewhere.has(cb.value) && !cb.checked) {
-          cb.checked = true;
-          n++;
-        }
-      });
-      updateAbWorkGroupHint();
-      if (typeof showToast === 'function') showToast(n ? `已将 ${n} 件未归类作品加入本分类` : '没有可收进的未归类作品', n ? 'success' : 'info');
-    }
-
     function filterAbWorkPicks(q) {
       const s = String(q || '').trim().toLowerCase();
       document.querySelectorAll('#abWorkPickList .ab-work-pick').forEach(el => {
@@ -3745,31 +3794,6 @@
       const allOn = cbs.every(cb => cb.checked);
       cbs.forEach(cb => { cb.checked = !allOn; });
       updateAbWorkGroupHint();
-    }
-
-    function updateAbWorkGroupHint() {
-      const hint = document.getElementById('abWorkGroupHint');
-      if (!hint) return;
-      const selected = new Set([...(window._abSelectedWorkIds || [])].map(String));
-      const grouped = new Set();
-      const counts = new Map();
-      document.querySelectorAll('#abGroupList .ab-group-work:checked').forEach(cb => {
-        grouped.add(cb.value);
-        counts.set(cb.value, (counts.get(cb.value) || 0) + 1);
-      });
-      const duplicate = [...counts.values()].filter(n => n > 1).length;
-      if (duplicate) {
-        hint.textContent = `有 ${duplicate} 件作品同时出现在多个分类，保存时会只保留第一个分类`;
-        return;
-      }
-      const ungrouped = [...selected].filter(id => !grouped.has(id));
-      if (!selected.size) {
-        hint.textContent = '';
-        return;
-      }
-      hint.textContent = ungrouped.length
-        ? `有 ${ungrouped.length} 件展示作品未归入任何分类，前台将显示在「其他」`
-        : '';
     }
 
     function toggleAuthorBoothMenu(btn) {
@@ -4249,7 +4273,7 @@
           const used = new Set();
           return [...document.querySelectorAll('#abGroupList .ab-group-row')].map(row => {
             const name = row.querySelector('.ab-group-name')?.value.trim() || '';
-            const workIds = [...row.querySelectorAll('.ab-group-work:checked')].map(i => i.value)
+            const workIds = [...row.querySelectorAll('.ab-group-work-item')].map(el => el.dataset.workId)
               .filter(id => { if (used.has(id)) return false; used.add(id); return true; });
             if (!name && !workIds.length) return null;
             return { id: row.dataset.id || ('c' + Date.now()), name, workIds };
@@ -5268,10 +5292,12 @@
     let _awpOnConfirm = null;
     let _awpSingle = false;
     let _awpKeyHandler = null;
+    let _awpBlocked = new Map();
     function openAuthorWorkPicker(options = {}) {
       _awpWorks = options.works || window._authorSeriesAvailableWorks || [];
       const selected = options.selected || window._authorSeriesSelectedWorkIds || new Set();
       _awpChosen = new Set([...selected].map(String));
+      _awpBlocked = new Map(Object.entries(options.blockedWorks || {}).map(([k, v]) => [String(k), v]));
       _awpOnConfirm = options.onConfirm || null;
       _awpSingle = options.multiple === false;
       const overlay = document.createElement('div');
@@ -5314,9 +5340,11 @@
       }
       grid.innerHTML = works.map(w => {
         const chosen = _awpChosen.has(String(w.id));
+        const blockedLabel = _awpBlocked.get(String(w.id));
+        const blocked = !!blockedLabel && !chosen;
         const cat = (typeof CATEGORIES !== 'undefined' && CATEGORIES[w.category]) || w.category || '';
-        return `<button type="button" class="awp-item${chosen ? ' selected' : ''}" data-work-id="${w.id}" onclick="toggleAuthorWorkPick('${w.id}')">
-          <div class="awp-cover">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 240))}" alt="">` : '<span>作品</span>'}<i>✓</i></div>
+        return `<button type="button" class="awp-item${chosen ? ' selected' : ''}${blocked ? ' blocked' : ''}" data-work-id="${w.id}" onclick="toggleAuthorWorkPick('${w.id}')">
+          <div class="awp-cover">${w.images?.[0] ? `<img src="${escapeHtml(imgUrl(w.images[0], 240))}" alt="">` : '<span>作品</span>'}<i>✓</i>${blocked ? `<em class="awp-blocked">已在「${escapeHtml(blockedLabel)}」</em>` : ''}</div>
           <div class="awp-body"><b>${escapeHtml(w.title || '未命名')}</b><small>${escapeHtml(STATUS_LABELS?.[w.status] || '')}${cat ? ' · ' + escapeHtml(cat) : ''}${(!w.approvalStatus || w.approvalStatus === 'approved') ? '' : ' · 待审核'}</small></div>
         </button>`;
       }).join('');
@@ -5326,6 +5354,10 @@
 
     function toggleAuthorWorkPick(id) {
       id = String(id);
+      if (_awpBlocked.has(id) && !_awpChosen.has(id)) {
+        if (typeof showToast === 'function') showToast(`该作品已在「${_awpBlocked.get(id)}」分类中`, 'error');
+        return;
+      }
       if (_awpSingle) {
         const wasSelected = _awpChosen.has(id);
         _awpChosen.clear();
@@ -5388,7 +5420,7 @@
 
     function renderAbSelectedWorks() {
       renderSelectedWorkChips('abSelectedWorks', window._abSelectedWorkIds, 'removeAbWork', _abManageWorks || []);
-      refreshAuthorGroupWorkOptions();
+      refreshAuthorGroupSelectedWorks();
       updateAbWorkGroupHint();
       updateAbEditorPreview();
     }
