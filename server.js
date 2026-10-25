@@ -329,16 +329,19 @@ app.get(Object.keys(DETAIL_PAGES), (req, res, next) => {
       if (w && isWorkPublic(w)) item = publicWorkView(w);
     } else if (cfg.type === 'event') {
       const e = readJSON('events.json').find(x => x.id === id);
-      if (e && (!e.approvalStatus || e.approvalStatus === 'approved') && (cfg.path !== '/only.html' || e.type === 'only')) item = e;
+      if (e && isPublicRevision(e)) {
+        const view = publicRevisionView(e);
+        if (cfg.path !== '/only.html' || view.type === 'only') item = view;
+      }
     } else if (cfg.type === 'circle') {
       const c = readJSON('circles.json').find(x => x.id === id);
       if (c && c.visible !== false) item = c;
     } else if (cfg.type === 'project') {
       const p = readJSON('projects.json').find(x => x.id === id);
-      if (p && (!p.approvalStatus || p.approvalStatus === 'approved')) item = p;
+      if (p && isPublicRevision(p)) item = publicRevisionView(p);
     } else if (cfg.type === 'update') {
       const u = readJSON('updates.json').find(x => x.id === id);
-      if (u && (!u.approvalStatus || u.approvalStatus === 'approved')) item = u;
+      if (u && isPublicRevision(u)) item = publicRevisionView(u);
     }
   } catch (e) {
     console.error('[seo detail]', cfg.type, e.message);
@@ -790,6 +793,123 @@ async function moveToTrash(type, item) {
   trash.push(entry);
   await writeJSON('trash.json', trash);
   return entry;
+}
+
+function keepIdsNotIn(list, idSet) {
+  if (!Array.isArray(list)) return list;
+  return list.filter(id => !idSet.has(String(id)));
+}
+
+async function cleanupWorkReferences(ids) {
+  const idSet = new Set((Array.isArray(ids) ? ids : [ids]).map(String));
+  if (!idSet.size) return;
+  const events = readJSON('events.json');
+  let changed = false;
+  events.forEach(e => {
+    const next = keepIdsNotIn(e.relatedWorks, idSet);
+    if (JSON.stringify(next) !== JSON.stringify(e.relatedWorks)) { e.relatedWorks = next; changed = true; }
+    if (e.published) {
+      const pubNext = keepIdsNotIn(e.published.relatedWorks, idSet);
+      if (JSON.stringify(pubNext) !== JSON.stringify(e.published.relatedWorks)) { e.published.relatedWorks = pubNext; changed = true; }
+    }
+    (e.booths || []).forEach(b => {
+      const boothNext = keepIdsNotIn(b.workIds, idSet);
+      if (JSON.stringify(boothNext) !== JSON.stringify(b.workIds)) { b.workIds = boothNext; changed = true; }
+    });
+  });
+  if (changed) await writeJSON('events.json', events);
+
+  const projects = readJSON('projects.json');
+  changed = false;
+  projects.forEach(p => {
+    const next = keepIdsNotIn(p.works, idSet);
+    if (JSON.stringify(next) !== JSON.stringify(p.works)) { p.works = next; changed = true; }
+    if (p.published) {
+      const pubNext = keepIdsNotIn(p.published.works, idSet);
+      if (JSON.stringify(pubNext) !== JSON.stringify(p.published.works)) { p.published.works = pubNext; changed = true; }
+    }
+  });
+  if (changed) await writeJSON('projects.json', projects);
+
+  const series = readJSON('series.json');
+  changed = false;
+  series.forEach(s => {
+    const next = keepIdsNotIn(s.workIds, idSet);
+    if (JSON.stringify(next) !== JSON.stringify(s.workIds)) { s.workIds = next; changed = true; }
+  });
+  if (changed) await writeJSON('series.json', series);
+
+  const circles = readJSON('circles.json');
+  changed = false;
+  circles.forEach(c => {
+    const next = keepIdsNotIn(c.featuredWorkIds, idSet);
+    if (JSON.stringify(next) !== JSON.stringify(c.featuredWorkIds)) { c.featuredWorkIds = next; changed = true; }
+  });
+  if (changed) await writeJSON('circles.json', circles);
+}
+
+async function cleanupEventReferences(ids) {
+  const idSet = new Set((Array.isArray(ids) ? ids : [ids]).map(String));
+  if (!idSet.size) return;
+  const works = readJSON('works.json');
+  let changed = false;
+  works.forEach(w => {
+    const next = keepIdsNotIn(w.relatedEvents, idSet);
+    if (JSON.stringify(next) !== JSON.stringify(w.relatedEvents)) { w.relatedEvents = next; changed = true; }
+  });
+  if (changed) await writeJSON('works.json', works);
+
+  const projects = readJSON('projects.json');
+  changed = false;
+  projects.forEach(p => {
+    const next = keepIdsNotIn(p.events, idSet);
+    if (JSON.stringify(next) !== JSON.stringify(p.events)) { p.events = next; changed = true; }
+    if (p.published) {
+      const pubNext = keepIdsNotIn(p.published.events, idSet);
+      if (JSON.stringify(pubNext) !== JSON.stringify(p.published.events)) { p.published.events = pubNext; changed = true; }
+    }
+  });
+  if (changed) await writeJSON('projects.json', projects);
+
+  const updates = readJSON('updates.json');
+  changed = false;
+  updates.forEach(u => {
+    const next = keepIdsNotIn(u.relatedEvents, idSet);
+    if (JSON.stringify(next) !== JSON.stringify(u.relatedEvents)) { u.relatedEvents = next; changed = true; }
+    if (u.published) {
+      const pubNext = keepIdsNotIn(u.published.relatedEvents, idSet);
+      if (JSON.stringify(pubNext) !== JSON.stringify(u.published.relatedEvents)) { u.published.relatedEvents = pubNext; changed = true; }
+    }
+  });
+  if (changed) await writeJSON('updates.json', updates);
+}
+
+async function cleanupProjectReferences(ids) {
+  const idSet = new Set((Array.isArray(ids) ? ids : [ids]).map(String));
+  if (!idSet.size) return;
+  const updates = readJSON('updates.json');
+  let changed = false;
+  updates.forEach(u => {
+    const next = keepIdsNotIn(u.relatedProjects, idSet);
+    if (JSON.stringify(next) !== JSON.stringify(u.relatedProjects)) { u.relatedProjects = next; changed = true; }
+    if (u.published) {
+      const pubNext = keepIdsNotIn(u.published.relatedProjects, idSet);
+      if (JSON.stringify(pubNext) !== JSON.stringify(u.published.relatedProjects)) { u.published.relatedProjects = pubNext; changed = true; }
+    }
+  });
+  if (changed) await writeJSON('updates.json', updates);
+
+  const events = readJSON('events.json');
+  changed = false;
+  events.forEach(e => {
+    const next = keepIdsNotIn(e.relatedProjects, idSet);
+    if (JSON.stringify(next) !== JSON.stringify(e.relatedProjects)) { e.relatedProjects = next; changed = true; }
+    if (e.published) {
+      const pubNext = keepIdsNotIn(e.published.relatedProjects, idSet);
+      if (JSON.stringify(pubNext) !== JSON.stringify(e.published.relatedProjects)) { e.published.relatedProjects = pubNext; changed = true; }
+    }
+  });
+  if (changed) await writeJSON('events.json', events);
 }
 
 async function clearEditLogImageUrl(imageUrl) {
@@ -1975,6 +2095,7 @@ app.delete('/api/author/works', authorAuthMiddleware, async (req, res) => {
   if (deleted.length === 0) return res.status(404).json({ error: '未找到可删除的作品' });
 
   await writeJSON('works.json', kept);
+  await cleanupWorkReferences(deleted.map(w => w.id));
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === circleId);
@@ -2001,6 +2122,7 @@ app.delete('/api/author/works/:id', authorAuthMiddleware, async (req, res) => {
   const workTitle = works[index].title;
   works.splice(index, 1);
   await writeJSON('works.json', works);
+  await cleanupWorkReferences([req.params.id]);
 
   // Log the deletion
   const circles = readJSON('circles.json');
@@ -2301,15 +2423,21 @@ app.put('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) => {
     updates.relatedWorks = updates.relatedWorks.filter(Boolean);
   }
 
+  const wasApproved = !events[index].approvalStatus || events[index].approvalStatus === 'approved';
+  if (wasApproved) events[index].published = pickRevisionContent(events[index], EVENT_REVISION_FIELDS);
   events[index] = {
     ...events[index],
     ...updates,
     approvalStatus: resolveApprovalStatus('requireEventApproval')
   };
+  if (events[index].approvalStatus === 'approved') delete events[index].published;
   delete events[index].rejectReason;
   // 同步作品 relatedEvents（双向）
   await writeJSON('events.json', events);
-  await syncEventWorkRelations(events[index]);
+  const relationEvent = events[index].published
+    ? { ...events[index], relatedWorks: events[index].published.relatedWorks || [] }
+    : events[index];
+  await syncEventWorkRelations(relationEvent);
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === circleId);
   await logEdit(circle?.name || '作者', '编辑活动', events[index].title || req.params.id, '', '', { before: beforeEdit, after: events[index] });
@@ -2326,6 +2454,7 @@ app.delete('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) =
   const eventTitle = events[index].title;
   events.splice(index, 1);
   await writeJSON('events.json', events);
+  await cleanupEventReferences([req.params.id]);
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -2732,11 +2861,14 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res) =>
   }
   if (Array.isArray(updates.works)) updates.works = updates.works.filter(Boolean);
 
+  const wasApproved = !projects[index].approvalStatus || projects[index].approvalStatus === 'approved';
+  if (wasApproved) projects[index].published = pickRevisionContent(projects[index], PROJECT_REVISION_FIELDS);
   projects[index] = {
     ...projects[index],
     ...updates,
     approvalStatus: resolveApprovalStatus('requireProjectApproval')
   };
+  if (projects[index].approvalStatus === 'approved') delete projects[index].published;
   delete projects[index].rejectReason;
   await writeJSON('projects.json', projects);
   const circles = readJSON('circles.json');
@@ -2755,6 +2887,7 @@ app.delete('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res)
   const projectTitle = projects[index].title;
   projects.splice(index, 1);
   await writeJSON('projects.json', projects);
+  await cleanupProjectReferences([req.params.id]);
 
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === req.author.circleId);
@@ -2821,11 +2954,14 @@ app.put('/api/author/my-updates/:id', authorAuthMiddleware, async (req, res) => 
     if (req.body[field] !== undefined) updates2[field] = req.body[field];
   });
 
+  const wasApproved = !updates[index].approvalStatus || updates[index].approvalStatus === 'approved';
+  if (wasApproved) updates[index].published = pickRevisionContent(updates[index], UPDATE_REVISION_FIELDS);
   updates[index] = {
     ...updates[index],
     ...updates2,
     approvalStatus: resolveApprovalStatus('requireUpdateApproval')
   };
+  if (updates[index].approvalStatus === 'approved') delete updates[index].published;
   delete updates[index].rejectReason;
   await writeJSON('updates.json', updates);
   const circles = readJSON('circles.json');
@@ -3048,6 +3184,52 @@ function authorWorkView(work) {
     approvalStatus: work.approvalStatus === 'rejected' ? 'rejected' : 'pending',
     _hasPendingRevision: true
   };
+}
+
+// Approved snapshots for events/projects/updates. When an author edits an
+// already-approved item, the old content stays public until review completes.
+const EVENT_REVISION_FIELDS = [
+  'title', 'date', 'endDate', 'location', 'description', 'coverImage', 'images',
+  'booth', 'status', 'socialLinks', 'relatedWorks', 'relatedCircles',
+  'relatedProjects', 'booths', 'type'
+];
+const PROJECT_REVISION_FIELDS = [
+  'title', 'description', 'status', 'category', 'images', 'tags', 'contactInfo',
+  'startDate', 'endDate', 'socialLinks', 'coverImage', 'works', 'circles',
+  'recruiting', 'recruitNote', 'recruitJobs', 'pinned', 'events'
+];
+const UPDATE_REVISION_FIELDS = [
+  'title', 'content', 'publishDate', 'coverImage', 'images', 'relatedCircles',
+  'relatedEvents', 'relatedProjects', 'category', 'status', 'pinned'
+];
+
+function pickRevisionContent(item, fields) {
+  const out = {};
+  for (const field of fields) {
+    if (item[field] !== undefined) out[field] = item[field];
+  }
+  return JSON.parse(JSON.stringify(out));
+}
+
+function snapshotPublicRevision(item, fields) {
+  if (item && !item.published) item.published = pickRevisionContent(item, fields);
+  return item;
+}
+
+function isPublicRevision(item) {
+  if (!item) return false;
+  if (!item.approvalStatus || item.approvalStatus === 'approved') return true;
+  return !!item.published;
+}
+
+function publicRevisionView(item) {
+  const approved = !item.approvalStatus || item.approvalStatus === 'approved';
+  const view = (!approved && item.published)
+    ? { ...item, ...item.published, approvalStatus: 'approved' }
+    : { ...item };
+  delete view.published;
+  delete view.pendingRevision;
+  return view;
 }
 
 function workRequireApproval(circle) {
@@ -3431,8 +3613,8 @@ app.get('/api/circles/:id/follow-status', (req, res) => {
 // Events
 app.get('/api/events', cacheMiddleware(60), (req, res) => {
   let events = readJSON('events.json');
-  // Only return approved events (or legacy events without approvalStatus)
-  events = events.filter(e => !e.approvalStatus || e.approvalStatus === 'approved');
+  // Approved content stays visible while an author revision is pending.
+  events = events.filter(isPublicRevision).map(publicRevisionView);
   const { circleId } = req.query;
   if (circleId) events = events.filter(e => (e.relatedCircles || []).includes(circleId));
   events.sort((a, b) => a.order - b.order);
@@ -3450,12 +3632,8 @@ app.get('/api/events', cacheMiddleware(60), (req, res) => {
 app.get('/api/events/:id', (req, res) => {
   const events = readJSON('events.json');
   const event = events.find(e => e.id === req.params.id);
-  if (!event) return res.status(404).json({ error: '活动未找到' });
-  // Only return approved events (or legacy events without approvalStatus)
-  if (event.approvalStatus && event.approvalStatus !== 'approved') {
-    return res.status(404).json({ error: '活动未找到' });
-  }
-  res.json(event);
+  if (!event || !isPublicRevision(event)) return res.status(404).json({ error: '活动未找到' });
+  res.json(publicRevisionView(event));
 });
 
 // Circles
@@ -3552,8 +3730,8 @@ app.get('/api/circles/:id', (req, res) => {
 // Projects
 app.get('/api/projects', cacheMiddleware(60), (req, res) => {
   let projects = readJSON('projects.json');
-  // Only return approved projects (or legacy projects without approvalStatus)
-  projects = projects.filter(p => !p.approvalStatus || p.approvalStatus === 'approved');
+  // Approved content stays visible while an author revision is pending.
+  projects = projects.filter(isPublicRevision).map(publicRevisionView);
   const { category, status, search } = req.query;
   if (category) projects = projects.filter(p => p.category === category);
   if (status) projects = projects.filter(p => p.status === status);
@@ -3584,12 +3762,8 @@ app.get('/api/projects', cacheMiddleware(60), (req, res) => {
 app.get('/api/projects/:id', (req, res) => {
   const projects = readJSON('projects.json');
   const project = projects.find(p => p.id === req.params.id);
-  if (!project) return res.status(404).json({ error: '企划未找到' });
-  // Only return approved projects (or legacy projects without approvalStatus)
-  if (project.approvalStatus && project.approvalStatus !== 'approved') {
-    return res.status(404).json({ error: '企划未找到' });
-  }
-  res.json(project);
+  if (!project || !isPublicRevision(project)) return res.status(404).json({ error: '企划未找到' });
+  res.json(publicRevisionView(project));
 });
 
 // Categories
@@ -3986,6 +4160,11 @@ app.delete('/api/admin/trash/:id', authMiddleware, async (req, res) => {
   if (index === -1) return res.status(404).json({ error: '回收站记录未找到' });
   const [entry] = trash.splice(index, 1);
   await writeJSON('trash.json', trash);
+  if (entry.item?.id) {
+    if (entry.type === 'work') await cleanupWorkReferences([entry.item.id]);
+    else if (entry.type === 'event') await cleanupEventReferences([entry.item.id]);
+    else if (entry.type === 'project') await cleanupProjectReferences([entry.item.id]);
+  }
   await logEdit('管理员', '彻底删除', entry.title || entry.id, entry.typeLabel || '');
   res.json({ success: true });
 });
@@ -4176,9 +4355,10 @@ app.get('/sitemap.xml', cacheMiddleware(3600), (req, res) => {
     const baseUrl = SITE_ORIGIN;
     const works = readJSON('works.json').filter(isWorkPublic).map(publicWorkView);
     const circles = readJSON('circles.json').filter(c => c.visible !== false);
-    const events = readJSON('events.json').filter(e => !e.approvalStatus || e.approvalStatus === 'approved');
-    const projects = readJSON('projects.json').filter(p => !p.approvalStatus || p.approvalStatus === 'approved');
-    const updates = readJSON('updates.json').filter(u => (!u.approvalStatus || u.approvalStatus === 'approved') && u.publishDate <= getChinaDate());
+    const events = readJSON('events.json').filter(isPublicRevision).map(publicRevisionView);
+    const projects = readJSON('projects.json').filter(isPublicRevision).map(publicRevisionView);
+    const updates = readJSON('updates.json').filter(isPublicRevision).map(publicRevisionView)
+      .filter(u => u.publishDate <= getChinaDate());
     const lastmod = (value) => {
       const d = value ? new Date(value) : null;
       return d && !Number.isNaN(d.getTime()) ? `\n    <lastmod>${d.toISOString().slice(0, 10)}</lastmod>` : '';
@@ -4212,19 +4392,20 @@ app.get('/rss.xml', cacheMiddleware(3600), (req, res) => {
     const baseUrl = req.protocol + '://' + req.get('host');
     const siteName = 'f7goods';
     const updates = readJSON('updates.json')
-      .filter(u => (!u.approvalStatus || u.approvalStatus === 'approved') && u.publishDate <= getChinaDate())
+      .filter(isPublicRevision).map(publicRevisionView)
+      .filter(u => u.publishDate <= getChinaDate())
       .sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate))
       .slice(0, 20);
     const works = readJSON('works.json')
-      .filter(w => !w.approvalStatus || w.approvalStatus === 'approved')
+      .filter(isWorkPublic).map(publicWorkView)
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, 10);
     const events = readJSON('events.json')
-      .filter(e => !e.approvalStatus || e.approvalStatus === 'approved')
+      .filter(isPublicRevision).map(publicRevisionView)
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
       .slice(0, 10);
     const projects = readJSON('projects.json')
-      .filter(p => !p.approvalStatus || p.approvalStatus === 'approved')
+      .filter(isPublicRevision).map(publicRevisionView)
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, 10);
 
@@ -4932,7 +5113,10 @@ app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
     ? (events[index].approvalStatus || 'approved')
     : (updates.approvalStatus !== undefined ? updates.approvalStatus : 'approved');
   events[index] = { ...events[index], ...updates, approvalStatus: nextApproval };
-  if (nextApproval === 'approved') delete events[index].rejectReason;
+  if (nextApproval === 'approved') {
+    delete events[index].rejectReason;
+    delete events[index].published;
+  }
   await writeJSON('events.json', events);
   await syncEventWorkRelations(events[index]);
   await logEdit('管理员', '编辑活动', events[index].title || req.params.id, '', '', { before, after: events[index] });
@@ -4956,7 +5140,9 @@ app.post('/api/admin/events/:id/approve', authMiddleware, async (req, res) => {
   const index = events.findIndex(e => e.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '活动未找到' });
   events[index].approvalStatus = 'approved';
+  delete events[index].published;
   await writeJSON('events.json', events);
+  await syncEventWorkRelations(events[index]);
   logEdit('管理员', '批准活动', events[index].title || req.params.id, '');
   // Notify author
   if (events[index].submittedBy) {
@@ -4973,6 +5159,9 @@ app.post('/api/admin/events/:id/reject', authMiddleware, async (req, res) => {
   events[index].approvalStatus = 'rejected';
   if (req.body.reason) events[index].rejectReason = req.body.reason;
   await writeJSON('events.json', events);
+  if (events[index].published) {
+    await syncEventWorkRelations({ ...events[index], relatedWorks: events[index].published.relatedWorks || [] });
+  }
   logEdit('管理员', '拒绝活动', events[index].title || req.params.id, req.body.reason || '');
   // Notify author
   if (events[index].submittedBy) {
@@ -4987,6 +5176,7 @@ app.post('/api/admin/projects/:id/approve', authMiddleware, async (req, res) => 
   const index = projects.findIndex(p => p.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '企划未找到' });
   projects[index].approvalStatus = 'approved';
+  delete projects[index].published;
   await writeJSON('projects.json', projects);
   logEdit('管理员', '批准企划', projects[index].title || req.params.id, '');
   // Notify author
@@ -5018,6 +5208,7 @@ app.post('/api/admin/updates/:id/approve', authMiddleware, async (req, res) => {
   const index = updates.findIndex(u => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: '动态未找到' });
   updates[index].approvalStatus = 'approved';
+  delete updates[index].published;
   await writeJSON('updates.json', updates);
   logEdit('管理员', '批准动态', updates[index].title || req.params.id, '');
   // Notify author
@@ -5426,7 +5617,10 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
     ? (projects[index].approvalStatus || 'approved')
     : (updates.approvalStatus !== undefined ? updates.approvalStatus : 'approved');
   projects[index] = { ...projects[index], ...updates, approvalStatus: nextApproval };
-  if (nextApproval === 'approved') delete projects[index].rejectReason;
+  if (nextApproval === 'approved') {
+    delete projects[index].rejectReason;
+    delete projects[index].published;
+  }
   await writeJSON('projects.json', projects);
   await logEdit('管理员', '编辑企划', projects[index].title || req.params.id, '', '', { before, after: projects[index] });
   res.json(projects[index]);
@@ -5474,8 +5668,9 @@ app.get('/api/updates', cacheMiddleware(60), (req, res) => {
   try {
     let updates = readJSON('updates.json');
     const today = getChinaDate();
-    // Only return approved updates (or legacy updates without approvalStatus)
-    updates = updates.filter(u => (!u.approvalStatus || u.approvalStatus === 'approved') && u.publishDate <= today);
+    // Approved content stays visible while an author revision is pending.
+    updates = updates.filter(isPublicRevision).map(publicRevisionView)
+      .filter(u => u.publishDate <= today);
     // Filter by category/status if provided
     if (req.query.category) updates = updates.filter(u => u.category === req.query.category);
     if (req.query.status) updates = updates.filter(u => u.status === req.query.status);
@@ -5504,12 +5699,8 @@ app.get('/api/updates/:id', (req, res) => {
   try {
     const updates = readJSON('updates.json');
     const update = updates.find(u => u.id === req.params.id);
-    if (!update) return res.status(404).json({ error: '动态未找到' });
-    // Only return approved updates (or legacy updates without approvalStatus)
-    if (update.approvalStatus && update.approvalStatus !== 'approved') {
-      return res.status(404).json({ error: '动态未找到' });
-    }
-    res.json(update);
+    if (!update || !isPublicRevision(update)) return res.status(404).json({ error: '动态未找到' });
+    res.json(publicRevisionView(update));
   } catch (e) { res.status(404).json({ error: '动态未找到' }); }
 });
 
@@ -5604,7 +5795,10 @@ app.put('/api/admin/updates/:id', authMiddleware, async (req, res) => {
   });
   const nextApproval = updates2.approvalStatus !== undefined ? updates2.approvalStatus : 'approved';
   updates[index] = { ...updates[index], ...updates2, approvalStatus: nextApproval };
-  if (nextApproval === 'approved') delete updates[index].rejectReason;
+  if (nextApproval === 'approved') {
+    delete updates[index].rejectReason;
+    delete updates[index].published;
+  }
   await writeJSON('updates.json', updates);
   await logEdit('管理员', '编辑动态', updates[index].title || req.params.id, '', '', { before, after: updates[index] });
   res.json(updates[index]);
