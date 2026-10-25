@@ -945,3 +945,29 @@
   .ab-editor .ab-editor-foot{padding:9px 12px}.ab-editor .ab-editor-foot .btn{font-size:11px}
   .awp-card{padding:14px;border-radius:12px}
 }
+
+/* ONLY booth mobile: keep work list and category blocks separated */
+@media(max-width:760px){
+  .ab-editor .ab-main{overflow-x:hidden}
+  .ab-editor #abSelectedWorks{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:12px;max-height:none}
+  .ab-editor .author-work-chip{width:100%;min-width:0}
+  .ab-editor .ab-subhead{margin-top:18px;padding-top:12px}
+  .ab-editor .ab-group-list{width:100%;min-width:0}
+  .ab-editor .ab-group-row{width:100%;max-width:100%;box-sizing:border-box;overflow:hidden}
+  .ab-editor .ab-group-head{gap:5px;align-items:center}
+  .ab-editor .ab-group-name{flex:1 1 100%;order:1;width:100%;min-width:0}
+  .ab-editor .ab-group-count{order:2;margin:0 auto 0 2px}
+  .ab-editor .ab-group-icon,.ab-editor .ab-group-delete{order:3}
+  .ab-editor .ab-group-works{width:100%;box-sizing:border-box;gap:6px}
+  .ab-editor .ab-group-work-item{max-width:calc(100% - 112px)}
+  .ab-editor .ab-group-work-item b{max-width:82px}
+  .ab-editor .ab-tier-row,.ab-editor .ab-claim-row{width:100%;box-sizing:border-box}
+  .ab-editor .ab-tier-head{flex-wrap:wrap;gap:6px}
+  .ab-editor .ab-tier-head .ab-tier-min{width:72px!important}
+  .ab-editor .ab-tier-gifts{width:100%}
+}
+@media(max-width:390px){
+  .ab-editor .ab-group-icon{width:27px;height:27px;flex-basis:27px}
+  .ab-editor .ab-group-delete{padding:0 7px}
+  .ab-editor .ab-group-work-item{max-width:100%}
+}
