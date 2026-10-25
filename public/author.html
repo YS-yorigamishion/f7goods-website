@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ef">
+  <link rel="stylesheet" href="/css/style.css?v=20261020eg">
   <link rel="stylesheet" href="/css/author.css?v=20261024d">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -848,9 +848,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020ef"></script>
-  <script src="/js/i18n.js?v=20261020ef"></script>
-  <script src="/js/main.js?v=20261020ef"></script>
+  <script src="/js/api.js?v=20261020eg"></script>
+  <script src="/js/i18n.js?v=20261020eg"></script>
+  <script src="/js/main.js?v=20261020eg"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4225,6 +4225,9 @@
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑活动' : '提交活动';
       window._myEventSelectedWorkIds = new Set((isEdit ? (eventData.relatedWorks || []) : []).map(String));
+      window._myEventLockedWorkIds = new Set(isEdit
+        ? (eventData.relatedWorks || []).map(String).filter(id => !(authorWorksData || []).some(w => String(w.id) === id))
+        : []);
       const allCircles = await loadCirclesForPick();
       const selectedCircles = new Set(isEdit ? (eventData.relatedCircles || []) : []);
       const eventStatusOptions = (typeof EVENT_STATUS_ORDERED !== 'undefined' && EVENT_STATUS_ORDERED.length > 0)
@@ -4270,7 +4273,7 @@
         <div class="form-group">
           <label>关联作品（仅自己的作品）</label>
           <div id="myEventWorksSelected" class="author-series-selected-works"></div>
-          <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myEventSelectedWorkIds,onConfirm:function(ids){window._myEventSelectedWorkIds=new Set(ids);renderMyEventSelectedWorks();}})">选择作品</button>
+          <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myEventSelectedWorkIds,onConfirm:function(ids){window._myEventSelectedWorkIds=new Set([...ids,...(window._myEventLockedWorkIds||[])]);renderMyEventSelectedWorks();}})">选择作品</button>
         </div>
         ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
@@ -4420,6 +4423,9 @@
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑企划' : '提交企划';
       window._myProjectSelectedWorkIds = new Set((isEdit ? (projectData.works || []) : []).map(String));
+      window._myProjectLockedWorkIds = new Set(isEdit
+        ? (projectData.works || []).map(String).filter(id => !(authorWorksData || []).some(w => String(w.id) === id))
+        : []);
       const allCircles = await loadCirclesForPick();
       const selectedCircles = new Set(isEdit ? (projectData.circles || []) : []);
       const existingImages = isEdit ? (projectData.images || []) : [];
@@ -4458,7 +4464,7 @@
         <div class="form-group">
           <label>关联作品（仅自己的作品）</label>
           <div id="myProjectWorksSelected" class="author-series-selected-works"></div>
-          <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myProjectSelectedWorkIds,onConfirm:function(ids){window._myProjectSelectedWorkIds=new Set(ids);renderMyProjectSelectedWorks();}})">选择作品</button>
+          <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myProjectSelectedWorkIds,onConfirm:function(ids){window._myProjectSelectedWorkIds=new Set([...ids,...(window._myProjectLockedWorkIds||[])]);renderMyProjectSelectedWorks();}})">选择作品</button>
         </div>
         <div class="form-group">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">

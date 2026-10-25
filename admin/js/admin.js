@@ -2084,7 +2084,7 @@ function makeSelectCircles(cell, workId, currentCircles) {
 }
 
 async function inlineUpdateWork(workId, field, value) {
-  await adminAPI('PUT', `/api/admin/works/${workId}`, { [field]: value });
+  await adminAPI('PUT', `/api/admin/works/${workId}`, { [field]: value, preservePending: true });
   showToast('已保存', 'success');
 }
 
@@ -2509,7 +2509,16 @@ function openWorkModal(work = null, returnToCircleId = null) {
       }
     } else {
       if (returnToCircleId && !data.circles.includes(returnToCircleId)) data.circles.push(returnToCircleId);
-      await adminAPI('POST', '/api/admin/works', data);
+      const createdWork = await adminAPI('POST', '/api/admin/works', data);
+      if (createdWork?.id && selectedProjectIds.length) {
+        const allProjects = await adminAPI('GET', '/api/admin/projects');
+        for (const proj of allProjects) {
+          if (selectedProjectIds.includes(proj.id) && !(proj.works || []).includes(createdWork.id)) {
+            proj.works = [...(proj.works || []), createdWork.id];
+            await adminAPI('PUT', `/api/admin/projects/${proj.id}`, proj);
+          }
+        }
+      }
     }
     closeModal();
     loadWorks();
@@ -2973,7 +2982,7 @@ async function rejectEvent(id) {
 }
 
 async function inlineUpdateEvent(eventId, field, value) {
-  await adminAPI('PUT', `/api/admin/events/${eventId}`, { [field]: value });
+  await adminAPI('PUT', `/api/admin/events/${eventId}`, { [field]: value, preserveApproval: true });
   showToast('已保存', 'success');
 }
 
@@ -5063,7 +5072,7 @@ async function batchDeleteProjects() {
 }
 
 async function inlineUpdateProject(projectId, field, value) {
-  await adminAPI('PUT', `/api/admin/projects/${projectId}`, { [field]: value });
+  await adminAPI('PUT', `/api/admin/projects/${projectId}`, { [field]: value, preserveApproval: true });
   showToast('已保存', 'success');
 }
 

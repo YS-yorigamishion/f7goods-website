@@ -1598,10 +1598,48 @@ app.put('/api/author/works/batch', authorAuthMiddleware, async (req, res) => {
 
   let works = readJSON('works.json');
   let updated = 0;
+  const authorCircle = readJSON('circles.json').find(c => c.id === circleId);
+  const requireApproval = workRequireApproval(authorCircle);
 
   for (const w of works) {
     if (idSet.has(w.id) && (w.circles || []).includes(circleId)) {
-      Object.assign(w, updates);
+      const contentUpdates = {};
+      const nonContentUpdates = {};
+      for (const [field, value] of Object.entries(updates)) {
+        if (WORK_CONTENT_FIELDS.includes(field)) contentUpdates[field] = value;
+        else nonContentUpdates[field] = value;
+      }
+      Object.assign(w, nonContentUpdates);
+      const contentChanged = Object.keys(contentUpdates).some(field =>
+        JSON.stringify(contentUpdates[field]) !== JSON.stringify(w[field])
+      );
+      if (contentChanged) {
+        const isApproved = !w.approvalStatus || w.approvalStatus === 'approved';
+        if (!requireApproval) {
+          Object.assign(w, contentUpdates);
+          w.approvalStatus = 'approved';
+          w.published = pickWorkContent(w);
+          delete w.pendingRevision;
+          delete w.rejectReason;
+        } else if (!w.published && !isApproved) {
+          Object.assign(w, contentUpdates);
+          w.approvalStatus = 'pending';
+          delete w.pendingRevision;
+          w.submittedAt = new Date().toISOString();
+          w.submittedBy = circleId;
+        } else {
+          if (!w.published) w.published = pickWorkContent(w);
+          w.pendingRevision = {
+            ...pickWorkContent({ ...w, ...contentUpdates }),
+            submittedAt: new Date().toISOString(),
+            submittedBy: circleId
+          };
+          w.approvalStatus = 'pending';
+          w.rejectReason = '';
+        }
+      } else {
+        Object.assign(w, updates);
+      }
       updated++;
     }
   }
@@ -2268,6 +2306,7 @@ app.put('/api/author/my-events/:id', authorAuthMiddleware, async (req, res) => {
     ...updates,
     approvalStatus: resolveApprovalStatus('requireEventApproval')
   };
+  delete events[index].rejectReason;
   // 同步作品 relatedEvents（双向）
   await writeJSON('events.json', events);
   await syncEventWorkRelations(events[index]);
@@ -2698,6 +2737,7 @@ app.put('/api/author/my-projects/:id', authorAuthMiddleware, async (req, res) =>
     ...updates,
     approvalStatus: resolveApprovalStatus('requireProjectApproval')
   };
+  delete projects[index].rejectReason;
   await writeJSON('projects.json', projects);
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === circleId);
@@ -2786,6 +2826,7 @@ app.put('/api/author/my-updates/:id', authorAuthMiddleware, async (req, res) => 
     ...updates2,
     approvalStatus: resolveApprovalStatus('requireUpdateApproval')
   };
+  delete updates[index].rejectReason;
   await writeJSON('updates.json', updates);
   const circles = readJSON('circles.json');
   const circle = circles.find(c => c.id === circleId);
@@ -4761,12 +4802,24 @@ app.put('/api/admin/works/:id', authMiddleware, async (req, res) => {
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
+  const contentFieldsProvided = WORK_CONTENT_FIELDS.some(field => updates[field] !== undefined);
   Object.assign(work, updates);
-  // Admin edits publish immediately and clear any stale pending revision.
-  work.approvalStatus = 'approved';
-  work.published = pickWorkContent(work);
-  delete work.pendingRevision;
-  delete work.rejectReason;
+  if (req.body.preservePending === true && work.pendingRevision) {
+    // Inline table edits should update the public snapshot without discarding
+    // an author revision that is still waiting for review.
+    work.published = { ...(work.published || pickWorkContent(work)), ...pickWorkContent(work) };
+    const revisionUpdates = pickWorkContent(updates);
+    work.pendingRevision = { ...work.pendingRevision, ...revisionUpdates };
+  } else if (contentFieldsProvided || req.body.approvalStatus === 'approved') {
+    // Full content edits publish immediately; an explicit approval also clears a stale revision.
+    work.approvalStatus = 'approved';
+    work.published = pickWorkContent(work);
+    delete work.pendingRevision;
+    delete work.rejectReason;
+  } else if (req.body.approvalStatus !== undefined) {
+    // Non-content edits (likes/wants/status) must not silently discard a pending author revision.
+    work.approvalStatus = req.body.approvalStatus;
+  }
   await writeJSON('works.json', works);
   await logEdit('管理员', '编辑作品', oldTitle || req.params.id, '', '', { before: beforeEdit, after: work });
   res.json(work);
@@ -4874,7 +4927,10 @@ app.put('/api/admin/events/:id', authMiddleware, async (req, res) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
   if (updates.booths !== undefined) updates.booths = sanitizeBoothsClaimFields(updates.booths);
-  const nextApproval = updates.approvalStatus !== undefined ? updates.approvalStatus : 'approved';
+  const preserveApproval = req.body.preserveApproval === true;
+  const nextApproval = preserveApproval
+    ? (events[index].approvalStatus || 'approved')
+    : (updates.approvalStatus !== undefined ? updates.approvalStatus : 'approved');
   events[index] = { ...events[index], ...updates, approvalStatus: nextApproval };
   if (nextApproval === 'approved') delete events[index].rejectReason;
   await writeJSON('events.json', events);
@@ -5366,7 +5422,9 @@ app.put('/api/admin/projects/:id', authMiddleware, async (req, res) => {
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
-  const nextApproval = updates.approvalStatus !== undefined ? updates.approvalStatus : 'approved';
+  const nextApproval = req.body.preserveApproval === true
+    ? (projects[index].approvalStatus || 'approved')
+    : (updates.approvalStatus !== undefined ? updates.approvalStatus : 'approved');
   projects[index] = { ...projects[index], ...updates, approvalStatus: nextApproval };
   if (nextApproval === 'approved') delete projects[index].rejectReason;
   await writeJSON('projects.json', projects);
