@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020en">
-  <link rel="stylesheet" href="/css/author.css?v=20261025k">
+  <link rel="stylesheet" href="/css/style.css?v=20261020eo">
+  <link rel="stylesheet" href="/css/author.css?v=20261025m">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
     .ab-sec {
@@ -848,9 +848,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020en"></script>
-  <script src="/js/i18n.js?v=20261020en"></script>
-  <script src="/js/main.js?v=20261020en"></script>
+  <script src="/js/api.js?v=20261020eo"></script>
+  <script src="/js/i18n.js?v=20261020eo"></script>
+  <script src="/js/main.js?v=20261020eo"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -2791,7 +2791,8 @@
 
     function closeWorkModal() {
       const overlay = document.getElementById('workModalOverlay');
-      overlay.classList.remove('open', 'booth-editor-mode');
+      if (overlay && overlay._previewCleanup) overlay._previewCleanup();
+      overlay.classList.remove('open', 'booth-editor-mode', 'author-form-mode');
     }
 
     async function openWorkEditModal(workId) {
@@ -4426,6 +4427,97 @@
       }).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作者</p>';
     }
 
+    function authorEditorPreviewCard(opts = {}) {
+      const pics = Array.isArray(opts.pics) ? opts.pics.filter(Boolean) : [];
+      const meta = Array.isArray(opts.meta) ? opts.meta.filter(Boolean) : [];
+      return `<div class="ab-preview-card">
+        <div class="ab-preview-cover" data-preview-cover>${opts.cover ? `<img src="${escapeHtml(imgUrl(opts.cover, 400))}" alt="">` : ''}</div>
+        <div class="ab-preview-body">
+          ${opts.logo ? `<img class="ab-preview-logo" src="${escapeHtml(imgUrl(opts.logo, 120))}" alt="">` : ''}
+          <div class="ab-preview-kicker">${escapeHtml(opts.kicker || '')}</div>
+          <div class="ab-preview-name" data-preview-title>${escapeHtml(opts.title || '未命名')}</div>
+          <p class="ab-preview-desc" data-preview-desc>${escapeHtml(opts.desc || '内容简介会显示在这里。')}</p>
+          <div class="ab-preview-meta">${meta.map(m => `<span>${escapeHtml(m)}</span>`).join('')}</div>
+        </div>
+        <div class="ab-preview-works" data-preview-pics>${pics.slice(0, 3).map(p => `<img src="${escapeHtml(imgUrl(p, 120))}" alt="">`).join('')}</div>
+        <div class="ab-preview-foot">${escapeHtml(opts.foot || '保存后更新前台展示')}</div>
+      </div>`;
+    }
+
+    function authorEditorPreviewPanel(html) {
+      return `<div class="ab-preview-label">前台预览 <span>PUBLIC VIEW</span></div>${html}<div class="ab-preview-note"><b>预览版说明</b><br>实际保存后仍需审核，通过后更新前台。</div>`;
+    }
+
+    function authorEditorShell(options = {}) {
+      const steps = options.steps || [];
+      const panels = options.panels || [];
+      const stepHtml = steps.map((step, index) => `<button type="button" class="ab-step${index === 0 ? ' on' : ''}" data-step="${escapeHtml(step.key)}"><span class="n">${index + 1}</span><span><b>${escapeHtml(step.label)}</b><small>${escapeHtml(step.desc || '')}</small></span>${step.count ? `<i>${escapeHtml(String(step.count))}</i>` : ''}</button>`).join('');
+      const panelHtml = panels.map((panel, index) => `<section class="ab-panel${index === 0 ? ' on' : ''}" data-step="${escapeHtml(panel.key)}">${panel.html || ''}</section>`).join('');
+      return `<div class="ab-editor author-form-editor">
+        <header class="ab-editor-head">
+          <div><div class="ab-kicker">${escapeHtml(options.kicker || 'AUTHOR EDITOR')}</div><h3>${escapeHtml(options.title || '编辑内容')} <span class="ab-code">${escapeHtml(options.badge || 'EDIT')}</span></h3><p>${escapeHtml(options.subtitle || '')}</p></div>
+          <button type="button" class="ab-close" onclick="closeWorkModal()" aria-label="关闭">×</button>
+        </header>
+        <div class="ab-editor-body">
+          <nav class="ab-steps"><div class="ab-steps-label">编辑内容</div>${stepHtml}<div class="ab-tip"><b>编辑提示</b>${escapeHtml(options.tip || '保存后需管理员审核，通过后更新前台展示。')}</div></nav>
+          <main class="ab-main">${panelHtml}</main>
+          <aside class="ab-preview">${options.preview || ''}</aside>
+        </div>
+        <footer class="ab-editor-foot"><div class="ab-save-status"><i></i>${escapeHtml(options.status || '保存后需重新审核')}</div><div><button type="button" class="btn" onclick="closeWorkModal()">取消</button><button type="button" class="btn btn-primary" onclick="${options.saveAction || ''}">${escapeHtml(options.saveLabel || '保存并提交审核')}</button></div></footer>
+      </div>`;
+    }
+
+    function initAuthorEditorShell(overlay) {
+      if (!overlay) return;
+      overlay.classList.add('open', 'author-form-mode');
+      overlay.querySelectorAll('.ab-step').forEach(step => {
+        step.addEventListener('click', () => {
+          overlay.querySelectorAll('.ab-step').forEach(b => b.classList.toggle('on', b === step));
+          overlay.querySelectorAll('.ab-panel').forEach(p => p.classList.toggle('on', p.dataset.step === step.dataset.step));
+        });
+      });
+    }
+
+    function initAuthorEditorPreview(overlay, opts = {}) {
+      if (!overlay) return;
+      if (overlay._previewCleanup) overlay._previewCleanup();
+      const card = overlay.querySelector('.ab-preview-card');
+      if (!card) return;
+      const update = () => {
+        const title = document.getElementById(opts.titleId)?.value.trim() || '';
+        const desc = document.getElementById(opts.descId)?.value.trim() || '';
+        const titleEl = card.querySelector('[data-preview-title]');
+        const descEl = card.querySelector('[data-preview-desc]');
+        const nextTitle = title || opts.titleFallback || '未命名';
+        const nextDesc = desc || opts.descFallback || '内容简介会显示在这里。';
+        if (titleEl && titleEl.textContent !== nextTitle) titleEl.textContent = nextTitle;
+        if (descEl && descEl.textContent !== nextDesc) descEl.textContent = nextDesc;
+        const coverWrap = card.querySelector('[data-preview-cover]');
+        const coverImg = opts.coverId ? document.querySelector(`#${opts.coverId} img`) : null;
+        if (coverWrap && coverImg && coverWrap.querySelector('img')?.src !== coverImg.src) {
+          coverWrap.innerHTML = `<img src="${escapeHtml(coverImg.src)}" alt="">`;
+        }
+        const picsWrap = card.querySelector('[data-preview-pics]');
+        const picImgs = opts.picSelector ? [...document.querySelectorAll(opts.picSelector)].slice(0, 3) : [];
+        const currentPics = picsWrap ? [...picsWrap.querySelectorAll('img')].map(img => img.src) : [];
+        const nextPics = picImgs.map(img => img.src);
+        if (picsWrap && nextPics.length && JSON.stringify(currentPics) !== JSON.stringify(nextPics)) {
+          picsWrap.innerHTML = picImgs.map(img => `<img src="${escapeHtml(img.src)}" alt="">`).join('');
+        }
+      };
+      overlay.addEventListener('input', update);
+      overlay.addEventListener('change', update);
+      const observer = new MutationObserver(update);
+      observer.observe(overlay, { childList: true, subtree: true });
+      overlay._previewCleanup = () => {
+        overlay.removeEventListener('input', update);
+        overlay.removeEventListener('change', update);
+        observer.disconnect();
+        overlay._previewCleanup = null;
+      };
+      update();
+    }
+
     async function openMyEventForm(eventData = null) {
       const isEdit = !!eventData;
       const overlay = document.getElementById('workModalOverlay');
@@ -4441,53 +4533,57 @@
         ? EVENT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && eventData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')
         : '<option value="jijiangkaiqi" ' + (isEdit && eventData.status === 'jijiangkaiqi' ? 'selected' : '') + '>即将开启</option><option value="jinxingzhong" ' + (isEdit && eventData.status === 'jinxingzhong' ? 'selected' : '') + '>进行中</option><option value="yijiesu" ' + (isEdit && eventData.status === 'yijiesu' ? 'selected' : '') + '>已结束</option>';
       const existingImages = isEdit ? (eventData.images || []) : [];
-      body.innerHTML = `
-        <div class="form-group"><label>活动名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myEventTitle" value="${isEdit ? escapeHtml(eventData.title) : ''}" required></div>
-        <div class="form-row">
-          <div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="myEventDate" value="${isEdit ? eventData.date || '' : ''}"></div>
-          <div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="myEventEndDate" value="${isEdit ? eventData.endDate || '' : ''}"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>地点</label><input class="form-input" id="myEventLocation" value="${isEdit ? escapeHtml(eventData.location || '') : ''}"></div>
-          <div class="form-group"><label>状态</label><select class="form-input" id="myEventStatus">${eventStatusOptions}</select></div>
-        </div>
-        <div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth" value="${isEdit ? escapeHtml(eventData.booth || '') : ''}"></div>
-        <div class="form-group"><label>描述</label><textarea class="form-input" id="myEventDesc" style="min-height:80px;">${isEdit ? escapeHtml(eventData.description || '') : ''}</textarea></div>
-        <div class="form-row">
-          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myEventContactType"><option value="" ${!isEdit || (!eventData.socialLinks?.qq && !eventData.socialLinks?.qqGroup && !eventData.socialLinks?.wechat && !eventData.socialLinks?.weibo && !eventData.socialLinks?.bilibili && !eventData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && eventData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && eventData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && eventData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && eventData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && eventData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && eventData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
-          <div class="form-group"><label>联系方式</label><input class="form-input" id="myEventContactValue" value="${isEdit ? (eventData.socialLinks?.qq || eventData.socialLinks?.qqGroup || eventData.socialLinks?.wechat || eventData.socialLinks?.weibo || eventData.socialLinks?.bilibili || eventData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>联系显示名</label><input class="form-input" id="myEventContactLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.contactLabel || '') : ''}"></div>
-          <div class="form-group"><label>网站链接</label><input class="form-input" id="myEventWebsite" value="${isEdit ? escapeHtml(eventData.socialLinks?.website || '') : ''}" placeholder="https://..."></div>
-        </div>
-        <div class="form-group"><label>网站显示名</label><input class="form-input" id="myEventWebsiteLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.websiteLabel || '') : ''}"></div>
-        <div class="form-group">
-          <label>封面图片</label>
-          <div id="myEventCoverPreview" style="margin-bottom:0.5rem;">${isEdit && eventData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + eventData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
-          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myEventCoverPreview', true)">从图片库选择</button>
-        </div>
-        <div class="form-group">
-          <label>更多图片</label>
-          <div id="myEventImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">${existingImages.map(img => '<div style="position:relative;"><img src="' + img + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}</div>
-          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myEventImagesPreview')">从图片库选择</button>
-        </div>
-        <div class="form-group">
-          <label>关联作者（可搜索 · 默认包含自己）</label>
-          <input type="search" class="form-input" placeholder="搜索作者…" style="margin-bottom:0.4rem;font-size:0.85rem;" oninput="filterAuthorPickList(this,'myEventCirclePick')">
-          <div id="myEventCirclePick" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${renderCirclePickList(allCircles, selectedCircles, 'my-event-circle-cb', 'myEventCirclePick')}</div>
-        </div>
-        <div class="form-group">
-          <label>关联作品（仅自己的作品）</label>
-          <div id="myEventWorksSelected" class="author-series-selected-works"></div>
-          <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myEventSelectedWorkIds,onConfirm:function(ids){window._myEventSelectedWorkIds=new Set([...ids,...(window._myEventLockedWorkIds||[])]);renderMyEventSelectedWorks();}})">选择作品</button>
-        </div>
-        ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
-        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-          <button class="btn btn-primary" onclick="submitMyEvent('${isEdit ? eventData.id : ''}')">${isEdit ? '保存修改' : '提交审核'}</button>
-          <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
-        </div>`;
-      overlay.classList.add('open');
+      const eventCover = isEdit ? (eventData.coverImage || '') : '';
+      const eventTitle = isEdit ? eventData.title || '' : '';
+      const eventDesc = isEdit ? (eventData.description || '') : '';
+      const eventDate = isEdit ? (eventData.date || '') : '';
+      const eventLocation = isEdit ? (eventData.location || '') : '';
+      const eventPics = existingImages.length ? existingImages : (isEdit ? (eventData.relatedWorks || []).map(id => (authorWorksData || []).find(w => String(w.id) === String(id))?.images?.[0]).filter(Boolean) : []);
+      body.innerHTML = authorEditorShell({
+        kicker: 'AUTHOR EDITOR · 我的活动',
+        title: isEdit ? '编辑活动' : '提交活动',
+        badge: 'EVENT',
+        subtitle: '管理活动信息、时间地点、关联作品与图片资料',
+        steps: [
+          { key: 'basic', label: '基本信息', desc: '名称、状态与简介' },
+          { key: 'time', label: '时间地点', desc: '日期、场馆与联系' },
+          { key: 'links', label: '关联内容', desc: '作者与作品', count: (isEdit ? (eventData.relatedWorks || []).length : 0) || '' },
+          { key: 'media', label: '图片资料', desc: '封面与更多图片' }
+        ],
+        panels: [
+          { key: 'basic', html: `<div class="ab-panel-head"><div><h4>基本信息 <span>BASIC</span></h4><p>活动名称、状态和对外介绍</p></div></div>
+            <div class="form-group"><label>活动名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myEventTitle" value="${isEdit ? escapeHtml(eventData.title) : ''}" required></div>
+            <div class="form-row"><div class="form-group"><label>活动状态</label><select class="form-input" id="myEventStatus">${eventStatusOptions}</select></div><div class="form-group"><label>摊位号</label><input class="form-input" id="myEventBooth" value="${isEdit ? escapeHtml(eventData.booth || '') : ''}"></div></div>
+            <div class="form-group"><label>活动简介</label><textarea class="form-input" id="myEventDesc" style="min-height:100px;">${isEdit ? escapeHtml(eventData.description || '') : ''}</textarea></div>` },
+          { key: 'time', html: `<div class="ab-panel-head"><div><h4>时间地点 <span>WHEN & WHERE</span></h4><p>活动举办时间和场馆信息</p></div></div>
+            <div class="form-row"><div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="myEventDate" value="${isEdit ? eventData.date || '' : ''}"></div><div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="myEventEndDate" value="${isEdit ? eventData.endDate || '' : ''}"></div></div>
+            <div class="form-group"><label>地点</label><input class="form-input" id="myEventLocation" value="${isEdit ? escapeHtml(eventData.location || '') : ''}"></div>
+            <div class="form-row"><div class="form-group"><label>联系方式类型</label><select class="form-input" id="myEventContactType"><option value="">无</option><option value="qq" ${isEdit && eventData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && eventData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && eventData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && eventData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && eventData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && eventData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div><div class="form-group"><label>联系方式</label><input class="form-input" id="myEventContactValue" value="${isEdit ? (eventData.socialLinks?.qq || eventData.socialLinks?.qqGroup || eventData.socialLinks?.wechat || eventData.socialLinks?.weibo || eventData.socialLinks?.bilibili || eventData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div></div>
+            <div class="form-row"><div class="form-group"><label>联系显示名</label><input class="form-input" id="myEventContactLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.contactLabel || '') : ''}"></div><div class="form-group"><label>网站链接</label><input class="form-input" id="myEventWebsite" value="${isEdit ? escapeHtml(eventData.socialLinks?.website || '') : ''}" placeholder="https://..."></div></div>
+            <div class="form-group"><label>网站显示名</label><input class="form-input" id="myEventWebsiteLabel" value="${isEdit ? escapeHtml(eventData.socialLinks?.websiteLabel || '') : ''}"></div>` },
+          { key: 'links', html: `<div class="ab-panel-head"><div><h4>关联内容 <span>LINKS</span></h4><p>选择活动相关的作者和作品</p></div></div>
+            <div class="form-group"><label>关联作者（可搜索 · 默认包含自己）</label><input type="search" class="form-input" placeholder="搜索作者…" style="margin-bottom:0.4rem;" oninput="filterAuthorPickList(this,'myEventCirclePick')"><div id="myEventCirclePick" class="ae-pick-box">${renderCirclePickList(allCircles, selectedCircles, 'my-event-circle-cb', 'myEventCirclePick')}</div></div>
+            <div class="form-group"><label>关联作品（仅自己的作品）</label><div id="myEventWorksSelected" class="author-series-selected-works"></div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myEventSelectedWorkIds,onConfirm:function(ids){window._myEventSelectedWorkIds=new Set([...ids,...(window._myEventLockedWorkIds||[])]);renderMyEventSelectedWorks();}})">+ 选择作品</button></div></div>` },
+          { key: 'media', html: `<div class="ab-panel-head"><div><h4>图片资料 <span>MEDIA</span></h4><p>活动封面和现场宣传图</p></div></div>
+            <div class="form-group"><label>封面图片</label><div id="myEventCoverPreview" class="ae-cover-preview">${isEdit && eventData.coverImage ? `<div class="ae-img-wrap"><img src="${escapeHtml(imgUrl(eventData.coverImage, 400))}" alt=""><button type="button" onclick="this.parentElement.remove()">&times;</button></div>` : ''}</div><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('myEventCoverPreview', true)">从图片库选择</button><div class="tag-chip-hint">建议 16:9，会显示在活动列表和详情页。</div></div>
+            <div class="form-group"><label>更多图片</label><div id="myEventImagesPreview" class="ae-image-list">${existingImages.map(img => `<div class="ae-img-wrap"><img src="${escapeHtml(imgUrl(img, 240))}" alt=""><button type="button" onclick="this.parentElement.remove()">&times;</button></div>`).join('')}</div><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('myEventImagesPreview')">+ 添加图片</button></div>` }
+        ],
+        preview: authorEditorPreviewPanel(authorEditorPreviewCard({
+          cover: eventCover,
+          kicker: [eventDate, eventLocation].filter(Boolean).join(' · ') || '活动信息',
+          title: eventTitle || '活动名称',
+          desc: eventDesc || '活动简介会显示在这里。',
+          meta: [isEdit ? (eventData.status ? ((typeof EVENT_STATUS_LABELS !== 'undefined' && EVENT_STATUS_LABELS[eventData.status]) || eventData.status) : '') : '', eventLocation].filter(Boolean),
+          pics: eventPics,
+          foot: '活动详情 · 相关摊位与作品'
+        })),
+        saveAction: `submitMyEvent('${isEdit ? eventData.id : ''}')`,
+        saveLabel: isEdit ? '保存修改' : '提交审核',
+        status: isEdit ? '编辑后需重新审核' : '提交后等待管理员审核',
+        tip: '活动编辑后需要重新审核；关联作品只会显示已通过审核的内容。'
+      });
+      initAuthorEditorShell(overlay);
+      initAuthorEditorPreview(overlay, { titleId: 'myEventTitle', descId: 'myEventDesc', coverId: 'myEventCoverPreview', picSelector: '#myEventImagesPreview img', titleFallback: '活动名称', descFallback: '活动简介会显示在这里。' });
       renderMyEventSelectedWorks();
 
       // Draft support for new events
@@ -4636,68 +4732,60 @@
       const allCircles = await loadCirclesForPick();
       const selectedCircles = new Set(isEdit ? (projectData.circles || []) : []);
       const existingImages = isEdit ? (projectData.images || []) : [];
-      body.innerHTML = `
-        <div class="form-group"><label>企划名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myProjectTitle" value="${isEdit ? escapeHtml(projectData.title) : ''}" required></div>
-        <div class="form-row">
-          <div class="form-group"><label>分类</label><select class="form-input" id="myProjectCategory">${PROJECT_CATEGORIES_ORDERED.map(c => `<option value="${c.id}" ${isEdit && projectData.category === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
-          <div class="form-group"><label>状态</label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && projectData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div>
-        </div>
-        <div class="form-group"><label>描述</label><textarea class="form-input" id="myProjectDesc" style="min-height:80px;">${isEdit ? escapeHtml(projectData.description || '') : ''}</textarea></div>
-        <div class="form-group"><label>标签</label><div class="tag-chip-box" id="myProjectTagsBox" data-for="myProjectTags"></div><input type="hidden" id="myProjectTags" value="${isEdit ? (projectData.tags || []).map(t => String(t).replace(/"/g,'&quot;')).join(', ') : ''}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div></div>
-        <div class="form-row">
-          <div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="" ${!isEdit || (!projectData.socialLinks?.qq && !projectData.socialLinks?.qqGroup && !projectData.socialLinks?.wechat && !projectData.socialLinks?.weibo && !projectData.socialLinks?.bilibili && !projectData.socialLinks?.custom) ? 'selected' : ''}>无</option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && projectData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && projectData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && projectData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && projectData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div>
-          <div class="form-group"><label>联系方式</label><input class="form-input" id="myProjectContactValue" value="${isEdit ? (projectData.socialLinks?.qq || projectData.socialLinks?.qqGroup || projectData.socialLinks?.wechat || projectData.socialLinks?.weibo || projectData.socialLinks?.bilibili || projectData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>联系显示名</label><input class="form-input" id="myProjectContactLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.contactLabel || '') : ''}"></div>
-          <div class="form-group"><label>网站链接</label><input class="form-input" id="myProjectWebsite" value="${isEdit ? escapeHtml(projectData.socialLinks?.website || '') : ''}" placeholder="https://..."></div>
-        </div>
-        <div class="form-group"><label>网站显示名</label><input class="form-input" id="myProjectWebsiteLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.websiteLabel || '') : ''}"></div>
-        <div class="form-group">
-          <label>封面图片</label>
-          <div id="myProjectCoverPreview" style="margin-bottom:0.5rem;">${isEdit && projectData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + projectData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
-          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myProjectCoverPreview', true)">从图片库选择</button>
-        </div>
-        <div class="form-group">
-          <label>更多图片</label>
-          <div id="myProjectImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">${existingImages.map(img => '<div style="position:relative;"><img src="' + img + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}</div>
-          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myProjectImagesPreview')">从图片库选择</button>
-        </div>
-        <div class="form-group">
-          <label>关联作者（可搜索 · 默认包含自己）</label>
-          <input type="search" class="form-input" placeholder="搜索作者…" style="margin-bottom:0.4rem;font-size:0.85rem;" oninput="filterAuthorPickList(this,'myProjectCirclePick')">
-          <div id="myProjectCirclePick" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;">${renderCirclePickList(allCircles, selectedCircles, 'my-project-circle-cb', 'myProjectCirclePick')}</div>
-        </div>
-        <div class="form-group">
-          <label>关联作品（仅自己的作品）</label>
-          <div id="myProjectWorksSelected" class="author-series-selected-works"></div>
-          <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myProjectSelectedWorkIds,onConfirm:function(ids){window._myProjectSelectedWorkIds=new Set([...ids,...(window._myProjectLockedWorkIds||[])]);renderMyProjectSelectedWorks();}})">选择作品</button>
-        </div>
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-            <input type="checkbox" id="myProjectRecruitOn" ${isEdit && projectData.recruiting ? 'checked' : ''} onchange="toggleMyProjectRecruit(this.checked)" style="width:16px;height:16px;accent-color:var(--accent);">
-            本企划正在招人
-          </label>
-          <div id="myProjectRecruitFields" style="display:${isEdit && projectData.recruiting ? 'block' : 'none'};margin-top:0.6rem;">
-            <div class="form-group" style="margin-bottom:0.5rem;">
-              <label>招人说明（可选）</label>
-              <textarea class="form-input" id="myProjectRecruitNote" rows="2" placeholder="例如：长期招募，线上协作，按节点交付">${isEdit ? escapeHtml(projectData.recruitNote || '') : ''}</textarea>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label>招人职位</label>
-              <div id="myProjectRecruitJobs">
-                ${(isEdit ? (projectData.recruitJobs || []) : []).map(j => renderMyProjectJobRow(j)).join('')}
-              </div>
-              <button type="button" class="ab-pill" style="margin-top:0.4rem;" onclick="addMyProjectJobRow()">+ 添加职位</button>
-            </div>
-          </div>
-        </div>
-        ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
-        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-          <button class="btn btn-primary" onclick="submitMyProject('${isEdit ? projectData.id : ''}')">${isEdit ? '保存修改' : '提交审核'}</button>
-          <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
-        </div>`;
-      overlay.classList.add('open');
+      const projectCover = isEdit ? (projectData.coverImage || '') : '';
+      const projectTitle = isEdit ? projectData.title || '' : '';
+      const projectDesc = isEdit ? (projectData.description || '') : '';
+      const projectStatus = isEdit ? (PROJECT_STATUS_LABELS[projectData.status] || projectData.status || '') : '';
+      const projectPics = existingImages.length ? existingImages : (isEdit ? (projectData.works || []).map(id => (authorWorksData || []).find(w => String(w.id) === String(id))?.images?.[0]).filter(Boolean) : []);
+      body.innerHTML = authorEditorShell({
+        kicker: 'AUTHOR EDITOR · 我的企划',
+        title: isEdit ? '编辑企划' : '提交企划',
+        badge: 'PROJECT',
+        subtitle: '编辑企划资料、关联作品、招募信息与展示图片',
+        steps: [
+          { key: 'basic', label: '基本信息', desc: '名称、分类与简介' },
+          { key: 'works', label: '关联作品', desc: '作品与参与作者', count: (isEdit ? (projectData.works || []).length : 0) || '' },
+          { key: 'recruit', label: '招募信息', desc: '招人职位与说明' },
+          { key: 'media', label: '联系与图片', desc: '封面、联系方式' }
+        ],
+        panels: [
+          { key: 'basic', html: `<div class="ab-panel-head"><div><h4>基本信息 <span>BASIC</span></h4><p>企划的公开名称、分类与介绍</p></div></div>
+            <div class="form-group"><label>企划名称 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myProjectTitle" value="${isEdit ? escapeHtml(projectData.title) : ''}" required></div>
+            <div class="form-row"><div class="form-group"><label>分类</label><select class="form-input" id="myProjectCategory">${PROJECT_CATEGORIES_ORDERED.map(c => `<option value="${c.id}" ${isEdit && projectData.category === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div><div class="form-group"><label>状态</label><select class="form-input" id="myProjectStatus">${PROJECT_STATUS_ORDERED.map(s => `<option value="${s.id}" ${isEdit && projectData.status === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div></div>
+            <div class="form-group"><label>企划简介</label><textarea class="form-input" id="myProjectDesc" style="min-height:100px;">${isEdit ? escapeHtml(projectData.description || '') : ''}</textarea></div>
+            <div class="form-group"><label>标签</label><div class="tag-chip-box" id="myProjectTagsBox" data-for="myProjectTags"></div><input type="hidden" id="myProjectTags" value="${isEdit ? (projectData.tags || []).map(t => String(t).replace(/"/g,'&quot;')).join(', ') : ''}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>${renderCommonTagsHtml(authorWorksData, 'myProjectTagsBox')}</div>` },
+          { key: 'works', html: `<div class="ab-panel-head"><div><h4>关联作品 <span>WORKS</span></h4><p>本企划下的周边和参与作者</p></div></div>
+            <div class="form-group"><label>参与作者（可搜索 · 默认包含自己）</label><input type="search" class="form-input" placeholder="搜索作者…" style="margin-bottom:0.4rem;" oninput="filterAuthorPickList(this,'myProjectCirclePick')"><div id="myProjectCirclePick" class="ae-pick-box">${renderCirclePickList(allCircles, selectedCircles, 'my-project-circle-cb', 'myProjectCirclePick')}</div></div>
+            <div class="form-group"><label>关联作品（仅自己的作品）</label><div id="myProjectWorksSelected" class="author-series-selected-works"></div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myProjectSelectedWorkIds,onConfirm:function(ids){window._myProjectSelectedWorkIds=new Set([...ids,...(window._myProjectLockedWorkIds||[])]);renderMyProjectSelectedWorks();}})">+ 选择作品</button></div></div>` },
+          { key: 'recruit', html: `<div class="ab-panel-head"><div><h4>招募信息 <span>RECRUIT</span></h4><p>需要新成员时可以在这里开启招募</p></div></div>
+            <div class="ae-switchline"><label><input type="checkbox" id="myProjectRecruitOn" ${isEdit && projectData.recruiting ? 'checked' : ''} onchange="toggleMyProjectRecruit(this.checked)"> <span>本企划正在招人</span></label><small>开启后前台会显示招募标记</small></div>
+            <div id="myProjectRecruitFields" style="display:${isEdit && projectData.recruiting ? 'block' : 'none'};margin-top:10px;">
+              <div class="form-group"><label>招人说明（可选）</label><textarea class="form-input" id="myProjectRecruitNote" rows="2" placeholder="例如：长期招募，线上协作，按节点交付">${isEdit ? escapeHtml(projectData.recruitNote || '') : ''}</textarea></div>
+              <div class="form-group"><label>招人职位</label><div id="myProjectRecruitJobs">${(isEdit ? (projectData.recruitJobs || []) : []).map(j => renderMyProjectJobRow(j)).join('')}</div><button type="button" class="btn-sm" style="margin-top:4px;" onclick="addMyProjectJobRow()">+ 添加职位</button></div>
+            </div>` },
+          { key: 'media', html: `<div class="ab-panel-head"><div><h4>联系与图片 <span>CONTACT</span></h4><p>企划对外联系方式和展示图片</p></div></div>
+            <div class="form-row"><div class="form-group"><label>联系方式类型</label><select class="form-input" id="myProjectContactType"><option value="">无</option><option value="qq" ${isEdit && projectData.socialLinks?.qq ? 'selected' : ''}>QQ</option><option value="qqGroup" ${isEdit && projectData.socialLinks?.qqGroup ? 'selected' : ''}>QQ群</option><option value="wechat" ${isEdit && projectData.socialLinks?.wechat ? 'selected' : ''}>微信</option><option value="weibo" ${isEdit && projectData.socialLinks?.weibo ? 'selected' : ''}>微博</option><option value="bilibili" ${isEdit && projectData.socialLinks?.bilibili ? 'selected' : ''}>B站</option><option value="custom" ${isEdit && projectData.socialLinks?.custom ? 'selected' : ''}>自定义链接</option></select></div><div class="form-group"><label>联系方式</label><input class="form-input" id="myProjectContactValue" value="${isEdit ? (projectData.socialLinks?.qq || projectData.socialLinks?.qqGroup || projectData.socialLinks?.wechat || projectData.socialLinks?.weibo || projectData.socialLinks?.bilibili || projectData.socialLinks?.custom || '') : ''}" placeholder="账号、群号或链接"></div></div>
+            <div class="form-row"><div class="form-group"><label>联系显示名</label><input class="form-input" id="myProjectContactLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.contactLabel || '') : ''}"></div><div class="form-group"><label>网站链接</label><input class="form-input" id="myProjectWebsite" value="${isEdit ? escapeHtml(projectData.socialLinks?.website || '') : ''}" placeholder="https://..."></div></div>
+            <div class="form-group"><label>网站显示名</label><input class="form-input" id="myProjectWebsiteLabel" value="${isEdit ? escapeHtml(projectData.socialLinks?.websiteLabel || '') : ''}"></div>
+            <div class="form-group"><label>封面图片</label><div id="myProjectCoverPreview" class="ae-cover-preview">${isEdit && projectData.coverImage ? `<div class="ae-img-wrap"><img src="${escapeHtml(imgUrl(projectData.coverImage, 400))}" alt=""><button type="button" onclick="this.parentElement.remove()">&times;</button></div>` : ''}</div><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('myProjectCoverPreview', true)">从图片库选择</button></div>
+            <div class="form-group"><label>更多图片</label><div id="myProjectImagesPreview" class="ae-image-list">${existingImages.map(img => `<div class="ae-img-wrap"><img src="${escapeHtml(imgUrl(img, 240))}" alt=""><button type="button" onclick="this.parentElement.remove()">&times;</button></div>`).join('')}</div><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('myProjectImagesPreview')">+ 添加图片</button></div>` }
+        ],
+        preview: authorEditorPreviewPanel(authorEditorPreviewCard({
+          cover: projectCover,
+          kicker: [isEdit ? (PROJECT_STATUS_LABELS[projectData.status] || projectData.status || '') : '', isEdit ? (projectData.category || '') : ''].filter(Boolean).join(' · ') || '企划信息',
+          title: projectTitle || '企划名称',
+          desc: projectDesc || '企划简介会显示在这里。',
+          meta: [isEdit ? `${(projectData.works || []).length} 件作品` : '', isEdit && projectData.recruiting ? '招募中' : ''].filter(Boolean),
+          pics: projectPics,
+          foot: '企划详情 · 参与作品'
+        })),
+        saveAction: `submitMyProject('${isEdit ? projectData.id : ''}')`,
+        saveLabel: isEdit ? '保存修改' : '提交审核',
+        status: isEdit ? '编辑后需重新审核' : '提交后等待管理员审核',
+        tip: '企划提交后需管理员审核；招募信息可以随时编辑，但仍会进入审核。'
+      });
+      initAuthorEditorShell(overlay);
+      initAuthorEditorPreview(overlay, { titleId: 'myProjectTitle', descId: 'myProjectDesc', coverId: 'myProjectCoverPreview', picSelector: '#myProjectImagesPreview img', titleFallback: '企划名称', descFallback: '企划简介会显示在这里。' });
       renderMyProjectSelectedWorks();
       initTagChipBoxes(body);
     }
@@ -4821,36 +4909,50 @@
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑动态' : '发布动态';
       const existingImages = isEdit ? (updateData.images || []) : [];
-      body.innerHTML = `
-        <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" value="${isEdit ? escapeHtml(updateData.title) : ''}" required></div>
-        <div class="form-group"><label>分类 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateCategory"><option value="">请选择</option></select></div>
-        <div class="form-group"><label>状态</label><select class="form-input" id="myUpdateStatus"><option value="">不填</option></select></div>
-        <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${isEdit ? updateData.publishDate || '' : new Date().toISOString().split('T')[0]}"></div>
-        <div class="form-group"><label>内容 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:120px;" required>${isEdit ? escapeHtml(updateData.content || '') : ''}</textarea></div>
-        <div class="form-group">
-          <label>封面图片</label>
-          <div id="myUpdateCoverPreview" style="margin-bottom:0.5rem;">${isEdit && updateData.coverImage ? '<div style="position:relative;display:inline-block;"><img src="' + updateData.coverImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>' : ''}</div>
-          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myUpdateCoverPreview', true)">从图片库选择</button>
-        </div>
-        <div class="form-group">
-          <label>更多图片</label>
-          <div id="myUpdateImagesPreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">${existingImages.map(img => '<div style="position:relative;"><img src="' + img + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;border:none;font-size:10px;cursor:pointer;line-height:1;">&times;</button></div>').join('')}</div>
-          <button type="button" class="btn-sm" style="background:var(--accent-alt);color:white;" onclick="openAuthorImageLib('myUpdateImagesPreview')">从图片库选择</button>
-        </div>
-        <div class="form-group">
-          <label>关联活动</label>
-          <div id="myUpdateEventsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;color:var(--haze);font-size:0.8rem;">加载中...</div>
-        </div>
-        <div class="form-group">
-          <label>关联企划</label>
-          <div id="myUpdateProjectsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem;color:var(--haze);font-size:0.8rem;">加载中...</div>
-        </div>
-        ${isEdit ? '<p style="font-size:0.8rem;color:var(--haze);margin-top:0.5rem;">编辑后需重新审核</p>' : ''}
-        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-          <button class="btn btn-primary" onclick="submitMyUpdate('${isEdit ? updateData.id : ''}')">${isEdit ? '保存修改' : '提交审核'}</button>
-          <button class="btn" style="background:var(--border);color:var(--ink);" onclick="closeWorkModal()">取消</button>
-        </div>`;
-      overlay.classList.add('open');
+      const updateCover = isEdit ? (updateData.coverImage || '') : '';
+      const updateTitle = isEdit ? updateData.title || '' : '';
+      const updateContent = isEdit ? (updateData.content || '') : '';
+      const updatePics = existingImages.length ? existingImages : (updateCover ? [updateCover] : []);
+      body.innerHTML = authorEditorShell({
+        kicker: 'AUTHOR EDITOR · 我的动态',
+        title: isEdit ? '编辑动态' : '发布动态',
+        badge: 'UPDATE',
+        subtitle: '发布活动/企划动态，关联相关内容和图片',
+        steps: [
+          { key: 'content', label: '动态内容', desc: '标题、分类与正文' },
+          { key: 'media', label: '图片', desc: '封面与配图' },
+          { key: 'links', label: '关联内容', desc: '活动与企划', count: isEdit ? ((updateData.relatedEvents || []).length + (updateData.relatedProjects || []).length) || '' : '' }
+        ],
+        panels: [
+          { key: 'content', html: `<div class="ab-panel-head"><div><h4>动态内容 <span>CONTENT</span></h4><p>动态的标题、分类和正文</p></div></div>
+            <div class="form-group"><label>标题 <span style="color:var(--accent)">*</span></label><input class="form-input" id="myUpdateTitle" value="${isEdit ? escapeHtml(updateData.title) : ''}" required></div>
+            <div class="form-row"><div class="form-group"><label>分类 <span style="color:var(--accent)">*</span></label><select class="form-input" id="myUpdateCategory"><option value="">请选择</option></select></div><div class="form-group"><label>状态</label><select class="form-input" id="myUpdateStatus"><option value="">不填</option></select></div></div>
+            <div class="form-group"><label>发布日期</label><input type="date" class="form-input" id="myUpdateDate" value="${isEdit ? updateData.publishDate || '' : new Date().toISOString().split('T')[0]}"></div>
+            <div class="form-group"><label>正文 <span style="color:var(--accent)">*</span></label><textarea class="form-input" id="myUpdateContent" style="min-height:180px;" required>${isEdit ? escapeHtml(updateData.content || '') : ''}</textarea><div class="tag-chip-hint">支持换行，前台会保留段落排版。</div></div>` },
+          { key: 'media', html: `<div class="ab-panel-head"><div><h4>图片 <span>MEDIA</span></h4><p>动态封面和正文配图</p></div></div>
+            <div class="form-group"><label>封面图片</label><div id="myUpdateCoverPreview" class="ae-cover-preview">${isEdit && updateData.coverImage ? `<div class="ae-img-wrap"><img src="${escapeHtml(imgUrl(updateData.coverImage, 400))}" alt=""><button type="button" onclick="this.parentElement.remove()">&times;</button></div>` : ''}</div><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('myUpdateCoverPreview', true)">从图片库选择</button><div class="tag-chip-hint">建议 16:9，会显示在动态列表卡片中。</div></div>
+            <div class="form-group"><label>正文配图</label><div id="myUpdateImagesPreview" class="ae-image-list">${existingImages.map(img => `<div class="ae-img-wrap"><img src="${escapeHtml(imgUrl(img, 240))}" alt=""><button type="button" onclick="this.parentElement.remove()">&times;</button></div>`).join('')}</div><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('myUpdateImagesPreview')">+ 添加图片</button></div>` },
+          { key: 'links', html: `<div class="ab-panel-head"><div><h4>关联内容 <span>LINKS</span></h4><p>把动态关联到活动或企划</p></div></div>
+            <div class="form-group"><label>关联活动</label><div id="myUpdateEventsList" class="ae-pick-box">加载中...</div></div>
+            <div class="form-group"><label>关联企划</label><div id="myUpdateProjectsList" class="ae-pick-box">加载中...</div></div>
+            <div class="tag-chip-hint">关联后会显示在活动/企划详情的最新动态中。</div>` }
+        ],
+        preview: authorEditorPreviewPanel(authorEditorPreviewCard({
+          cover: updateCover,
+          kicker: [isEdit ? updateData.publishDate || '' : new Date().toISOString().slice(0, 10), '动态'].filter(Boolean).join(' · '),
+          title: updateTitle || '动态标题',
+          desc: updateContent || '动态正文会显示在这里。',
+          meta: [isEdit ? (updateData.category || '') : '', isEdit ? `已关联 ${(updateData.relatedEvents || []).length + (updateData.relatedProjects || []).length} 个内容` : ''].filter(Boolean),
+          pics: updatePics,
+          foot: '动态详情 · 关联活动'
+        })),
+        saveAction: `submitMyUpdate('${isEdit ? updateData.id : ''}')`,
+        saveLabel: isEdit ? '保存修改' : '提交审核',
+        status: isEdit ? '编辑后需重新审核' : '提交后等待管理员审核',
+        tip: '动态发布后需要审核；已通过审核的动态编辑后会保留旧版展示。'
+      });
+      initAuthorEditorShell(overlay);
+      initAuthorEditorPreview(overlay, { titleId: 'myUpdateTitle', descId: 'myUpdateContent', coverId: 'myUpdateCoverPreview', picSelector: '#myUpdateImagesPreview img', titleFallback: '动态标题', descFallback: '动态正文会显示在这里。' });
       // Load categories and populate dropdowns
       loadMyUpdateCategories(isEdit ? updateData : null);
       loadMyUpdateRelations(isEdit ? updateData : null, preset);
@@ -5238,83 +5340,61 @@
     }
 
     function openAuthorSeriesEditor(id) {
-      const editor = document.getElementById('authorSeriesEditor');
-      if (!editor) return;
       const series = id ? authorSeriesCache.find(s => s.id === id) : null;
       const selected = new Set((series?.workIds || []).map(String));
       const works = authorSeriesWorksCache;
       window._authorSeriesSelectedWorkIds = selected;
       window._authorSeriesAvailableWorks = works;
       const defaultSeriesStatus = (typeof PROJECT_STATUS_ORDERED !== 'undefined' && PROJECT_STATUS_ORDERED[0]?.id) || 'zhaomuzhong';
-      editor.innerHTML = `
-        <div class="author-series-editor">
-          <div class="author-series-editor-head">
-            <h3>${series ? '编辑系列' : '新建系列'}</h3>
-            <button type="button" class="btn-sm" onclick="document.getElementById('authorSeriesEditor').innerHTML=''">取消</button>
-          </div>
-          <div class="form-group">
-            <label>系列名称</label>
-            <input class="form-input" id="authorSeriesName" value="${series ? escapeHtml(series.name) : ''}" placeholder="如：2026 新春套组">
-          </div>
-          <div class="form-group">
-            <label>系列状态</label>
-            <select class="form-input" id="authorSeriesStatus">
-              ${Object.entries(PROJECT_STATUS_LABELS).map(([k, v]) => `<option value="${k}" ${(series?.status || defaultSeriesStatus) === k ? 'selected' : ''}>${v}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>分类</label>
-              <select class="form-input" id="authorSeriesCategory">
-                <option value="">未分类</option>
-                ${Object.entries(PROJECT_CATEGORIES || {}).map(([k, v]) => `<option value="${k}" ${series?.category === k ? 'selected' : ''}>${v}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>开始日期</label>
-              <input type="date" class="form-input" id="authorSeriesStart" value="${series?.startDate || ''}">
-            </div>
-            <div class="form-group">
-              <label>结束日期</label>
-              <input type="date" class="form-input" id="authorSeriesEnd" value="${series?.endDate || ''}">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>标签</label>
-            <div class="tag-chip-box" id="authorSeriesTagsBox" data-for="authorSeriesTags"></div>
-            <input type="hidden" id="authorSeriesTags" value="${(series?.tags || []).map(t => String(t).replace(/"/g,'&quot;')).join(', ')}">
-            <div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>
-            ${renderCommonTagsHtml(works, 'authorSeriesTagsBox')}
-          </div>
-          <div class="form-group">
-            <label>系列简介</label>
-            <textarea class="form-input" id="authorSeriesDesc" style="min-height:100px;">${escapeHtml(series?.description || '')}</textarea>
-          </div>
-          <div class="form-group">
-            <label>参与方式 / 联系方式</label>
-            <textarea class="form-input" id="authorSeriesContact" style="min-height:80px;">${escapeHtml(series?.contactInfo || '')}</textarea>
-          </div>
-          <div class="form-group">
-            <label>系列封面 <span style="font-weight:400;color:var(--haze);">仅可从自己的图片库选择</span></label>
-            <input type="hidden" id="authorSeriesCover" value="${series?.cover ? escapeHtml(series.cover) : ''}">
-            <div id="authorSeriesCoverPreview" class="author-series-cover-preview">${series?.cover ? `<img src="${escapeHtml(imgUrl(series.cover, 240))}" alt="">` : '<span>未设置封面</span>'}</div>
-            <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem;">
-              <button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('authorSeriesCoverPreview', true)">从图片库选择</button>
-              <button type="button" class="btn-sm" style="background:var(--border);color:var(--ink);" onclick="document.getElementById('authorSeriesCover').value='';document.getElementById('authorSeriesCoverPreview').innerHTML='<span>未设置封面</span>'">清除</button>
-            </div>
-          </div>
-          <label class="author-series-visible"><input type="checkbox" id="authorSeriesVisible" ${series?.visible === false ? '' : 'checked'}> 在作者主页显示这个系列</label>
-          <div class="form-group">
-            <label>包含作品 <span style="font-weight:400;color:var(--haze);">未选择 = 不显示任何作品</span></label>
+      const overlay = document.getElementById('workModalOverlay');
+      const body = document.getElementById('workModalBody');
+      document.getElementById('workModalTitle').textContent = series ? '编辑系列' : '新建系列';
+      const chosenWorks = works.filter(w => selected.has(String(w.id)));
+      const seriesCover = series?.cover || '';
+      const seriesStatus = series?.status || defaultSeriesStatus;
+      const seriesPics = chosenWorks.map(w => w.images?.[0]).filter(Boolean);
+      body.innerHTML = authorEditorShell({
+        kicker: 'AUTHOR EDITOR · 系列周边',
+        title: series ? '编辑系列' : '新建系列',
+        badge: 'SERIES',
+        subtitle: '整理同一主题的周边作品，展示在作者主页和企划详情中',
+        steps: [
+          { key: 'basic', label: '基本信息', desc: '名称、状态与简介' },
+          { key: 'works', label: '系列作品', desc: '选择包含的周边', count: chosenWorks.length || '' },
+          { key: 'display', label: '展示设置', desc: '封面、标签与显示' }
+        ],
+        panels: [
+          { key: 'basic', html: `<div class="ab-panel-head"><div><h4>基本信息 <span>BASIC</span></h4><p>系列的公开名称、状态和介绍</p></div></div>
+            <div class="form-group"><label>系列名称</label><input class="form-input" id="authorSeriesName" value="${series ? escapeHtml(series.name) : ''}" placeholder="如：2026 新春套组"></div>
+            <div class="form-row"><div class="form-group"><label>系列状态</label><select class="form-input" id="authorSeriesStatus">${Object.entries(PROJECT_STATUS_LABELS).map(([k, v]) => `<option value="${k}" ${seriesStatus === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div><div class="form-group"><label>分类</label><select class="form-input" id="authorSeriesCategory"><option value="">未分类</option>${Object.entries(PROJECT_CATEGORIES || {}).map(([k, v]) => `<option value="${k}" ${series?.category === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div></div>
+            <div class="form-row"><div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="authorSeriesStart" value="${series?.startDate || ''}"></div><div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="authorSeriesEnd" value="${series?.endDate || ''}"></div></div>
+            <div class="form-group"><label>系列简介</label><textarea class="form-input" id="authorSeriesDesc" style="min-height:120px;">${escapeHtml(series?.description || '')}</textarea></div>` },
+          { key: 'works', html: `<div class="ab-panel-head"><div><h4>系列作品 <span>WORKS</span></h4><p>选择要归入这个系列的周边</p></div><button type="button" class="btn-sm btn-primary" onclick="openAuthorWorkPicker()">+ 选择作品</button></div>
             <div id="authorSeriesSelectedWorks" class="author-series-selected-works"></div>
-            <button type="button" class="btn-sm btn-edit" style="margin-top:.35rem;" onclick="openAuthorWorkPicker()">选择作品</button>
-          </div>
-          <div class="author-series-editor-foot">
-            <button type="button" class="btn btn-primary" onclick="saveAuthorSeries('${series?.id || ''}')">保存系列</button>
-          </div>
-        </div>`;
-      editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      initTagChipBoxes(editor);
+            <div class="tag-chip-hint">未选择作品时，前台不会显示这个系列的作品。</div>` },
+          { key: 'display', html: `<div class="ab-panel-head"><div><h4>展示设置 <span>DISPLAY</span></h4><p>控制系列在作者主页的呈现方式</p></div></div>
+            <div class="form-group"><label>系列封面</label><input type="hidden" id="authorSeriesCover" value="${series?.cover ? escapeHtml(series.cover) : ''}"><div id="authorSeriesCoverPreview" class="author-series-cover-preview">${series?.cover ? `<img src="${escapeHtml(imgUrl(series.cover, 240))}" alt="">` : '<span>未设置封面</span>'}</div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('authorSeriesCoverPreview', true)">从图片库选择</button><button type="button" class="btn-sm" onclick="document.getElementById('authorSeriesCover').value='';document.getElementById('authorSeriesCoverPreview').innerHTML='<span>未设置封面</span>'">清除</button></div><div class="tag-chip-hint">建议 16:9 或 3:2，展示在系列卡片和详情页顶部。</div></div>
+            <div class="form-group"><label>标签</label><div class="tag-chip-box" id="authorSeriesTagsBox" data-for="authorSeriesTags"></div><input type="hidden" id="authorSeriesTags" value="${(series?.tags || []).map(t => String(t).replace(/"/g,'&quot;')).join(', ')}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>${renderCommonTagsHtml(works, 'authorSeriesTagsBox')}</div>
+            <div class="form-group"><label>参与方式 / 联系方式</label><textarea class="form-input" id="authorSeriesContact" style="min-height:90px;">${escapeHtml(series?.contactInfo || '')}</textarea></div>
+            <label class="ae-check-line"><input type="checkbox" id="authorSeriesVisible" ${series?.visible === false ? '' : 'checked'}> 在作者主页显示这个系列</label>` }
+        ],
+        preview: authorEditorPreviewPanel(authorEditorPreviewCard({
+          cover: seriesCover,
+          kicker: [series?.status ? (PROJECT_STATUS_LABELS[series.status] || series.status) : (PROJECT_STATUS_LABELS[seriesStatus] || ''), '系列周边'].filter(Boolean).join(' · '),
+          title: series?.name || '系列名称',
+          desc: series?.description || '系列简介会显示在这里。',
+          meta: [chosenWorks.length ? `${chosenWorks.length} 件周边` : '', '作者主页 · 系列周边'].filter(Boolean),
+          pics: seriesPics,
+          foot: '作者主页 · 系列周边'
+        })),
+        saveAction: `saveAuthorSeries('${series?.id || ''}')`,
+        saveLabel: '保存系列',
+        status: '保存后需管理员审核',
+        tip: '只有已通过审核的作品会被前台展示，系列本身也需要审核。'
+      });
+      initAuthorEditorShell(overlay);
+      initAuthorEditorPreview(overlay, { titleId: 'authorSeriesName', descId: 'authorSeriesDesc', coverId: 'authorSeriesCoverPreview', picSelector: '#authorSeriesSelectedWorks img', titleFallback: '系列名称', descFallback: '系列简介会显示在这里。' });
+      initTagChipBoxes(body);
       renderAuthorSeriesSelectedWorks();
     }
 
@@ -5533,7 +5613,7 @@
           : await authorAPI('POST', '/api/author/series', body);
         if (result) {
           showToast('系列已保存', 'success');
-          document.getElementById('authorSeriesEditor').innerHTML = '';
+          closeWorkModal();
           loadAuthorSeries();
         }
       } catch (e) {
@@ -5826,7 +5906,8 @@
       if (typeof FormDraft !== 'undefined' && FormDraft.stopTracking) FormDraft.stopTracking();
       const overlay = document.getElementById('workModalOverlay');
       if (overlay) {
-        overlay.classList.remove('open', 'booth-editor-mode');
+        if (overlay._previewCleanup) overlay._previewCleanup();
+        overlay.classList.remove('open', 'booth-editor-mode', 'author-form-mode');
         overlay.style.display = '';
       }
     };
