@@ -973,7 +973,7 @@
 }
 
 /* Current page approval badge */
-.mgmt-approval-badge{font-size:9px;line-height:1;font-weight:700;border-radius:999px;padding:4px 7px;white-space:nowrap;flex:0 0 auto;letter-spacing:.02em}
+.mgmt-approval-badge{font-size:9px;line-height:1;font-weight:700;border-radius:999px;padding:4px 7px;white-space:nowrap;flex:0 0 auto;letter-spacing:.02em;margin-left:6px;vertical-align:middle}
 .mgmt-approval-badge.need{background:rgba(180,63,75,.1);color:var(--accent);border:1px solid rgba(180,63,75,.18)}
 .mgmt-approval-badge.free{background:rgba(47,130,94,.1);color:#2f825e;border:1px solid rgba(47,130,94,.18)}
 @media(max-width:600px){.mgmt-approval-badge{font-size:8.5px;padding:3px 6px}.mgmt-header h2{font-size:.98rem}}

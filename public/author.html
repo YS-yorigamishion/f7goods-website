@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ew">
-  <link rel="stylesheet" href="/css/author.css?v=20261025t">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ex">
+  <link rel="stylesheet" href="/css/author.css?v=20261025u">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
     .ab-sec {
@@ -849,9 +849,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020ew"></script>
-  <script src="/js/i18n.js?v=20261020ew"></script>
-  <script src="/js/main.js?v=20261020ew"></script>
+  <script src="/js/api.js?v=20261020ex"></script>
+  <script src="/js/i18n.js?v=20261020ex"></script>
+  <script src="/js/main.js?v=20261020ex"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -5359,6 +5359,7 @@
             </div>`).join('') : '<p class="author-featured-hint">还没有作品系列。新建一个，把同系列周边放进去。</p>'}
         </div>
         <div id="authorSeriesEditor"></div>`;
+      updateMgmtApprovalBadge(_currentMgmtTab);
     }
 
     function openAuthorSeriesWorkPicker(currentSeriesId = '') {
@@ -5825,6 +5826,14 @@
           : tab === 'only-booths'
             ? 'ONLY 摊位编辑保存后立即更新，不进入审核'
             : need ? '当前页面内容保存后需要管理员审核' : '当前页面内容保存后直接生效';
+        const section = document.getElementById('tab-' + tab);
+        const target = section?.querySelector('.mgmt-tab-head h3, .mgmt-toolbar h3, .author-series-head h3, h3');
+        if (target) {
+          target.appendChild(badge);
+          badge.hidden = false;
+        } else {
+          badge.hidden = true;
+        }
       } catch (e) {
         badge.hidden = true;
       }
