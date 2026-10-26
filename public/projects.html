@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261027a">
+  <link rel="stylesheet" href="/css/style.css?v=20261027b">
 <link rel="canonical" href="https://f7goods.com/projects.html">
 <meta property="og:url" content="https://f7goods.com/projects.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -72,10 +72,10 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261027a"></script>
+  <script src="/js/api.js?v=20261027b"></script>
   <script src="/js/pull-to-refresh.js"></script>
-  <script src="/js/i18n.js?v=20261027a"></script>
-  <script src="/js/main.js?v=20261027a"></script>
+  <script src="/js/i18n.js?v=20261027b"></script>
+  <script src="/js/main.js?v=20261027b"></script>
   <script>
     initPage('projects');
     if (typeof mountAuthorCreateFab === 'function') mountAuthorCreateFab({ label: '创建企划', tab: 'my-projects' });
@@ -177,7 +177,7 @@ function projectCardHtml(item) {
         <h3>${escapeHtml(item.name)}</h3>
         <div class="prj-meta">系列周边 · ${owner ? escapeHtml(owner.name) : '未知作者'} · ${(item.works || []).length} 件</div>
         <p class="prj-desc">${(item.works || []).slice(0, 3).map(w => escapeHtml(workTitle(w))).join(' · ') || '作品系列'}</p>
-        ${tags.length ? `<div class="prj-tags">${tags.map(tg => `<span class="prj-tag" role="link" tabindex="0" data-tag="${escapeHtml(tg)}" onclick="event.preventDefault();event.stopPropagation();goTag(this.dataset.tag)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();goTag(this.dataset.tag)}">${escapeHtml(tg)}</span>`).join('')}</div>` : ''}
+        ${tags.length ? `<div class="prj-tags">${tags.map(tg => `<span class="tag" role="link" tabindex="0" data-tag="${escapeHtml(tg)}" onclick="event.preventDefault();event.stopPropagation();goTag(this.dataset.tag)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();goTag(this.dataset.tag)}">${escapeHtml(tg)}</span>`).join('')}</div>` : ''}
         <div class="prj-foot"><span>${(item.works || []).length} 件作品</span><span class="go">查看系列 →</span></div>
       </div>
     </a>`;
@@ -198,7 +198,7 @@ function projectCardHtml(item) {
       <h3>${escapeHtml(p.title)}</h3>
       <div class="prj-meta">${escapeHtml(catLabel)}${authorN ? ' · 参与作者 ' + authorN + ' 人' : ''}</div>
       <p class="prj-desc">${escapeHtml(p.description || '')}</p>
-      ${tags.length ? `<div class="prj-tags">${tags.map(tg => `<span class="prj-tag" role="link" tabindex="0" data-tag="${escapeHtml(tg)}" onclick="event.preventDefault();event.stopPropagation();goTag(this.dataset.tag)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();goTag(this.dataset.tag)}">${escapeHtml(tg)}</span>`).join('')}</div>` : ''}
+      ${tags.length ? `<div class="prj-tags">${tags.map(tg => `<span class="tag" role="link" tabindex="0" data-tag="${escapeHtml(tg)}" onclick="event.preventDefault();event.stopPropagation();goTag(this.dataset.tag)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();goTag(this.dataset.tag)}">${escapeHtml(tg)}</span>`).join('')}</div>` : ''}
       ${prog ? `<div class="prj-time"><div class="prj-time-head"><span>${formatDate(p.startDate)} → ${formatDate(p.endDate)}</span><span>${prog.label}</span></div><div class="prj-time-bar"><i style="width:${prog.pct}%"></i></div></div>` : ''}
       <div class="prj-foot"><span>${p.startDate ? formatDate(p.startDate) : '时间待定'}</span><span class="go">查看 →</span></div>
     </div>

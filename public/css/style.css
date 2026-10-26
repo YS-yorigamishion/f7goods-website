@@ -3749,9 +3749,6 @@ body.app-mode .detail-page { padding-top: 1.25rem; }
   color: var(--muted);
 }
 .cl-chip.cat { color: var(--ink); border-color: #D4C8B8; }
-a.cl-chip { text-decoration: none; cursor: pointer; transition: color .15s, border-color .15s, background .15s; }
-a.cl-chip:hover { color: var(--accent); border-color: rgba(180,63,75,.35); background: rgba(180,63,75,.06); }
-a.cl-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .cl-actions {
   display: flex; flex-direction: column; gap: 0.4rem; align-items: stretch;
   min-width: 110px;
@@ -5114,9 +5111,8 @@ a.cl-series-card:hover { border-color: var(--accent); }
 .prj-meta{font-size:9px;color:var(--haze);margin-bottom:6px}
 .prj-desc{font-size:9.5px;color:var(--haze);line-height:1.7;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:3.2em}
 .prj-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}
-.prj-tag{font-size:8px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 6px;cursor:pointer;transition:color .15s,border-color .15s,background .15s}
-.prj-tag:hover{color:var(--accent);border-color:rgba(180,63,75,.35);background:rgba(180,63,75,.06)}
-.prj-tag:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.prj-tags .tag{cursor:pointer}
+.prj-tag{font-size:8px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 6px}
 .prj-time{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line)}
 .prj-time-head{display:flex;justify-content:space-between;font-size:8.5px;color:var(--haze);margin-bottom:4px;gap:8px}
 .prj-time-bar{height:2px;border-radius:999px;background:var(--line);overflow:hidden}
