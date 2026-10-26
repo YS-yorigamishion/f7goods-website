@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020eu">
-  <link rel="stylesheet" href="/css/author.css?v=20261025r">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ew">
+  <link rel="stylesheet" href="/css/author.css?v=20261025t">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
     .ab-sec {
@@ -203,6 +203,7 @@
           <svg class="xmark" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
         <h2 id="mgmtTitle">作者管理</h2>
+        <span id="mgmtApprovalBadge" class="mgmt-approval-badge" hidden></span>
       </div>
       <div class="mgmt-header-right">
         <button type="button" class="mgmt-icon-btn" onclick="showNotifications()" title="通知" aria-label="通知">
@@ -485,16 +486,6 @@
         </div>
 
         <div id="authorTodoSummary" class="author-todo-summary"></div>
-
-        <section class="awb-rules" id="authorApprovalRules">
-          <div class="awb-rules-head">
-            <div><h3>当前审核规则</h3><p>由管理员统一设置，规则变更后这里会自动更新。</p></div>
-            <button type="button" class="ab-pill" onclick="loadAuthorApprovalRules()">刷新规则</button>
-          </div>
-          <div class="awb-rules-grid" id="authorApprovalRulesGrid">
-            <div class="awb-rules-loading">正在读取审核规则…</div>
-          </div>
-        </section>
 
         <div class="awb-layout">
           <section class="awb-panel awb-tasks">
@@ -858,9 +849,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020eu"></script>
-  <script src="/js/i18n.js?v=20261020eu"></script>
-  <script src="/js/main.js?v=20261020eu"></script>
+  <script src="/js/api.js?v=20261020ew"></script>
+  <script src="/js/i18n.js?v=20261020ew"></script>
+  <script src="/js/main.js?v=20261020ew"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -1321,7 +1312,7 @@
       }
       // Reload all data
       await loadAuthorProfile();
-      loadAuthorApprovalRules();
+      updateMgmtApprovalBadge(_currentMgmtTab, true);
       await loadAuthorWorks();
       await loadAuthorEvents();
       loadAuthorProjects();
@@ -1341,7 +1332,6 @@
       screen.style.display = '';
       await loadAccessibleAccounts();
       await loadAuthorProfile();
-      loadAuthorApprovalRules();
       await loadAuthorWorks();
       await loadAuthorEvents();
       loadAuthorProjects();
@@ -4439,11 +4429,6 @@
       }).join('') || '<p style="color:var(--haze);font-size:0.85rem;">暂无作者</p>';
     }
 
-    function authorApprovalNeed(key) {
-      const rules = window._authorApprovalRules;
-      return !rules || rules[key] !== false;
-    }
-
     function authorEditorPreviewCard(opts = {}) {
       const pics = Array.isArray(opts.pics) ? opts.pics.filter(Boolean) : [];
       const meta = Array.isArray(opts.meta) ? opts.meta.filter(Boolean) : [];
@@ -4462,7 +4447,7 @@
     }
 
     function authorEditorPreviewPanel(html) {
-      return `<div class="ab-preview-label">前台预览 <span>PUBLIC VIEW</span></div>${html}<div class="ab-preview-note"><b>预览版说明</b><br>实际保存后的展示状态以当前审核规则为准。</div>`;
+      return `<div class="ab-preview-label">前台预览 <span>PUBLIC VIEW</span></div>${html}<div class="ab-preview-note"><b>预览版说明</b><br>实际保存后仍需审核，通过后更新前台。</div>`;
     }
 
     function authorEditorShell(options = {}) {
@@ -4537,7 +4522,6 @@
 
     async function openMyEventForm(eventData = null) {
       const isEdit = !!eventData;
-      const eventReview = authorApprovalNeed('eventNeed');
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑活动' : '提交活动';
@@ -4606,9 +4590,9 @@
           foot: '活动详情 · 相关摊位与作品'
         })),
         saveAction: `submitMyEvent('${isEdit ? eventData.id : ''}')`,
-        saveLabel: isEdit ? '保存修改' : (eventReview ? '提交审核' : '保存并发布'),
-        status: isEdit ? (eventReview ? '编辑后需重新审核' : '编辑后保存直接生效') : (eventReview ? '提交后等待管理员审核' : '提交后直接生效'),
-        tip: eventReview ? '活动编辑后需要重新审核；关联作品只会显示已通过审核的内容。' : '活动当前免审核，保存后直接生效；关联作品仍按作品审核状态展示。'
+        saveLabel: isEdit ? '保存修改' : '提交审核',
+        status: isEdit ? '编辑后需重新审核' : '提交后等待管理员审核',
+        tip: '活动编辑后需要重新审核；关联作品只会显示已通过审核的内容。'
       });
       initAuthorEditorShell(overlay);
       initAuthorEditorPreview(overlay, { titleId: 'myEventTitle', descId: 'myEventDesc', coverId: 'myEventCoverPreview', picSelector: '#myEventImagesPreview img', titleFallback: '活动名称', descFallback: '活动简介会显示在这里。' });
@@ -4659,13 +4643,12 @@
         socialLinks
       };
       let result;
-      const reviewNeeded = authorApprovalNeed('eventNeed');
       if (eventId) {
         result = await authorAPI('PUT', '/api/author/my-events/' + eventId, data);
-        if (result) showToast(reviewNeeded ? '已保存，需重新审核' : '已保存并直接生效', 'success');
+        if (result) showToast('已保存，需重新审核', 'success');
       } else {
         result = await authorAPI('POST', '/api/author/my-events', data);
-        if (result) showToast(reviewNeeded ? '活动已提交，等待审核' : '活动已提交并直接发布', 'success');
+        if (result) showToast('活动已提交，等待审核', 'success');
       }
       if (result) {
         FormDraft.clear('event');
@@ -4751,7 +4734,6 @@
 
     async function openMyProjectForm(projectData = null) {
       const isEdit = !!projectData;
-      const projectReview = authorApprovalNeed('projectNeed');
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑企划' : '提交企划';
@@ -4820,9 +4802,9 @@
           foot: '企划详情 · 参与作品'
         })),
         saveAction: `submitMyProject('${isEdit ? projectData.id : ''}')`,
-        saveLabel: isEdit ? '保存修改' : (projectReview ? '提交审核' : '保存并发布'),
-        status: isEdit ? (projectReview ? '编辑后需重新审核' : '编辑后保存直接生效') : (projectReview ? '提交后等待管理员审核' : '提交后直接生效'),
-        tip: projectReview ? '企划提交后需管理员审核；招募信息可以随时编辑，但仍会进入审核。' : '企划当前免审核，保存后直接生效。'
+        saveLabel: isEdit ? '保存修改' : '提交审核',
+        status: isEdit ? '编辑后需重新审核' : '提交后等待管理员审核',
+        tip: '企划提交后需管理员审核；招募信息可以随时编辑，但仍会进入审核。'
       });
       initAuthorEditorShell(overlay);
       initAuthorEditorPreview(overlay, { titleId: 'myProjectTitle', descId: 'myProjectDesc', coverId: 'myProjectCoverPreview', picSelector: '#myProjectImagesPreview img', titleFallback: '企划名称', descFallback: '企划简介会显示在这里。' });
@@ -4862,13 +4844,12 @@
         socialLinks
       };
       let result;
-      const reviewNeeded = authorApprovalNeed('projectNeed');
       if (projectId) {
         result = await authorAPI('PUT', '/api/author/my-projects/' + projectId, data);
-        if (result) showToast(reviewNeeded ? '已保存，需重新审核' : '已保存并直接生效', 'success');
+        if (result) showToast('已保存，需重新审核', 'success');
       } else {
         result = await authorAPI('POST', '/api/author/my-projects', data);
-        if (result) showToast(reviewNeeded ? '企划已提交，等待审核' : '企划已提交并直接发布', 'success');
+        if (result) showToast('企划已提交，等待审核', 'success');
       }
       if (result) {
         closeWorkModal();
@@ -4946,7 +4927,6 @@
 
     function openMyUpdateForm(updateData = null, preset = null) {
       const isEdit = !!updateData;
-      const updateReview = authorApprovalNeed('updateNeed');
       const overlay = document.getElementById('workModalOverlay');
       const body = document.getElementById('workModalBody');
       document.getElementById('workModalTitle').textContent = isEdit ? '编辑动态' : '发布动态';
@@ -4989,9 +4969,9 @@
           foot: '动态详情 · 关联活动'
         })),
         saveAction: `submitMyUpdate('${isEdit ? updateData.id : ''}')`,
-        saveLabel: isEdit ? '保存修改' : (updateReview ? '提交审核' : '保存并发布'),
-        status: isEdit ? (updateReview ? '编辑后需重新审核' : '编辑后保存直接生效') : (updateReview ? '提交后等待管理员审核' : '提交后直接生效'),
-        tip: updateReview ? '动态发布后需要审核；已通过审核的动态编辑后会保留旧版展示。' : '动态当前免审核，保存后直接生效。'
+        saveLabel: isEdit ? '保存修改' : '提交审核',
+        status: isEdit ? '编辑后需重新审核' : '提交后等待管理员审核',
+        tip: '动态发布后需要审核；已通过审核的动态编辑后会保留旧版展示。'
       });
       initAuthorEditorShell(overlay);
       initAuthorEditorPreview(overlay, { titleId: 'myUpdateTitle', descId: 'myUpdateContent', coverId: 'myUpdateCoverPreview', picSelector: '#myUpdateImagesPreview img', titleFallback: '动态标题', descFallback: '动态正文会显示在这里。' });
@@ -5060,13 +5040,12 @@
         data.relatedProjects = [...document.querySelectorAll('.my-update-project-cb:checked')].map(cb => cb.value);
       }
       let result;
-      const reviewNeeded = authorApprovalNeed('updateNeed');
       if (updateId) {
         result = await authorAPI('PUT', '/api/author/my-updates/' + updateId, data);
-        if (result) showToast(reviewNeeded ? '已保存，需重新审核' : '已保存并直接生效', 'success');
+        if (result) showToast('已保存，需重新审核', 'success');
       } else {
         result = await authorAPI('POST', '/api/author/my-updates', data);
-        if (result) showToast(reviewNeeded ? '动态已提交，等待审核' : '动态已提交并直接发布', 'success');
+        if (result) showToast('动态已提交，等待审核', 'success');
       }
       if (result) {
         closeWorkModal();
@@ -5083,48 +5062,8 @@
       }
     }
 
-    async function loadAuthorApprovalRules() {
-      const grid = document.getElementById('authorApprovalRulesGrid');
-      if (!grid) return;
-      try {
-        const [settings, profile] = await Promise.all([
-          fetch('/api/settings').then(r => r.json()).catch(() => ({})),
-          authorAPI('GET', '/api/author/profile').catch(() => authorProfile)
-        ]);
-        if (profile) authorProfile = profile;
-        const site = settings?.site || {};
-        const workGlobal = site.requireWorkApproval !== false;
-        const authorExempt = profile?.requireApproval === false;
-        const workNeed = workGlobal && !authorExempt;
-        const eventNeed = site.requireEventApproval !== false;
-        const projectNeed = site.requireProjectApproval !== false;
-        const updateNeed = site.requireUpdateApproval !== false;
-        const card = (title, status, desc) => `<article class="awb-rule"><div class="awb-rule-top"><b>${escapeHtml(title)}</b><span class="awb-rule-status ${status.cls}">${escapeHtml(status.label)}</span></div><p class="awb-rule-desc">${desc}</p></article>`;
-        const workDesc = workNeed
-          ? (authorExempt ? '当前账号已设为免审核；作品保存后直接生效。' : '新增或修改后进入待审核，通过后展示；已通过内容编辑期间前台保留旧版。')
-          : '管理员已关闭作品审核，作品保存后直接展示。';
-        const seriesDesc = workNeed
-          ? '系列本身无需审核，保存后直接生效；包含的作品仍需审核，仅审核通过的作品会展示。'
-          : '系列和作品都无需审核，保存后直接展示。';
-        const eventDesc = `活动新增或修改${eventNeed ? '需管理员审核' : '免审核，保存后直接生效'}。ONLY 摊位编辑单独保存，不进入审核，保存后立即更新。`;
-        const projectDesc = `企划新增或修改${projectNeed ? '需管理员审核，通过后展示' : '免审核，保存后直接生效'}。`;
-        const updateDesc = `动态新增或修改${updateNeed ? '需管理员审核，通过后展示' : '免审核，保存后直接生效'}。`;
-        grid.innerHTML = [
-          card('我的作品', { cls: workNeed ? 'need' : 'free', label: workNeed ? '需审核' : '免审核' }, workDesc),
-          card('系列周边', { cls: 'free', label: '系列免审核' }, seriesDesc),
-          card('我的活动 / ONLY 摊位', { cls: eventNeed ? 'need' : 'free', label: eventNeed ? '活动需审核' : '活动免审核' }, eventDesc),
-          card('我的企划', { cls: projectNeed ? 'need' : 'free', label: projectNeed ? '需审核' : '免审核' }, projectDesc),
-          card('我的动态', { cls: updateNeed ? 'need' : 'free', label: updateNeed ? '需审核' : '免审核' }, updateDesc)
-        ].join('') + `<div class="awb-rules-foot">规则已同步 · 管理员修改后刷新本页即可看到最新状态</div>`;
-        window._authorApprovalRules = { workNeed, eventNeed, projectNeed, updateNeed, workGlobal, authorExempt };
-      } catch (e) {
-        grid.innerHTML = '<div class="awb-rules-loading">审核规则读取失败，请稍后刷新重试。</div>';
-      }
-    }
-
     // Management tab switching
     async function loadAuthorWorkbench() {
-      loadAuthorApprovalRules();
       const summary = document.getElementById('authorTodoSummary');
       const list = document.getElementById('authorTodoList');
       const suggest = document.getElementById('authorTodoSuggest');
@@ -5491,9 +5430,7 @@
         saveAction: `saveAuthorSeries('${series?.id || ''}')`,
         saveLabel: '保存系列',
         status: '保存后直接生效',
-        tip: authorApprovalNeed('workNeed')
-          ? '系列本身无需审核，保存后直接生效；包含的作品仍需审核，仅审核通过的作品会展示。'
-          : '系列和作品都无需审核，保存后直接展示。'
+        tip: '系列本身无需审核，保存后直接生效；包含的作品是否展示取决于作品审核规则。'
       });
       initAuthorEditorShell(overlay);
       initAuthorEditorPreview(overlay, { titleId: 'authorSeriesName', descId: 'authorSeriesDesc', coverId: 'authorSeriesCoverPreview', picSelector: '#authorSeriesSelectedWorks img', titleFallback: '系列名称', descFallback: '系列简介会显示在这里。' });
@@ -5843,6 +5780,56 @@
       }
     }
 
+    let _approvalSettingsCache = null;
+    let _currentMgmtTab = 'todo';
+    async function getApprovalSettings(force = false) {
+      if (!force && _approvalSettingsCache && Date.now() - _approvalSettingsCache.at < 15000) {
+        return _approvalSettingsCache.data;
+      }
+      const data = await fetch('/api/settings').then(r => r.json()).catch(() => ({}));
+      _approvalSettingsCache = { data, at: Date.now() };
+      return data;
+    }
+
+    async function updateMgmtApprovalBadge(tab, force = false) {
+      const badge = document.getElementById('mgmtApprovalBadge');
+      if (!badge) return;
+      const supported = ['works', 'my-series', 'my-events', 'only-booths', 'my-projects', 'my-updates'];
+      if (!supported.includes(tab)) {
+        badge.hidden = true;
+        return;
+      }
+      let need = false;
+      try {
+        if (tab === 'my-series' || tab === 'only-booths') {
+          need = false;
+        } else {
+          const settings = await getApprovalSettings(force);
+          const site = settings?.site || {};
+          if (tab === 'works') {
+            if (!authorProfile) authorProfile = await authorAPI('GET', '/api/author/profile').catch(() => null);
+            need = site.requireWorkApproval !== false && authorProfile?.requireApproval !== false;
+          } else if (tab === 'my-events') {
+            need = site.requireEventApproval !== false;
+          } else if (tab === 'my-projects') {
+            need = site.requireProjectApproval !== false;
+          } else if (tab === 'my-updates') {
+            need = site.requireUpdateApproval !== false;
+          }
+        }
+        badge.hidden = false;
+        badge.textContent = need ? '需审核' : '免审核';
+        badge.className = 'mgmt-approval-badge ' + (need ? 'need' : 'free');
+        badge.title = tab === 'my-series'
+          ? '系列本身免审核；包含的作品按作品审核规则展示'
+          : tab === 'only-booths'
+            ? 'ONLY 摊位编辑保存后立即更新，不进入审核'
+            : need ? '当前页面内容保存后需要管理员审核' : '当前页面内容保存后直接生效';
+      } catch (e) {
+        badge.hidden = true;
+      }
+    }
+
     function switchMgmtTab(tab) {
       document.querySelectorAll('.mgmt-nav-item').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.mgmt-section').forEach(s => s.classList.remove('active'));
@@ -5868,6 +5855,8 @@
       };
       const titleEl = document.getElementById('mgmtTitle');
       if (titleEl) titleEl.textContent = titles[tab] || '作者管理';
+      _currentMgmtTab = tab;
+      updateMgmtApprovalBadge(tab);
       const content = document.querySelector('.mgmt-content');
       if (content) content.scrollTop = 0;
       toggleMgmtSidebar(false);
@@ -6047,10 +6036,10 @@
       if (el) new MutationObserver(updateProfilePreview).observe(el, { childList: true, subtree: true, attributes: true });
     });
     window.addEventListener('focus', () => {
-      if (document.getElementById('mgmtScreen')?.classList.contains('is-on')) loadAuthorApprovalRules();
+      if (document.getElementById('mgmtScreen')?.classList.contains('is-on')) updateMgmtApprovalBadge(_currentMgmtTab, true);
     });
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && document.getElementById('mgmtScreen')?.classList.contains('is-on')) loadAuthorApprovalRules();
+      if (!document.hidden && document.getElementById('mgmtScreen')?.classList.contains('is-on')) updateMgmtApprovalBadge(_currentMgmtTab, true);
     });
     loadLang(_lang, true).finally(() => checkAuthorAuth());
   </script>
