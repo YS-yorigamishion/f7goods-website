@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ey">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ez">
   <link rel="stylesheet" href="/css/author.css?v=20261025u">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -849,9 +849,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020ey"></script>
-  <script src="/js/i18n.js?v=20261020ey"></script>
-  <script src="/js/main.js?v=20261020ey"></script>
+  <script src="/js/api.js?v=20261020ez"></script>
+  <script src="/js/i18n.js?v=20261020ez"></script>
+  <script src="/js/main.js?v=20261020ez"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -940,6 +940,28 @@
       box.querySelectorAll('.tag-chip').forEach(c => c.remove());
       tags.forEach(t => box.insertBefore(createTagChip(box, t), input || null));
       syncTagChipHidden(box);
+    }
+
+    function addWorkTagsToTagBox(workIds, boxId, works) {
+      const box = document.getElementById(boxId);
+      if (!box) return 0;
+      const list = Array.isArray(works) ? works : (authorWorksData || []);
+      const wanted = new Set((workIds || []).map(String));
+      const existing = new Set(getTagChipValuesFromBox(box).map(t => t.trim().toLowerCase()));
+      let addedCount = 0;
+      list.filter(w => wanted.has(String(w.id))).forEach(w => {
+        (w.tags || []).forEach(raw => {
+          const tag = String(raw || '').trim();
+          if (!tag) return;
+          const key = tag.toLowerCase();
+          if (existing.has(key)) return;
+          if (addTagChip(box, tag)) {
+            existing.add(key);
+            addedCount++;
+          }
+        });
+      });
+      return addedCount;
     }
 
     function commitPendingTag(box, force) {
@@ -4778,7 +4800,7 @@
             <div class="form-group"><label>标签</label><div class="tag-chip-box" id="myProjectTagsBox" data-for="myProjectTags"></div><input type="hidden" id="myProjectTags" value="${isEdit ? (projectData.tags || []).map(t => String(t).replace(/"/g,'&quot;')).join(', ') : ''}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>${renderCommonTagsHtml(authorWorksData, 'myProjectTagsBox')}</div>` },
           { key: 'works', html: `<div class="ab-panel-head"><div><h4>关联作品 <span>WORKS</span></h4><p>本企划下的周边和参与作者</p></div></div>
             <div class="form-group"><label>参与作者（可搜索 · 默认包含自己）</label><input type="search" class="form-input" placeholder="搜索作者…" style="margin-bottom:0.4rem;" oninput="filterAuthorPickList(this,'myProjectCirclePick')"><div id="myProjectCirclePick" class="ae-pick-box">${renderCirclePickList(allCircles, selectedCircles, 'my-project-circle-cb', 'myProjectCirclePick')}</div></div>
-            <div class="form-group"><label>关联作品（仅自己的作品）</label><div id="myProjectWorksSelected" class="author-series-selected-works"></div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openAuthorWorkPicker({works:authorWorksData,selected:window._myProjectSelectedWorkIds,markedWorks:window._myProjectUsedWorks,hideMarkedLabel:'隐藏已被其他企划使用的作品',onConfirm:function(ids){window._myProjectSelectedWorkIds=new Set([...ids,...(window._myProjectLockedWorkIds||[])]);renderMyProjectSelectedWorks();}})">+ 选择作品</button></div></div>` },
+            <div class="form-group"><label>关联作品（仅自己的作品）</label><div id="myProjectWorksSelected" class="author-series-selected-works"></div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openMyProjectWorkPicker()">+ 选择作品</button></div></div>` },
           { key: 'recruit', html: `<div class="ab-panel-head"><div><h4>招募信息 <span>RECRUIT</span></h4><p>需要新成员时可以在这里开启招募</p></div></div>
             <div class="ae-switchline"><label><input type="checkbox" id="myProjectRecruitOn" ${isEdit && projectData.recruiting ? 'checked' : ''} onchange="toggleMyProjectRecruit(this.checked)"> <span>本企划正在招人</span></label><small>开启后前台会显示招募标记</small></div>
             <div id="myProjectRecruitFields" style="display:${isEdit && projectData.recruiting ? 'block' : 'none'};margin-top:10px;">
@@ -5370,11 +5392,20 @@
           if (!marked[key]) marked[key] = `已在「${s.name || '其他系列'}」`;
         });
       });
+      const before = new Set(window._authorSeriesSelectedWorkIds || []);
       openAuthorWorkPicker({
         works: window._authorSeriesAvailableWorks || [],
         selected: window._authorSeriesSelectedWorkIds,
         markedWorks: marked,
-        hideMarkedLabel: '隐藏已加入其他系列的作品'
+        hideMarkedLabel: '隐藏已加入其他系列的作品',
+        onConfirm: (ids) => {
+          const next = new Set(ids.map(String));
+          const added = [...next].filter(id => !before.has(id));
+          window._authorSeriesSelectedWorkIds = next;
+          renderAuthorSeriesSelectedWorks();
+          const addedTags = addWorkTagsToTagBox(added, 'authorSeriesTagsBox', window._authorSeriesAvailableWorks || []);
+          if (addedTags) showToast(`已自动填入 ${addedTags} 个作品标签`, 'success');
+        }
       });
     }
 
@@ -5628,6 +5659,23 @@
     function removeMyProjectWork(id) {
       window._myProjectSelectedWorkIds?.delete(String(id));
       renderMyProjectSelectedWorks();
+    }
+
+    function openMyProjectWorkPicker() {
+      const before = new Set(window._myProjectSelectedWorkIds || []);
+      openAuthorWorkPicker({
+        works: authorWorksData,
+        selected: window._myProjectSelectedWorkIds,
+        markedWorks: window._myProjectUsedWorks,
+        hideMarkedLabel: '隐藏已被其他企划使用的作品',
+        onConfirm: (ids) => {
+          const added = [...new Set(ids.map(String))].filter(id => !before.has(id));
+          window._myProjectSelectedWorkIds = new Set([...ids, ...(window._myProjectLockedWorkIds || [])]);
+          renderMyProjectSelectedWorks();
+          const addedTags = addWorkTagsToTagBox(added, 'myProjectTagsBox', authorWorksData);
+          if (addedTags) showToast(`已自动填入 ${addedTags} 个作品标签`, 'success');
+        }
+      });
     }
 
     function renderAbSelectedWorks() {
