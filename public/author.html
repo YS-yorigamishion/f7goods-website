@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261020ex">
+  <link rel="stylesheet" href="/css/style.css?v=20261020ey">
   <link rel="stylesheet" href="/css/author.css?v=20261025u">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -849,9 +849,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261020ex"></script>
-  <script src="/js/i18n.js?v=20261020ex"></script>
-  <script src="/js/main.js?v=20261020ex"></script>
+  <script src="/js/api.js?v=20261020ey"></script>
+  <script src="/js/i18n.js?v=20261020ey"></script>
+  <script src="/js/main.js?v=20261020ey"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -5411,8 +5411,7 @@
             <div class="form-row"><div class="form-group"><label>开始日期</label><input type="date" class="form-input" id="authorSeriesStart" value="${series?.startDate || ''}"></div><div class="form-group"><label>结束日期</label><input type="date" class="form-input" id="authorSeriesEnd" value="${series?.endDate || ''}"></div></div>
             <div class="form-group"><label>系列简介</label><textarea class="form-input" id="authorSeriesDesc" style="min-height:120px;">${escapeHtml(series?.description || '')}</textarea></div>` },
           { key: 'works', html: `<div class="ab-panel-head"><div><h4>系列作品 <span>WORKS</span></h4><p>选择要归入这个系列的周边</p></div><button type="button" class="btn-sm btn-primary" onclick="openAuthorSeriesWorkPicker('${series?.id || ''}')">+ 选择作品</button></div>
-            <div id="authorSeriesSelectedWorks" class="author-series-selected-works"></div>
-            <div class="tag-chip-hint">未选择作品时，前台不会显示这个系列的作品。</div>` },
+            <div id="authorSeriesSelectedWorks" class="author-series-selected-works"></div>` },
           { key: 'display', html: `<div class="ab-panel-head"><div><h4>展示设置 <span>DISPLAY</span></h4><p>控制系列在作者主页的呈现方式</p></div></div>
             <div class="form-group"><label>系列封面</label><input type="hidden" id="authorSeriesCover" value="${series?.cover ? escapeHtml(series.cover) : ''}"><div id="authorSeriesCoverPreview" class="author-series-cover-preview">${series?.cover ? `<img src="${escapeHtml(imgUrl(series.cover, 240))}" alt="">` : '<span>未设置封面</span>'}</div><div class="ae-pick-actions"><button type="button" class="btn-sm btn-edit" onclick="openAuthorImageLib('authorSeriesCoverPreview', true)">从图片库选择</button><button type="button" class="btn-sm" onclick="document.getElementById('authorSeriesCover').value='';document.getElementById('authorSeriesCoverPreview').innerHTML='<span>未设置封面</span>'">清除</button></div><div class="tag-chip-hint">建议 16:9 或 3:2，展示在系列卡片和详情页顶部。</div></div>
             <div class="form-group"><label>标签</label><div class="tag-chip-box" id="authorSeriesTagsBox" data-for="authorSeriesTags"></div><input type="hidden" id="authorSeriesTags" value="${(series?.tags || []).map(t => String(t).replace(/"/g,'&quot;')).join(', ')}"><div class="tag-chip-hint">输入后回车或逗号添加，退格删除上一个；中英文逗号、顿号均可</div>${renderCommonTagsHtml(works, 'authorSeriesTagsBox')}</div>
