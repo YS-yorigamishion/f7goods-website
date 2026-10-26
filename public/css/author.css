@@ -971,3 +971,30 @@
   .ab-editor .ab-group-delete{padding:0 7px}
   .ab-editor .ab-group-work-item{max-width:100%}
 }
+
+/* Author approval rules */
+.awb-rules{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.awb-rules-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:11px}
+.awb-rules-head h3{font-family:'Noto Serif SC',Georgia,serif;font-size:14px;margin:0}
+.awb-rules-head p{font-size:10px;color:var(--haze);margin:2px 0 0;line-height:1.6}
+.awb-rules-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.awb-rule{position:relative;border:1px solid var(--line);border-radius:9px;padding:11px 11px 10px;background:rgba(243,238,230,.4);min-width:0}
+.awb-rule-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+.awb-rule-top b{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.awb-rule-status{font-size:9px;font-weight:700;border-radius:999px;padding:2px 7px;white-space:nowrap;flex:0 0 auto}
+.awb-rule-status.need{background:rgba(180,63,75,.1);color:var(--accent)}
+.awb-rule-status.free{background:rgba(47,130,94,.1);color:#2f825e}
+.awb-rule-status.hybrid{background:rgba(167,120,47,.1);color:#a8783f}
+.awb-rule-desc{font-size:10.5px;color:var(--haze);line-height:1.7;margin:0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.awb-rule-desc b{color:var(--muted);font-weight:500}
+.awb-rules-loading{grid-column:1/-1;font-size:10px;color:var(--haze);padding:8px 2px}
+.awb-rules-foot{display:flex;align-items:center;gap:5px;font-size:8.5px;color:var(--haze);margin-top:8px}
+.awb-rules-foot::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--green)}
+@media(max-width:1100px){.awb-rules-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+  .awb-rules{padding:12px;border-radius:12px}
+  .awb-rules-head h3{font-size:14px}.awb-rules-head p{font-size:9.5px}
+  .awb-rules-grid{grid-template-columns:1fr}
+  .awb-rule{padding:10px}.awb-rule-top b{font-size:11.5px}.awb-rule-desc{font-size:10px;-webkit-line-clamp:4}
+}
+@media(max-width:420px){.awb-rules-grid{grid-template-columns:1fr}.awb-rule-desc{font-size:10.5px}}
