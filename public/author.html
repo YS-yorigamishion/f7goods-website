@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261027b">
+  <link rel="stylesheet" href="/css/style.css?v=20261027c">
   <link rel="stylesheet" href="/css/author.css?v=20261025u">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -849,9 +849,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261027b"></script>
-  <script src="/js/i18n.js?v=20261027b"></script>
-  <script src="/js/main.js?v=20261027b"></script>
+  <script src="/js/api.js?v=20261027c"></script>
+  <script src="/js/i18n.js?v=20261027c"></script>
+  <script src="/js/main.js?v=20261027c"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -5834,25 +5834,33 @@
       if (!force && _approvalSettingsCache && Date.now() - _approvalSettingsCache.at < 15000) {
         return _approvalSettingsCache.data;
       }
-      const data = await fetch('/api/settings').then(r => r.json()).catch(() => ({}));
+      const data = await fetch('/api/settings', { cache: 'no-store' }).then(r => r.json()).catch(() => ({}));
       _approvalSettingsCache = { data, at: Date.now() };
       return data;
     }
 
     async function updateMgmtApprovalBadge(tab, force = false) {
-      const badge = document.getElementById('mgmtApprovalBadge');
-      if (!badge) return;
       const supported = ['works', 'my-series', 'my-events', 'only-booths', 'my-projects', 'my-updates'];
+      let badge = document.getElementById('mgmtApprovalBadge');
       if (!supported.includes(tab)) {
-        badge.hidden = true;
+        if (badge) badge.hidden = true;
         return;
       }
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'mgmtApprovalBadge';
+        badge.className = 'mgmt-approval-badge';
+        badge.hidden = true;
+        document.querySelector('.mgmt-header-left')?.appendChild(badge);
+      }
+      const requestTab = tab;
       let need = false;
       try {
         if (tab === 'my-series' || tab === 'only-booths') {
           need = false;
         } else {
           const settings = await getApprovalSettings(force);
+          if (_currentMgmtTab !== requestTab) return;
           const site = settings?.site || {};
           if (tab === 'works') {
             if (!authorProfile) authorProfile = await authorAPI('GET', '/api/author/profile').catch(() => null);
@@ -5882,7 +5890,7 @@
           badge.hidden = true;
         }
       } catch (e) {
-        badge.hidden = true;
+        if (badge && _currentMgmtTab === requestTab) badge.hidden = true;
       }
     }
 
@@ -5912,7 +5920,7 @@
       const titleEl = document.getElementById('mgmtTitle');
       if (titleEl) titleEl.textContent = titles[tab] || '作者管理';
       _currentMgmtTab = tab;
-      updateMgmtApprovalBadge(tab);
+      updateMgmtApprovalBadge(tab, true);
       const content = document.querySelector('.mgmt-content');
       if (content) content.scrollTop = 0;
       toggleMgmtSidebar(false);
@@ -6097,6 +6105,15 @@
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && document.getElementById('mgmtScreen')?.classList.contains('is-on')) updateMgmtApprovalBadge(_currentMgmtTab, true);
     });
+    try {
+      const approvalChannel = new BroadcastChannel('f7settings');
+      approvalChannel.onmessage = () => {
+        if (document.getElementById('mgmtScreen')?.classList.contains('is-on')) updateMgmtApprovalBadge(_currentMgmtTab, true);
+      };
+    } catch (e) {}
+    setInterval(() => {
+      if (!document.hidden && document.getElementById('mgmtScreen')?.classList.contains('is-on')) updateMgmtApprovalBadge(_currentMgmtTab, true);
+    }, 30000);
     loadLang(_lang, true).finally(() => checkAuthorAuth());
   </script>
 </body>

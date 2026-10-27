@@ -1516,13 +1516,32 @@ function showPVDetail(type) {
 }
 
 // Toggle work approval requirement
+function notifySettingsChanged() {
+  try {
+    if ('BroadcastChannel' in window) {
+      const ch = new BroadcastChannel('f7settings');
+      ch.postMessage({ type: 'settings-updated', at: Date.now() });
+      ch.close();
+    }
+  } catch (e) {}
+}
+
 async function toggleWorkApproval() {
   const checked = document.getElementById('requireWorkApproval').checked;
   const settings = await adminAPI('GET', '/api/settings') || {};
   if (!settings.site) settings.site = {};
   settings.site.requireWorkApproval = checked;
-  await adminAPI('PUT', '/api/admin/settings', settings);
-  showToast(checked ? '已开启作品审核' : '已关闭作品审核（免审核）', 'success');
+  const result = await adminAPI('PUT', '/api/admin/settings', settings);
+  if (result && result.success) {
+    currentSettings = currentSettings || {};
+    currentSettings.site = currentSettings.site || {};
+    currentSettings.site.requireWorkApproval = checked;
+    notifySettingsChanged();
+    showToast(checked ? '已开启作品审核' : '已关闭作品审核（免审核）', 'success');
+  } else {
+    document.getElementById('requireWorkApproval').checked = !checked;
+    showToast('保存审核设置失败，请重试', 'error');
+  }
 }
 
 // 活动 / 企划 / 动态：全局需审核开关（取消勾选 = 免审核直接上架）
@@ -1533,8 +1552,17 @@ async function toggleContentApproval(key, label) {
   const settings = await adminAPI('GET', '/api/settings') || {};
   if (!settings.site) settings.site = {};
   settings.site[key] = checked;
-  await adminAPI('PUT', '/api/admin/settings', settings);
-  showToast(checked ? `已开启${label}审核` : `已关闭${label}审核（免审核）`, 'success');
+  const result = await adminAPI('PUT', '/api/admin/settings', settings);
+  if (result && result.success) {
+    currentSettings = currentSettings || {};
+    currentSettings.site = currentSettings.site || {};
+    currentSettings.site[key] = checked;
+    notifySettingsChanged();
+    showToast(checked ? `已开启${label}审核` : `已关闭${label}审核（免审核）`, 'success');
+  } else {
+    el.checked = !checked;
+    showToast('保存审核设置失败，请重试', 'error');
+  }
 }
 
 // Sync work approval toggle state
@@ -1544,6 +1572,8 @@ async function syncWorkApprovalToggle() {
     const checkbox = document.getElementById('requireWorkApproval');
     if (checkbox && settings?.site) {
       checkbox.checked = settings.site.requireWorkApproval !== false;
+      currentSettings = currentSettings || {};
+      currentSettings.site = { ...(currentSettings.site || {}), ...settings.site };
     }
   } catch (e) {}
 }
@@ -1562,6 +1592,8 @@ async function syncContentApprovalToggles() {
       const el = document.getElementById(id);
       if (el) el.checked = site[key] !== false;
     });
+    currentSettings = currentSettings || {};
+    currentSettings.site = { ...(currentSettings.site || {}), ...site };
   } catch (e) {}
 }
 
@@ -6220,11 +6252,16 @@ async function saveSettings() {
   });
   pages.about.contactLinks = aboutContactLinks;
 
+  let latestSite = currentSettings?.site || {};
+  try {
+    const latest = await adminAPI('GET', '/api/settings');
+    if (latest?.site) latestSite = latest.site;
+  } catch (e) {}
   const site = {
-    ...currentSettings.site,
+    ...latestSite,
     logoText: document.getElementById('setting_site_logoText')?.value || 'F7',
     brandName: document.getElementById('setting_site_brandName')?.value || 'f7goods',
-    favicon: currentSettings.site?.favicon || ''
+    favicon: latestSite.favicon || currentSettings.site?.favicon || ''
   };
 
   // Collect footer social links
