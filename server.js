@@ -1109,6 +1109,14 @@ app.post('/api/author/login', rateLimitMiddleware, async (req, res) => {
   }
 
   const token = jwt.sign({ circleId: circle.id, role: 'author' }, JWT_SECRET, { expiresIn: '12h' });
+  try {
+    await mutateJSON('circles.json', list => {
+      const target = list.find(c => c.id === circle.id);
+      if (target) target.lastLoginAt = new Date().toISOString();
+    });
+  } catch (e) {
+    console.error('[author login lastLoginAt]', e.message);
+  }
   res.json({ token, circleId: circle.id, circleName: circle.name });
 });
 

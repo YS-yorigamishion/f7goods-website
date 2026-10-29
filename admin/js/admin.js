@@ -3986,6 +3986,16 @@ async function loadCircles(page = 1) {
   if (paginationEl) paginationEl.innerHTML = renderPagination('circles', 'loadCircles');
 }
 
+function formatAuthorLastLogin(value) {
+  if (!value) return '暂无登录记录';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '暂无登录记录';
+  return d.toLocaleString('zh-CN', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  });
+}
+
 function renderCirclesTable(circles) {
   const tbody = document.getElementById('circlesTableBody');
   if (!circles || circles.length === 0) {
@@ -4000,6 +4010,9 @@ function renderCirclesTable(circles) {
       } else if (c.authorStatus === 'disabled') {
         accountHtml = '<span style="color:var(--accent);font-weight:600;font-size:0.8rem;">已禁用</span><br><span style="font-size:0.7rem;color:var(--haze);">' + escapeHtml(c.username) + '</span>';
       }
+    }
+    if (c.username) {
+      accountHtml += `<br><span style="font-size:0.68rem;color:var(--haze);line-height:1.4;">上次登录：${escapeHtml(formatAuthorLastLogin(c.lastLoginAt))}</span>`;
     }
     const visibleState = c.visible === true ? 'show' : c.visible === false ? 'hide' : 'auto';
     const visibleLabel = visibleState === 'show' ? '👁 显示' : visibleState === 'hide' ? '👁 隐藏' : '👁 自动';
