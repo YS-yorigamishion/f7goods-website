@@ -1551,32 +1551,37 @@ if ('BroadcastChannel' in window) {
   };
 }
 
-// Do not let a browser-restored focus reveal the keyboard-only skip link on refresh.
+// Keep the keyboard-only skip link hidden unless it was reached with Tab.
 let skipLinkKeyboardIntent = false;
-let skipLinkRestoreGuard = true;
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Tab') skipLinkKeyboardIntent = true;
+  if (e.key === 'Tab') {
+    skipLinkKeyboardIntent = true;
+    const link = document.querySelector('.skip-link');
+    if (link && document.activeElement === link) link.classList.add('is-visible');
+  }
 }, true);
 document.addEventListener('pointerdown', () => {
   skipLinkKeyboardIntent = false;
 }, true);
 document.addEventListener('focusin', (e) => {
-  if (skipLinkRestoreGuard && e.target && e.target.classList && e.target.classList.contains('skip-link') && !skipLinkKeyboardIntent) {
-    setTimeout(() => { if (document.activeElement === e.target) e.target.blur(); }, 0);
+  if (!e.target || !e.target.classList || !e.target.classList.contains('skip-link')) return;
+  if (!skipLinkKeyboardIntent) {
+    e.target.classList.remove('is-visible');
+    e.target.blur();
+    return;
+  }
+  e.target.classList.add('is-visible');
+}, true);
+document.addEventListener('focusout', (e) => {
+  if (e.target && e.target.classList && e.target.classList.contains('skip-link')) {
+    e.target.classList.remove('is-visible');
   }
 }, true);
-function dismissRestoredSkipFocus() {
+function hideRestoredSkipFocus() {
   const link = document.querySelector('.skip-link');
-  if (link && document.activeElement === link && !skipLinkKeyboardIntent) link.blur();
+  if (!link) return;
+  link.classList.remove('is-visible');
+  if (document.activeElement === link && !skipLinkKeyboardIntent) link.blur();
 }
-function endSkipLinkRestoreGuard() {
-  setTimeout(() => { skipLinkRestoreGuard = false; }, 600);
-}
-window.addEventListener('pageshow', () => {
-  setTimeout(dismissRestoredSkipFocus, 60);
-  endSkipLinkRestoreGuard();
-});
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(dismissRestoredSkipFocus, 0);
-  endSkipLinkRestoreGuard();
-});
+window.addEventListener('pageshow', () => setTimeout(hideRestoredSkipFocus, 60));
+document.addEventListener('DOMContentLoaded', () => setTimeout(hideRestoredSkipFocus, 0));
