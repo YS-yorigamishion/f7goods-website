@@ -219,13 +219,23 @@ function getSeenPopups() {
 
 async function checkPopupAnnouncements() {
   try {
-    const res = await fetch('/api/announcements/popup');
+    const res = await fetch('/api/announcements/popup', { cache: 'no-store' });
     const announcements = await res.json();
     if (!announcements || announcements.length === 0) return;
     const seen = getSeenPopups();
     const unseen = announcements.filter(a => !seen.includes(a.id));
     if (unseen.length === 0) return;
-    showAnnouncementPopup(unseen[0]);
+    const byNewest = (a, b) => new Date(b.publishDate || 0) - new Date(a.publishDate || 0);
+    let next;
+    if (seen.length === 0) {
+      // 首次到访：先展示置顶公告，让新用户先看到站点说明。
+      const pinned = unseen.filter(a => a.pinned).sort(byNewest)[0];
+      next = pinned || unseen.slice().sort(byNewest)[0];
+    } else {
+      // 后续到访：只展示尚未确认过的最新公告。
+      next = unseen.slice().sort(byNewest)[0];
+    }
+    if (next) showAnnouncementPopup(next);
   } catch (e) {}
 }
 
@@ -282,11 +292,15 @@ function showImageLightbox(src) {
 }
 
 function showAnnouncementPopup(ann) {
+  var chips = [];
+  if (ann.pinned) chips.push('<span class="ann-popup-chip pin">置顶</span>');
+  if (ann.popup) chips.push('<span class="ann-popup-chip pop">弹窗公告</span>');
+  var chipsHtml = chips.length ? '<div class="ann-popup-chips">' + chips.join('') + '</div>' : '';
   var imagesHtml = '';
   if (ann.images && ann.images.length > 0) {
     imagesHtml = '<div class="ann-popup-images">' +
       ann.images.map(function(url) {
-        return '<img src="' + url + '" style="width:100%;border-radius:8px;margin-bottom:0.5rem;cursor:pointer;" onclick="showImageLightbox(this.src)">';
+        return '<img src="' + escapeHtml(imgUrl(url, 800)) + '" alt="" loading="lazy" onclick="showImageLightbox(this.src)">';
       }).join('') +
     '</div>';
   }
@@ -294,12 +308,16 @@ function showAnnouncementPopup(ann) {
   overlay.id = 'annPopupOverlay';
   overlay.className = 'ann-popup-overlay';
   overlay.innerHTML = '<div class="ann-popup" role="dialog" aria-modal="true" aria-label="' + escapeHtml(ann.title) + '">' +
-    '<button class="ann-popup-close" aria-label="关闭" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">×</button>' +
-    '<h3 class="ann-popup-title">' + escapeHtml(ann.title) + '</h3>' +
-    '<div class="ann-popup-date">' + formatDate(ann.publishDate) + '</div>' +
-    '<div class="ann-popup-content">' + nl2br(ann.content) + '</div>' +
-    imagesHtml +
-    '<button class="btn btn-primary ann-popup-btn" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">' + t('common.gotIt') + '</button>' +
+    '<div class="ann-popup-bar"><span class="ann-popup-label">公告</span>' +
+    '<button class="ann-popup-close" aria-label="关闭" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">×</button></div>' +
+    '<div class="ann-popup-scroll">' +
+      chipsHtml +
+      '<h3 class="ann-popup-title">' + escapeHtml(ann.title) + '</h3>' +
+      '<div class="ann-popup-date">' + formatDate(ann.publishDate) + '</div>' +
+      '<div class="ann-popup-content">' + nl2br(ann.content) + '</div>' +
+      imagesHtml +
+    '</div>' +
+    '<div class="ann-popup-foot"><button class="btn btn-primary ann-popup-btn" onclick="closeAnnouncementPopup(\'' + ann.id + '\')">' + t('common.gotIt') + '</button></div>' +
   '</div>';
   document.body.appendChild(overlay);
   overlay._previousFocus = document.activeElement;
@@ -309,8 +327,11 @@ function showAnnouncementPopup(ann) {
   overlay.addEventListener('click', function(e) { if (e.target === overlay) closeAnnouncementPopup(ann.id); });
   requestAnimationFrame(function() {
     overlay.classList.add('open');
-    var btn = overlay.querySelector('.ann-popup-close');
-    if (btn) btn.focus();
+    var dialog = overlay.querySelector('.ann-popup');
+    if (dialog) {
+      dialog.setAttribute('tabindex', '-1');
+      dialog.focus({ preventScroll: true });
+    }
   });
 }
 
