@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261027f">
+  <link rel="stylesheet" href="/css/style.css?v=20261027g">
   <link rel="stylesheet" href="/css/author.css?v=20261025u">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -825,16 +825,7 @@
       </div>
 
       <!-- Author Announcement Popup -->
-      <div id="aaPopupOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
-        <div style="background:var(--card-bg);border-radius:var(--radius);padding:2rem;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;position:relative;">
-          <button onclick="closeAaPopup()" style="position:absolute;top:0.8rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--haze);">&times;</button>
-          <h3 id="aaPopupTitle" style="margin-bottom:1rem;"></h3>
-          <div id="aaPopupContent" style="white-space:pre-wrap;line-height:1.8;"></div>
-          <div style="text-align:right;margin-top:1.5rem;">
-            <button class="btn btn-primary" onclick="closeAaPopup()">知道了</button>
-          </div>
-        </div>
-      </div>
+      <div id="aaPopupOverlay" class="ann-popup-overlay" aria-live="polite" onclick="if(event.target===this)closeAaPopup()"></div>
 
       <!-- History Tab -->
       <div id="tab-history" class="mgmt-section">
@@ -849,9 +840,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261027f"></script>
-  <script src="/js/i18n.js?v=20261027f"></script>
-  <script src="/js/main.js?v=20261027f"></script>
+  <script src="/js/api.js?v=20261027g"></script>
+  <script src="/js/i18n.js?v=20261027g"></script>
+  <script src="/js/main.js?v=20261027g"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -2164,69 +2155,172 @@
     }
 
     // ===== Author Announcements =====
+    let authorAnnouncementsData = [];
+    let aaCurrentAnnouncement = null;
+
+    function aaDateParts(value) {
+      const d = new Date(value || 0);
+      if (Number.isNaN(d.getTime())) {
+        return { day: '--', month: '', monthKey: 'unknown', monthLabel: '未标日期' };
+      }
+      const month = d.getMonth() + 1;
+      return {
+        day: String(d.getDate()).padStart(2, '0'),
+        month: month + ' 月',
+        monthKey: d.getFullYear() + '-' + String(month).padStart(2, '0'),
+        monthLabel: d.getFullYear() + ' 年 ' + month + ' 月'
+      };
+    }
+
+    function aaPreview(text) {
+      const s = String(text || '').replace(/\s+/g, ' ').trim();
+      return s.length > 96 ? s.slice(0, 96) + '…' : s;
+    }
+
+    function aaCardHtml(a) {
+      const dp = aaDateParts(a.sentAt);
+      const chips = [];
+      if (a.pinned) chips.push('<span class="cl-an-chip pin">置顶</span>');
+      if (!a.read) chips.push('<span class="cl-an-chip pop">未读</span>');
+      return `<button type="button" class="cl-an-note${a.pinned ? ' pinned' : ''}" data-aa-id="${escapeHtml(a.id)}">
+        <span class="cl-an-date"><span class="m">${dp.month}</span><span class="d">${dp.day}</span></span>
+        <span class="cl-an-main">
+          <span class="cl-an-chips">${chips.join('')}</span>
+          <span class="cl-an-title">${escapeHtml(a.title || '')}</span>
+          <span class="cl-an-exc">${escapeHtml(aaPreview(a.content || ''))}</span>
+          <span class="cl-an-more">${a.read ? '查看详情' : '查看并标记已读'} ›</span>
+        </span>
+        <span class="cl-an-chev">›</span>
+      </button>`;
+    }
+
     async function loadAuthorAnnouncementsList() {
       const container = document.getElementById('authorAnnouncementsContainer');
       try {
         const announcements = await authorAPI('GET', '/api/author/announcements');
-        if (!announcements || announcements.length === 0) {
-          container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无公告</p>';
+        authorAnnouncementsData = Array.isArray(announcements) ? announcements : [];
+        if (authorAnnouncementsData.length === 0) {
+          container.innerHTML = '<div class="empty-state"><p>暂无公告</p></div>';
           return;
         }
-        container.innerHTML = announcements.map(a => {
-          const time = new Date(a.sentAt).toLocaleString('zh-CN');
-          return `<div style="display:flex;gap:0.8rem;padding:0.8rem 0;border-bottom:1px solid var(--border);${!a.read ? 'background:rgba(52,152,219,0.05);' : ''}" onclick="markAaRead('${a.id}', this)">
-            <div style="width:24px;height:24px;border-radius:50%;background:${a.read ? 'var(--border)' : 'var(--info)'};color:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;">📢</div>
-            <div style="flex:1;">
-              <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.2rem;">
-                ${a.pinned ? '<span style="font-size:0.7rem;background:var(--accent);color:white;padding:0.1rem 0.3rem;border-radius:3px;margin-right:0.3rem;">置顶</span>' : ''}
-                ${escapeHtml(a.title)}
-              </div>
-              <div style="font-size:0.8rem;color:var(--haze);margin-bottom:0.3rem;white-space:pre-wrap;${a.read ? '' : 'cursor:pointer;'}" onclick="event.stopPropagation();openAaPopup('${escapeHtml(a.title).replace(/'/g, "\\'")}', \`${escapeHtml(a.content).replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">${escapeHtml(a.content).substring(0, 80)}${a.content.length > 80 ? '... <span style="color:var(--info);">点击展开</span>' : ''}</div>
-              <div style="font-size:0.75rem;color:var(--haze);">${time}</div>
-            </div>
-          </div>`;
-        }).join('');
+        const pinned = authorAnnouncementsData.filter(a => a.pinned);
+        const rest = authorAnnouncementsData.filter(a => !a.pinned);
+        let html = '';
+        if (pinned.length) {
+          html += '<div class="cl-an-month">置顶公告</div>';
+          html += pinned.map(aaCardHtml).join('');
+        }
+        let lastMonth = null;
+        if (rest.length) {
+          rest.forEach(a => {
+            const dp = aaDateParts(a.sentAt);
+            if (dp.monthKey !== lastMonth) {
+              html += `<div class="cl-an-month">${dp.monthLabel}</div>`;
+              lastMonth = dp.monthKey;
+            }
+            html += aaCardHtml(a);
+          });
+        }
+        container.innerHTML = html;
+        container.querySelectorAll('[data-aa-id]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const a = authorAnnouncementsData.find(x => x.id === btn.dataset.aaId);
+            if (a) openAaPopup(a);
+          });
+        });
       } catch (e) {
-        container.innerHTML = '<p style="color:var(--haze);text-align:center;padding:2rem;">暂无公告</p>';
+        container.innerHTML = '<div class="empty-state"><p>暂无公告</p></div>';
       }
     }
 
-    async function markAaRead(id, el) {
-      await authorAPI('PUT', `/api/author/announcements/${id}/read`);
-      if (el) el.style.background = '';
+    async function markAaRead(id) {
+      try { await authorAPI('PUT', `/api/author/announcements/${id}/read`); } catch (e) {}
+      const item = authorAnnouncementsData.find(a => a.id === id);
+      if (item) item.read = true;
+      const section = document.getElementById('tab-author-announcements');
+      if (section && section.classList.contains('active')) loadAuthorAnnouncementsList();
     }
 
-    function openAaPopup(title, content) {
-      document.getElementById('aaPopupTitle').textContent = title;
-      document.getElementById('aaPopupContent').textContent = content;
-      document.getElementById('aaPopupOverlay').style.display = 'flex';
+    function aaShownKey() {
+      const scope = localStorage.getItem('f7author_actAs') || authorCircleId || 'me';
+      return 'f7aaShown:' + scope;
+    }
+
+    function rememberAaShown(id) {
+      if (!id) return;
+      let shown = [];
+      try { shown = JSON.parse(localStorage.getItem(aaShownKey()) || '[]') || []; } catch { shown = []; }
+      if (!Array.isArray(shown)) shown = [];
+      if (!shown.includes(id)) shown.push(id);
+      localStorage.setItem(aaShownKey(), JSON.stringify(shown.slice(-100)));
+    }
+
+    function openAaPopup(ann) {
+      if (!ann) return;
+      aaCurrentAnnouncement = ann;
+      const overlay = document.getElementById('aaPopupOverlay');
+      const dp = aaDateParts(ann.sentAt);
+      const chips = [];
+      if (ann.pinned) chips.push('<span class="ann-popup-chip pin">置顶</span>');
+      if (!ann.read) chips.push('<span class="ann-popup-chip pop">未读</span>');
+      overlay.innerHTML = `<div class="ann-popup" role="dialog" aria-modal="true" aria-label="${escapeHtml(ann.title || '')}" tabindex="-1">
+        <div class="ann-popup-bar">
+          <span class="ann-popup-label">管理公告</span>
+          <button class="ann-popup-close" aria-label="关闭" onclick="closeAaPopup()">×</button>
+        </div>
+        <div class="ann-popup-scroll">
+          ${chips.length ? `<div class="ann-popup-chips">${chips.join('')}</div>` : ''}
+          <h3 class="ann-popup-title">${escapeHtml(ann.title || '')}</h3>
+          <div class="ann-popup-date">${escapeHtml(dp.monthLabel)}${dp.day !== '--' ? ' · ' + dp.day + ' 日' : ''}</div>
+          <div class="ann-popup-content">${nl2br(ann.content || '')}</div>
+        </div>
+        <div class="ann-popup-foot"><button class="btn btn-primary ann-popup-btn" onclick="closeAaPopup()">知道了</button></div>
+      </div>`;
+      overlay.classList.add('open');
+      requestAnimationFrame(() => {
+        const dialog = overlay.querySelector('.ann-popup');
+        if (dialog) dialog.focus({ preventScroll: true });
+      });
     }
 
     function closeAaPopup() {
-      document.getElementById('aaPopupOverlay').style.display = 'none';
+      const overlay = document.getElementById('aaPopupOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('open');
+      const ann = aaCurrentAnnouncement;
+      aaCurrentAnnouncement = null;
+      if (ann) {
+        rememberAaShown(ann.id);
+        markAaRead(ann.id);
+      }
+      setTimeout(() => {
+        if (!overlay.classList.contains('open')) overlay.innerHTML = '';
+      }, 220);
     }
 
     // Check for popup announcements on page load
     async function checkAaPopup() {
-      const scope = localStorage.getItem('f7author_actAs') || authorCircleId || 'me';
-      const storeKey = 'f7aaShown:' + scope;
       let shown = [];
-      try { shown = JSON.parse(localStorage.getItem(storeKey) || '[]') || []; } catch { shown = []; }
+      try { shown = JSON.parse(localStorage.getItem(aaShownKey()) || '[]') || []; } catch { shown = []; }
       if (!Array.isArray(shown)) shown = [];
-
       try {
         const announcements = await authorAPI('GET', '/api/author/announcements/popup');
         if (!announcements || announcements.length === 0) return;
         const fresh = announcements.filter(a => a && a.id && !shown.includes(a.id));
         if (fresh.length === 0) return;
-        openAaPopup(fresh[0].title, fresh[0].content);
-        for (const a of fresh) {
-          if (!shown.includes(a.id)) shown.push(a.id);
-          try { await authorAPI('PUT', `/api/author/announcements/${a.id}/read`); } catch (e) {}
-        }
-        localStorage.setItem(storeKey, JSON.stringify(shown.slice(-100)));
+        const next = shown.length === 0
+          ? (fresh.find(a => a.pinned) || fresh[0])
+          : fresh[0];
+        openAaPopup(next);
       } catch (e) {}
     }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('aaPopupOverlay')?.classList.contains('open')) {
+        e.preventDefault();
+        closeAaPopup();
+      }
+    });
 
     // Load author history
     let authorHistoryData = [];
