@@ -1550,3 +1550,33 @@ if ('BroadcastChannel' in window) {
     if (footer && typeof buildFooter === 'function') footer.innerHTML = buildFooter();
   };
 }
+
+// Do not let a browser-restored focus reveal the keyboard-only skip link on refresh.
+let skipLinkKeyboardIntent = false;
+let skipLinkRestoreGuard = true;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') skipLinkKeyboardIntent = true;
+}, true);
+document.addEventListener('pointerdown', () => {
+  skipLinkKeyboardIntent = false;
+}, true);
+document.addEventListener('focusin', (e) => {
+  if (skipLinkRestoreGuard && e.target && e.target.classList && e.target.classList.contains('skip-link') && !skipLinkKeyboardIntent) {
+    setTimeout(() => { if (document.activeElement === e.target) e.target.blur(); }, 0);
+  }
+}, true);
+function dismissRestoredSkipFocus() {
+  const link = document.querySelector('.skip-link');
+  if (link && document.activeElement === link && !skipLinkKeyboardIntent) link.blur();
+}
+function endSkipLinkRestoreGuard() {
+  setTimeout(() => { skipLinkRestoreGuard = false; }, 600);
+}
+window.addEventListener('pageshow', () => {
+  setTimeout(dismissRestoredSkipFocus, 60);
+  endSkipLinkRestoreGuard();
+});
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(dismissRestoredSkipFocus, 0);
+  endSkipLinkRestoreGuard();
+});
