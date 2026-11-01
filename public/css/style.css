@@ -5664,6 +5664,12 @@ body{font-size:16px}
 @media(max-width:600px){.cp-bio{font-size:11px;-webkit-line-clamp:3}.cp-author-card{padding:14px}.cp-author-head h3{font-size:13px}.cp-author-bio{font-size:10.5px}.cp-author-row{font-size:9.5px}.cp-author-row>span{width:46px}}
 
 @media(max-width:900px){.cp-home .cp-side{order:-1}}
+.cp-mobile-home-info{display:none}
+@media(max-width:900px){
+  .cp-home .cp-side{order:-1;grid-template-columns:1fr}
+  .cp-side .cp-info-card{display:none!important}
+  .cp-mobile-home-info{display:block!important;margin-top:12px}
+}
 @media(max-width:600px){
   .cp-actions{display:flex;width:100%;padding:8px 0 0;justify-content:flex-end}
   .cp-actions .follow-btn,.cp-actions .want-btn{height:32px;min-height:32px;padding:0 14px;font-size:11px}
