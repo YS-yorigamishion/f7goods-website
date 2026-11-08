@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261108a">
+  <link rel="stylesheet" href="/css/style.css?v=20261108b">
   <link rel="stylesheet" href="/css/author.css?v=20261025u">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -357,7 +357,7 @@
               </div>
               <div class="form-row">
                 <div class="form-group"><label>作者名称</label><input class="form-input" id="pName"></div>
-                <div class="form-group"><label>分类</label><select class="form-input" id="pCategory"><option value="">未分类</option></select></div>
+                <div class="form-group"><label>分类</label><select class="form-input" id="pCategory" onchange="updateProfileMemberSection()"><option value="">未分类</option></select></div>
               </div>
               <div class="form-group"><label>作者简介</label><textarea class="form-input" id="pDesc" style="min-height:86px;"></textarea><div class="tag-chip-hint">会显示在主页首屏和作者名片中，建议 40–120 字。</div></div>
               <div class="form-group">
@@ -368,6 +368,16 @@
                   <button type="button" class="btn-sm" onclick="document.getElementById('pCardCoverPreview').innerHTML='';updateProfilePreview();">清除（自动回退）</button>
                 </div>
                 <div class="tag-chip-hint">未设置时按作者图、第一件作品图、头像依次回退。</div>
+              </div>
+            </section>
+
+            <section class="aps-card" id="profile-members" style="display:none;">
+              <div class="aps-card-head"><h4>社团成员 <span>MEMBERS</span></h4><p>分类为「社团」时，可以关联其他作者并显示在社团主页</p></div>
+              <div class="form-group">
+                <label>选择社团成员</label>
+                <input type="search" class="form-input" placeholder="搜索作者名称…" style="margin-bottom:0.4rem;" oninput="filterAuthorPickList(this,'pMemberPickList')">
+                <div id="pMemberPickList" class="ae-pick-box" style="max-height:220px;overflow:auto;">加载中...</div>
+                <div class="tag-chip-hint">勾选后会显示在个人主页的「社团成员」区域；取消勾选即可移除。</div>
               </div>
             </section>
 
@@ -840,9 +850,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261108a"></script>
-  <script src="/js/i18n.js?v=20261108a"></script>
-  <script src="/js/main.js?v=20261108a"></script>
+  <script src="/js/api.js?v=20261108b"></script>
+  <script src="/js/i18n.js?v=20261108b"></script>
+  <script src="/js/main.js?v=20261108b"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -1407,6 +1417,34 @@
       return res.json();
     }
 
+    function updateProfileMemberSection() {
+      const section = document.getElementById('profile-members');
+      const catSelect = document.getElementById('pCategory');
+      if (!section || !catSelect) return;
+      const visible = catSelect.value === 'shetuan';
+      section.style.display = visible ? '' : 'none';
+      if (visible) loadProfileMemberOptions();
+    }
+
+    async function loadProfileMemberOptions() {
+      const box = document.getElementById('pMemberPickList');
+      if (!box) return;
+      box.dataset.loaded = '';
+      box.innerHTML = '<p style="color:var(--haze);font-size:0.85rem;padding:0.5rem;">加载中...</p>';
+      let circles = [];
+      try {
+        circles = await authorAPI('GET', '/api/author/member-candidates') || [];
+      } catch (e) {}
+      if (!Array.isArray(circles) || circles.length === 0) circles = await loadCirclesForPick();
+      if (!Array.isArray(circles)) {
+        box.innerHTML = '<p style="color:var(--haze);font-size:0.85rem;padding:0.5rem;">作者列表加载失败，保存时会保留原有成员。</p>';
+        return;
+      }
+      const selected = new Set((authorProfile?.memberIds || []).map(String));
+      box.innerHTML = renderCirclePickList(circles, selected, 'p-member-cb', 'pMemberPickList');
+      box.dataset.loaded = '1';
+    }
+
     // Load profile
     async function loadAuthorProfile() {
       authorProfile = await authorAPI('GET', '/api/author/profile');
@@ -1432,6 +1470,7 @@
       Object.entries(CIRCLE_CATEGORIES).forEach(([k, v]) => {
         catSelect.innerHTML += '<option value="' + k + '"' + (authorProfile.category === k ? ' selected' : '') + '>' + v + '</option>';
       });
+      updateProfileMemberSection();
 
       const sl = authorProfile.socialLinks || {};
       document.getElementById('pContactType').value = sl.qqGroup ? 'qqGroup' : 'qq';
@@ -1522,17 +1561,25 @@
         websiteLabel: document.getElementById('pWebsiteLabel').value
       };
       if (contactType && contactValue) socialLinks[contactType] = contactValue;
+      const category = document.getElementById('pCategory').value;
+      const memberBox = document.getElementById('pMemberPickList');
+      const memberIds = category === 'shetuan'
+        ? (memberBox && memberBox.dataset.loaded === '1'
+          ? [...memberBox.querySelectorAll('.p-member-cb:checked')].map(cb => cb.value)
+          : (authorProfile?.memberIds || []))
+        : [];
 
       const data = {
         name: document.getElementById('pName').value,
-        category: document.getElementById('pCategory').value,
+        category,
         description: document.getElementById('pDesc').value,
         socialLinks,
         platforms: document.getElementById('pPlatforms').value.split(/[,，、;；]+/).map(p => p.trim()).filter(Boolean),
         commissionStatus: document.getElementById('pCommissionStatus').value === 'open' ? 'open' : 'closed',
         commissionNote: document.getElementById('pCommissionNote').value,
         logo: document.querySelector('#pLogoPreview img')?.src || '',
-        cardCover: document.querySelector('#pCardCoverPreview img')?.src || ''
+        cardCover: document.querySelector('#pCardCoverPreview img')?.src || '',
+        memberIds
       };
 
       const result = await authorAPI('PUT', '/api/author/profile', data);

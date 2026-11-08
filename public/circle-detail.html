@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261108a">
+  <link rel="stylesheet" href="/css/style.css?v=20261108b">
 </head>
 <body>
   <nav class="navbar" id="navbar"></nav>
@@ -45,9 +45,9 @@
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="/js/api.js?v=20261108a"></script>
-  <script src="/js/i18n.js?v=20261108a"></script>
-  <script src="/js/main.js?v=20261108a"></script>
+  <script src="/js/api.js?v=20261108b"></script>
+  <script src="/js/i18n.js?v=20261108b"></script>
+  <script src="/js/main.js?v=20261108b"></script>
   <script>
     let circleWorksData = [];
     let cwCategory = 'all';
@@ -125,13 +125,14 @@
 
       try {
         await loadCategoriesFromAPI();
-        const [circle, circleWorks, relatedEvents, allProjects, allUpdates, authorSeries] = await Promise.all([
+        const [circle, circleWorks, relatedEvents, allProjects, allUpdates, authorSeries, allCircles] = await Promise.all([
           F7API.getCircle(id),
           F7API.getWorks({ circleId: id }),
           F7API.getEvents({ circleId: id }),
           F7API.getProjects(),
           fetch('/api/updates').then(r => r.json()),
-          fetch('/api/series?circleId=' + encodeURIComponent(id)).then(r => r.json()).catch(() => [])
+          fetch('/api/series?circleId=' + encodeURIComponent(id)).then(r => r.json()).catch(() => []),
+          F7API.getCircles()
         ]);
         circleWorksData = circleWorks || [];
         const circleWorkIds = circleWorksData.map(w => w.id);
@@ -312,7 +313,13 @@
           </div>
         `;
         renderCircleWorks();
-        setupCircleTabs(container, circle, circleWorks, relatedEvents, relatedProjects, relatedUpdates, authorSeries);
+        const memberIdsForPage = circle.category === 'shetuan' && Array.isArray(circle.memberIds)
+          ? circle.memberIds.map(String)
+          : [];
+        const memberProfiles = await Promise.all(memberIdsForPage.map(mid =>
+          F7API.getCircle(mid).catch(() => null)
+        ));
+        setupCircleTabs(container, circle, circleWorks, relatedEvents, relatedProjects, relatedUpdates, authorSeries, allCircles, memberProfiles);
         if (typeof applyTranslations === 'function') applyTranslations();
       } catch (e) {
         document.getElementById('circleDetail').innerHTML =
@@ -320,7 +327,7 @@
       }
     }
 
-    function setupCircleTabs(container, circle, works, events, projects, updates = [], series = []) {
+    function setupCircleTabs(container, circle, works, events, projects, updates = [], series = [], allCircles = [], memberProfiles = []) {
       const detail = container.querySelector('.detail-content');
       if (!detail) return;
       const main = detail.querySelector('.detail-main');
@@ -388,6 +395,22 @@
           <div><b>${escapeHtml(u.title)}</b><small>${formatDate(u.publishDate)}</small></div>
           <span class="cp-update-more">→</span>
         </a>`).join('');
+      const memberIds = circle.category === 'shetuan' && Array.isArray(circle.memberIds)
+        ? circle.memberIds.map(String)
+        : [];
+      const memberCircles = memberIds
+        .map(mid => (memberProfiles || []).find(c => c && String(c.id) === mid) || (allCircles || []).find(c => String(c.id) === mid))
+        .filter(Boolean);
+      const membersHtml = memberCircles.map(member => {
+        const memberCat = member.category ? (CIRCLE_CATEGORIES[member.category] || '') : '';
+        return `<a class="cp-member" href="/circle-detail.html?id=${encodeURIComponent(member.id)}">
+          <span class="cp-member-avatar">${member.logo ? `<img src="${escapeHtml(imgUrl(member.logo, 120))}" alt="${escapeHtml(member.name || '')}" loading="lazy">` : escapeHtml((member.name || '?').charAt(0))}</span>
+          <span class="cp-member-body"><b>${escapeHtml(member.name || '')}</b><span>${escapeHtml(memberCat || '社团成员')}</span></span>
+        </a>`;
+      }).join('');
+      const membersSection = membersHtml
+        ? `<section class="cp-section cp-members-section"><div class="cp-section-head"><div><h3>社团成员</h3><p>社团主页的成员作者</p></div><span>${memberCircles.length} 位成员</span></div><div class="cp-members-grid">${membersHtml}</div></section>`
+        : '';
       const featuredSection = featuredHtml && circle.showFeaturedWorks !== false
         ? `<section class="cp-section"><div class="cp-section-head"><div><h3>精选作品</h3><p>作者选择在主页优先展示的作品</p></div><a href="#works">全部 ${works.length} 件 →</a></div><div class="cp-feature-grid ${featuredWorks.length === 1 ? 'single' : ''}">${featuredHtml}</div></section>`
         : '';
@@ -402,7 +425,7 @@
       homeLayout.className = 'cp-layout';
       const homeMain = document.createElement('div');
       homeMain.className = 'cp-main';
-      homeMain.innerHTML = featuredSection + seriesSection + updateSection;
+      homeMain.innerHTML = membersSection + featuredSection + seriesSection + updateSection;
       const homeSide = document.createElement('aside');
       homeSide.className = 'cp-side';
       const platformList = (Array.isArray(circle.platforms) ? circle.platforms : []).filter(Boolean).slice(0, 8);

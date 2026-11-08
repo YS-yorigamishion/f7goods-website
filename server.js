@@ -1130,6 +1130,17 @@ app.get('/api/author/profile', authorAuthMiddleware, (req, res) => {
   res.json(safe);
 });
 
+// Get other author profiles that a group can add as members.
+app.get('/api/author/member-candidates', authorAuthMiddleware, (req, res) => {
+  const circles = readJSON('circles.json');
+  const currentId = req.author.circleId;
+  const candidates = circles
+    .filter(c => c.id !== currentId && c.authorStatus !== 'disabled')
+    .map(c => ({ id: c.id, name: c.name || '', logo: c.logo || '', category: c.category || '' }))
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh'));
+  res.json(candidates);
+});
+
 // Get accessible author accounts
 app.get('/api/author/accessible-accounts', authorAuthMiddleware, (req, res) => {
   const circles = readJSON('circles.json');
@@ -1173,11 +1184,22 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
   const old = { ...circles[index] };
 
   // Only allow updating specific fields
-  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'platforms', 'commissionStatus', 'commissionNote', 'featuredWorkIds', 'showFeaturedWorks', 'seriesDisplayLimit', 'featuredSeriesIds'];
+  const allowed = ['name', 'description', 'category', 'logo', 'cardCover', 'images', 'socialLinks', 'platforms', 'commissionStatus', 'commissionNote', 'featuredWorkIds', 'showFeaturedWorks', 'seriesDisplayLimit', 'featuredSeriesIds', 'memberIds'];
   const updates = {};
   allowed.forEach(field => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
+  // A profile can only keep members while it is a 社团; validate against existing circles.
+  if (updates.category !== undefined || updates.memberIds !== undefined) {
+    const finalCategory = updates.category !== undefined ? updates.category : circles[index].category;
+    if (finalCategory !== 'shetuan') {
+      updates.memberIds = [];
+    } else {
+      const validMemberIds = new Set(circles.filter(c => c.id !== circles[index].id).map(c => String(c.id)));
+      const rawMembers = updates.memberIds !== undefined ? updates.memberIds : (circles[index].memberIds || []);
+      updates.memberIds = [...new Set((Array.isArray(rawMembers) ? rawMembers : []).map(String).filter(id => validMemberIds.has(id)))].slice(0, 50);
+    }
+  }
   if (updates.showFeaturedWorks !== undefined) updates.showFeaturedWorks = updates.showFeaturedWorks === true;
   if (updates.platforms !== undefined) {
     const raw = Array.isArray(updates.platforms) ? updates.platforms : String(updates.platforms || '').split(/[,，、;；]+/);
@@ -1217,6 +1239,7 @@ app.put('/api/author/profile', authorAuthMiddleware, async (req, res) => {
     else if (newCount < oldCount) changes.push('删除了' + (oldCount - newCount) + '张图片');
   }
   if (updates.category && updates.category !== old.category) changes.push('修改了分类');
+  if (updates.memberIds !== undefined) changes.push(updates.memberIds.length ? `更新了社团成员（${updates.memberIds.length} 人）` : '清空了社团成员');
   if (updates.featuredWorkIds !== undefined) changes.push('更新了首页展示作品');
   if (updates.showFeaturedWorks !== undefined) changes.push(updates.showFeaturedWorks ? '开启首页展示作品' : '关闭首页展示作品');
   if (updates.featuredSeriesIds !== undefined) changes.push('更新了作品系列展示');
