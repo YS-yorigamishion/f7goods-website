@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261027j">
+  <link rel="stylesheet" href="/css/style.css?v=20261108a">
   <link rel="stylesheet" href="/css/author.css?v=20261025u">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -840,9 +840,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261027j"></script>
-  <script src="/js/i18n.js?v=20261027j"></script>
-  <script src="/js/main.js?v=20261027j"></script>
+  <script src="/js/api.js?v=20261108a"></script>
+  <script src="/js/i18n.js?v=20261108a"></script>
+  <script src="/js/main.js?v=20261108a"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -1411,6 +1411,7 @@
     async function loadAuthorProfile() {
       authorProfile = await authorAPI('GET', '/api/author/profile');
       if (!authorProfile) return;
+      if (typeof cacheAuthorNavProfile === 'function') cacheAuthorNavProfile(authorProfile);
 
       // Title is managed by switchMgmtTab; keep name in account chrome
       renderAccountChrome();
@@ -1537,6 +1538,7 @@
       const result = await authorAPI('PUT', '/api/author/profile', data);
       if (result) {
         authorProfile = result;
+        if (typeof cacheAuthorNavProfile === 'function') cacheAuthorNavProfile(result);
         const actAs = localStorage.getItem('f7author_actAs');
         const currentId = actAs || authorCircleId;
         const acc = accessibleAccounts.find(a => a.id === currentId);
@@ -6037,6 +6039,7 @@
       localStorage.removeItem('f7author_token');
       localStorage.removeItem('f7author_circleId');
       localStorage.removeItem('f7author_actAs');
+      localStorage.removeItem('f7author_nav_profile');
       const screen = document.getElementById('mgmtScreen');
       screen.classList.remove('is-on');
       screen.style.display = 'none';

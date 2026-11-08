@@ -351,6 +351,87 @@ function closeAnnouncementPopup(id) {
 }
 
 // Build app shell (rail + topbar + mobile tabbar)
+const AUTHOR_NAV_PROFILE_KEY = 'f7author_nav_profile';
+
+function getAuthorNavProfile() {
+  try {
+    const profile = JSON.parse(localStorage.getItem(AUTHOR_NAV_PROFILE_KEY) || 'null');
+    return profile && typeof profile === 'object' ? profile : null;
+  } catch { return null; }
+}
+
+function getAuthorNavScope() {
+  try {
+    return localStorage.getItem('f7author_actAs') || localStorage.getItem('f7author_circleId') || '';
+  } catch { return ''; }
+}
+
+function authorLoginNavHtml() {
+  return `<a href="/author.html" class="nav-author-btn" id="navAuthorEntry">${t('common.authorLogin')}</a>`;
+}
+
+function authorNavEntryHtml() {
+  let token = '';
+  try { token = localStorage.getItem('f7author_token') || ''; } catch {}
+  if (!token) return authorLoginNavHtml();
+  const scope = getAuthorNavScope();
+  let profile = getAuthorNavProfile();
+  if (profile && profile.id && scope && String(profile.id) !== String(scope)) profile = null;
+  const name = profile?.name || '作者';
+  const initial = (name.trim().charAt(0) || '作');
+  const logo = profile?.logo ? imgUrl(profile.logo, 80) : '';
+  return `<a href="/author.html" class="nav-author-avatar" id="navAuthorEntry" title="作者后台" aria-label="作者后台 · ${escapeHtml(name)}">${logo ? `<img src="${escapeHtml(logo)}" alt="${escapeHtml(name)}" loading="lazy">` : `<span class="nav-author-fallback">${escapeHtml(initial)}</span>`}</a>`;
+}
+
+function cacheAuthorNavProfile(profile) {
+  if (!profile) return;
+  try {
+    const scope = localStorage.getItem('f7author_actAs') || profile.id || localStorage.getItem('f7author_circleId') || '';
+    const value = JSON.stringify({
+      id: scope,
+      name: profile.name || '作者',
+      logo: profile.logo || ''
+    });
+    if (localStorage.getItem(AUTHOR_NAV_PROFILE_KEY) !== value) {
+      localStorage.setItem(AUTHOR_NAV_PROFILE_KEY, value);
+    }
+  } catch {}
+}
+
+async function hydrateNavAuthor() {
+  const entry = document.getElementById('navAuthorEntry');
+  if (!entry) return;
+  let token = '';
+  try { token = localStorage.getItem('f7author_token') || ''; } catch {}
+  if (!token) {
+    if (entry.classList.contains('nav-author-avatar')) entry.outerHTML = authorLoginNavHtml();
+    return;
+  }
+  if (!entry.classList.contains('nav-author-avatar')) entry.outerHTML = authorNavEntryHtml();
+  const actAs = (() => { try { return localStorage.getItem('f7author_actAs') || ''; } catch { return ''; } })();
+  const headers = { Authorization: 'Bearer ' + token };
+  if (actAs) headers['X-Act-As'] = actAs;
+  try {
+    const res = await fetch('/api/author/profile', { headers, cache: 'no-store' });
+    if (res.status === 401 || res.status === 403) {
+      try {
+        localStorage.removeItem('f7author_token');
+        localStorage.removeItem('f7author_circleId');
+        localStorage.removeItem('f7author_actAs');
+        localStorage.removeItem(AUTHOR_NAV_PROFILE_KEY);
+      } catch {}
+      const current = document.getElementById('navAuthorEntry');
+      if (current) current.outerHTML = authorLoginNavHtml();
+      return;
+    }
+    if (!res.ok) return;
+    const profile = await res.json();
+    cacheAuthorNavProfile(profile);
+    const current = document.getElementById('navAuthorEntry');
+    if (current) current.outerHTML = authorNavEntryHtml();
+  } catch {}
+}
+
 function buildNavbar(activePage) {
   const site = getSiteSettings();
   const logoText = site.logoText || '';
@@ -414,7 +495,7 @@ function buildNavbar(activePage) {
           <button class="lang-current" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="Language">${currentLangName}</button>
           <div class="lang-dropdown">${langOptions}</div>
         </div>
-        <a href="/author.html" class="nav-author-btn">${t('common.authorLogin')}</a>
+        ${authorNavEntryHtml()}
       </div>
     </header>
     <nav class="app-tabbar" aria-label="底部导航">${tabBtns}</nav>
@@ -495,6 +576,7 @@ async function initPage(activePage, itemId) {
       navbar.dataset.activePage = activePage;
       navbar.className = 'app-shell';
       navbar.innerHTML = buildNavbar(activePage);
+      hydrateNavAuthor();
     const mainEl = document.querySelector('main');
     if (mainEl && !mainEl.id) mainEl.id = 'mainContent';
       // Close lang dropdown when clicking outside
@@ -1546,14 +1628,34 @@ if ('BroadcastChannel' in window) {
     if (typeof _applyPageSettingsText === 'function') _applyPageSettingsText();
     const navbar = document.getElementById('navbar');
     if (navbar && typeof buildNavbar === 'function') navbar.innerHTML = buildNavbar(navbar.dataset.activePage);
+    hydrateNavAuthor();
     const footer = document.getElementById('footer');
     if (footer && typeof buildFooter === 'function') footer.innerHTML = buildFooter();
   };
 }
 
+// Refresh the top-right author entry when login state changes in another tab,
+// or when returning to a cached page after logging in/out.
+function refreshAuthorNav() {
+  const navbar = document.getElementById('navbar');
+  if (!navbar || !navbar.classList.contains('app-shell')) return;
+  navbar.innerHTML = buildNavbar(navbar.dataset.activePage);
+  hydrateNavAuthor();
+}
+window.addEventListener('storage', (e) => {
+  if (['f7author_token', 'f7author_circleId', 'f7author_actAs', AUTHOR_NAV_PROFILE_KEY].includes(e.key)) {
+    refreshAuthorNav();
+  }
+});
+window.addEventListener('pageshow', () => {
+  let token = '';
+  try { token = localStorage.getItem('f7author_token') || ''; } catch {}
+  const hasAvatar = !!document.querySelector('.nav-author-avatar');
+  if ((!!token) !== hasAvatar) refreshAuthorNav();
+});
+
 // Keep the keyboard-only skip link hidden unless it was reached with Tab.
-let skipLinkKeyboardIntent = false;
-document.addEventListener('keydown', (e) => {
+let skipLinkKeyboardIntent = false;document.addEventListener('keydown', (e) => {
   if (e.key === 'Tab') {
     skipLinkKeyboardIntent = true;
     const link = document.querySelector('.skip-link');
