@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261108b">
+  <link rel="stylesheet" href="/css/style.css?v=20261108c">
   <link rel="stylesheet" href="/css/author.css?v=20261025u">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -850,9 +850,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261108b"></script>
-  <script src="/js/i18n.js?v=20261108b"></script>
-  <script src="/js/main.js?v=20261108b"></script>
+  <script src="/js/api.js?v=20261108c"></script>
+  <script src="/js/i18n.js?v=20261108c"></script>
+  <script src="/js/main.js?v=20261108c"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -1442,6 +1442,9 @@
       }
       const selected = new Set((authorProfile?.memberIds || []).map(String));
       box.innerHTML = renderCirclePickList(circles, selected, 'p-member-cb', 'pMemberPickList');
+      const selfId = (typeof activeCircleId === 'function' ? activeCircleId() : '') || authorCircleId;
+      const selfBox = [...box.querySelectorAll('.p-member-cb')].find(cb => cb.value === selfId);
+      if (selfBox) selfBox.checked = false;
       box.dataset.loaded = '1';
     }
 
