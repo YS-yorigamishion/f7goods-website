@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261108c">
+  <link rel="stylesheet" href="/css/style.css?v=20261108d">
   <link rel="stylesheet" href="/css/author.css?v=20261025u">
   <style>
     /* ONLY 摊位编辑：分段卡片 */
@@ -850,9 +850,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261108c"></script>
-  <script src="/js/i18n.js?v=20261108c"></script>
-  <script src="/js/main.js?v=20261108c"></script>
+  <script src="/js/api.js?v=20261108d"></script>
+  <script src="/js/i18n.js?v=20261108d"></script>
+  <script src="/js/main.js?v=20261108d"></script>
   <script>
     // Apply theme immediately
     if (typeof applyTheme === 'function') applyTheme();
@@ -4237,7 +4237,7 @@
               <section class="ab-panel on" data-ab-panel="basic">
                 <div class="ab-panel-head"><div><h4>基本信息 <span>BASIC INFO</span></h4><p>访客在 ONLY 摊位页首先看到的内容</p></div></div>
                 <div class="form-row">
-                  ${canFullEdit ? `<div class="form-group"><label>摊位号 <span style="color:var(--accent)">*</span></label><input class="form-input" id="abCode" value="${isEdit ? escapeHtml(booth.code || '') : ''}" placeholder="如 A1"></div>` : `<div class="form-group"><label>摊位号</label><input class="form-input" value="${isEdit ? escapeHtml(booth.code || '') : ''}" disabled></div>`}
+                  <div class="form-group"><label>摊位号 <span style="color:var(--accent)">*</span></label><input class="form-input" id="abCode" value="${isEdit ? escapeHtml(booth.code || '') : ''}" placeholder="如 A1"></div>
                   <div class="form-group"><label>显示名</label><input class="form-input" id="abTitle" value="${isEdit ? escapeHtml(booth.title || '') : ''}" placeholder="如 主摊 / 特典区"></div>
                 </div>
                 <div class="ab-logo-row">
@@ -4536,13 +4536,14 @@
         claimConditions[workId] = ta?.value.trim() || '';
       });
       payload.claimConditions = claimConditions;
+      const boothCode = document.getElementById('abCode')?.value.trim() || '';
+      if (!boothCode) {
+        showToast('请填写摊位号', 'error');
+        return;
+      }
+      payload.code = boothCode;
       if (canFullEdit) {
-        payload.code = document.getElementById('abCode')?.value.trim() || '';
         payload.circleIds = [...document.querySelectorAll('.ab-circle:checked')].map(i => i.value);
-        if (!boothId && !payload.code) {
-          showToast('请填写摊位号', 'error');
-          return;
-        }
       }
 
       let result;

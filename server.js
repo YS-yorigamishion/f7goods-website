@@ -2657,6 +2657,10 @@ function findOnlyEventForAuthor(eventId, circleId) {
   return { events, index, event: events[index], canManageAll: isEventBoothAdmin(events[index], circleId) };
 }
 
+function normalizeBoothCode(value) {
+  return String(value || '').trim().slice(0, 40);
+}
+
 // Event admin: create booth
 app.post('/api/author/only-booths/:eventId', authorAuthMiddleware, async (req, res) => {
   const pack = findOnlyEventForAuthor(req.params.eventId, req.author.circleId);
@@ -2666,7 +2670,7 @@ app.post('/api/author/only-booths/:eventId', authorAuthMiddleware, async (req, r
   const booths = Array.isArray(pack.event.booths) ? pack.event.booths : [];
   const booth = {
     id: 'b' + Date.now() + Math.random().toString(36).slice(2, 6),
-    code: String(req.body.code || '').trim(),
+    code: normalizeBoothCode(req.body.code),
     title: String(req.body.title || '').trim(),
     logo: String(req.body.logo || ''),
     description: String(req.body.description || ''),
@@ -2680,6 +2684,8 @@ app.post('/api/author/only-booths/:eventId', authorAuthMiddleware, async (req, r
     promoTiers: sanitizePromoTiers(req.body.promoTiers)
   };
   if (!booth.code) return res.status(400).json({ error: '请填写摊位号' });
+  const duplicate = booths.some(b => normalizeBoothCode(b.code).toLowerCase() === booth.code.toLowerCase());
+  if (duplicate) return res.status(400).json({ error: '该活动已存在相同摊位号' });
   booths.push(booth);
   pack.events[pack.index].booths = booths;
   await writeJSON('events.json', pack.events);
@@ -2701,8 +2707,13 @@ app.put('/api/author/only-booths/:eventId/:boothId', authorAuthMiddleware, async
   const owned = isBoothOwnerOf(booth, circleId);
   if (!pack.canManageAll && !owned) return res.status(403).json({ error: '无权编辑该摊位' });
 
+  const nextCode = req.body.code !== undefined ? normalizeBoothCode(req.body.code) : booth.code;
+  if (!nextCode) return res.status(400).json({ error: '请填写摊位号' });
+  const duplicateCode = booths.some((b, idx) => idx !== bi && normalizeBoothCode(b.code).toLowerCase() === nextCode.toLowerCase());
+  if (duplicateCode) return res.status(400).json({ error: '该活动已存在相同摊位号' });
+  booth.code = nextCode;
+
   if (pack.canManageAll) {
-    if (req.body.code !== undefined) booth.code = String(req.body.code || '').trim();
     if (req.body.title !== undefined) booth.title = String(req.body.title || '').trim();
     if (req.body.logo !== undefined) booth.logo = String(req.body.logo || '');
     if (req.body.description !== undefined) booth.description = String(req.body.description || '');
