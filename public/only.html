@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261108d">
+  <link rel="stylesheet" href="/css/style.css?v=20261118a">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-hero {
@@ -443,9 +443,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261108d"></script>
-  <script src="/js/i18n.js?v=20261108d"></script>
-  <script src="/js/main.js?v=20261108d"></script>
+  <script src="/js/api.js?v=20261118a"></script>
+  <script src="/js/i18n.js?v=20261118a"></script>
+  <script src="/js/main.js?v=20261118a"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -637,7 +637,7 @@
             <button type="button" data-t="owners">摊主</button>
             <button type="button" data-t="ov">概况</button>
           </div>
-          <input type="search" class="only-search" id="onlySearch" placeholder="搜索摊位号、摊主或作品…" oninput="renderOnlyBooths('all')">
+          <input type="search" class="only-search" id="onlySearch" placeholder="搜索摊位号、摊主、作品或角色标签…" oninput="renderOnlyBooths('all')">
         </div>
         <div id="onlyListPane"></div>
         <div id="onlyGoodsPane" style="display:none;"></div>
@@ -821,7 +821,10 @@
       let list = source.slice();
       if (f.cat && f.cat !== 'all') list = list.filter(w => w.category === f.cat);
       const q = String(f.q || '').trim().toLowerCase();
-      if (q) list = list.filter(w => String(w.title || '').toLowerCase().includes(q));
+      if (q) list = list.filter(w => {
+        const hay = [w.title, ...(Array.isArray(w.tags) ? w.tags : [])].join(' ').toLowerCase();
+        return hay.includes(q);
+      });
       return list;
     }
 
@@ -926,7 +929,7 @@
             <button type="button" class="only-cat${f.cat === 'all' ? ' on' : ''}" data-cat="all">全部</button>
             ${cats.map(c => `<button type="button" class="only-cat${f.cat === c ? ' on' : ''}" data-cat="${esc(c)}">${esc(catLabel(c))}</button>`).join('')}
           </div>
-          <input type="search" id="onlyGoodsSearch" class="only-allgoods-search" placeholder="搜索本活动周边…" value="${esc(f.q || '')}">
+          <input type="search" id="onlyGoodsSearch" class="only-allgoods-search" placeholder="搜索本活动周边、角色标签…" value="${esc(f.q || '')}">
         </div>
         <div class="only-allgoods-meta">共 <b id="onlyGoodsCount">0</b> 件展示周边</div>
         <div class="only-goods" id="onlyGoodsGrid"></div>
@@ -1061,12 +1064,22 @@
       }
       const q = (document.getElementById('onlySearch')?.value || '').trim().toLowerCase();
       const booths = q ? boothsAll.filter(b => {
-        const hay = [b.code, b.title, b.description, ...(b.owners || []).map(c => c.name), ...(b.goods || []).map(g => g.title)].join(' ').toLowerCase();
+        const hay = [
+          b.code,
+          b.title,
+          b.description,
+          ...(b.owners || []).map(c => c.name),
+          ...(b.goods || []).flatMap(g => [g.title, ...(Array.isArray(g.tags) ? g.tags : [])])
+        ].join(' ').toLowerCase();
         return hay.includes(q);
       }) : boothsAll;
       if (!booths.length) {
         listPane.innerHTML = '<div class="empty-state"><div class="icon">·</div><p>没有匹配的摊位</p></div>';
         return;
+      }
+      if (q) {
+        if (!window._onlyOpenBooths) window._onlyOpenBooths = new Set();
+        booths.forEach(b => window._onlyOpenBooths.add(b.id));
       }
       const cart = window._onlyCart || {};
       if (!window._onlyOpenBooths) {
