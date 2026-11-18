@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=20261118d">
+  <link rel="stylesheet" href="/css/style.css?v=20261118e">
   <style>
     .only-wrap { max-width: 960px; margin: 0 auto; }
     .only-cover {
@@ -493,9 +493,9 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=20261118d"></script>
-  <script src="/js/i18n.js?v=20261118d"></script>
-  <script src="/js/main.js?v=20261118d"></script>
+  <script src="/js/api.js?v=20261118e"></script>
+  <script src="/js/i18n.js?v=20261118e"></script>
+  <script src="/js/main.js?v=20261118e"></script>
   <script>
     (async function bootOnly() {
       const params = new URLSearchParams(location.search);
@@ -659,9 +659,13 @@
         });
       });
       const allGoodsN = displayedWorks.length;
-      const activeOwnerIds = new Set();
-      displayedWorks.forEach(w => (w.circles || []).forEach(cid => activeOwnerIds.add(cid)));
-      const ownerN = activeOwnerIds.size;
+      const knownOwnerIds = new Set();
+      boothModels.forEach(b => (b.circleIds || []).forEach(cid => knownOwnerIds.add(cid)));
+      (event.relatedCircles || []).forEach(cid => knownOwnerIds.add(cid));
+      const ownerN = [...knownOwnerIds].filter(cid => {
+        const c = circleMap[cid];
+        return c && displayedWorks.some(w => (w.circles || []).includes(cid));
+      }).length;
 
       rootEl.innerHTML = `
         <div class="only-cover">
